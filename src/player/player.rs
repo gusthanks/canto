@@ -1075,7 +1075,7 @@ impl SpotifyPlayer {
             let sink: Box<dyn Sink> = match backend {
                 AudioBackend::PulseAudio => {
                     info!("using pulseaudio");
-                    env::set_var("PULSE_PROP_application.name", "Riff");
+                    env::set_var("PULSE_PROP_application.name", "Canto");
                     let backend = audio_backend::find(Some("pulseaudio".to_string())).unwrap();
                     backend(None, audio_format)
                 }

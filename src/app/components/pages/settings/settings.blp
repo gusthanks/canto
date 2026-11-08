@@ -40,7 +40,7 @@ template $SettingsWindow : Adw.PreferencesDialog {
 
         /* Translators: Description for the close window behavior preference */
 
-        subtitle: _("Riff's behavior when closing the main window");
+        subtitle: _("Canto's behavior when closing the main window");
         model: StringList {
           strings [
             _("Ask"),
@@ -306,7 +306,7 @@ template $SettingsWindow : Adw.PreferencesDialog {
 
       /* Translators: Description under the Caching preferences header */
 
-      description: _("Control how Riff caches data locally.");
+      description: _("Control how Canto caches data locally.");
 
       Adw.SpinRow memory_cache_size {
         /* Translators: Title for the in-memory cache size preference */
@@ -315,7 +315,7 @@ template $SettingsWindow : Adw.PreferencesDialog {
 
         /* Translators: Description for the in-memory cache size preference */
 
-        subtitle: _("Maximum memory allocated for caching data while Riff is running.");
+        subtitle: _("Maximum memory allocated for caching data while Canto is running.");
         adjustment: Adjustment {
           lower: 1;
           upper: 1024;

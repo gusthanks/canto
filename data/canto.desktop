@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.5
+Name=Canto
+Exec=canto %u
+GenericName=Spotify Music Player & Synced Lyrics
+Icon=canto
+Terminal=false
+Type=Application
+Categories=GTK;GNOME;Music;AudioVideo;Audio;Player;
+MimeType=x-scheme-handler/spotify;
+StartupNotify=true
+X-Purism-FormFactor=Workstation;Mobile;
+SingleMainWindow=true
+Keywords=spotify;music;lyrics;canto;

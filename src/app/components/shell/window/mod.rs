@@ -85,9 +85,9 @@ impl MainWindow {
 
         dialog.set_body(&gettext(
             "This account appears to be using Spotify's new PlayPlay DRM, which \
-             prevents playback in Riff. Spotify's PlayPlay DRM is proprietary and only works in \
+             prevents playback in Canto. Spotify's PlayPlay DRM is proprietary and only works in \
              the official Spotify client.\n\n\
-             This is not a bug and Riff will never attempt to circumvent Spotify's PlayPlay DRM.",
+             This is not a bug and Canto will never attempt to circumvent Spotify's PlayPlay DRM.",
         ));
 
         dialog.add_response("close", &gettext("Dismiss"));

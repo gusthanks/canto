@@ -447,23 +447,23 @@ msgid "Open Spotify link?"
 msgstr ""
 
 #: src/app/components/shell/clipboard_import/mod.rs:95
-msgid "There’s a Spotify album link in your clipboard. Open it in Riff?"
+msgid "There’s a Spotify album link in your clipboard. Open it in Canto?"
 msgstr ""
 
 #: src/app/components/shell/clipboard_import/mod.rs:99
-msgid "There’s a Spotify artist link in your clipboard. Open it in Riff?"
+msgid "There’s a Spotify artist link in your clipboard. Open it in Canto?"
 msgstr ""
 
 #: src/app/components/shell/clipboard_import/mod.rs:103
-msgid "There’s a Spotify playlist link in your clipboard. Open it in Riff?"
+msgid "There’s a Spotify playlist link in your clipboard. Open it in Canto?"
 msgstr ""
 
 #: src/app/components/shell/clipboard_import/mod.rs:107
-msgid "There’s a Spotify profile link in your clipboard. Open it in Riff?"
+msgid "There’s a Spotify profile link in your clipboard. Open it in Canto?"
 msgstr ""
 
 #: src/app/components/shell/clipboard_import/mod.rs:111
-msgid "There’s a Spotify track link in your clipboard. Open it in Riff?"
+msgid "There’s a Spotify track link in your clipboard. Open it in Canto?"
 msgstr ""
 
 #. translators: Button of the dialog asking to confirm clearing the play queue: keeps the queue.
@@ -572,11 +572,11 @@ msgid "New Playlist"
 msgstr "Новый плейлист"
 
 #: src/app/components/shell/window/close_dialog.rs:12
-msgid "Riff is Still Playing"
+msgid "Canto is Still Playing"
 msgstr ""
 
 #: src/app/components/shell/window/close_dialog.rs:13
-msgid "How should Riff close while audio is playing?"
+msgid "How should Canto close while audio is playing?"
 msgstr ""
 
 #: src/app/components/shell/window/close_dialog.rs:16
@@ -606,10 +606,10 @@ msgstr ""
 #: src/app/components/shell/window/mod.rs:87
 msgid ""
 "This account appears to be using Spotify's new PlayPlay DRM, which prevents "
-"playback in Riff. Spotify's PlayPlay DRM is proprietary and only works in "
+"playback in Canto. Spotify's PlayPlay DRM is proprietary and only works in "
 "the official Spotify client.\n"
 "\n"
-"This is not a bug and Riff will never attempt to circumvent Spotify's "
+"This is not a bug and Canto will never attempt to circumvent Spotify's "
 "PlayPlay DRM."
 msgstr ""
 
@@ -764,8 +764,8 @@ msgid "Copyright"
 msgstr "Авторское право"
 
 #: src/app/components/pages/login/login.blp:48
-msgid "Welcome to Riff"
-msgstr "Добро пожаловать в Riff!"
+msgid "Welcome to Canto"
+msgstr "Добро пожаловать в Canto!"
 
 #. Translators: Login window subtitle
 #: src/app/components/pages/login/login.blp:55
@@ -995,7 +995,7 @@ msgstr ""
 
 #. Translators: Description for the close window behavior preference
 #: src/app/components/pages/settings/settings.blp:43
-msgid "Riff's behavior when closing the main window"
+msgid "Canto's behavior when closing the main window"
 msgstr ""
 
 #: src/app/components/pages/settings/settings.blp:46
@@ -1237,7 +1237,7 @@ msgstr ""
 
 #. Translators: Description under the Caching preferences header
 #: src/app/components/pages/settings/settings.blp:309
-msgid "Control how Riff caches data locally."
+msgid "Control how Canto caches data locally."
 msgstr ""
 
 #. Translators: Title for the in-memory cache size preference
@@ -1247,7 +1247,7 @@ msgstr ""
 
 #. Translators: Description for the in-memory cache size preference
 #: src/app/components/pages/settings/settings.blp:318
-msgid "Maximum memory allocated for caching data while Riff is running."
+msgid "Maximum memory allocated for caching data while Canto is running."
 msgstr ""
 
 #. Translators: Title for the on-disk image cache size preference
@@ -1466,8 +1466,8 @@ msgstr ""
 
 #: src/window.blp:289
 #, fuzzy
-msgid "About Riff"
-msgstr "О Riff"
+msgid "About Canto"
+msgstr "О Canto"
 
 #: src/window.blp:296
 msgid "Log Out"

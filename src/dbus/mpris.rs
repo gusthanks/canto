@@ -56,7 +56,7 @@ impl RiffMpris {
 
     #[zbus(property)]
     fn identity(&self) -> &'static str {
-        "Riff"
+        "Canto"
     }
 
     #[zbus(property)]
@@ -71,7 +71,7 @@ impl RiffMpris {
 
     #[zbus(property)]
     fn desktop_entry(&self) -> &'static str {
-        "dev.diegovsky.Riff"
+        "canto"
     }
 }
 

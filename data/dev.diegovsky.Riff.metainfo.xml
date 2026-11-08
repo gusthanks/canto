@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
   <id>dev.diegovsky.Riff</id>
-  <url type="homepage">https://github.com/Diegovsky/riff</url>
-  <url type="bugtracker">https://github.com/Diegovsky/riff/issues</url>
-  <url type="vcs-browser">https://github.com/Diegovsky/riff/</url>
+  <url type="homepage">https://github.com/gusthanks/canto</url>
+  <url type="bugtracker">https://github.com/gusthanks/canto/issues</url>
+  <url type="vcs-browser">https://github.com/gusthanks/canto/</url>
 
-  <name>Riff</name>
+  <name>Canto</name>
   <developer id="diegovsky@fosstodon.org">
      <name>Diego Augusto</name>
   </developer>
@@ -16,7 +16,7 @@
     <color type="primary" scheme_preference="dark">#354762</color>
   </branding>
 
-  <launchable type="desktop-id">dev.diegovsky.Riff.desktop</launchable>
+  <launchable type="desktop-id">canto.desktop</launchable>
 
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
@@ -34,8 +34,8 @@
   </recommends>
 
   <description>
-    <p>Riff is a Spotify client that puts your music library front and center. It features a clean, minimal design that lets you listen distraction-free.</p>
-    <p><em>Note: Riff requires a Spotify Premium account. Some accounts may not work due to Spotify's new PlayPlay DRM, which is proprietary and cannot be implemented externally.</em></p>
+    <p>Canto is a Spotify client that puts your music library front and center. It features a clean, minimal design that lets you listen distraction-free.</p>
+    <p><em>Note: Canto requires a Spotify Premium account. Some accounts may not work due to Spotify's new PlayPlay DRM, which is proprietary and cannot be implemented externally.</em></p>
     <p>Features:</p>
     <ul>
       <li>Modern GTK4 and libadwaita interface with light/dark themes and a responsive layout</li>
@@ -85,7 +85,7 @@
   <releases>
     <release version="26.10" date="2026-10-24">
         <description>
-            <p>This release adds a new play queue, playlist management and more, all while making Riff faster and lighter.</p>
+            <p>This release adds a new play queue, playlist management and more, all while making Canto faster and lighter.</p>
             <p>New features:</p>
             <ul>
                 <li>New queue with drag-and-drop reordering, shown as a bottom sheet or a side panel</li>
@@ -99,7 +99,7 @@
             <p>Improvements:</p>
             <ul>
                 <li>Pages load faster and are more responsive</li>
-                <li>Riff uses less CPU and memory during playback, navigation, and browsing</li>
+                <li>Canto uses less CPU and memory during playback, navigation, and browsing</li>
                 <li>Reworked back and forward navigation, with a history of recent pages</li>
                 <li>Layout adapts better to small windows and phones</li>
                 <li>Better support for large playlists and albums</li>
@@ -150,7 +150,7 @@
                 <li>Skeleton loading states while pages load.</li>
                 <li>Improved mobile layout with a new header widget.</li>
                 <li>Closer conformance to the Human Interface Guidelines.</li>
-                <li>Riff now uses your system accent color instead of its default green.</li>
+                <li>Canto now uses your system accent color instead of its default green.</li>
                 <li>Collapsible side panel to give your library more room.</li>
             </ul>
             <p>Bug fixes:</p>

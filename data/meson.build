@@ -1,4 +1,4 @@
-install_data('dev.diegovsky.Riff.desktop',
+install_data('canto.desktop',
   install_dir: get_option('datadir') / 'applications'
 )
 

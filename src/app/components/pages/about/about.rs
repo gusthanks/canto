@@ -24,7 +24,9 @@ fn setup_credits(about: &libadwaita::AboutDialog) {
 
 fn setup_issue_link(about: &libadwaita::AboutDialog) {
     about.connect_activate_link(|_, uri| {
-        if uri.starts_with("https://github.com/Diegovsky/riff/issues") {
+        if uri.starts_with("https://github.com/Diegovsky/riff/issues")
+            || uri.starts_with("https://github.com/gusthanks/canto/issues")
+        {
             report_issue();
             true
         } else {
@@ -51,7 +53,7 @@ pub fn report_issue() {
          **General information:**\n\
          - Distribution: {distro}\n\
          - Installation method: {install_method}\n\
-         - Riff Version: {version}\n\
+         - Canto Version: {version}\n\
          - Arch: {arch}\n\
          - Desktop: {desktop}\n\
          - Display server: {display_server}\n\
@@ -59,7 +61,7 @@ pub fn report_issue() {
          **Logs:**\n\
          Please paste relevant log output below. You can retrieve logs with:\n\
          ```sh\n\
-         journalctl --user _COMM=riff --since=\"1 hour ago\" --no-pager\n\
+         journalctl --user _COMM=canto --since=\"1 hour ago\" --no-pager\n\
          ```\n\
          <details><summary>Log output</summary>\n\n\
          ```\n\
@@ -77,7 +79,7 @@ pub fn report_issue() {
     );
 
     let url = format!(
-        "https://github.com/Diegovsky/riff/issues/new?labels=bug&body={}",
+        "https://github.com/gusthanks/canto/issues/new?labels=bug&body={}",
         percent_encoding::utf8_percent_encode(&body, percent_encoding::NON_ALPHANUMERIC)
     );
 

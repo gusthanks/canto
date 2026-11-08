@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="data/hicolor/scalable/apps/dev.diegovsky.Riff.svg" width="128" height="128" alt="Riff icon">
+  <img src="data/icons/canto.png" width="128" height="128" alt="Canto icon">
 </p>
 
-<h1 align="center">Riff</h1>
+<h1 align="center">Canto</h1>
 
 <p align="center">
-    Riff is a Spotify client that puts your music library front and center. It features a clean, minimal design that lets you listen distraction-free.
+    Canto is a Spotify client that puts your music library front and center. It features a clean, minimal design that lets you listen distraction-free.
 </p>
 
 ![Riff Dark](data/appstream/albums-image-only-dark.png#gh-dark-mode-only)![Riff Light](data/appstream/albums-image-only-light.png#gh-light-mode-only)
@@ -63,7 +63,7 @@ flatpak install --user Riff-x86_64.flatpak
 ./scripts/setup-dev.sh                 # install dependencies
 ./scripts/api/generate-spotify-api.sh  # generate Spotify API crate (requires Java)
 ./scripts/build.sh release --install   # build and install to ~/.local
-~/.local/bin/riff                      # run Riff
+~/.local/bin/canto                     # run Canto
 ```
 
 See the [Development Guide](doc/Development.md) for full build instructions, project structure, and troubleshooting.

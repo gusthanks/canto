@@ -144,6 +144,12 @@ final_bin = custom_target(
   ]
 )
 
+install_symlink(
+  'canto',
+  pointing_to: meson.project_name(),
+  install_dir: get_option('bindir')
+)
+
 test('Unit tests',
   cargo,
   args: [

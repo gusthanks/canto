@@ -9,8 +9,8 @@ use riff_config::settings::SETTINGS;
 
 pub fn show(window: &libadwaita::ApplicationWindow) {
     let dialog = libadwaita::AlertDialog::new(
-        Some(&gettext("Riff is Still Playing")),
-        Some(&gettext("How should Riff close while audio is playing?")),
+        Some(&gettext("Canto is Still Playing")),
+        Some(&gettext("How should Canto close while audio is playing?")),
     );
 
     dialog.add_response("background", &gettext("Run in Background"));

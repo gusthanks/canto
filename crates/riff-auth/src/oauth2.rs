@@ -510,7 +510,7 @@ fn page(title: &str, message: &str) -> String {
 
 fn success_page() -> String {
     page(
-        "Riff Connected",
+        "Canto Connected",
         "Logged in successfully! You may close this window.",
     )
 }
