@@ -134,6 +134,10 @@ pub trait MusicProvider: Send + Sync + 'static {
     async fn get_player_queue(&self) -> Result<Queue, DomainError>;
     async fn get_player_state(&self) -> Result<PlayerState, DomainError>;
     async fn player_resume(&self, device_id: &str) -> Result<(), DomainError>;
+    async fn player_transfer(&self, device_id: &str) -> Result<(), DomainError> {
+        let _ = device_id;
+        Ok(())
+    }
     async fn player_play_in_context(
         &self,
         device_id: &str,

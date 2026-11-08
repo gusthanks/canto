@@ -125,7 +125,6 @@ impl ConnectPlayer {
         debug!("polling connect device...");
         let player_state = self.api.get_player_state(load::transport()).await;
         let Ok(state) = player_state else {
-            self.device_lost();
             return;
         };
         self.apply_remote_state(&state).await;
@@ -239,6 +238,7 @@ impl ConnectPlayer {
     pub async fn handle_command(&self, command: ConnectCommand) -> Option<()> {
         let device_lost = match command {
             ConnectCommand::SetDevice(new_device_id) => {
+                let _ = self.api.player_transfer(&new_device_id).await;
                 self.device_id.write().ok()?.replace(new_device_id);
                 self.sync_state().await;
                 false
@@ -259,10 +259,14 @@ impl ConnectPlayer {
                             // translators: This notification is shown when Spotify throttles requests.
                             "Rate limited by Spotify. Please wait a moment and try again.",
                         ))]);
+                    } else if matches!(result, Err(DomainError::NotFound { .. })) {
+                        self.send_actions([AppAction::ShowNotification(gettext(
+                            "Dispositivo Spotify Connect em espera. Inicie uma música na Alexa primeiro.",
+                        ))]);
                     }
-                    matches!(result, Err(DomainError::NotFound { .. }))
+                    false
                 } else {
-                    true
+                    false
                 }
             }
         };

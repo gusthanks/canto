@@ -1089,6 +1089,11 @@ impl ApiService {
         self.provider.player_resume(device_id).await
     }
 
+    pub async fn player_transfer(&self, device_id: &str) -> Result<(), DomainError> {
+        let _lane = self.player_lane.enter().await;
+        self.provider.player_transfer(device_id).await
+    }
+
     pub async fn player_play_in_context(
         &self,
         device_id: &str,

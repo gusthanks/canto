@@ -729,6 +729,15 @@ impl MusicProvider for SpotifyDomain {
         Ok(apis::player_api::start_a_users_playback(&config, Some(device_id), None).await?)
     }
 
+    async fn player_transfer(&self, device_id: &str) -> Result<(), DomainError> {
+        let config = self.config_or_err()?;
+        let body = sp::TransferAUsersPlaybackRequest {
+            device_ids: vec![device_id.to_string()],
+            play: Some(false),
+        };
+        Ok(apis::player_api::transfer_a_users_playback(&config, Some(body)).await?)
+    }
+
     async fn player_play_in_context(
         &self,
         device_id: &str,
