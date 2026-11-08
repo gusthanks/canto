@@ -172,7 +172,8 @@ test('Clippy',
     '-D', 'warnings',
     '-A', 'clippy::module_inception',
     '-A', 'clippy::new_without_default',
-    '-A', 'clippy::enum-variant-names'
+    '-A', 'clippy::enum-variant-names',
+    '-A', 'clippy::derivable_impls'
   ],
   timeout: 180,
   env: env

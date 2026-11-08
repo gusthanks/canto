@@ -97,7 +97,11 @@ impl ConnectPlayer {
         }
 
         let play_pause = if state.is_playing {
-            PlaybackAction::Load(state.current_track_id.as_ref().unwrap().id.clone())
+            state
+                .current_track_id
+                .as_ref()
+                .map(|track_id| PlaybackAction::Load(track_id.id.clone()))
+                .unwrap_or(PlaybackAction::Pause)
         } else {
             PlaybackAction::Pause
         };

@@ -264,6 +264,9 @@ pub async fn get_information_about_the_users_current_playback(configuration: &co
     let resp = configuration.client.execute(req).await?;
 
     let status = resp.status();
+    if status.as_u16() == 204 {
+        return Ok(models::CurrentlyPlayingContextObject::new());
+    }
     let content_type = resp
         .headers()
         .get("content-type")
@@ -302,6 +305,9 @@ pub async fn get_queue(configuration: &configuration::Configuration, ) -> Result
     let resp = configuration.client.execute(req).await?;
 
     let status = resp.status();
+    if status.as_u16() == 204 {
+        return Ok(models::QueueObject::new());
+    }
     let content_type = resp
         .headers()
         .get("content-type")
@@ -400,6 +406,9 @@ pub async fn get_the_users_currently_playing_track(configuration: &configuration
     let resp = configuration.client.execute(req).await?;
 
     let status = resp.status();
+    if status.as_u16() == 204 {
+        return Ok(models::CurrentlyPlayingContextObject::new());
+    }
     let content_type = resp
         .headers()
         .get("content-type")

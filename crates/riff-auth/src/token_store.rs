@@ -39,7 +39,7 @@ impl TokenStore {
     }
 
     pub(crate) fn for_session() -> Self {
-        Self::filed_under(SESSION_ATTRS, "Riff Session Credentials")
+        Self::filed_under(SESSION_ATTRS, "Canto Session Credentials")
     }
 
     fn filed_under(attrs: Attrs, label: &'static str) -> Self {

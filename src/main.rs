@@ -131,6 +131,10 @@ fn setup_gtk(settings: &settings::RiffSettings) {
     // Setup logging
     env_logger::init();
 
+    // Set application and program names so desktop environment and window manager identify Canto
+    glib::set_application_name("Canto");
+    glib::set_prgname(Some("canto"));
+
     // Setup translations
     textdomain("riff")
         .and_then(|_| bindtextdomain("riff", config::LOCALEDIR))

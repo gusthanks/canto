@@ -1076,6 +1076,7 @@ impl SpotifyPlayer {
                 AudioBackend::PulseAudio => {
                     info!("using pulseaudio");
                     env::set_var("PULSE_PROP_application.name", "Canto");
+                    env::set_var("PULSE_PROP_application.icon_name", "canto");
                     let backend = audio_backend::find(Some("pulseaudio".to_string())).unwrap();
                     backend(None, audio_format)
                 }

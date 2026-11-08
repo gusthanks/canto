@@ -29,6 +29,9 @@ async fn dbus_server(
         .object_server()
         .at("/org/mpris/MediaPlayer2", player)
         .await?;
+    let _ = connection
+        .request_name("org.mpris.MediaPlayer2.canto")
+        .await;
     connection
         .request_name("org.mpris.MediaPlayer2.dev.diegovsky.Riff")
         .await?;

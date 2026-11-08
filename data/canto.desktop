@@ -3,6 +3,7 @@ Version=1.5
 Name=Canto
 Exec=canto %u
 GenericName=Spotify Music Player & Synced Lyrics
+Comment=Spotify Music Player & Synced Lyrics
 Icon=canto
 Terminal=false
 Type=Application
