@@ -665,5 +665,23 @@ mod tests {
         let player_state = player_state_from_object(&ctx);
         assert!(player_state.is_playing);
         assert_eq!(player_state.progress_ms, 12345);
+
+        // Edge case: null timestamp
+        let json_null = r#"{
+            "timestamp": null,
+            "progress_ms": 0,
+            "is_playing": false
+        }"#;
+        let ctx_null: sp::CurrentlyPlayingContextObject = serde_json::from_str(json_null).unwrap();
+        assert_eq!(ctx_null.timestamp, None);
+
+        // Edge case: omitted timestamp
+        let json_omitted = r#"{
+            "progress_ms": 0,
+            "is_playing": false
+        }"#;
+        let ctx_omitted: sp::CurrentlyPlayingContextObject =
+            serde_json::from_str(json_omitted).unwrap();
+        assert_eq!(ctx_omitted.timestamp, None);
     }
 }
