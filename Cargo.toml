@@ -19,7 +19,7 @@ glib = "0.22.10"
 futures = "0.3.18"
 libc = "0.2"
 ref_filter_map = "1.0.1"
-zbus = { version = "5.12", default-features = false, features = ["tokio"] }
+zbus = { version = "6.2", default-features = false, features = ["tokio"] }
 int-enum = "1.2.0"
 lazy_static = "1.4.0"
 log = "0.4.17"
