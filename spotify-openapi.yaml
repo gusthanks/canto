@@ -3983,6 +3983,7 @@ paths:
               must not be specified.
             example: 1484811043508
             type: integer
+            format: int64
         - name: before
           required: false
           in: query
@@ -3993,6 +3994,7 @@ paths:
               before (but not including) this cursor position. If `before` is specified,
               `after` must not be specified.
             type: integer
+            format: int64
       responses:
         '200':
           $ref: '#/components/responses/CursorPagedPlayHistory'
@@ -5004,6 +5006,7 @@ components:
           description: A Context Object. Can be `null`.
         timestamp:
           type: integer
+          format: int64
           description: Unix Millisecond Timestamp when playback state was last changed (play, pause, skip, scrub, new song, etc.).
         progress_ms:
           type: integer

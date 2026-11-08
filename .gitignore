@@ -3,7 +3,6 @@
 /build/
 /builddir/
 /cargo/
-/generated/
 /.flatpak-builder/
 
 # Generated files

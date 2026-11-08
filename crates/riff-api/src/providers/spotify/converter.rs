@@ -649,4 +649,21 @@ mod tests {
         let item = sp::PlaylistTrackObject::new();
         assert!(!track_from_playlist_item(&item).playable);
     }
+
+    #[test]
+    fn currently_playing_context_deserializes_millisecond_timestamp() {
+        // Spotify returns millisecond Unix timestamps (~1.7e12 ms) which overflow i32.
+        let json = r#"{
+            "timestamp": 1731078000000,
+            "progress_ms": 12345,
+            "is_playing": true,
+            "repeat_state": "off",
+            "shuffle_state": false
+        }"#;
+        let ctx: sp::CurrentlyPlayingContextObject = serde_json::from_str(json).unwrap();
+        assert_eq!(ctx.timestamp, Some(1731078000000_i64));
+        let player_state = player_state_from_object(&ctx);
+        assert!(player_state.is_playing);
+        assert_eq!(player_state.progress_ms, 12345);
+    }
 }
