@@ -27,8 +27,27 @@ template $UtilityPanelWidget : Adw.Bin {
           "utility-panel__header",
         ]
 
-        // Set with the content (see UtilityPanel::set_content)
-        title-widget: Adw.WindowTitle title {};
+        title-widget: Box switcher_box {
+          orientation: horizontal;
+          halign: center;
+          valign: center;
+
+          styles [
+            "linked",
+          ]
+
+          ToggleButton queue_tab {
+            /* Translators: Tab label for the queue in utility panel. */
+            label: _("Queue");
+            active: true;
+          }
+
+          ToggleButton lyrics_tab {
+            /* Translators: Tab label for lyrics in utility panel. */
+            label: _("Lyrics");
+            group: queue_tab;
+          }
+        };
       }
 
       Adw.HeaderBar selection_header {
@@ -61,9 +80,24 @@ template $UtilityPanelWidget : Adw.Bin {
         }
       }
 
-      // Set with UtilityPanel::set_content
-      Adw.Bin content {
+      Stack panel_stack {
         vexpand: true;
+
+        StackPage {
+          name: "queue";
+
+          child: Adw.Bin queue_content {
+            vexpand: true;
+          };
+        }
+
+        StackPage {
+          name: "lyrics";
+
+          child: Adw.Bin lyrics_content {
+            vexpand: true;
+          };
+        }
       }
     }
   };

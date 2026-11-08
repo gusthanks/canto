@@ -6,6 +6,8 @@ pub use riff_api::models::{
     Album, AlbumType, Artist, ArtistRef, ContentRating, Device, DeviceKind, ImageSet, Page,
     PlayerState, Playlist, RepeatMode, ResourceId, SearchResults, Track, User,
 };
+#[allow(unused_imports)]
+pub use riff_api::{LyricLine, Lyrics};
 pub use riff_core::play_queue::{PageRequest, SongsSource};
 
 // Only the `#[cfg(test)]` fixtures below name `Provider`; keep its import

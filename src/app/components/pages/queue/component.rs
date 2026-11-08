@@ -52,6 +52,7 @@ impl QueuePage {
         &self.widget
     }
 
+    #[allow(dead_code)]
     pub fn title() -> String {
         // translators: Title of the queue, listing what plays next, when it's shown beside the content.
         gettext("Queue")

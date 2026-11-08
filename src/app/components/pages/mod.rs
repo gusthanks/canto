@@ -22,6 +22,9 @@ pub use queue::*;
 mod login;
 pub use login::*;
 
+pub mod lyrics;
+pub use lyrics::*;
+
 mod saved_albums;
 pub use saved_albums::*;
 

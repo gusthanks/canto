@@ -41,6 +41,8 @@
     <file alias="components/bottom_sheet.ui">app/components/shell/bottom_sheet/bottom_sheet.ui</file>
     <!-- queue -->
     <file alias="components/queue_page.ui">app/components/pages/queue/queue_page.ui</file>
+    <!-- lyrics -->
+    <file alias="components/lyrics_page.ui">app/components/pages/lyrics/lyrics_page.ui</file>
     <!-- liked songs -->
     <!-- track_list / track_row -->
     <file alias="components/track_row.css">app/components/widgets/track_list/track_row.css</file>

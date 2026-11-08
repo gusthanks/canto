@@ -53,6 +53,7 @@ pub fn expose_custom_widgets() {
     widgets::segmented_button::expose_widgets();
     shell::window::expose_widgets();
     shell::utility_panel::expose_widgets();
+    pages::lyrics::expose_widgets();
     shell::layout::expose_widgets();
 }
 

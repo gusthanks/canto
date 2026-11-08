@@ -54,6 +54,7 @@ pub struct ApiService {
     cdn_client: http::ServiceClient,
     image_disk: DiskCache,
     api_disk: DiskCache,
+    lyrics_service: Arc<crate::lyrics::LyricsService>,
     inflight: Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>,
     image_queue: AdmissionQueue,
     read_queue: AdmissionQueue,
@@ -77,6 +78,7 @@ impl ApiService {
             cdn_client: http::cdn_service(pool),
             image_disk: DiskCache::new("riff/img", disk_cache_bytes, IMAGE_TTL),
             api_disk: DiskCache::new("riff/net", disk_cache_bytes, API_TTL),
+            lyrics_service: Arc::new(crate::lyrics::LyricsService::new()),
             inflight: Mutex::new(HashMap::new()),
             image_queue: AdmissionQueue::new(
                 "image queue",
@@ -114,6 +116,23 @@ impl ApiService {
         self.api_disk.set_max_bytes(max_bytes);
         self.image_disk.set_max_bytes(max_bytes);
         self.run_cache_maintenance().await;
+    }
+
+    pub fn lyrics_service(&self) -> Arc<crate::lyrics::LyricsService> {
+        Arc::clone(&self.lyrics_service)
+    }
+
+    pub async fn fetch_lyrics(
+        &self,
+        key: &str,
+        track_name: &str,
+        artist_name: &str,
+        album_name: Option<&str>,
+        duration_secs: Option<u32>,
+    ) -> Option<crate::lyrics::Lyrics> {
+        self.lyrics_service
+            .fetch_lyrics(key, track_name, artist_name, album_name, duration_secs)
+            .await
     }
 
     /// Clear all cached data, on disk (API responses + images) and in memory

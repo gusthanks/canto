@@ -9,7 +9,7 @@ use std::rc::Rc;
 use super::NowPlayingModel;
 use crate::app::components::{
     Component, DetailsPageComponent, DeviceSelector, DeviceSelectorWidget, EventListener,
-    HasHeaderBarModel, PageHeader, QueueList,
+    HasHeaderBarModel, LyricsPage, PageHeader, QueueList,
 };
 use crate::app::state::PlaybackEvent;
 use crate::app::AppEvent;
@@ -29,16 +29,52 @@ impl NowPlaying {
         let mut component =
             DetailsPageComponent::new(model.clone(), model.to_headerbar_model(), header);
         let queue_list = QueueList::new(model.queue_list_model());
-        component.append_content(queue_list.widget());
+        let lyrics_page = LyricsPage::new(model.app_model.clone(), model.dispatcher.clone());
+
+        let tab_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        tab_box.add_css_class("linked");
+        tab_box.set_halign(gtk::Align::Center);
+        tab_box.set_valign(gtk::Align::Center);
+
+        let queue_btn = gtk::ToggleButton::with_label(&gettext("Queue"));
+        queue_btn.set_active(true);
+        let lyrics_btn = gtk::ToggleButton::with_label(&gettext("Lyrics"));
+        lyrics_btn.set_group(Some(&queue_btn));
+
+        tab_box.append(&queue_btn);
+        tab_box.append(&lyrics_btn);
+
+        let content_stack = gtk::Stack::new();
+        content_stack.set_vexpand(true);
+        content_stack.add_named(queue_list.widget(), Some("queue"));
+        content_stack.add_named(lyrics_page.widget(), Some("lyrics"));
+        content_stack.set_visible_child_name("queue");
+
+        let stack_clone = content_stack.clone();
+        queue_btn.connect_toggled(move |btn| {
+            if btn.is_active() {
+                stack_clone.set_visible_child_name("queue");
+            }
+        });
+        let stack_clone2 = content_stack.clone();
+        lyrics_btn.connect_toggled(move |btn| {
+            if btn.is_active() {
+                stack_clone2.set_visible_child_name("lyrics");
+            }
+        });
+
+        component.append_content(&content_stack);
         // Once the list is in the page's ScrolledWindow
         queue_list.connect_scrolling();
         component.add_child(Box::new(queue_list));
+        component.add_child(Box::new(lyrics_page));
 
         let ds_widget: DeviceSelectorWidget = glib::Object::new();
         gio::Settings::new(SETTINGS)
             .bind(FeatureFlag::DeviceSelector.key(), &ds_widget, "visible")
             .get()
             .build();
+        component.header().add_end(&tab_box);
         component.header().add_end(&ds_widget);
         let device_selector = Box::new(DeviceSelector::new(
             ds_widget,

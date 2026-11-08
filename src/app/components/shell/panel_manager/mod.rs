@@ -3,7 +3,8 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use crate::app::components::{
-    AppHeaderBar, BottomSheet, Component, EventListener, QueuePage, QueuePageWidget, UtilityPanel,
+    AppHeaderBar, BottomSheet, Component, EventListener, LyricsPage, QueuePage, QueuePageWidget,
+    UtilityPanel,
 };
 use crate::app::state::PlaybackEvent;
 use crate::app::{AppAction, AppEvent, AppModel, Dispatcher};
@@ -29,6 +30,7 @@ impl Placement {
 
 struct Panels {
     queue: gtk::Widget,
+    lyrics: gtk::Widget,
     panel: UtilityPanel,
     sheet: BottomSheet,
     app_header: AppHeaderBar,
@@ -67,7 +69,7 @@ impl Panels {
         match self.placement.get() {
             Some(Placement::Side) => {
                 self.panel.set_selection(None, false);
-                self.panel.set_content(None, "")
+                self.panel.set_pages(None, None);
             }
             Some(Placement::Sheet) => {
                 self.sheet.set_selecting(false);
@@ -82,7 +84,7 @@ impl Panels {
         match placement {
             Placement::Side => self
                 .panel
-                .set_content(Some(&self.queue), &QueuePage::title()),
+                .set_pages(Some(&self.queue), Some(&self.lyrics)),
             Placement::Sheet => self.sheet.set_page(self.queue.downcast_ref()),
         }
         self.sync_header();
@@ -91,6 +93,7 @@ impl Panels {
 
 pub struct PanelManager {
     queue: QueuePage,
+    lyrics: LyricsPage,
     panels: Rc<Panels>,
     app_model: Rc<AppModel>,
     _settings: gio::Settings,
@@ -106,6 +109,7 @@ impl PanelManager {
         dispatcher: Dispatcher,
     ) -> Self {
         let queue = QueuePage::new(app_model.clone(), dispatcher.clone());
+        let lyrics = LyricsPage::new(app_model.clone(), dispatcher.clone());
         panel.connect_selection_cancel(clone!(
             #[weak(rename_to = model)]
             queue.model(),
@@ -118,6 +122,7 @@ impl PanelManager {
         ));
         let panels = Rc::new(Panels {
             queue: queue.widget().clone().upcast(),
+            lyrics: lyrics.widget().clone().upcast(),
             panel,
             sheet,
             app_header,
@@ -137,6 +142,7 @@ impl PanelManager {
 
         let manager = Self {
             queue,
+            lyrics,
             panels,
             app_model,
             _settings: settings,
@@ -198,6 +204,7 @@ impl Component for PanelManager {
 impl EventListener for PanelManager {
     fn on_event(&mut self, event: &AppEvent) {
         self.queue.on_event(event);
+        self.lyrics.on_event(event);
         if let AppEvent::SelectionEvent(_)
         | AppEvent::PlaybackEvent(PlaybackEvent::PlaylistChanged) = event
         {

@@ -16,11 +16,11 @@ mod imp {
         #[template_child]
         pub resize_handle: TemplateChild<gtk::Box>,
         #[template_child]
-        pub content: TemplateChild<libadwaita::Bin>,
-        #[template_child]
         pub header: TemplateChild<libadwaita::HeaderBar>,
         #[template_child]
-        pub title: TemplateChild<libadwaita::WindowTitle>,
+        pub queue_tab: TemplateChild<gtk::ToggleButton>,
+        #[template_child]
+        pub lyrics_tab: TemplateChild<gtk::ToggleButton>,
         #[template_child]
         pub selection_header: TemplateChild<libadwaita::HeaderBar>,
         #[template_child]
@@ -29,6 +29,12 @@ mod imp {
         pub selection_cancel: TemplateChild<gtk::Button>,
         #[template_child]
         pub select_all: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub panel_stack: TemplateChild<gtk::Stack>,
+        #[template_child]
+        pub queue_content: TemplateChild<libadwaita::Bin>,
+        #[template_child]
+        pub lyrics_content: TemplateChild<libadwaita::Bin>,
     }
 
     #[glib::object_subclass]
@@ -62,11 +68,34 @@ impl UtilityPanelWidget {
         &self.imp().resize_handle
     }
 
-    /// Show `content` under a header titled `title`.
-    pub fn set_content(&self, content: Option<&gtk::Widget>, title: &str) {
+    pub fn wire_tabs(&self) {
         let imp = self.imp();
-        imp.content.set_child(content);
-        imp.title.set_title(title);
+        let stack = imp.panel_stack.clone();
+        imp.queue_tab.connect_toggled(clone!(
+            #[weak]
+            stack,
+            move |btn| {
+                if btn.is_active() {
+                    stack.set_visible_child_name("queue");
+                }
+            }
+        ));
+        let stack2 = imp.panel_stack.clone();
+        imp.lyrics_tab.connect_toggled(move |btn| {
+            if btn.is_active() {
+                stack2.set_visible_child_name("lyrics");
+            }
+        });
+    }
+
+    pub fn set_pages(&self, queue: Option<&gtk::Widget>, lyrics: Option<&gtk::Widget>) {
+        let imp = self.imp();
+        imp.queue_content.set_child(queue);
+        imp.lyrics_content.set_child(lyrics);
+    }
+
+    pub fn set_content(&self, content: Option<&gtk::Widget>, _title: &str) {
+        self.set_pages(content, None);
     }
 
     pub fn connect_selection_cancel<F: Fn() + 'static>(&self, f: F) {
@@ -81,6 +110,10 @@ impl UtilityPanelWidget {
         let imp = self.imp();
         imp.header.set_visible(selected.is_none());
         imp.selection_header.set_visible(selected.is_some());
+        if selected.is_some() {
+            imp.queue_tab.set_active(true);
+            imp.panel_stack.set_visible_child_name("queue");
+        }
         let Some(count) = selected else {
             return;
         };

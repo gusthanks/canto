@@ -77,6 +77,10 @@ impl PlaybackState {
         self.is_playing && self.queue.current().is_some()
     }
 
+    pub fn seek_position(&self) -> u64 {
+        self.seek_position.current()
+    }
+
     pub fn is_shuffled(&self) -> bool {
         self.queue.is_shuffled()
     }

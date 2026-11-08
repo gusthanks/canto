@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate log;
 
+pub mod lyrics;
 pub mod models;
 
 mod defaults;
@@ -18,6 +19,7 @@ pub(crate) mod service;
 pub(crate) mod dev;
 
 pub use error::DomainError;
+pub use lyrics::{LyricLine, Lyrics, LyricsCache, LyricsService};
 pub use providers::spotify::domain::{check_user_profile, UserProfileCheck};
 pub use providers::spotify::spotify_service;
 pub use scheduler::{Load, LoadPriority, BACKGROUND_EPOCH};

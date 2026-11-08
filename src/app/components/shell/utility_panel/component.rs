@@ -5,7 +5,7 @@ use super::UtilityPanelWidget;
 use crate::app::components::WindowLayout;
 
 /// The panel beside the content, at the window's end. Whatever it shows is
-/// set with [`UtilityPanel::set_content`]; without content it leaves the
+/// set with [`UtilityPanel::set_pages`]; without content it leaves the
 /// split view, so it can't be opened.
 #[derive(Clone)]
 pub struct UtilityPanel {
@@ -20,22 +20,29 @@ impl UtilityPanel {
         split: libadwaita::OverlaySplitView,
         layout: Rc<WindowLayout>,
     ) -> Self {
+        widget.wire_tabs();
         let panel = Self {
             widget,
             split,
             layout,
         };
-        panel.set_content(None, "");
+        panel.set_pages(None, None);
         panel
     }
 
-    pub fn set_content(&self, content: Option<&gtk::Widget>, title: &str) {
-        self.widget.set_content(content, title);
+    pub fn set_pages(&self, queue: Option<&gtk::Widget>, lyrics: Option<&gtk::Widget>) {
+        self.widget.set_pages(queue, lyrics);
+        let has_content = queue.is_some() || lyrics.is_some();
         self.split
-            .set_sidebar(content.is_some().then_some(&self.widget));
+            .set_sidebar(has_content.then_some(&self.widget));
         self.widget
             .resize_handle()
-            .set_visible(content.is_some() && !self.split.is_collapsed());
+            .set_visible(has_content && !self.split.is_collapsed());
+    }
+
+    #[allow(dead_code)]
+    pub fn set_content(&self, content: Option<&gtk::Widget>, _title: &str) {
+        self.set_pages(content, None);
     }
 
     pub fn set_selection(&self, selected: Option<usize>, all_selected: bool) {

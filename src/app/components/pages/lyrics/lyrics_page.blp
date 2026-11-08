@@ -1,0 +1,64 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $LyricsPageWidget : Adw.Bin {
+  child: Box {
+    orientation: vertical;
+
+    Stack lyrics_stack {
+      vexpand: true;
+
+      styles [
+        "lyrics-page__content",
+      ]
+
+      StackPage {
+        name: "loading";
+
+        child: Adw.StatusPage loading_page {
+          icon-name: "audio-x-generic-symbolic";
+          /* Translators: Shown when fetching song lyrics. */
+          title: _("Loading Lyrics…");
+
+          styles [
+            "compact",
+          ]
+        };
+      }
+
+      StackPage {
+        name: "list";
+
+        child: ScrolledWindow lyrics_scroller {
+          hscrollbar-policy: never;
+          vexpand: true;
+
+          Box lyrics_container {
+            orientation: vertical;
+            valign: start;
+            margin-top: 24;
+            margin-bottom: 48;
+            margin-start: 16;
+            margin-end: 16;
+            spacing: 8;
+          }
+        };
+      }
+
+      StackPage {
+        name: "empty";
+
+        child: Adw.StatusPage empty_page {
+          icon-name: "audio-x-generic-symbolic";
+          /* Translators: Shown when no lyrics are found. */
+          title: _("No Lyrics Available");
+          description: _("Lyrics couldn't be found for this song.");
+
+          styles [
+            "compact",
+          ]
+        };
+      }
+    }
+  };
+}
