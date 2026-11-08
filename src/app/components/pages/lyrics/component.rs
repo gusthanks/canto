@@ -54,10 +54,13 @@ impl LyricsPage {
 
     fn start_clock(&self) {
         let app_model = self.app_model.clone();
-        let widget = self.widget.clone();
+        let widget_weak = self.widget.downgrade();
         let lyrics = self.lyrics.clone();
 
         self.clock.start(move || {
+            let Some(widget) = widget_weak.upgrade() else {
+                return;
+            };
             let (is_playing, pos) = {
                 let playback = &app_model.get_state().playback;
                 (playback.is_playing(), playback.seek_position())
@@ -94,6 +97,8 @@ impl LyricsPage {
 
         let track_id = track.rri.id.clone();
         if *self.current_track_id.borrow() == Some(track_id.clone()) {
+            let pos = self.app_model.get_state().playback.seek_position();
+            self.sync_position(pos);
             return;
         }
 
@@ -181,6 +186,12 @@ impl LyricsPage {
 impl Component for LyricsPage {
     fn get_root_widget(&self) -> &gtk::Widget {
         self.widget.upcast_ref()
+    }
+}
+
+impl Drop for LyricsPage {
+    fn drop(&mut self) {
+        self.clock.stop();
     }
 }
 

@@ -1,6 +1,6 @@
 use super::model::{LyricLine, Lyrics};
 
-/// Parse a time tag content such as "01:23.45", "00:05.06", "02:15.500", or "01:23" into milliseconds.
+/// Parse a time tag content such as "01:23.45", "00:05.06", "02:15.500", "01:23,45", or "01:23" into milliseconds.
 pub fn parse_timestamp(tag: &str) -> Option<u64> {
     let mut parts = tag.split(':');
     let min_str = parts.next()?;
@@ -11,17 +11,19 @@ pub fn parse_timestamp(tag: &str) -> Option<u64> {
 
     let minutes = min_str.trim().parse::<u64>().ok()?;
 
-    let (seconds, frac_ms) = if let Some((sec, frac)) = sec_str.trim().split_once('.') {
-        let s = sec.parse::<u64>().ok()?;
-        let f = match frac.len() {
-            0 => 0,
-            1 => frac.parse::<u64>().ok()? * 100,
-            2 => frac.parse::<u64>().ok()? * 10,
-            _ => frac[..3].parse::<u64>().ok()?,
-        };
-        (s, f)
+    let (sec_part, frac_part) = if let Some(pair) = sec_str.trim().split_once('.').or_else(|| sec_str.trim().split_once(',')) {
+        pair
     } else {
-        (sec_str.trim().parse::<u64>().ok()?, 0)
+        (sec_str.trim(), "")
+    };
+
+    let seconds = sec_part.parse::<u64>().ok()?;
+    let digits: String = frac_part.chars().take_while(|c| c.is_ascii_digit()).collect();
+    let frac_ms = match digits.len() {
+        0 => 0,
+        1 => digits.parse::<u64>().ok()? * 100,
+        2 => digits.parse::<u64>().ok()? * 10,
+        _ => digits[..3].parse::<u64>().ok()?,
     };
 
     Some((minutes * 60 + seconds) * 1000 + frac_ms)
@@ -47,14 +49,12 @@ pub fn parse_lrc(input: &str) -> Vec<LyricLine> {
                     timestamps.push(ms);
                     rest = rest[close_bracket + 1..].trim_start();
                 } else {
-                    let lower = tag.to_ascii_lowercase();
-                    if lower.starts_with("ar:")
-                        || lower.starts_with("ti:")
-                        || lower.starts_with("al:")
-                        || lower.starts_with("by:")
-                        || lower.starts_with("offset:")
-                        || lower.starts_with("length:")
-                    {
+                    // Check for standard ID tags such as [ar:...], [al:...], [ti:...], [au:...], [by:...], etc.
+                    let is_id_tag = tag.contains(':') && {
+                        let prefix = tag.split_once(':').map(|(p, _)| p.trim()).unwrap_or("");
+                        !prefix.is_empty() && prefix.chars().all(|c| c.is_ascii_alphabetic())
+                    };
+                    if is_id_tag {
                         rest = rest[close_bracket + 1..].trim_start();
                     } else {
                         break;
@@ -66,6 +66,10 @@ pub fn parse_lrc(input: &str) -> Vec<LyricLine> {
         }
 
         let text = rest.trim().to_string();
+        if text.is_empty() {
+            continue;
+        }
+
         for ts in timestamps {
             lines.push(LyricLine {
                 start_time_ms: ts,
@@ -253,5 +257,40 @@ mod tests {
         assert_eq!(lyrics.active_line_index(15000), Some(1));
         assert_eq!(lyrics.active_line_index(20000), Some(2));
         assert_eq!(lyrics.active_line_index(30000), Some(2));
+    }
+
+    #[test]
+    fn test_parse_timestamp_comma() {
+        assert_eq!(parse_timestamp("01:23,45"), Some(83450));
+        assert_eq!(parse_timestamp("00:05,06"), Some(5060));
+    }
+
+    #[test]
+    fn test_parse_timestamp_utf8_safety() {
+        assert_eq!(parse_timestamp("01:23.1€"), Some(83100));
+        assert_eq!(parse_timestamp("01:23.€"), Some(83000));
+    }
+
+    #[test]
+    fn test_parse_lrc_filters_blank_lines() {
+        let lrc = r#"
+[00:05.00] Line 1
+[00:10.00]
+[00:15.00]    
+[00:20.00] Line 2
+"#;
+        let lines = parse_lrc(lrc);
+        assert_eq!(lines.len(), 2);
+        assert_eq!(lines[0].text, "Line 1");
+        assert_eq!(lines[1].text, "Line 2");
+    }
+
+    #[test]
+    fn test_parse_lrc_extended_id_tags() {
+        let lrc = "[00:05.00][au:John Lennon][re:Minilyrics]Yesterday";
+        let lines = parse_lrc(lrc);
+        assert_eq!(lines.len(), 1);
+        assert_eq!(lines[0].start_time_ms, 5000);
+        assert_eq!(lines[0].text, "Yesterday");
     }
 }

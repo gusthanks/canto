@@ -170,7 +170,6 @@ bottom-sheet.bottom-sheet--padded > sheet {
   background: transparent;
   outline: none;
   box-shadow: none;
-  text-align: left;
 }
 
 .lyric-line:hover {
@@ -190,5 +189,4 @@ bottom-sheet.bottom-sheet--padded > sheet {
   opacity: 0.85;
   font-size: 1.1rem;
   font-weight: 500;
-  cursor: default;
 }

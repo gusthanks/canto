@@ -71,19 +71,25 @@ impl UtilityPanelWidget {
     pub fn wire_tabs(&self) {
         let imp = self.imp();
         let stack = imp.panel_stack.clone();
+        let lyrics_tab = imp.lyrics_tab.clone();
         imp.queue_tab.connect_toggled(clone!(
             #[weak]
             stack,
             move |btn| {
                 if btn.is_active() {
                     stack.set_visible_child_name("queue");
+                } else if !lyrics_tab.is_active() {
+                    btn.set_active(true);
                 }
             }
         ));
         let stack2 = imp.panel_stack.clone();
+        let queue_tab = imp.queue_tab.clone();
         imp.lyrics_tab.connect_toggled(move |btn| {
             if btn.is_active() {
                 stack2.set_visible_child_name("lyrics");
+            } else if !queue_tab.is_active() {
+                btn.set_active(true);
             }
         });
     }

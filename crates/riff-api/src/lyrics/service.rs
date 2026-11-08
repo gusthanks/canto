@@ -19,8 +19,32 @@ pub struct LyricsService {
 struct LrclibItem {
     pub plain_lyrics: Option<String>,
     pub synced_lyrics: Option<String>,
-    #[allow(dead_code)]
     pub instrumental: Option<bool>,
+    pub duration: Option<f64>,
+}
+
+fn clean_track_title(title: &str) -> Option<String> {
+    let patterns = [
+        " - Remastered",
+        " - Live",
+        " - Radio Edit",
+        " - Mono",
+        " - Stereo",
+        " (Remastered",
+        " (Live",
+        " (Radio Edit",
+        " (feat.",
+        " [feat.",
+    ];
+    for pattern in patterns {
+        if let Some((clean, _)) = title.split_once(pattern) {
+            let trimmed = clean.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_string());
+            }
+        }
+    }
+    None
 }
 
 impl Default for LyricsService {
@@ -62,6 +86,12 @@ impl LyricsService {
         album_name: Option<&str>,
         duration_secs: Option<u32>,
     ) -> Option<Lyrics> {
+        let track_name = track_name.trim();
+        let artist_name = artist_name.trim();
+        if track_name.is_empty() || artist_name.is_empty() {
+            return None;
+        }
+
         // 1. Check disk cache
         if let Some(cached) = self.cache.get(key) {
             return Some(cached);
@@ -84,10 +114,25 @@ impl LyricsService {
             }
         }
 
-        // 4. Fallback: search endpoint
-        if let Some(lyrics) = self.query_search(track_name, artist_name).await {
+        // 4. Fallback: search endpoint with duration preference
+        if let Some(lyrics) = self.query_search(track_name, artist_name, duration_secs).await {
             let _ = self.cache.store(key, &lyrics);
             return Some(lyrics);
+        }
+
+        // 5. Fallback: clean track title (strip " - Remastered", " (Live)", etc.)
+        if let Some(clean_title) = clean_track_title(track_name) {
+            if let Some(lyrics) = self
+                .query_get(&clean_title, artist_name, None, duration_secs)
+                .await
+            {
+                let _ = self.cache.store(key, &lyrics);
+                return Some(lyrics);
+            }
+            if let Some(lyrics) = self.query_search(&clean_title, artist_name, duration_secs).await {
+                let _ = self.cache.store(key, &lyrics);
+                return Some(lyrics);
+            }
         }
 
         None
@@ -131,7 +176,12 @@ impl LyricsService {
         parse_lyrics(item.synced_lyrics.as_deref(), item.plain_lyrics.as_deref())
     }
 
-    async fn query_search(&self, track_name: &str, artist_name: &str) -> Option<Lyrics> {
+    async fn query_search(
+        &self,
+        track_name: &str,
+        artist_name: &str,
+        duration_secs: Option<u32>,
+    ) -> Option<Lyrics> {
         let query = [
             ("track_name", track_name),
             ("artist_name", artist_name),
@@ -149,7 +199,20 @@ impl LyricsService {
             return None;
         }
 
-        let items: Vec<LrclibItem> = resp.json().await.ok()?;
+        let mut items: Vec<LrclibItem> = resp.json().await.ok()?;
+        // Filter out non-lyric instrumental items
+        items.retain(|item| item.instrumental != Some(true));
+
+        // If target duration is known, sort items by proximity to target duration
+        if let Some(target) = duration_secs {
+            let target_f = target as f64;
+            items.sort_by(|a, b| {
+                let diff_a = a.duration.map_or(f64::MAX, |d| (d - target_f).abs());
+                let diff_b = b.duration.map_or(f64::MAX, |d| (d - target_f).abs());
+                diff_a.partial_cmp(&diff_b).unwrap_or(std::cmp::Ordering::Equal)
+            });
+        }
+
         // Prefer synced lyrics if available
         for item in &items {
             if let Some(synced) = &item.synced_lyrics {

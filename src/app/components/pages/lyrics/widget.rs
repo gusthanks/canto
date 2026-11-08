@@ -55,7 +55,21 @@ glib::wrapper! {
 
 impl Default for LyricsPageWidget {
     fn default() -> Self {
-        glib::Object::new()
+        let widget: Self = glib::Object::new();
+        let vadjust = widget.imp().lyrics_scroller.vadjustment();
+        let weak_widget = widget.downgrade();
+        vadjust.connect_page_size_notify(move |_| {
+            if let Some(w) = weak_widget.upgrade() {
+                let active = *w.imp().active_index.borrow();
+                if let Some(idx) = active {
+                    let line_widgets = w.imp().line_widgets.borrow();
+                    if let Some(lw) = line_widgets.get(idx) {
+                        w.scroll_to_line(lw);
+                    }
+                }
+            }
+        });
+        widget
     }
 }
 

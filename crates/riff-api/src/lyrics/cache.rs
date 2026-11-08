@@ -34,8 +34,14 @@ impl LyricsCache {
         &self.root
     }
 
+    /// Normalize Spotify track URIs or IDs to a canonical key.
+    pub fn normalize_key(key: &str) -> &str {
+        key.trim().strip_prefix("spotify:track:").unwrap_or(key.trim())
+    }
+
     pub fn cache_path(&self, key: &str) -> PathBuf {
-        let safe_key: String = key
+        let canonical = Self::normalize_key(key);
+        let safe_key: String = canonical
             .chars()
             .map(|c| match c {
                 'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' => c,
@@ -51,27 +57,38 @@ impl LyricsCache {
     }
 
     pub fn get(&self, key: &str) -> Option<Lyrics> {
-        let path = self.cache_path(key);
+        let canonical = Self::normalize_key(key);
+        if canonical.is_empty() {
+            return None;
+        }
+        let path = self.cache_path(canonical);
         let data = fs::read_to_string(&path).ok().or_else(|| {
-            if let Some(stripped) = key.strip_prefix("spotify:track:") {
-                fs::read_to_string(self.cache_path(stripped)).ok()
+            // Backward-compatibility: check legacy raw key format (e.g. spotify_track_<id>.json)
+            let legacy_safe: String = key
+                .chars()
+                .map(|c| match c {
+                    'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' => c,
+                    _ => '_',
+                })
+                .collect();
+            if !legacy_safe.is_empty() && legacy_safe != canonical {
+                fs::read_to_string(self.root.join(format!("{legacy_safe}.json"))).ok()
             } else {
-                let prefixed = format!("spotify:track:{key}");
-                fs::read_to_string(self.cache_path(&prefixed)).ok()
+                None
             }
         })?;
         serde_json::from_str(&data).ok()
     }
 
     pub fn store(&self, key: &str, lyrics: &Lyrics) -> io::Result<()> {
+        let canonical = Self::normalize_key(key);
+        if canonical.is_empty() {
+            return Ok(());
+        }
         let _ = fs::create_dir_all(&self.root);
         let data = serde_json::to_string(lyrics)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-        fs::write(self.cache_path(key), &data)?;
-        // If key starts with spotify:track:, save under bare id as well for instant dual-lookup
-        if let Some(stripped) = key.strip_prefix("spotify:track:") {
-            let _ = fs::write(self.cache_path(stripped), &data);
-        }
+        fs::write(self.cache_path(canonical), &data)?;
         Ok(())
     }
 }
@@ -153,6 +170,20 @@ mod tests {
         assert_eq!(cache.get("corrupted_key"), None);
 
         // Clean up
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_lyrics_cache_empty_key() {
+        let temp_dir = unique_temp_dir("canto_test_empty");
+        let cache = LyricsCache::with_dir(temp_dir.clone());
+        let lyrics = Lyrics::Plain(vec!["text".into()]);
+
+        assert_eq!(cache.get(""), None);
+        assert_eq!(cache.get("   "), None);
+        cache.store("", &lyrics).expect("store empty key");
+        assert_eq!(cache.get(""), None);
+
         let _ = fs::remove_dir_all(&temp_dir);
     }
 }

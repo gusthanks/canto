@@ -51,15 +51,21 @@ impl NowPlaying {
         content_stack.set_visible_child_name("queue");
 
         let stack_clone = content_stack.clone();
+        let lyrics_btn_clone = lyrics_btn.clone();
         queue_btn.connect_toggled(move |btn| {
             if btn.is_active() {
                 stack_clone.set_visible_child_name("queue");
+            } else if !lyrics_btn_clone.is_active() {
+                btn.set_active(true);
             }
         });
         let stack_clone2 = content_stack.clone();
+        let queue_btn_clone = queue_btn.clone();
         lyrics_btn.connect_toggled(move |btn| {
             if btn.is_active() {
                 stack_clone2.set_visible_child_name("lyrics");
+            } else if !queue_btn_clone.is_active() {
+                btn.set_active(true);
             }
         });
 
