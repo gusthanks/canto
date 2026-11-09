@@ -8,6 +8,10 @@
     Canto is a Spotify client that puts your music library front and center. It features a clean, minimal design that lets you listen distraction-free.
 </p>
 
+<p align="center">
+    <sub>Canto is a fork of <a href="https://github.com/Diegovsky/riff">Riff</a> by Diego Augusto and the Riff contributors (itself descended from Spot by Alexandre Trendel), under the same MIT license.</sub>
+</p>
+
 ![Riff Dark](data/appstream/albums-image-only-dark.png#gh-dark-mode-only)![Riff Light](data/appstream/albums-image-only-light.png#gh-light-mode-only)
 
 <p align="center">
@@ -18,9 +22,6 @@
 
 > [!NOTE]
 > Requires a Spotify Premium account. Some accounts may not work due to Spotify's new PlayPlay DRM, which is proprietary and cannot be implemented externally.
-
-> [!WARNING]
-> This project does not accept AI-generated contributions, as outlined by [Flathub's Generative AI Policy](https://docs.flathub.org/docs/for-app-authors/requirements/#generative-ai-policy) and [GNOME Circle's AI Policy](https://gitlab.gnome.org/Teams/Releng/AppOrganization/-/blob/main/AppCriteria.md#circle-app-criteria).
 
 ## Features
 
