@@ -268,14 +268,54 @@ fn shell_quote(arg: &str) -> String {
     quoted
 }
 
-fn build_hyprland_exec_spec(workspace: &str, pid_file: &Path, program: &str) -> String {
+/// Quotes a string as a Lua double-quoted literal for `hyprctl eval`.
+fn lua_quote(value: &str) -> String {
+    let mut quoted = String::with_capacity(value.len() + 2);
+    quoted.push('"');
+    for ch in value.chars() {
+        match ch {
+            '\\' => quoted.push_str("\\\\"),
+            '"' => quoted.push_str("\\\""),
+            '\n' => quoted.push_str("\\n"),
+            '\r' => quoted.push_str("\\r"),
+            '\t' => quoted.push_str("\\t"),
+            other => quoted.push(other),
+        }
+    }
+    quoted.push('"');
+    quoted
+}
+
+fn build_hyprland_shell_command(pid_file: &Path, program: &str) -> String {
     let pid_q = shell_quote(&pid_file.to_string_lossy());
     let prog_q = shell_quote(program);
     // Single-quote safe command passed to `sh -c` so PID is recorded before `exec` replaces `sh`.
     let inner = "printf '%s\\n' \"$$\" > \"$1\"; exec \"$2\" >/dev/null 2>&1";
+    format!("sh -c {} _ {pid_q} {prog_q}", shell_quote(inner))
+}
+
+fn build_hyprland_exec_spec(workspace: &str, pid_file: &Path, program: &str) -> String {
+    let cmd = build_hyprland_shell_command(pid_file, program);
+    format!("[workspace {workspace} silent] {cmd}")
+}
+
+/// Builds a Hyprland Lua `hl.exec_cmd` call targeting a silent workspace.
+fn build_hyprland_lua_exec(workspace: &str, pid_file: &Path, program: &str) -> String {
+    let cmd = build_hyprland_shell_command(pid_file, program);
+    let rule = format!("{workspace} silent");
     format!(
-        "[workspace {workspace} silent] sh -c {} _ {pid_q} {prog_q}",
-        shell_quote(inner)
+        "hl.exec_cmd({}, {{ workspace = {} }})",
+        lua_quote(&cmd),
+        lua_quote(&rule)
+    )
+}
+
+/// Builds a Hyprland Lua call moving an existing window silently to a workspace.
+fn build_hyprland_lua_move(workspace: &str, address: &str) -> String {
+    format!(
+        "hl.dispatch(hl.dsp.window.move({{ workspace = {}, follow = false, window = {} }}))",
+        lua_quote(workspace),
+        lua_quote(&format!("address:{address}"))
     )
 }
 
@@ -293,9 +333,13 @@ fn spawn_silently_via_hyprland(program: &str) -> Result<u32, String> {
     let _ = std::fs::remove_file(&pid_file);
 
     let spec = build_hyprland_exec_spec(HIDDEN_WORKSPACE, &pid_file, program);
-    if !hyprctl_dispatch(&["exec", &spec]) {
+    let dispatched = hyprctl_dispatch(&["exec", &spec]) || {
+        let lua = build_hyprland_lua_exec(HIDDEN_WORKSPACE, &pid_file, program);
+        hyprctl_eval(&lua)
+    };
+    if !dispatched {
         let _ = std::fs::remove_file(&pid_file);
-        return Err("hyprctl dispatch exec did not return ok".to_string());
+        return Err("hyprctl dispatch/eval exec did not return ok".to_string());
     }
 
     let deadline = Instant::now() + HYPRLAND_PID_TIMEOUT;
@@ -437,9 +481,7 @@ fn move_window_to_hidden_workspace(address: &str) -> bool {
     if hyprctl_dispatch(&["movetoworkspacesilent", &legacy]) {
         return true;
     }
-    let lua = format!(
-        "hl.dsp.window.move({{ workspace = \"{HIDDEN_WORKSPACE}\", follow = false, window = \"address:{address}\" }})"
-    );
+    let lua = build_hyprland_lua_move(HIDDEN_WORKSPACE, address);
     hyprctl_eval(&lua)
 }
 
@@ -534,6 +576,33 @@ mod tests {
         assert!(spec.starts_with("[workspace special:canto silent] sh -c "));
         assert!(spec.contains("'/run/user/1000/canto.pid'"));
         assert!(spec.contains("'/usr/bin/spotify'"));
+    }
+
+    #[test]
+    fn lua_quote_escapes_special_characters() {
+        assert_eq!(lua_quote("a\"b\\c\nd"), "\"a\\\"b\\\\c\\nd\"");
+    }
+
+    #[test]
+    fn build_lua_exec_targets_silent_workspace() {
+        let lua = build_hyprland_lua_exec(
+            "special:canto",
+            Path::new("/run/user/1000/canto.pid"),
+            "/usr/bin/spotify",
+        );
+        assert!(lua.starts_with("hl.exec_cmd(\"sh -c "));
+        assert!(lua.ends_with(", { workspace = \"special:canto silent\" })"));
+        assert!(lua.contains("'/run/user/1000/canto.pid'"));
+        assert!(lua.contains("'/usr/bin/spotify'"));
+    }
+
+    #[test]
+    fn build_lua_move_dispatches_window_move_silently() {
+        let lua = build_hyprland_lua_move("special:canto", "0x222");
+        assert_eq!(
+            lua,
+            "hl.dispatch(hl.dsp.window.move({ workspace = \"special:canto\", follow = false, window = \"address:0x222\" }))"
+        );
     }
 
     #[test]
