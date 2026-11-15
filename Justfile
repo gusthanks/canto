@@ -19,5 +19,8 @@ generate-spotify-api:
     ./scripts/api/generate-spotify-api.sh
 
 init *ARGS:
-    meson setup -Dbuildtype=debug -Doffline=false --prefix="$HOME/.local" {{build}} {{ARGS}}
+    meson setup -Dbuildtype=release -Doffline=true --prefix="$HOME/.local" {{build}} {{ARGS}}
+
+init-debug *ARGS:
+    meson setup -Dbuildtype=debug -Doffline=true --prefix="$HOME/.local" {{build}} {{ARGS}}
 

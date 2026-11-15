@@ -218,7 +218,7 @@
       <default>'none'</default>
     </key>
     <key name="feature-device-selector" type="b">
-      <default>false</default>
+      <default>true</default>
       <summary>Enable the device selector in the Now Playing headerbar</summary>
     </key>
     <key name="feature-normalisation" type="b">
@@ -230,8 +230,39 @@
       <summary>Enable pinning objects to the navigation panel</summary>
     </key>
     <key name="queue-side-panel" type="b">
-      <default>false</default>
+      <default>true</default>
       <summary>Show the queue in the utility panel at the window's end, instead of the bottom sheet</summary>
+    </key>
+    <key name="app-language" type="s">
+      <choices>
+        <choice value="system" />
+        <choice value="en" />
+        <choice value="pt_BR" />
+      </choices>
+      <default>'system'</default>
+      <summary>Interface language</summary>
+      <description>Language used by the application interface ("system" follows the OS locale).</description>
+    </key>
+    <key name="app-theme" type="s">
+      <choices>
+        <choice value='omarchy'/>
+        <choice value='neutral'/>
+        <choice value='spotify-green'/>
+        <choice value='oled-dark'/>
+        <choice value='warm-vinyl'/>
+        <choice value='purple-night'/>
+      </choices>
+      <default>'omarchy'</default>
+      <summary>Selected color theme preset or Omarchy live theme</summary>
+    </key>
+    <key name="adaptive-cover-colors" type="b">
+      <default>true</default>
+      <summary>Subtly tint Now Playing and Lyrics surfaces with the active album art accent color</summary>
+    </key>
+    <key name="lyrics-offset-ms" type="i">
+      <range min="-10000" max="10000"/>
+      <default>0</default>
+      <summary>Manual synced lyrics timing offset in milliseconds</summary>
     </key>
     <key name="pinned-objects-by-user" type="s">
       <default>'{}'</default>
@@ -305,6 +336,56 @@
       <default>1024</default>
       <summary>Maximum disk space (MB) for the on-disk audio cache</summary>
       <description>Upper bound on disk space used to cache downloaded audio data.</description>
+    </key>
+    <key name="genius-access-token" type="s">
+      <default>""</default>
+      <summary>Genius Client Access Token</summary>
+      <description>Optional Genius API client access token used to fetch verified song pages, credits, and liner notes.</description>
+    </key>
+    <key name="scrobble-enabled" type="b">
+      <default>false</default>
+      <summary>Enable scrobbling</summary>
+      <description>Submit now-playing updates and completed plays to configured scrobbling services.</description>
+    </key>
+    <key name="scrobble-respect-remote" type="b">
+      <default>true</default>
+      <summary>Scrobble remote Spotify Connect playback</summary>
+      <description>Include tracks played on remote Spotify Connect devices when scrobbling is enabled.</description>
+    </key>
+    <key name="lastfm-api-key" type="s">
+      <default>""</default>
+      <summary>Last.fm API key</summary>
+      <description>User-provided Last.fm API key for authentication and scrobbling.</description>
+    </key>
+    <key name="lastfm-api-secret" type="s">
+      <default>""</default>
+      <summary>Last.fm API secret</summary>
+      <description>User-provided Last.fm shared secret used to sign API requests.</description>
+    </key>
+    <key name="lastfm-session-key" type="s">
+      <default>""</default>
+      <summary>Last.fm session key</summary>
+      <description>Session key obtained after authorizing Canto with Last.fm.</description>
+    </key>
+    <key name="lastfm-username" type="s">
+      <default>""</default>
+      <summary>Last.fm username</summary>
+      <description>Display username of the connected Last.fm account.</description>
+    </key>
+    <key name="listenbrainz-token" type="s">
+      <default>""</default>
+      <summary>ListenBrainz user token</summary>
+      <description>Personal ListenBrainz user token used to submit listens.</description>
+    </key>
+    <key name="smart-queue-continuation" type="b">
+      <default>false</default>
+      <summary>Smart queue continuation</summary>
+      <description>Automatically queue similar tracks when local playback reaches the end of the queue without repeat.</description>
+    </key>
+    <key name="visual-bridge-enabled" type="b">
+      <default>false</default>
+      <summary>Enable visual bridge</summary>
+      <description>Opt-in runtime JSON state and lock-free audio energy output for external visualizers such as Chaosphere.</description>
     </key>
   </schema>
 </schemalist>

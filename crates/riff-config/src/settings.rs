@@ -4,9 +4,25 @@ use std::collections::HashMap;
 
 pub const SETTINGS: &str = "dev.diegovsky.Riff";
 pub const QUEUE_SIDE_PANEL: &str = "queue-side-panel";
+pub const APP_LANGUAGE: &str = "app-language";
+pub const APP_THEME: &str = "app-theme";
+pub const ADAPTIVE_COVER_COLORS: &str = "adaptive-cover-colors";
+pub const LYRICS_OFFSET_MS: &str = "lyrics-offset-ms";
+pub const GENIUS_ACCESS_TOKEN: &str = "genius-access-token";
+pub const SCROBBLE_ENABLED: &str = "scrobble-enabled";
+pub const SCROBBLE_RESPECT_REMOTE: &str = "scrobble-respect-remote";
+pub const LASTFM_API_KEY: &str = "lastfm-api-key";
+pub const LASTFM_API_SECRET: &str = "lastfm-api-secret";
+pub const LASTFM_SESSION_KEY: &str = "lastfm-session-key";
+pub const LASTFM_USERNAME: &str = "lastfm-username";
+pub const LISTENBRAINZ_TOKEN: &str = "listenbrainz-token";
+pub const SMART_QUEUE_CONTINUATION: &str = "smart-queue-continuation";
+pub const VISUAL_BRIDGE_ENABLED: &str = "visual-bridge-enabled";
 
 /// Keys whose changes only apply after restarting the app.
 pub const RESTART_REQUIRED_KEYS: &[&str] = &[
+    // General
+    APP_LANGUAGE,
     // Audio
     "audio-backend",
     "alsa-device",

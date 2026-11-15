@@ -33,7 +33,29 @@ pub fn wire_dev_tools(
     let navigation_panel_header: libadwaita::HeaderBar =
         builder.object("navigation_panel_header").unwrap();
     navigation_panel_header.pack_start(&dev_menu);
-    dev_menu.set_visible(true);
+    let dev_env = std::env::var_os("CANTO_DEV")
+        .is_some_and(|v| !v.is_empty() && v != "0" && v != "false");
+    dev_menu.set_visible(dev_env);
+
+    if let Some(window) = builder.object::<libadwaita::ApplicationWindow>("window") {
+        let toggle = gtk::gio::SimpleAction::new("toggle-dev-tools", None);
+        let dev_menu_weak = dev_menu.downgrade();
+        toggle.connect_activate(move |_, _| {
+            if let Some(btn) = dev_menu_weak.upgrade() {
+                btn.set_visible(!btn.is_visible());
+            }
+        });
+        window.add_action(&toggle);
+
+        let shortcut = gtk::Shortcut::new(
+            gtk::ShortcutTrigger::parse_string("<Ctrl><Shift>D"),
+            Some(gtk::NamedAction::new("win.toggle-dev-tools")),
+        );
+        let controller = gtk::ShortcutController::new();
+        controller.set_scope(gtk::ShortcutScope::Local);
+        controller.add_shortcut(shortcut);
+        window.add_controller(controller);
+    }
 
     let display = gdk::Display::default().unwrap();
 
@@ -260,6 +282,6 @@ pub fn wire_dev_tools(
     let dev_show_drm_dialog: gtk::Button = dev_builder.object("dev_show_drm_dialog").unwrap();
     let app_sender = sender.clone();
     dev_show_drm_dialog.connect_clicked(move |_| {
-        let _ = app_sender.unbounded_send(AppAction::ShowDrmBlockedDialog);
+        let _ = app_sender.unbounded_send(AppAction::UseOfficialClient);
     });
 }
