@@ -5,58 +5,212 @@ template $LyricsPageWidget : Adw.Bin {
   child: Box {
     orientation: vertical;
 
-    Stack lyrics_stack {
-      vexpand: true;
+    Box lyrics_top_bar {
+      orientation: horizontal;
+      spacing: 8;
+      visible: false;
+      margin-top: 8;
+      margin-bottom: 4;
+      margin-start: 12;
+      margin-end: 12;
 
       styles [
-        "lyrics-page__content",
+        "lyrics-top-bar",
       ]
 
-      StackPage {
-        name: "loading";
+      Box {
+        styles [
+          "linked",
+        ]
 
-        child: Adw.StatusPage loading_page {
-          icon-name: "audio-x-generic-symbolic";
-          /* Translators: Shown when fetching song lyrics. */
-          title: _("Loading Lyrics…");
+        ToggleButton tab_lyrics_button {
+          /* Translators: Tab label switching to song lyrics view */
+          label: _("Lyrics");
+          active: true;
+          tooltip-text: _("Show track lyrics");
+        }
 
-          styles [
-            "compact",
-          ]
-        };
+        ToggleButton tab_about_button {
+          /* Translators: Tab label switching to credits & liner notes */
+          label: _("About Track");
+          group: tab_lyrics_button;
+          tooltip-text: _("Credits, samples, and liner notes");
+        }
       }
 
-      StackPage {
-        name: "list";
+      Box {
+        hexpand: true;
+      }
 
-        child: ScrolledWindow lyrics_scroller {
-          hscrollbar-policy: never;
+      Button genius_button {
+        tooltip-text: _("Open track on Genius");
+
+        styles [
+          "pill",
+          "genius-pill",
+        ]
+
+        child: Adw.ButtonContent {
+          icon-name: "canto-genius-symbolic";
+          /* Translators: Short button label opening track on Genius */
+          label: _("Genius");
+        };
+      }
+    }
+
+    Stack content_mode_stack {
+      vexpand: true;
+      transition-type: crossfade;
+
+      StackPage {
+        name: "lyrics";
+
+        child: Box {
+          orientation: vertical;
           vexpand: true;
 
-          Box lyrics_container {
-            orientation: vertical;
-            valign: start;
-            margin-top: 24;
-            margin-bottom: 48;
-            margin-start: 16;
-            margin-end: 16;
-            spacing: 8;
+          Stack lyrics_stack {
+            vexpand: true;
+
+            styles [
+              "lyrics-page__content",
+            ]
+
+            StackPage {
+              name: "loading";
+
+              child: Adw.StatusPage loading_page {
+                icon-name: "audio-x-generic-symbolic";
+                /* Translators: Shown when fetching song lyrics. */
+                title: _("Loading Lyrics…");
+
+                styles [
+                  "compact",
+                ]
+              };
+            }
+
+            StackPage {
+              name: "list";
+
+              child: ScrolledWindow lyrics_scroller {
+                hscrollbar-policy: never;
+                vexpand: true;
+
+                Box lyrics_container {
+                  orientation: vertical;
+                  valign: start;
+                  margin-top: 24;
+                  margin-bottom: 48;
+                  margin-start: 16;
+                  margin-end: 16;
+                  spacing: 8;
+                }
+              };
+            }
+
+            StackPage {
+              name: "empty";
+
+              child: Adw.StatusPage empty_page {
+                icon-name: "audio-x-generic-symbolic";
+                /* Translators: Shown when no lyrics are found. */
+                title: _("No Lyrics Available");
+                description: _("Lyrics couldn't be found for this song.");
+
+                styles [
+                  "compact",
+                ]
+
+                child: Button reload_empty_button {
+                  halign: center;
+                  visible: false;
+                  /* Translators: Button to retry fetching lyrics from LRCLIB. */
+                  label: _("Reload Lyrics");
+
+                  styles [
+                    "pill",
+                  ]
+                };
+              };
+            }
+          }
+
+          Box sync_toolbar {
+            orientation: horizontal;
+            halign: center;
+            spacing: 4;
+            visible: false;
+
+            styles [
+              "lyric-sync-bar",
+            ]
+
+            Button offset_minus_button {
+              label: "-100 ms";
+              tooltip-text: _("Delay lyrics (-100 ms)");
+
+              styles [
+                "flat",
+                "circular",
+              ]
+            }
+
+            Button offset_reset_button {
+              label: "0 ms";
+              tooltip-text: _("Reset lyrics sync offset");
+
+              styles [
+                "flat",
+                "lyric-sync-offset",
+              ]
+            }
+
+            Button offset_plus_button {
+              label: "+100 ms";
+              tooltip-text: _("Advance lyrics (+100 ms)");
+
+              styles [
+                "flat",
+                "circular",
+              ]
+            }
+
+            Separator {
+              orientation: vertical;
+              margin-top: 4;
+              margin-bottom: 4;
+            }
+
+            Button reload_button {
+              icon-name: "view-refresh-symbolic";
+              tooltip-text: _("Reload lyrics");
+
+              styles [
+                "flat",
+                "circular",
+              ]
+            }
           }
         };
       }
 
       StackPage {
-        name: "empty";
+        name: "about";
 
-        child: Adw.StatusPage empty_page {
-          icon-name: "audio-x-generic-symbolic";
-          /* Translators: Shown when no lyrics are found. */
-          title: _("No Lyrics Available");
-          description: _("Lyrics couldn't be found for this song.");
+        child: ScrolledWindow about_scroller {
+          hscrollbar-policy: never;
+          vexpand: true;
 
-          styles [
-            "compact",
-          ]
+          Box about_container {
+            orientation: vertical;
+            valign: start;
+            margin-top: 16;
+            margin-bottom: 32;
+            margin-start: 16;
+            margin-end: 16;
+            spacing: 14;
+          }
         };
       }
     }

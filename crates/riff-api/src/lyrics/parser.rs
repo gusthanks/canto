@@ -30,8 +30,10 @@ pub fn parse_timestamp(tag: &str) -> Option<u64> {
 }
 
 /// Parse LRC formatted content into a list of timestamped `LyricLine`s.
+/// Supports standard `[offset:+/-ms]` metadata tags (positive shifts lyrics earlier).
 pub fn parse_lrc(input: &str) -> Vec<LyricLine> {
     let mut lines = Vec::new();
+    let mut offset_ms: i64 = 0;
 
     for raw_line in input.lines() {
         let line = raw_line.trim();
@@ -47,6 +49,9 @@ pub fn parse_lrc(input: &str) -> Vec<LyricLine> {
                 let tag = &rest[1..close_bracket];
                 if let Some(ms) = parse_timestamp(tag) {
                     timestamps.push(ms);
+                    rest = rest[close_bracket + 1..].trim_start();
+                } else if let Some(parsed_offset) = parse_offset_tag(tag) {
+                    offset_ms = parsed_offset;
                     rest = rest[close_bracket + 1..].trim_start();
                 } else {
                     // Check for standard ID tags such as [ar:...], [al:...], [ti:...], [au:...], [by:...], etc.
@@ -78,8 +83,25 @@ pub fn parse_lrc(input: &str) -> Vec<LyricLine> {
         }
     }
 
+    if offset_ms != 0 {
+        for line in &mut lines {
+            // Standard LRC: positive [offset:+N] shifts lyrics earlier by subtracting N ms.
+            let adjusted = (line.start_time_ms as i128 - i128::from(offset_ms))
+                .clamp(0, i128::from(u64::MAX));
+            line.start_time_ms = adjusted as u64;
+        }
+    }
+
     lines.sort_by_key(|l| l.start_time_ms);
     lines
+}
+
+fn parse_offset_tag(tag: &str) -> Option<i64> {
+    let (key, value) = tag.split_once(':')?;
+    if !key.trim().eq_ignore_ascii_case("offset") {
+        return None;
+    }
+    value.trim().parse::<i64>().ok()
 }
 
 /// Fallback aware lyrics parser that takes optional synced LRC and plain lyrics strings.
@@ -292,5 +314,34 @@ mod tests {
         assert_eq!(lines.len(), 1);
         assert_eq!(lines[0].start_time_ms, 5000);
         assert_eq!(lines[0].text, "Yesterday");
+    }
+
+    #[test]
+    fn test_parse_lrc_offset_positive_and_negative() {
+        let lrc_pos = "\
+[offset:+500]
+[00:01.00]First line
+[00:05.50]Second line
+";
+        let lines = parse_lrc(lrc_pos);
+        assert_eq!(lines.len(), 2);
+        assert_eq!(lines[0].start_time_ms, 500);
+        assert_eq!(lines[1].start_time_ms, 5000);
+
+        let lrc_neg = "\
+[OFFSET: -250]
+[00:01.00]Delayed line
+";
+        let lines = parse_lrc(lrc_neg);
+        assert_eq!(lines.len(), 1);
+        assert_eq!(lines[0].start_time_ms, 1250);
+
+        let lrc_clamp = "\
+[offset:+2000]
+[00:01.00]Clamped line
+";
+        let lines = parse_lrc(lrc_clamp);
+        assert_eq!(lines.len(), 1);
+        assert_eq!(lines[0].start_time_ms, 0);
     }
 }

@@ -24,25 +24,105 @@ struct LrclibItem {
 }
 
 fn clean_track_title(title: &str) -> Option<String> {
-    let patterns = [
-        " - Remastered",
-        " - Live",
-        " - Radio Edit",
-        " - Mono",
-        " - Stereo",
-        " (Remastered",
-        " (Live",
-        " (Radio Edit",
+    let mut current = title.trim().to_string();
+    let lower_patterns = [
+        " - remaster",
+        " - live",
+        " - ao vivo",
+        " - radio edit",
+        " - single version",
+        " - album version",
+        " - deluxe",
+        " - acoustic",
+        " - instrumental",
+        " - demo",
+        " - explicit",
+        " - clean",
+        " - mono",
+        " - stereo",
+        " (remaster",
+        " (live",
+        " (ao vivo",
+        " (radio edit",
+        " (single version",
+        " (album version",
+        " (deluxe",
+        " (acoustic",
+        " (instrumental",
+        " (explicit",
         " (feat.",
+        " (ft.",
+        " (with ",
+        " [remaster",
+        " [live",
+        " [ao vivo",
+        " [deluxe",
+        " [explicit",
         " [feat.",
+        " [ft.",
+        " [with ",
     ];
-    for pattern in patterns {
-        if let Some((clean, _)) = title.split_once(pattern) {
-            let trimmed = clean.trim();
-            if !trimmed.is_empty() {
-                return Some(trimmed.to_string());
+
+    loop {
+        let lower = current.to_ascii_lowercase();
+        let mut cut_at: Option<usize> = None;
+
+        for pattern in lower_patterns {
+            if let Some(idx) = lower.find(pattern) {
+                cut_at = Some(cut_at.map_or(idx, |prev| prev.min(idx)));
             }
         }
+
+        // Also match year-prefixed dash suffixes such as " - 2011 Remaster" or " - 2023 Mix".
+        if let Some(year_idx) = find_year_edition_dash(&lower) {
+            cut_at = Some(cut_at.map_or(year_idx, |prev| prev.min(year_idx)));
+        }
+        // Match year-prefixed parenthetical editions like " (2011 Remaster)" or " (2009 Mix)".
+        if let Some(year_paren_idx) = find_year_edition_paren(&lower) {
+            cut_at = Some(cut_at.map_or(year_paren_idx, |prev| prev.min(year_paren_idx)));
+        }
+
+        let Some(idx) = cut_at else {
+            break;
+        };
+        let next = current[..idx].trim();
+        if next.is_empty() || next.len() == current.len() {
+            break;
+        }
+        current = next.to_string();
+    }
+
+    (current != title.trim() && !current.is_empty()).then_some(current)
+}
+
+fn find_year_edition_dash(lower: &str) -> Option<usize> {
+    let bytes = lower.as_bytes();
+    let needle = b" - ";
+    let mut i = 0;
+    while i + 8 <= bytes.len() {
+        if &bytes[i..i + 3] == needle && bytes[i + 3..i + 7].iter().all(|b| b.is_ascii_digit()) {
+            let tail = &lower[i + 7..];
+            if tail.contains("remaster") || tail.contains("mix") || tail.contains("version") || tail.contains("edit") {
+                return Some(i);
+            }
+        }
+        i += 1;
+    }
+    None
+}
+
+fn find_year_edition_paren(lower: &str) -> Option<usize> {
+    let bytes = lower.as_bytes();
+    let needle = b" (";
+    let mut i = 0;
+    while i + 7 <= bytes.len() {
+        if &bytes[i..i + 2] == needle && bytes[i + 2..i + 6].iter().all(|b| b.is_ascii_digit()) {
+            let tail = &lower[i + 6..];
+            if tail.contains("remaster") || tail.contains("mix") || tail.contains("version") || tail.contains("edition") {
+                return Some(i);
+            }
+        }
+        i += 1;
     }
     None
 }
@@ -86,15 +166,43 @@ impl LyricsService {
         album_name: Option<&str>,
         duration_secs: Option<u32>,
     ) -> Option<Lyrics> {
+        self.fetch_lyrics_inner(key, track_name, artist_name, album_name, duration_secs, false)
+            .await
+    }
+
+    /// Refetch lyrics from LRCLIB bypassing the cached disk copy.
+    pub async fn refetch_lyrics(
+        &self,
+        key: &str,
+        track_name: &str,
+        artist_name: &str,
+        album_name: Option<&str>,
+        duration_secs: Option<u32>,
+    ) -> Option<Lyrics> {
+        self.fetch_lyrics_inner(key, track_name, artist_name, album_name, duration_secs, true)
+            .await
+    }
+
+    async fn fetch_lyrics_inner(
+        &self,
+        key: &str,
+        track_name: &str,
+        artist_name: &str,
+        album_name: Option<&str>,
+        duration_secs: Option<u32>,
+        force_refresh: bool,
+    ) -> Option<Lyrics> {
         let track_name = track_name.trim();
         let artist_name = artist_name.trim();
         if track_name.is_empty() || artist_name.is_empty() {
             return None;
         }
 
-        // 1. Check disk cache
-        if let Some(cached) = self.cache.get(key) {
-            return Some(cached);
+        // 1. Check disk cache unless explicitly refreshing
+        if !force_refresh {
+            if let Some(cached) = self.cache.get(key) {
+                return Some(cached);
+            }
         }
 
         // 2. Fetch from LRCLIB get endpoint with full parameters
@@ -231,5 +339,39 @@ impl LyricsService {
         }
 
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn clean_track_title_handles_remasters_features_and_live_editions() {
+        assert_eq!(
+            clean_track_title("Bohemian Rhapsody - Remastered 2011").as_deref(),
+            Some("Bohemian Rhapsody")
+        );
+        assert_eq!(
+            clean_track_title("Yesterday - 2009 Remaster").as_deref(),
+            Some("Yesterday")
+        );
+        assert_eq!(
+            clean_track_title("Wish You Were Here (2011 Remaster)").as_deref(),
+            Some("Wish You Were Here")
+        );
+        assert_eq!(
+            clean_track_title("Evidências (Ao Vivo) [Deluxe]").as_deref(),
+            Some("Evidências")
+        );
+        assert_eq!(
+            clean_track_title("Stay (with Justin Bieber)").as_deref(),
+            Some("Stay")
+        );
+        assert_eq!(
+            clean_track_title("Track One - radio edit (feat. Guest)").as_deref(),
+            Some("Track One")
+        );
+        assert_eq!(clean_track_title("Let It Be"), None);
     }
 }

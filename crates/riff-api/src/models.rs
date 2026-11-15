@@ -321,6 +321,8 @@ pub struct PlayerState {
     pub is_playing: bool,
     pub current_track_id: Option<ResourceId>,
     pub progress_ms: u32,
+    #[serde(default)]
+    pub timestamp_ms: Option<u64>,
     pub repeat: RepeatMode,
     pub shuffle: bool,
     pub device: Option<Device>,
