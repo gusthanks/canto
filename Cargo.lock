@@ -3197,6 +3197,7 @@ dependencies = [
  "riff-auth",
  "riff-config",
  "riff-core",
+ "serde_json",
  "tokio",
  "url",
  "zbus",
@@ -3212,9 +3213,11 @@ dependencies = [
  "gdk4",
  "gettext-rs",
  "glib",
+ "hex",
  "http",
  "httpdate",
  "log",
+ "md-5",
  "prost",
  "reqwest",
  "reqwest-middleware",
@@ -3225,6 +3228,7 @@ dependencies = [
  "spotify-api",
  "thiserror 2.0.21",
  "tokio",
+ "url",
  "uuid",
 ]
 
