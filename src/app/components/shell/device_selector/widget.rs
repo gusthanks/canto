@@ -75,7 +75,8 @@ mod imp {
             self.obj().connect_clicked(clone!(
                 #[weak]
                 popover,
-                move |_| {
+                move |btn| {
+                    let _ = btn.activate_action(&format!("{ACTIONS}.{REFRESH_ACTION}"), None);
                     popover.set_visible(true);
                     popover.present();
                     popover.grab_focus();
@@ -157,7 +158,7 @@ impl DeviceSelectorWidget {
 
     pub fn update_devices_list(&self, devices: &[ConnectDevice]) {
         let widget = self.imp();
-        widget.this_device_button.set_sensitive(!devices.is_empty());
+        widget.this_device_button.set_sensitive(true);
 
         while let Some(child) = widget.devices.upcast_ref::<gtk::Widget>().first_child() {
             widget.devices.remove(&child);

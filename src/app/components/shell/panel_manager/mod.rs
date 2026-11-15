@@ -11,6 +11,8 @@ use crate::app::{AppAction, AppEvent, AppModel, Dispatcher};
 use crate::settings::{QUEUE_SIDE_PANEL, SETTINGS};
 
 const TOGGLE_ACTION: &str = "utility-panel";
+const SHOW_QUEUE_ACTION: &str = "show-queue";
+const SHOW_LYRICS_ACTION: &str = "show-lyrics";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Placement {
@@ -56,9 +58,8 @@ impl Panels {
     }
 
     fn sync_header(&self) {
-        let side = self.placement.get() == Some(Placement::Side);
         self.app_header
-            .set_utility_panel_beside(side && self.is_open());
+            .set_utility_panel_beside(self.panel.is_open());
     }
 
     fn place(&self, placement: Placement) {
@@ -66,6 +67,7 @@ impl Panels {
             return;
         }
         self.set_open(false);
+        self.panel.set_open(false);
         match self.placement.get() {
             Some(Placement::Side) => {
                 self.panel.set_selection(None, false);
@@ -73,7 +75,8 @@ impl Panels {
             }
             Some(Placement::Sheet) => {
                 self.sheet.set_selecting(false);
-                self.sheet.set_page(None)
+                self.sheet.set_page(None);
+                self.panel.set_pages(None, None);
             }
             None => {}
         }
@@ -85,7 +88,14 @@ impl Panels {
             Placement::Side => self
                 .panel
                 .set_pages(Some(&self.queue), Some(&self.lyrics)),
-            Placement::Sheet => self.sheet.set_page(self.queue.downcast_ref()),
+            Placement::Sheet => {
+                self.sheet.set_page(self.queue.downcast_ref());
+                self.panel.set_pages(None, Some(&self.lyrics));
+            }
+        }
+        let open = self.is_open();
+        if self.action.state().and_then(|s| s.get::<bool>()) != Some(open) {
+            self.action.set_state(&open.to_variant());
         }
         self.sync_header();
     }
@@ -154,12 +164,54 @@ impl PanelManager {
     fn wire_toggle(&self, window: &libadwaita::ApplicationWindow, dispatcher: Dispatcher) {
         let action = self.panels.action.clone();
         let panels = Rc::downgrade(&self.panels);
-        action.connect_change_state(move |_, state| {
+        action.connect_change_state(move |action, state| {
             if let (Some(panels), Some(open)) = (panels.upgrade(), state.and_then(|s| s.get())) {
                 panels.set_open(open);
+                let actual = panels.is_open();
+                if action.state().and_then(|s| s.get::<bool>()) != Some(actual) {
+                    action.set_state(&actual.to_variant());
+                }
             }
         });
         window.add_action(&action);
+
+        let show_queue = gio::SimpleAction::new(SHOW_QUEUE_ACTION, None);
+        let panels_weak = Rc::downgrade(&self.panels);
+        show_queue.connect_activate(move |_, _| {
+            let Some(panels) = panels_weak.upgrade() else {
+                return;
+            };
+            match panels.placement.get() {
+                Some(Placement::Sheet) => {
+                    panels.sheet.set_open(!panels.sheet.is_open());
+                }
+                Some(Placement::Side) => {
+                    if panels.panel.is_open() && panels.panel.active_tab() == "queue" {
+                        panels.panel.set_open(false);
+                    } else {
+                        panels.panel.show_tab("queue");
+                        panels.panel.set_open(true);
+                    }
+                }
+                None => {}
+            }
+        });
+        window.add_action(&show_queue);
+
+        let show_lyrics = gio::SimpleAction::new(SHOW_LYRICS_ACTION, None);
+        let panels_weak = Rc::downgrade(&self.panels);
+        show_lyrics.connect_activate(move |_, _| {
+            let Some(panels) = panels_weak.upgrade() else {
+                return;
+            };
+            if panels.panel.is_open() && panels.panel.active_tab() == "lyrics" {
+                panels.panel.set_open(false);
+            } else {
+                panels.panel.show_tab("lyrics");
+                panels.panel.set_open(true);
+            }
+        });
+        window.add_action(&show_lyrics);
 
         let panels = Rc::downgrade(&self.panels);
         let app_model = self.app_model.clone();
@@ -167,7 +219,10 @@ impl PanelManager {
             let Some(panels) = panels.upgrade() else {
                 return;
             };
-            action.set_state(&panels.is_open().to_variant());
+            let actual = panels.is_open();
+            if action.state().and_then(|s| s.get::<bool>()) != Some(actual) {
+                action.set_state(&actual.to_variant());
+            }
             panels.sync_header();
             if !panels.is_open() && app_model.get_state().selection.is_selecting_in(true) {
                 dispatcher.dispatch(AppAction::CancelSelection);
@@ -212,6 +267,7 @@ impl EventListener for PanelManager {
         }
         if let AppEvent::PlaybackEvent(
             PlaybackEvent::TrackChanged(_)
+            | PlaybackEvent::TrackSynced
             | PlaybackEvent::PlaybackStopped
             | PlaybackEvent::PlaylistChanged
             | PlaybackEvent::SourceChanged,

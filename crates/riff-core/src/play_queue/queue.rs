@@ -709,6 +709,48 @@ impl PlayQueue {
             .collect()
     }
 
+    /// Replaces the queue with a snapshot already ordered by a remote Spotify Connect device,
+    /// preserving its track order even when shuffle is active and selecting `current_id` if present.
+    pub fn set_remote_queue(&mut self, tracks: Vec<Track>, current_id: Option<&str>, shuffled: bool) {
+        let len = tracks.len();
+        self.history.clear();
+        self.queued.clear();
+        self.removed.clear();
+        self.context = Context::new(None);
+        self.context.set_all(tracks);
+        self.shuffled = shuffled;
+        self.order = (0..len).collect();
+        self.next_order.clear();
+        self.cursor = current_id.and_then(|id| {
+            (0..len).find(|&i| self.context.get(i).is_some_and(|t| t.rri.id == id))
+        });
+        self.now = if self.cursor.is_some() {
+            Now::Context
+        } else {
+            Now::Nothing
+        };
+    }
+
+    pub fn set_shuffled_flag(&mut self, shuffled: bool) {
+        self.shuffled = shuffled;
+        if shuffled {
+            self.next_order.clear();
+        }
+    }
+
+    pub fn select_remote_id(&mut self, id: &str) -> bool {
+        let Some(pos) = self
+            .order
+            .iter()
+            .position(|&i| self.context.get(i).is_some_and(|t| t.rri.id == id))
+        else {
+            return false;
+        };
+        self.cursor = Some(pos);
+        self.now = Now::Context;
+        true
+    }
+
     pub fn view(&self, repeat: RepeatMode) -> QueueView {
         let queued = self
             .queued
@@ -1580,5 +1622,19 @@ mod tests {
         assert_eq!(order[..3], played[..]);
         assert_eq!(order.len(), 100);
         assert_eq!(request(&q, RepeatMode::Off, false), None);
+    }
+
+    #[test]
+    fn test_remote_queue_preserves_order_when_shuffled_and_selects_paused_track() {
+        let mut q = queue();
+        let list = tracks(&["a", "b", "c", "d"]);
+        q.set_remote_queue(list, Some("b"), true);
+        assert!(q.is_shuffled());
+        assert_eq!(q.current().map(|t| t.rri.id.as_str()), Some("b"));
+        assert_eq!(ids(&q.view(RepeatMode::Context).context), vec!["c", "d"]);
+
+        assert!(q.select_remote_id("d"));
+        assert_eq!(q.current().map(|t| t.rri.id.as_str()), Some("d"));
+        assert!(!q.select_remote_id("missing"));
     }
 }

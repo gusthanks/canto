@@ -7,8 +7,8 @@ use std::ops::Deref;
 use std::rc::Rc;
 
 use crate::app::components::{
-    build_song_menu, fetch_queue_page, labels, DetailsPageModel, GroupButton, QueueMenuEntry,
-    SongActions, TrackListModel,
+    build_song_menu_with_radio, fetch_queue_page, labels, DetailsPageModel, GroupButton,
+    QueueMenuEntry, SongActions, TrackListModel,
 };
 use crate::app::models::{QueueRole, SongListModel, SongModel, Track};
 use crate::app::state::{
@@ -312,6 +312,7 @@ impl TrackListModel for QueueListModel {
         }
         group.add_action(&song.make_album_action(dispatcher.clone()));
         group.add_action(&song.make_link_action());
+        group.add_action(&song.make_radio_action(Rc::clone(&self.base.app_model), dispatcher.clone()));
         let actions = match queue_entry(row) {
             Some((key, QueueRole::Queued)) => {
                 song.make_queue_entry_actions(key, dispatcher.clone())
@@ -347,7 +348,7 @@ impl TrackListModel for QueueListModel {
             Some((_, QueueRole::Current)) => QueueMenuEntry::Add,
             _ => QueueMenuEntry::None,
         };
-        Some(build_song_menu(
+        Some(build_song_menu_with_radio(
             song,
             true,
             None,

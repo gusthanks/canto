@@ -49,7 +49,13 @@ mod imp {
                     min_baseline,
                     natural_baseline,
                 ),
-                _ => (min, natural, min_baseline, natural_baseline),
+                // Ensure the bottom sheet never collapses vertically when the queue is empty.
+                _ => (
+                    min.max(220),
+                    natural.max(380),
+                    min_baseline,
+                    natural_baseline,
+                ),
             }
         }
 

@@ -73,10 +73,10 @@ impl AppPlaybackStateListener {
 
     fn update_for(&self, event: &PlaybackEvent) -> Vec<MprisStateUpdate> {
         match event {
-            PlaybackEvent::PlaybackPaused => {
+            PlaybackEvent::PlaybackPaused | PlaybackEvent::PlayStateSynced(false) => {
                 vec![MprisStateUpdate::SetPlaying(PlaybackStatus::Paused)]
             }
-            PlaybackEvent::PlaybackResumed => {
+            PlaybackEvent::PlaybackResumed | PlaybackEvent::PlayStateSynced(true) => {
                 vec![MprisStateUpdate::SetPlaying(PlaybackStatus::Playing)]
             }
             PlaybackEvent::PlaybackStopped => {
@@ -94,7 +94,24 @@ impl AppPlaybackStateListener {
                     MprisStateUpdate::SetPlaying(PlaybackStatus::Playing),
                 ]
             }
-            PlaybackEvent::RepeatModeChanged(_) => {
+            PlaybackEvent::TrackSynced => {
+                let current = self.make_track_meta();
+                let (has_prev, has_next) = self.has_prev_next();
+                let status = if self.app_model.get_state().playback.is_playing() {
+                    PlaybackStatus::Playing
+                } else {
+                    PlaybackStatus::Paused
+                };
+                vec![
+                    MprisStateUpdate::SetCurrentTrack {
+                        has_prev,
+                        has_next,
+                        current,
+                    },
+                    MprisStateUpdate::SetPlaying(status),
+                ]
+            }
+            PlaybackEvent::RepeatModeChanged(_) | PlaybackEvent::RepeatSynced(_) => {
                 let loop_status = self.loop_status();
                 let (has_prev, has_next) = self.has_prev_next();
                 vec![MprisStateUpdate::SetLoopStatus {
@@ -103,14 +120,16 @@ impl AppPlaybackStateListener {
                     loop_status,
                 }]
             }
-            PlaybackEvent::ShuffleChanged(shuffled) => {
+            PlaybackEvent::ShuffleChanged(shuffled) | PlaybackEvent::ShuffleSynced(shuffled) => {
                 vec![MprisStateUpdate::SetShuffled(*shuffled)]
             }
             PlaybackEvent::TrackSeeked(pos) | PlaybackEvent::SeekSynced(pos) => {
                 let pos = 1000 * (*pos as u128);
                 vec![MprisStateUpdate::SetPositionMs(pos)]
             }
-            PlaybackEvent::VolumeSet(vol) => vec![MprisStateUpdate::SetVolume(*vol)],
+            PlaybackEvent::VolumeSet(vol) | PlaybackEvent::VolumeSynced(vol) => {
+                vec![MprisStateUpdate::SetVolume(*vol)]
+            }
             _ => vec![],
         }
     }

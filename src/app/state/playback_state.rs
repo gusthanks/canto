@@ -37,6 +37,9 @@ pub struct PlaybackState {
     volume: f64,
     // Volume to restore when unmuting, set while muted by `ToggleMute`.
     muted_volume: Option<f64>,
+    // Track that ended naturally when the local queue finished (`TrackEnded`),
+    // preserved across `stop()` for opt-in Smart Queue Continuation.
+    last_finished_track: Option<Track>,
 }
 
 // Most mutatings methods shouldn't be pub
@@ -95,6 +98,10 @@ impl PlaybackState {
 
     pub fn repeat_mode(&self) -> RepeatMode {
         self.repeat
+    }
+
+    pub fn last_finished_track(&self) -> Option<&Track> {
+        self.last_finished_track.as_ref()
     }
 
     pub fn next_query(&self, for_view: bool) -> Option<(SongsSource, PageRequest)> {
@@ -302,6 +309,7 @@ impl PlaybackState {
     }
 
     fn stop(&mut self) {
+        self.last_finished_track = None;
         self.queue.stop();
         self.is_playing = false;
         self.seek_position.set(0, false);
@@ -314,9 +322,16 @@ impl PlaybackState {
     fn play_next_skippable(&mut self, auto: bool) -> Option<String> {
         let skip = self.skipper();
         if self.queue.advance(auto, self.repeat, skip).is_some() {
+            self.last_finished_track = None;
             self.started_playing()
         } else {
+            let ended = if auto {
+                self.queue.current().cloned()
+            } else {
+                None
+            };
             self.stop();
+            self.last_finished_track = ended;
             None
         }
     }
@@ -377,6 +392,101 @@ impl PlaybackState {
         }
     }
 
+    fn sync_volume(&mut self, volume: f64) -> Vec<PlaybackEvent> {
+        let volume = volume.clamp(0.0, 1.0);
+        if (self.volume - volume).abs() < 0.005 {
+            vec![]
+        } else {
+            self.volume = volume;
+            vec![PlaybackEvent::VolumeSynced(volume)]
+        }
+    }
+
+    fn sync_remote_state(&mut self, remote: RemotePlaybackState) -> Vec<PlaybackEvent> {
+        if self.is_local() {
+            return vec![];
+        }
+
+        let prev_track = self.current_song_id();
+        let prev_playing = self.is_playing();
+        let prev_repeat = self.repeat;
+        let prev_shuffled = self.is_shuffled();
+        let prev_position = self.seek_position.current();
+
+        let mut queue_changed = false;
+        if let Some(tracks) = remote.tracks {
+            self.queue
+                .set_remote_queue(tracks, remote.track_id.as_deref(), remote.shuffle);
+            queue_changed = true;
+        } else {
+            if self.queue.is_shuffled() != remote.shuffle {
+                self.queue.set_shuffled_flag(remote.shuffle);
+                queue_changed = true;
+            }
+            if let Some(id) = remote.track_id.as_deref() {
+                if self.current_song_id().as_deref() != Some(id) && self.queue.select_remote_id(id)
+                {
+                    queue_changed = true;
+                }
+            } else if self.queue.current().is_some() {
+                self.queue.stop();
+                queue_changed = true;
+            }
+        }
+
+        let new_track = self.current_song_id();
+        let new_playing = remote.is_playing && self.queue.current().is_some();
+        self.is_playing = new_playing;
+        self.repeat = remote.repeat;
+        self.seek_position
+            .set(remote.position_ms as u64, new_playing);
+
+        if queue_changed || prev_repeat != remote.repeat {
+            self.refresh_view();
+        }
+
+        let mut events = Vec::new();
+        if queue_changed {
+            events.push(PlaybackEvent::PlaylistChanged);
+        }
+
+        match (prev_track.as_deref(), new_track.as_deref()) {
+            (None, None) => {}
+            (Some(_), None) => {
+                events.push(PlaybackEvent::PlaybackStopped);
+            }
+            (old, Some(new_id)) if old != Some(new_id) => {
+                events.push(PlaybackEvent::TrackSynced);
+            }
+            _ => {}
+        }
+
+        if new_playing != prev_playing && new_track.is_some() {
+            events.push(PlaybackEvent::PlayStateSynced(new_playing));
+        }
+
+        if prev_repeat != remote.repeat {
+            events.push(PlaybackEvent::RepeatSynced(remote.repeat));
+        }
+
+        if prev_shuffled != self.is_shuffled() {
+            events.push(PlaybackEvent::ShuffleSynced(self.is_shuffled()));
+        }
+
+        if (prev_track != new_track && new_track.is_some())
+            || remote.position_ms as u64 != prev_position
+            || prev_playing != new_playing
+        {
+            events.push(PlaybackEvent::SeekSynced(remote.position_ms));
+        }
+
+        if let Some(volume) = remote.volume {
+            events.extend(self.sync_volume(volume));
+        }
+
+        events
+    }
+
     fn toggle_play(&mut self) -> Option<bool> {
         if self.queue.current().is_some() {
             self.is_playing = !self.is_playing;
@@ -435,6 +545,7 @@ impl Default for PlaybackState {
             explicit_filter_locked: false,
             volume: -1.0,
             muted_volume: None,
+            last_finished_track: None,
         }
     }
 }
@@ -459,6 +570,7 @@ pub enum PlaybackAction {
     // Seek relative to the current position (in milliseconds)
     SeekBy(i32),
     SyncSeek(u32),
+    SyncRemoteState(Box<RemotePlaybackState>),
     Load(String),
     #[deprecated]
     LoadSongs(Vec<Track>),
@@ -514,6 +626,17 @@ impl From<PlaybackAction> for AppAction {
 }
 
 #[derive(Clone, Debug)]
+pub struct RemotePlaybackState {
+    pub tracks: Option<Vec<Track>>,
+    pub track_id: Option<String>,
+    pub is_playing: bool,
+    pub position_ms: u32,
+    pub repeat: RepeatMode,
+    pub shuffle: bool,
+    pub volume: Option<f64>,
+}
+
+#[derive(Clone, Debug)]
 pub enum Device {
     Local,
     Connect(ConnectDevice),
@@ -524,13 +647,18 @@ pub enum PlaybackEvent {
     PlaybackPaused,
     PlaybackResumed,
     RepeatModeChanged(RepeatMode),
+    RepeatSynced(RepeatMode),
     TrackSeeked(u32),
     SeekSynced(u32),
     VolumeSet(f64),
+    VolumeSynced(f64),
     TrackChanged(String),
+    TrackSynced,
+    PlayStateSynced(bool),
     SourceChanged,
     Preload(String),
     ShuffleChanged(bool),
+    ShuffleSynced(bool),
     PlaylistChanged,
     PlaybackStopped,
     NoPreviousTrack,
@@ -715,6 +843,7 @@ impl UpdatableState for PlaybackState {
                 self.seek_position.set(pos as u64, true);
                 vec![PlaybackEvent::SeekSynced(pos)]
             }
+            PlaybackAction::SyncRemoteState(remote) => self.sync_remote_state(*remote),
             PlaybackAction::SetVolume(volume) => self.set_volume(volume),
             PlaybackAction::AdjustVolume(delta) => {
                 self.set_volume((self.volume.max(0.0) + delta).clamp(0.0, 1.0))
@@ -1695,5 +1824,171 @@ mod tests {
         assert!(events
             .iter()
             .any(|e| matches!(e, PlaybackEvent::TrackChanged(id) if id == "4")));
+    }
+
+    fn connect_device(id: &str) -> Device {
+        Device::Connect(ConnectDevice {
+            id: id.to_string(),
+            label: "Echo Dot".to_string(),
+            kind: DeviceKind::Speaker,
+            is_active: true,
+            volume_percent: Some(50),
+        })
+    }
+
+    #[test]
+    fn test_sync_remote_state_preserves_paused_track_and_queue_order() {
+        let mut state = PlaybackState::default();
+        state.act(PlaybackAction::SwitchDevice(connect_device("alexa")));
+
+        let events = state.act(PlaybackAction::SyncRemoteState(Box::new(
+            RemotePlaybackState {
+                tracks: Some(vec![song("b"), song("a"), song("c")]),
+                track_id: Some("b".to_string()),
+                is_playing: false,
+                position_ms: 42_000,
+                repeat: RepeatMode::Context,
+                shuffle: true,
+                volume: Some(0.5),
+            },
+        )));
+
+        assert_eq!(state.current_song_id().as_deref(), Some("b"));
+        assert!(!state.is_playing());
+        assert!(state.is_shuffled());
+        assert_eq!(state.repeat_mode(), RepeatMode::Context);
+        assert_eq!(state.song_ids(), ["b", "a", "c"]);
+        // Paused seek position must stay frozen instead of drifting upward.
+        assert_eq!(state.seek_position(), 42_000);
+        std::thread::sleep(std::time::Duration::from_millis(25));
+        assert_eq!(state.seek_position(), 42_000);
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::TrackSynced)));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::RepeatSynced(RepeatMode::Context))));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::ShuffleSynced(true))));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::SeekSynced(42_000))));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::VolumeSynced(v) if (v - 0.5).abs() < 1e-6)));
+        assert!(!events.iter().any(|e| matches!(
+            e,
+            PlaybackEvent::TrackChanged(_)
+                | PlaybackEvent::SourceChanged
+                | PlaybackEvent::PlaybackResumed
+                | PlaybackEvent::PlaybackPaused
+                | PlaybackEvent::RepeatModeChanged(_)
+                | PlaybackEvent::ShuffleChanged(_)
+                | PlaybackEvent::VolumeSet(_)
+        )));
+
+        // Re-syncing within the 0.005 volume epsilon must not re-emit VolumeSynced.
+        let jitter = state.act(PlaybackAction::SyncRemoteState(Box::new(
+            RemotePlaybackState {
+                tracks: None,
+                track_id: Some("b".to_string()),
+                is_playing: false,
+                position_ms: 42_000,
+                repeat: RepeatMode::Context,
+                shuffle: true,
+                volume: Some(0.501),
+            },
+        )));
+        assert!(jitter.is_empty());
+    }
+
+    #[test]
+    fn test_sync_remote_state_same_track_queue_update_avoids_track_reemit() {
+        let mut state = PlaybackState::default();
+        state.act(PlaybackAction::SwitchDevice(connect_device("alexa")));
+        state.act(PlaybackAction::SyncRemoteState(Box::new(
+            RemotePlaybackState {
+                tracks: Some(vec![song("b"), song("a")]),
+                track_id: Some("b".to_string()),
+                is_playing: true,
+                position_ms: 10_000,
+                repeat: RepeatMode::Off,
+                shuffle: true,
+                volume: None,
+            },
+        )));
+
+        let events = state.act(PlaybackAction::SyncRemoteState(Box::new(
+            RemotePlaybackState {
+                tracks: Some(vec![song("b"), song("c"), song("a")]),
+                track_id: Some("b".to_string()),
+                is_playing: true,
+                position_ms: 13_000,
+                repeat: RepeatMode::Off,
+                shuffle: true,
+                volume: None,
+            },
+        )));
+
+        assert_eq!(state.song_ids(), ["b", "c", "a"]);
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::PlaylistChanged)));
+        assert!(!events
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::TrackSynced | PlaybackEvent::TrackChanged(_))));
+        assert!(!events
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::PlayStateSynced(_))));
+    }
+
+    #[test]
+    fn test_sync_remote_state_stops_when_track_cleared_and_ignores_when_local() {
+        let mut state = PlaybackState::default();
+        state.act(PlaybackAction::SwitchDevice(connect_device("alexa")));
+        state.act(PlaybackAction::SyncRemoteState(Box::new(
+            RemotePlaybackState {
+                tracks: Some(vec![song("a")]),
+                track_id: Some("a".to_string()),
+                is_playing: true,
+                position_ms: 5_000,
+                repeat: RepeatMode::Off,
+                shuffle: false,
+                volume: None,
+            },
+        )));
+
+        let events = state.act(PlaybackAction::SyncRemoteState(Box::new(
+            RemotePlaybackState {
+                tracks: None,
+                track_id: None,
+                is_playing: false,
+                position_ms: 0,
+                repeat: RepeatMode::Off,
+                shuffle: false,
+                volume: None,
+            },
+        )));
+        assert_eq!(state.current_song_id(), None);
+        assert!(!state.is_playing());
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::PlaybackStopped)));
+
+        state.act(PlaybackAction::SwitchDevice(Device::Local));
+        let local_events = state.act(PlaybackAction::SyncRemoteState(Box::new(
+            RemotePlaybackState {
+                tracks: Some(vec![song("z")]),
+                track_id: Some("z".to_string()),
+                is_playing: true,
+                position_ms: 1_000,
+                repeat: RepeatMode::Track,
+                shuffle: true,
+                volume: Some(0.9),
+            },
+        )));
+        assert!(local_events.is_empty());
+        assert_eq!(state.current_song_id(), None);
     }
 }

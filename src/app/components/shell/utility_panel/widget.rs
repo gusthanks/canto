@@ -98,6 +98,15 @@ impl UtilityPanelWidget {
         let imp = self.imp();
         imp.queue_content.set_child(queue);
         imp.lyrics_content.set_child(lyrics);
+        imp.queue_tab.set_visible(queue.is_some());
+        imp.lyrics_tab.set_visible(lyrics.is_some());
+        if queue.is_none() && lyrics.is_some() {
+            imp.lyrics_tab.set_active(true);
+            imp.panel_stack.set_visible_child_name("lyrics");
+        } else if lyrics.is_none() && queue.is_some() {
+            imp.queue_tab.set_active(true);
+            imp.panel_stack.set_visible_child_name("queue");
+        }
     }
 
     pub fn set_content(&self, content: Option<&gtk::Widget>, _title: &str) {
@@ -132,6 +141,28 @@ impl UtilityPanelWidget {
             // translators: Button label. Selects all visible songs.
             gettext("Select All")
         });
+    }
+
+    pub fn active_tab(&self) -> &'static str {
+        if self.imp().lyrics_tab.is_active() {
+            "lyrics"
+        } else {
+            "queue"
+        }
+    }
+
+    pub fn show_tab(&self, tab: &str) {
+        let imp = self.imp();
+        match tab {
+            "lyrics" => {
+                imp.lyrics_tab.set_active(true);
+                imp.panel_stack.set_visible_child_name("lyrics");
+            }
+            _ => {
+                imp.queue_tab.set_active(true);
+                imp.panel_stack.set_visible_child_name("queue");
+            }
+        }
     }
 }
 

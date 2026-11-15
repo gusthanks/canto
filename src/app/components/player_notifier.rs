@@ -12,7 +12,9 @@ use crate::app::state::{
     SettingsEvent,
 };
 use crate::app::{AppAction, AppEvent, AppModel, Dispatcher, SongsSource};
-use crate::connect::ConnectCommand;
+use crate::connect::{
+    account_needs_official_client, remember_account_needs_official_client, ConnectCommand,
+};
 use crate::player::Command;
 
 use riff_config::settings::SETTINGS;
@@ -45,6 +47,10 @@ pub struct PlayerNotifier {
     connect_command_sender: UnboundedSender<ConnectCommand>,
     // Kept alive so its `changed` signals keep firing for live DSP updates.
     _dsp_settings: gio::Settings,
+    // Whether this account must play through the official client (PlayPlay DRM).
+    use_official_client: bool,
+    // A switch to the official client is in flight; avoid duplicate requests.
+    official_client_pending: bool,
 }
 
 impl PlayerNotifier {
@@ -63,6 +69,8 @@ impl PlayerNotifier {
             command_sender,
             connect_command_sender,
             _dsp_settings: dsp_settings,
+            use_official_client: account_needs_official_client(),
+            official_client_pending: false,
         }
     }
 
@@ -230,6 +238,31 @@ impl PlayerNotifier {
         }
     }
 
+    fn request_official_client(&mut self) {
+        if self.official_client_pending {
+            return;
+        }
+        self.official_client_pending = true;
+        self.send_command_to_local_player(Command::PlayerStop);
+        self.send_command_to_connect_player(ConnectCommand::UseOfficialClient);
+    }
+
+    /// With the official-client mode on, "This Device" means "the Spotify app
+    /// on this computer": starting playback locally hands off to it instead.
+    fn route_local_event(&mut self, event: &PlaybackEvent) {
+        if self.use_official_client {
+            let wants_playback = match event {
+                PlaybackEvent::TrackChanged(_) | PlaybackEvent::PlaybackResumed => true,
+                PlaybackEvent::SourceChanged => self.is_playing(),
+                _ => false,
+            };
+            if wants_playback {
+                return self.request_official_client();
+            }
+        }
+        self.notify_local_player(event);
+    }
+
     fn notify_local_player(&self, event: &PlaybackEvent) {
         let command = match event {
             PlaybackEvent::PlaybackPaused => Some(Command::PlayerPause),
@@ -289,15 +322,19 @@ impl PlayerNotifier {
     }
 
     fn switch_device(&mut self, device: &Device) {
+        self.official_client_pending = false;
         match device {
             Device::Connect(device) => {
+                let was_playing = self.is_playing();
                 self.send_command_to_local_player(Command::PlayerStop);
                 self.send_command_to_connect_player(ConnectCommand::SetDevice(device.id.clone()));
-                self.notify_connect_player(&PlaybackEvent::SourceChanged);
+                if was_playing {
+                    self.notify_connect_player(&PlaybackEvent::SourceChanged);
+                }
             }
             Device::Local => {
                 self.send_command_to_connect_player(ConnectCommand::PlayerStop);
-                self.notify_local_player(&PlaybackEvent::SourceChanged);
+                self.route_local_event(&PlaybackEvent::SourceChanged);
             }
         }
     }
@@ -308,8 +345,21 @@ impl EventListener for PlayerNotifier {
         let device = self.device().clone();
         match (device, event) {
             (_, AppEvent::LoginEvent(event)) => self.notify_login(event),
+            (_, AppEvent::OfficialClientFailed) => {
+                self.official_client_pending = false;
+            }
+            (_, AppEvent::OfficialClientRequested) => {
+                // Librespot can't decrypt audio for this account: remember it
+                // and hand playback to the official client from now on.
+                if !self.use_official_client {
+                    info!("account needs the official client; remembering it");
+                    remember_account_needs_official_client();
+                    self.use_official_client = true;
+                }
+                self.request_official_client();
+            }
             (_, AppEvent::PlaybackEvent(PlaybackEvent::SwitchedDevice(d))) => self.switch_device(d),
-            (Device::Local, AppEvent::PlaybackEvent(event)) => self.notify_local_player(event),
+            (Device::Local, AppEvent::PlaybackEvent(event)) => self.route_local_event(event),
             (Device::Local, AppEvent::SettingsEvent(SettingsEvent::PlayerSettingsChanged)) => {
                 self.send_command_to_local_player(Command::ReloadSettings)
             }

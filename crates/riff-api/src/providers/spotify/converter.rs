@@ -412,7 +412,7 @@ pub(super) fn device_from_object(d: &sp::DeviceObject) -> Option<Device> {
         label: d.name.clone().unwrap_or_default(),
         kind,
         is_active: d.is_active.unwrap_or(false),
-        volume_percent: None,
+        volume_percent: d.volume_percent.flatten().map(|v| v.clamp(0, 100) as u8),
     })
 }
 
@@ -434,9 +434,10 @@ pub(super) fn player_state_from_object(s: &sp::CurrentlyPlayingContextObject) ->
         is_playing: s.is_playing.unwrap_or(false),
         current_track_id,
         progress_ms: s.progress_ms.unwrap_or(0) as u32,
+        timestamp_ms: s.timestamp.and_then(|t| u64::try_from(t).ok()),
         repeat,
         shuffle: s.shuffle_state.unwrap_or(false),
-        device: None,
+        device: s.device.as_deref().and_then(device_from_object),
     }
 }
 
@@ -683,5 +684,65 @@ mod tests {
         let ctx_omitted: sp::CurrentlyPlayingContextObject =
             serde_json::from_str(json_omitted).unwrap();
         assert_eq!(ctx_omitted.timestamp, None);
+    }
+
+    #[test]
+    fn device_conversion_clamps_volume_and_populates_player_state_device() {
+        let make_device = |vol: Option<Option<i32>>, restricted: Option<bool>| sp::DeviceObject {
+            id: Some(Some("dev-1".to_string())),
+            is_active: Some(true),
+            is_private_session: Some(false),
+            is_restricted: restricted,
+            name: Some("Echo Dot".to_string()),
+            r#type: Some("Speaker".to_string()),
+            volume_percent: vol,
+            supports_volume: Some(true),
+        };
+
+        let normal = device_from_object(&make_device(Some(Some(42)), Some(false))).unwrap();
+        assert_eq!(normal.id, "dev-1");
+        assert_eq!(normal.label, "Echo Dot");
+        assert_eq!(normal.kind, DeviceKind::Speaker);
+        assert!(normal.is_active);
+        assert_eq!(normal.volume_percent, Some(42));
+
+        let clamped_low = device_from_object(&make_device(Some(Some(-15)), None)).unwrap();
+        assert_eq!(clamped_low.volume_percent, Some(0));
+
+        let clamped_high = device_from_object(&make_device(Some(Some(140)), None)).unwrap();
+        assert_eq!(clamped_high.volume_percent, Some(100));
+
+        let no_vol = device_from_object(&make_device(Some(None), None)).unwrap();
+        assert_eq!(no_vol.volume_percent, None);
+
+        assert!(device_from_object(&make_device(Some(Some(50)), Some(true))).is_none());
+
+        let json_with_device = r#"{
+            "progress_ms": 5000,
+            "is_playing": false,
+            "repeat_state": "context",
+            "shuffle_state": true,
+            "device": {
+                "id": "alexa-42",
+                "is_active": true,
+                "is_private_session": false,
+                "is_restricted": false,
+                "name": "Echo Show",
+                "type": "Speaker",
+                "volume_percent": 65,
+                "supports_volume": true
+            }
+        }"#;
+        let ctx: sp::CurrentlyPlayingContextObject =
+            serde_json::from_str(json_with_device).unwrap();
+        let state = player_state_from_object(&ctx);
+        assert!(!state.is_playing);
+        assert_eq!(state.repeat, RepeatMode::Context);
+        assert!(state.shuffle);
+        let dev = state.device.expect("device should be populated");
+        assert_eq!(dev.id, "alexa-42");
+        assert_eq!(dev.label, "Echo Show");
+        assert_eq!(dev.kind, DeviceKind::Speaker);
+        assert_eq!(dev.volume_percent, Some(65));
     }
 }

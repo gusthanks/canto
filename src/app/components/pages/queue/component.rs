@@ -73,6 +73,7 @@ impl EventListener for QueuePage {
         }
         if let AppEvent::PlaybackEvent(
             PlaybackEvent::TrackChanged(_)
+            | PlaybackEvent::TrackSynced
             | PlaybackEvent::PlaybackStopped
             | PlaybackEvent::PlaylistChanged
             | PlaybackEvent::SourceChanged,

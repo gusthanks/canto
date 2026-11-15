@@ -68,4 +68,12 @@ impl UtilityPanel {
     pub fn connect_open_notify<F: Fn() + 'static>(&self, f: F) {
         self.split.connect_show_sidebar_notify(move |_| f());
     }
+
+    pub fn active_tab(&self) -> &'static str {
+        self.widget.active_tab()
+    }
+
+    pub fn show_tab(&self, tab: &str) {
+        self.widget.show_tab(tab);
+    }
 }

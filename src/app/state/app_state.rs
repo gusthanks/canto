@@ -30,8 +30,10 @@ pub enum AppAction {
     Raise,
     ShowNotification(String),
     ShowRestartRequired,
-    // Account is blocked by PlayPlay DRM; triggers an explanatory dialog.
-    ShowDrmBlockedDialog,
+    // Account can't be decrypted by librespot (PlayPlay DRM): play through
+    // the official Spotify client over Connect instead.
+    UseOfficialClient,
+    OfficialClientFailed,
     SetConnectionLost(bool),
     // Cross-state actions
     QueueSelection,
@@ -103,7 +105,8 @@ pub enum AppEvent {
     Raised,
     NotificationShown(String),
     RestartRequiredShown,
-    DrmBlockedDialogShown,
+    OfficialClientRequested,
+    OfficialClientFailed,
     ConnectionLostChanged(bool),
     SettingsEvent(SettingsEvent),
 }
@@ -145,7 +148,8 @@ impl AppState {
             // they're here just to have a consistent way of doing things (always an Action)
             AppAction::ShowNotification(c) => vec![AppEvent::NotificationShown(c)],
             AppAction::ShowRestartRequired => vec![AppEvent::RestartRequiredShown],
-            AppAction::ShowDrmBlockedDialog => vec![AppEvent::DrmBlockedDialogShown],
+            AppAction::UseOfficialClient => vec![AppEvent::OfficialClientRequested],
+            AppAction::OfficialClientFailed => vec![AppEvent::OfficialClientFailed],
             AppAction::SetConnectionLost(lost) => {
                 // Real state, deduplicated: only emit the event (and move the
                 // banner) when the connection status actually changes, so
