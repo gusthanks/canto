@@ -28,6 +28,9 @@ impl NowPlaying {
     pub fn new(model: Rc<NowPlayingModel>, header: PageHeader) -> Self {
         let mut component =
             DetailsPageComponent::new(model.clone(), model.to_headerbar_model(), header);
+        component
+            .get_root_widget()
+            .add_css_class("adaptive-cover-surface");
         let queue_list = QueueList::new(model.queue_list_model());
         let lyrics_page = LyricsPage::new(model.app_model.clone(), model.dispatcher.clone());
 
@@ -134,6 +137,7 @@ impl EventListener for NowPlaying {
         self.component.handle_event(event);
         if let AppEvent::PlaybackEvent(
             PlaybackEvent::TrackChanged(_)
+            | PlaybackEvent::TrackSynced
             | PlaybackEvent::PlaybackStopped
             | PlaybackEvent::PlaylistChanged,
         ) = event

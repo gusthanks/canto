@@ -13,6 +13,9 @@ mod imp {
     #[template(resource = "/dev/diegovsky/Riff/components/playback_info.ui")]
     pub struct PlaybackInfoWidget {
         #[template_child]
+        pub placeholder_art: TemplateChild<gtk::Image>,
+
+        #[template_child]
         pub playing_image: TemplateChild<gtk::Image>,
 
         #[template_child]
@@ -62,7 +65,9 @@ impl PlaybackInfoWidget {
         let widget = self.imp();
         widget.song_title.set_text(title);
         widget.song_artist.set_text(artist);
+        widget.song_title.remove_css_class("dim-label");
         widget.song_info_box.set_visible(true);
+        self.set_sensitive(true);
     }
 
     pub fn reset_info(&self) {
@@ -71,12 +76,18 @@ impl PlaybackInfoWidget {
             .song_title
             // translators: Short text displayed instead of a track title when nothing plays
             .set_text(&gettext("No Track Playing"));
-        widget.song_artist.set_text("");
-        widget.song_info_box.set_visible(false);
+        widget
+            .song_artist
+            // translators: Subtle hint displayed below "No Track Playing" in the bottom player bar
+            .set_text(&gettext("Select a track to play"));
+        widget.song_title.add_css_class("dim-label");
+        widget.song_info_box.set_visible(true);
         widget
             .playing_image
             .set_paintable(None::<gdk::Paintable>.as_ref());
+        widget.placeholder_art.set_visible(true);
         set_missing_art(&*widget.playing_image, false);
+        self.set_sensitive(false);
     }
 
     pub fn set_info_visible(&self, visible: bool) {
@@ -86,6 +97,7 @@ impl PlaybackInfoWidget {
     pub fn set_artwork(&self, texture: &gdk::Texture) {
         let widget = self.imp();
         widget.playing_image.set_paintable(Some(texture));
+        widget.placeholder_art.set_visible(false);
         set_missing_art(&*widget.playing_image, false);
     }
 
@@ -94,6 +106,7 @@ impl PlaybackInfoWidget {
         widget
             .playing_image
             .set_paintable(None::<gdk::Paintable>.as_ref());
+        widget.placeholder_art.set_visible(true);
         set_missing_art(&*widget.playing_image, true);
     }
 }

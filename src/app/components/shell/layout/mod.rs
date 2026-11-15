@@ -84,12 +84,10 @@ impl WindowLayout {
             move |_| layout.fit()
         ));
 
-        utility_split.add_tick_callback(clone!(
+        let refit_if_changed = Rc::new(clone!(
             #[weak]
             layout,
-            #[upgrade_or]
-            glib::ControlFlow::Break,
-            move |_, _| {
+            move || {
                 let width = layout.window_width();
                 let header_width = layout.header.wide_width();
                 if layout.fitted_width.replace(width) != width
@@ -97,9 +95,31 @@ impl WindowLayout {
                 {
                     layout.fit();
                 }
-                glib::ControlFlow::Continue
             }
         ));
+
+        if let Some(shell_box) = window
+            .child()
+            .and_then(|child| child.downcast::<crate::app::components::ShellBox>().ok())
+        {
+            shell_box.connect_layout_requested(clone!(
+                #[strong]
+                refit_if_changed,
+                move |_| refit_if_changed()
+            ));
+        }
+
+        window.connect_default_width_notify(clone!(
+            #[strong]
+            refit_if_changed,
+            move |_| refit_if_changed()
+        ));
+        window.connect_maximized_notify(clone!(
+            #[strong]
+            refit_if_changed,
+            move |_| refit_if_changed()
+        ));
+        utility_split.connect_map(move |_| refit_if_changed());
         utility_split.connect_show_sidebar_notify(clone!(
             #[weak]
             layout,

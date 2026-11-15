@@ -8,7 +8,7 @@ use gio::prelude::*;
 use gio::SimpleActionGroup;
 
 use crate::app::components::{
-    add_tracks_to_playlist, build_song_menu, dispatch_api_call, dispatch_api_call_many,
+    add_tracks_to_playlist, build_song_menu_with_radio, dispatch_api_call, dispatch_api_call_many,
     queue_source_tracks, PlaylistPicker, QueueMenuEntry, SongActions, REMOVE_FROM_PLAYLIST_ACTION,
 };
 use crate::app::dispatch::Dispatcher;
@@ -214,7 +214,7 @@ pub fn track_menu(
         Some(SongsSource::Artist(id)) => Some(id.as_str()),
         _ => None,
     };
-    build_song_menu(
+    build_song_menu_with_radio(
         song,
         show_view_album,
         artist,
@@ -283,6 +283,7 @@ impl DetailsPageModel {
             group.add_action(&song.make_album_action(self.dispatcher.clone()));
         }
         group.add_action(&song.make_link_action());
+        group.add_action(&song.make_radio_action(Rc::clone(&self.app_model), self.dispatcher.clone()));
         for action in song.make_queue_actions(self.dispatcher.clone()) {
             group.add_action(&action);
         }
@@ -670,6 +671,22 @@ mod tests {
     fn test_is_playback_event_track_changed() {
         let event = AppEvent::PlaybackEvent(PlaybackEvent::TrackChanged("x".to_string()));
         assert_eq!(is_playback_event(&event), Some(true));
+    }
+
+    #[test]
+    fn test_is_playback_event_play_state_synced() {
+        assert_eq!(
+            is_playback_event(&AppEvent::PlaybackEvent(PlaybackEvent::PlayStateSynced(true))),
+            Some(true)
+        );
+        assert_eq!(
+            is_playback_event(&AppEvent::PlaybackEvent(PlaybackEvent::PlayStateSynced(false))),
+            Some(false)
+        );
+        assert_eq!(
+            is_playback_event(&AppEvent::PlaybackEvent(PlaybackEvent::TrackSynced)),
+            None
+        );
     }
 
     #[test]

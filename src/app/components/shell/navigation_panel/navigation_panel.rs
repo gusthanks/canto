@@ -301,7 +301,9 @@ impl EventListener for NavigationPanel {
                 PlaybackEvent::PlaybackPaused
                 | PlaybackEvent::PlaybackResumed
                 | PlaybackEvent::PlaybackStopped
-                | PlaybackEvent::TrackChanged(_),
+                | PlaybackEvent::TrackChanged(_)
+                | PlaybackEvent::TrackSynced
+                | PlaybackEvent::PlayStateSynced(_),
             ) => self.update_playing(),
             _ => {}
         }

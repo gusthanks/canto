@@ -199,6 +199,7 @@ impl PageModel for NowPlayingModel {
             event,
             AppEvent::PlaybackEvent(
                 PlaybackEvent::TrackChanged(_)
+                    | PlaybackEvent::TrackSynced
                     | PlaybackEvent::PlaybackStopped
                     | PlaybackEvent::PlaylistChanged
             )

@@ -1,28 +1,49 @@
+use gio::prelude::SettingsExt;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 
-use crate::app::components::display_add_css_provider;
 use crate::app::components::utils::{decode_px, format_duration, Clock, Debouncer};
+use crate::app::components::{
+    display_add_css_provider, DeviceSelectorWidget, SleepTimerMode, SleepTimerSnapshot,
+};
 use crate::app::models::RepeatMode;
 
 use riff_api::models::is_resource_url;
 use riff_api::ApiService;
+use riff_config::settings::SETTINGS;
 
 use crate::app::load;
+use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 
 use super::playback_controls::PlaybackControlsWidget;
 use super::playback_info::PlaybackInfoWidget;
 
 /// Matches the artwork size request in playback_info.blp.
-const ARTWORK_SIZE: i32 = 56;
+const ARTWORK_SIZE: i32 = 48;
+
+pub const EQ_PRESETS: [(&str, [f64; 10]); 5] = [
+    ("flat", [0.0; 10]),
+    ("bass", [5.0, 4.0, 2.5, 1.0, 0.0, 0.0, 0.5, 1.0, 1.5, 1.5]),
+    ("vocal", [-2.0, -1.5, 0.0, 2.0, 3.5, 3.5, 2.0, 0.5, -1.0, -1.5]),
+    ("lofi", [2.5, 2.0, 1.0, 0.0, -1.5, -2.5, -3.5, -4.5, -5.0, -6.0]),
+    ("acoustic", [2.0, 1.5, 1.0, 0.5, 1.5, 1.5, 2.0, 2.5, 2.0, 1.0]),
+];
+
+fn apply_eq_preset(gains: [f64; 10]) {
+    let settings = gio::Settings::new(SETTINGS);
+    for (idx, gain) in gains.iter().enumerate() {
+        let key = format!("eq-band-{idx}");
+        let _ = settings.set_double(&key, gain.clamp(-12.0, 12.0));
+    }
+}
 
 mod imp {
 
     use super::*;
 
-    #[derive(Debug, Default, CompositeTemplate)]
+    #[derive(Debug, CompositeTemplate)]
     #[template(resource = "/dev/diegovsky/Riff/components/playback_widget.ui")]
     pub struct PlaybackWidget {
         #[template_child]
@@ -35,10 +56,10 @@ mod imp {
         pub now_playing_button: TemplateChild<gtk::Button>,
 
         #[template_child]
-        pub seek_bar: TemplateChild<gtk::Scale>,
+        pub seek_row: TemplateChild<gtk::Box>,
 
         #[template_child]
-        pub seek_overlay: TemplateChild<gtk::Overlay>,
+        pub seek_bar: TemplateChild<gtk::Scale>,
 
         #[template_child]
         pub track_position: TemplateChild<gtk::Label>,
@@ -50,9 +71,106 @@ mod imp {
         pub volume_slider: TemplateChild<gtk::Scale>,
 
         #[template_child]
-        pub queue_button: TemplateChild<gtk::ToggleButton>,
+        pub mute_button: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub eq_popover: TemplateChild<gtk::Popover>,
+
+        #[template_child]
+        pub eq_preset_flat: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub eq_preset_bass: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub eq_preset_vocal: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub eq_preset_lofi: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub eq_preset_acoustic: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub eq_open_settings: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub start_radio_button: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub sleep_timer_button: TemplateChild<gtk::MenuButton>,
+
+        #[template_child]
+        pub sleep_timer_label: TemplateChild<gtk::Label>,
+
+        #[template_child]
+        pub sleep_popover: TemplateChild<gtk::Popover>,
+
+        #[template_child]
+        pub sleep_off_btn: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub sleep_track_btn: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub sleep_15_btn: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub sleep_30_btn: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub sleep_45_btn: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub sleep_60_btn: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub device_selector: TemplateChild<DeviceSelectorWidget>,
+
+        #[template_child]
+        pub queue_button: TemplateChild<gtk::Button>,
 
         pub clock: Clock,
+        pub volume_changed_handler: RefCell<Option<glib::SignalHandlerId>>,
+        pub last_nonzero_volume: Cell<f64>,
+    }
+
+    impl Default for PlaybackWidget {
+        fn default() -> Self {
+            Self {
+                controls: Default::default(),
+                now_playing: Default::default(),
+                now_playing_button: Default::default(),
+                seek_row: Default::default(),
+                seek_bar: Default::default(),
+                track_position: Default::default(),
+                track_duration: Default::default(),
+                volume_slider: Default::default(),
+                mute_button: Default::default(),
+                eq_popover: Default::default(),
+                eq_preset_flat: Default::default(),
+                eq_preset_bass: Default::default(),
+                eq_preset_vocal: Default::default(),
+                eq_preset_lofi: Default::default(),
+                eq_preset_acoustic: Default::default(),
+                eq_open_settings: Default::default(),
+                start_radio_button: Default::default(),
+                sleep_timer_button: Default::default(),
+                sleep_timer_label: Default::default(),
+                sleep_popover: Default::default(),
+                sleep_off_btn: Default::default(),
+                sleep_track_btn: Default::default(),
+                sleep_15_btn: Default::default(),
+                sleep_30_btn: Default::default(),
+                sleep_45_btn: Default::default(),
+                sleep_60_btn: Default::default(),
+                device_selector: Default::default(),
+                queue_button: Default::default(),
+                clock: Clock::default(),
+                volume_changed_handler: Default::default(),
+                last_nonzero_volume: Cell::new(0.7),
+            }
+        }
     }
 
     #[glib::object_subclass]
@@ -74,32 +192,47 @@ mod imp {
         fn constructed(&self) {
             self.parent_constructed();
             self.now_playing.set_info_visible(true);
+            self.now_playing.reset_info();
             display_add_css_provider(resource!("/components/playback.css"));
 
-            let track_position = self.track_position.clone();
-            let track_duration = self.track_duration.clone();
-            let motion = gtk::EventControllerMotion::new();
-            motion.connect_enter(clone!(
-                #[weak]
-                track_position,
-                #[weak]
-                track_duration,
-                move |_, _, _| {
-                    track_position.set_visible(true);
-                    track_duration.set_visible(true);
+            let popover = self.eq_popover.clone();
+            let preset_buttons = [
+                (&*self.eq_preset_flat, EQ_PRESETS[0].1),
+                (&*self.eq_preset_bass, EQ_PRESETS[1].1),
+                (&*self.eq_preset_vocal, EQ_PRESETS[2].1),
+                (&*self.eq_preset_lofi, EQ_PRESETS[3].1),
+                (&*self.eq_preset_acoustic, EQ_PRESETS[4].1),
+            ];
+            for (btn, gains) in preset_buttons {
+                let p = popover.clone();
+                btn.connect_clicked(move |_| {
+                    apply_eq_preset(gains);
+                    p.popdown();
+                });
+            }
+            let p_close = popover.clone();
+            self.eq_open_settings.connect_clicked(move |_| {
+                p_close.popdown();
+            });
+            self.start_radio_button.connect_clicked(move |_| {
+                popover.popdown();
+            });
+
+            let volume_slider = self.volume_slider.clone();
+            let weak_self = self.obj().downgrade();
+            self.mute_button.connect_clicked(move |_| {
+                let Some(obj) = weak_self.upgrade() else {
+                    return;
+                };
+                let cur = volume_slider.value();
+                if cur > 0.01 {
+                    obj.imp().last_nonzero_volume.set(cur);
+                    volume_slider.set_value(0.0);
+                } else {
+                    let restore = obj.imp().last_nonzero_volume.get().max(0.2);
+                    volume_slider.set_value(restore);
                 }
-            ));
-            motion.connect_leave(clone!(
-                #[weak]
-                track_position,
-                #[weak]
-                track_duration,
-                move |_| {
-                    track_position.set_visible(false);
-                    track_duration.set_visible(false);
-                }
-            ));
-            self.seek_overlay.add_controller(motion);
+            });
         }
     }
 
@@ -113,6 +246,10 @@ glib::wrapper! {
 }
 
 impl PlaybackWidget {
+    pub fn device_selector(&self) -> DeviceSelectorWidget {
+        self.imp().device_selector.clone()
+    }
+
     pub fn set_title_and_artist(&self, title: &str, artist: &str) {
         let widget = self.imp();
         widget.now_playing.set_visible(true);
@@ -122,7 +259,7 @@ impl PlaybackWidget {
 
     pub fn reset_info(&self) {
         let widget = self.imp();
-        widget.now_playing.set_visible(false);
+        widget.now_playing.set_visible(true);
         widget.now_playing.reset_info();
         widget.now_playing_button.set_visible(false);
         self.set_song_duration(None);
@@ -155,12 +292,15 @@ impl PlaybackWidget {
         let class = "seek-bar--active";
         if let Some(duration) = duration {
             self.add_css_class(class);
+            widget.seek_bar.set_sensitive(true);
             widget.seek_bar.set_range(0.0, duration);
             widget.seek_bar.set_value(0.0);
             self.update_track_time(0.0, duration);
         } else {
             self.remove_css_class(class);
+            widget.seek_bar.set_sensitive(false);
             widget.seek_bar.set_range(0.0, 0.0);
+            self.update_track_time(0.0, 0.0);
         }
     }
 
@@ -255,12 +395,84 @@ impl PlaybackWidget {
 
     pub fn set_seekbar_visible(&self, visible: bool) {
         let widget = self.imp();
-        widget.seek_bar.set_visible(visible);
+        widget.seek_row.set_visible(visible);
     }
 
     pub fn set_volume(&self, value: f64) {
         let widget = self.imp();
-        widget.volume_slider.set_value(value)
+        if value > 0.01 {
+            widget.last_nonzero_volume.set(value);
+        }
+        let handler = widget.volume_changed_handler.borrow();
+        if let Some(id) = handler.as_ref() {
+            widget.volume_slider.block_signal(id);
+        }
+        widget.volume_slider.set_value(value);
+        if let Some(id) = handler.as_ref() {
+            widget.volume_slider.unblock_signal(id);
+        }
+    }
+
+    pub fn set_sleep_timer_snapshot(&self, snap: &SleepTimerSnapshot) {
+        let imp = self.imp();
+        imp.sleep_timer_button
+            .set_tooltip_text(Some(&snap.tooltip()));
+        if let Some(text) = snap.compact_label() {
+            imp.sleep_timer_label.set_label(&text);
+            imp.sleep_timer_label.set_visible(true);
+            imp.sleep_timer_button.set_width_request(-1);
+            imp.sleep_timer_button.remove_css_class("circular");
+            imp.sleep_timer_button.add_css_class("pill");
+        } else {
+            imp.sleep_timer_label.set_visible(false);
+            imp.sleep_timer_button.remove_css_class("pill");
+            imp.sleep_timer_button.add_css_class("circular");
+            imp.sleep_timer_button.set_width_request(36);
+        }
+
+        let active_btn: Option<&gtk::Button> = match snap.mode {
+            SleepTimerMode::Off => Some(&*imp.sleep_off_btn),
+            SleepTimerMode::EndOfTrack => Some(&*imp.sleep_track_btn),
+            SleepTimerMode::Minutes(15) => Some(&*imp.sleep_15_btn),
+            SleepTimerMode::Minutes(30) => Some(&*imp.sleep_30_btn),
+            SleepTimerMode::Minutes(45) => Some(&*imp.sleep_45_btn),
+            SleepTimerMode::Minutes(60) => Some(&*imp.sleep_60_btn),
+            SleepTimerMode::Minutes(_) => None,
+        };
+        for btn in [
+            &*imp.sleep_off_btn,
+            &*imp.sleep_track_btn,
+            &*imp.sleep_15_btn,
+            &*imp.sleep_30_btn,
+            &*imp.sleep_45_btn,
+            &*imp.sleep_60_btn,
+        ] {
+            if active_btn == Some(btn) {
+                btn.add_css_class("suggested-action");
+            } else {
+                btn.remove_css_class("suggested-action");
+            }
+        }
+    }
+
+    pub fn connect_sleep_timer<F: Fn(SleepTimerMode) + Clone + 'static>(&self, on_select: F) {
+        let imp = self.imp();
+        let presets = [
+            (&*imp.sleep_off_btn, SleepTimerMode::Off),
+            (&*imp.sleep_track_btn, SleepTimerMode::EndOfTrack),
+            (&*imp.sleep_15_btn, SleepTimerMode::Minutes(15)),
+            (&*imp.sleep_30_btn, SleepTimerMode::Minutes(30)),
+            (&*imp.sleep_45_btn, SleepTimerMode::Minutes(45)),
+            (&*imp.sleep_60_btn, SleepTimerMode::Minutes(60)),
+        ];
+        for (btn, mode) in presets {
+            let pop = imp.sleep_popover.clone();
+            let cb = on_select.clone();
+            btn.connect_clicked(move |_| {
+                cb(mode);
+                pop.popdown();
+            });
+        }
     }
 
     pub fn connect_play_pause<F>(&self, f: F)
@@ -309,7 +521,7 @@ impl PlaybackWidget {
     {
         let debouncer = Debouncer::new();
         let widget = self.imp();
-        widget.volume_slider.connect_value_changed(move |scale| {
+        let id = widget.volume_slider.connect_value_changed(move |scale| {
             // Debounce dispatch: a single mouse-wheel flick emits a burst of
             // high-resolution scroll deltas, each firing `value_changed`.
             // Without this, every delta would fan out to the mixer, the Web
@@ -319,5 +531,26 @@ impl PlaybackWidget {
             let f = f.clone();
             debouncer.debounce(100, move || f(value));
         });
+        *widget.volume_changed_handler.borrow_mut() = Some(id);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn eq_presets_have_valid_10_band_ranges() {
+        for (name, gains) in EQ_PRESETS {
+            assert_eq!(gains.len(), 10, "preset {} should define 10 bands", name);
+            for g in gains {
+                assert!(
+                    (-12.0..=12.0).contains(&g),
+                    "preset {} gain {} out of gschema range",
+                    name,
+                    g
+                );
+            }
+        }
     }
 }

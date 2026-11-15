@@ -169,6 +169,8 @@ Adw.ApplicationWindow window {
                 hexpand: true;
 
                 Adw.HeaderBar navigation_panel_header {
+                  show-title: false;
+
                   styles [
                     "flat",
                   ]
@@ -178,11 +180,6 @@ Adw.ApplicationWindow window {
                     tooltip-text: _("Search");
                     focus-on-click: false;
                     can-focus: false;
-                  }
-
-                  [title]
-                  Adw.WindowTitle {
-                    title: "Canto";
                   }
 
                   [end]
@@ -271,6 +268,18 @@ Adw.AboutDialog about {
 }
 
 menu main_menu {
+  section {
+    item {
+      label: _("Command Palette");
+      action: "win.command-palette";
+    }
+
+    item {
+      label: _("Start Track Radio");
+      action: "win.start-track-radio";
+    }
+  }
+
   section {
     item {
       label: _("Preferences");

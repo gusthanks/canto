@@ -4,101 +4,62 @@ using Adw 1;
 template $PlaybackWidget : Box {
   orientation: vertical;
 
-  Overlay seek_overlay {
-    overflow: visible;
-
-    [overlay]
-    Scale seek_bar {
-      show-fill-level: true;
-      restrict-to-fill-level: false;
-      fill-level: 0;
-      digits: 0;
-      draw-value: false;
-
-      styles [
-        "seek-bar",
-      ]
-    }
-
-    child: Box {
-      can-target: false;
-      valign: start;
-
-      Label track_position {
-        label: "0∶00";
-        halign: start;
-        visible: false;
-        hexpand: true;
-
-        styles [
-          "numeric",
-          "seek-time-label",
-        ]
-      }
-
-      Label track_duration {
-        label: "0∶00";
-        halign: end;
-        visible: false;
-
-        styles [
-          "numeric",
-          "seek-time-label",
-        ]
-      }
-    };
-  }
+  styles [
+    "playback-bar",
+  ]
 
   Adw.BreakpointBin {
     width-request: 1;
-    height-request: 75;
-    margin-top: 4;
+    height-request: 88;
 
     Adw.Breakpoint {
-      condition("max-width:764sp")
+      condition("max-width:700sp")
 
       setters {
-        now_playing_box.visible: false;
-        now_playing_button_box.visible: true;
         volume_box.visible: false;
         volume_button.visible: true;
-        queue_button.visible: false;
-        playback_center.margin-start: 16;
-        playback_center.margin-end: 16;
-        // Narrow: drop equal thirds. The transport controls need more than a
-        // third on a phone-width window, so let each slot take its natural
-        // size; the expanding side slots keep the controls centred.
+        device_selector_box.visible: false;
+        eq_button.visible: false;
         playback_center.homogeneous: false;
       }
     }
 
-    // Desktop: three equal-width columns (now playing, controls, volume). The
-    // homogeneous split means the now-playing card is bounded by its own column
-    // and can never grow into the controls' column, so the centred controls
-    // stay put no matter how long the title or artist is. The narrow breakpoint
-    // turns homogeneity off (see above).
+    Adw.Breakpoint {
+      condition("max-width:480sp")
+
+      setters {
+        volume_box.visible: false;
+        volume_button.visible: true;
+        device_selector_box.visible: false;
+        eq_button.visible: false;
+        playback_center.homogeneous: false;
+        now_playing_box.visible: false;
+        now_playing_button_box.visible: true;
+        lyrics_button.visible: false;
+        queue_button.visible: false;
+        sleep_timer_button.visible: false;
+        playback_center.margin-start: 10;
+        playback_center.margin-end: 10;
+      }
+    }
+
     child: Box playback_center {
       orientation: horizontal;
-      homogeneous: true;
+      homogeneous: false;
       halign: fill;
       hexpand: true;
-      height-request: 58;
+      height-request: 66;
       margin-top: 8;
-      margin-bottom: 9;
-      margin-start: 8;
-      margin-end: 8;
+      margin-bottom: 8;
+      margin-start: 12;
+      margin-end: 12;
+      spacing: 8;
 
-      // The side slots expand so that, when homogeneity is off in narrow mode,
-      // they absorb the leftover width equally and keep the controls centred.
-      // Under homogeneity (desktop) the expand is a no-op; every column is equal.
       Box now_playing_start {
-        hexpand: true;
+        hexpand: false;
         halign: start;
         valign: center;
 
-        // Narrow mode replaces the track info with a compact button. The
-        // breakpoint toggles this box; the button inside is shown in code only
-        // when a track is playing.
         Box now_playing_button_box {
           visible: false;
           width-request: 40;
@@ -120,89 +81,453 @@ template $PlaybackWidget : Box {
 
         Box now_playing_box {
           hexpand: true;
-          height-request: 58;
+          height-request: 54;
           overflow: hidden;
           halign: start;
 
-          // The card is bounded by its equal-width column, so a long title or
-          // artist ellipsizes within the column instead of widening it.
           $PlaybackInfoWidget now_playing {
             receives-default: "1";
             halign: "start";
             valign: "center";
             has-frame: "0";
-            visible: false;
+            visible: true;
           }
         }
       }
 
-      $PlaybackControlsWidget controls {
-        // Keep the control cluster at its natural width, centred in its column.
-        hexpand: false;
-        halign: center;
+      Box {
+        orientation: vertical;
         valign: center;
+        hexpand: true;
+        spacing: 2;
+
+        $PlaybackControlsWidget controls {
+          hexpand: false;
+          halign: center;
+          valign: center;
+        }
+
+        Box seek_row {
+          orientation: horizontal;
+          valign: center;
+          spacing: 8;
+          hexpand: true;
+
+          Label track_position {
+            label: "0∶00";
+            width-chars: 5;
+            xalign: 1.0;
+
+            styles [
+              "numeric",
+              "caption",
+              "playback-time",
+            ]
+          }
+
+          Scale seek_bar {
+            hexpand: true;
+            show-fill-level: true;
+            restrict-to-fill-level: false;
+            fill-level: 0;
+            digits: 0;
+            draw-value: false;
+
+            styles [
+              "seek-bar",
+            ]
+          }
+
+          Label track_duration {
+            label: "0∶00";
+            width-chars: 5;
+            xalign: 0.0;
+
+            styles [
+              "numeric",
+              "caption",
+              "playback-time",
+            ]
+          }
+        }
       }
 
-      // Right column. Expands only to help centre the controls when homogeneity
-      // is off (narrow mode); its content is aligned to the right edge.
       Box {
-        hexpand: true;
+        hexpand: false;
         halign: end;
         valign: center;
+        spacing: 2;
 
-        ToggleButton queue_button {
-          width-request: 40;
-          margin-end: 6;
-          icon-name: "queue-symbolic";
-          /* Translators: Tooltip of the playback bar button that shows or hides the queue. */
-          tooltip-text: _("Queue");
-          action-name: "win.utility-panel";
-          halign: end;
+        Button lyrics_button {
+          width-request: 36;
+          height-request: 36;
+          icon-name: "paper-sheet-symbolic";
+          /* Translators: Tooltip of the player bar button that shows or hides synced lyrics. */
+          tooltip-text: _("Lyrics");
+          action-name: "win.show-lyrics";
           valign: center;
           focus-on-click: false;
           can-focus: false;
 
           styles [
-            "flat"
+            "flat",
+            "circular",
           ]
         }
 
-        // With the queue button, 250 wide
-        Box volume_box {
-          width-request: 204;
+        Button queue_button {
+          width-request: 36;
+          height-request: 36;
+          icon-name: "queue-symbolic";
+          /* Translators: Tooltip of the playback bar button that shows or hides the queue. */
+          tooltip-text: _("Queue");
+          action-name: "win.show-queue";
+          valign: center;
+          focus-on-click: false;
+          can-focus: false;
 
-          Box {
-            hexpand: true;
+          styles [
+            "flat",
+            "circular",
+          ]
+        }
+
+        MenuButton sleep_timer_button {
+          width-request: 36;
+          height-request: 36;
+          tooltip-text: _("Sleep Timer");
+          valign: center;
+          direction: up;
+          focus-on-click: false;
+          can-focus: false;
+
+          styles [
+            "flat",
+            "circular",
+          ]
+
+          child: Box {
+            orientation: horizontal;
+            spacing: 4;
+            halign: center;
+            valign: center;
 
             Image {
-              icon-name: 'multimedia-volume-control-symbolic';
+              icon-name: "alarm-symbolic";
             }
 
-            Scale volume_slider {
-              hexpand: true;
-              show-fill-level: true;
-              restrict-to-fill-level: false;
-              value-pos: left;
+            Label sleep_timer_label {
+              visible: false;
 
               styles [
-                'volume-slider'
+                "sleep-timer-countdown",
               ]
-
-              adjustment: Adjustment {
-                lower: 0.0;
-                value: 0.7;
-                upper: 1.0;
-                step-increment: 0.01;
-                page-increment: 0.05;
-              };
             }
+          };
+
+          popover: Popover sleep_popover {
+            child: Box {
+              orientation: vertical;
+              spacing: 4;
+              margin-top: 6;
+              margin-bottom: 6;
+              margin-start: 6;
+              margin-end: 6;
+
+              Label {
+                label: _("Sleep Timer");
+                xalign: 0.0;
+                margin-start: 8;
+                margin-bottom: 4;
+
+                styles [
+                  "caption-heading",
+                  "dim-label",
+                ]
+              }
+
+              Button sleep_off_btn {
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Label {
+                  label: _("Off");
+                  xalign: 0.0;
+                };
+              }
+
+              Button sleep_track_btn {
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Label {
+                  label: _("End of current track");
+                  xalign: 0.0;
+                };
+              }
+
+              Button sleep_15_btn {
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Label {
+                  label: _("15 min");
+                  xalign: 0.0;
+                };
+              }
+
+              Button sleep_30_btn {
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Label {
+                  label: _("30 min");
+                  xalign: 0.0;
+                };
+              }
+
+              Button sleep_45_btn {
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Label {
+                  label: _("45 min");
+                  xalign: 0.0;
+                };
+              }
+
+              Button sleep_60_btn {
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Label {
+                  label: _("60 min");
+                  xalign: 0.0;
+                };
+              }
+            };
+          };
+        }
+
+        MenuButton eq_button {
+          width-request: 36;
+          height-request: 36;
+          icon-name: "preferences-other-symbolic";
+          /* Translators: Tooltip of the player bar equalizer presets menu button. */
+          tooltip-text: _("Equalizer Presets");
+          valign: center;
+          direction: up;
+          focus-on-click: false;
+          can-focus: false;
+
+          styles [
+            "flat",
+            "circular",
+          ]
+
+          popover: Popover eq_popover {
+            child: Box {
+              orientation: vertical;
+              spacing: 4;
+              margin-top: 6;
+              margin-bottom: 6;
+              margin-start: 6;
+              margin-end: 6;
+
+              Label {
+                label: _("Equalizer Presets");
+                xalign: 0.0;
+                margin-start: 8;
+                margin-bottom: 4;
+
+                styles [
+                  "caption-heading",
+                  "dim-label",
+                ]
+              }
+
+              Button eq_preset_flat {
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Label {
+                  label: _("Flat");
+                  xalign: 0.0;
+                };
+              }
+
+              Button eq_preset_bass {
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Label {
+                  label: _("Bass Boost");
+                  xalign: 0.0;
+                };
+              }
+
+              Button eq_preset_vocal {
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Label {
+                  label: _("Vocal");
+                  xalign: 0.0;
+                };
+              }
+
+              Button eq_preset_lofi {
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Label {
+                  label: _("Lo-Fi");
+                  xalign: 0.0;
+                };
+              }
+
+              Button eq_preset_acoustic {
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Label {
+                  label: _("Acoustic");
+                  xalign: 0.0;
+                };
+              }
+
+              Separator {
+                margin-top: 2;
+                margin-bottom: 2;
+              }
+
+              Button start_radio_button {
+                action-name: "win.start-track-radio";
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Label {
+                  label: _("Start Track Radio");
+                  xalign: 0.0;
+                };
+              }
+
+              Button eq_open_settings {
+                action-name: "win.preferences";
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Label {
+                  label: _("Audio Settings…");
+                  xalign: 0.0;
+                };
+              }
+            };
+          };
+        }
+
+        Box device_selector_box {
+          valign: center;
+
+          $DeviceSelectorWidget device_selector {}
+        }
+
+        Box volume_box {
+          width-request: 132;
+          spacing: 2;
+          valign: center;
+
+          Button mute_button {
+            width-request: 34;
+            height-request: 34;
+            icon-name: "multimedia-volume-control-symbolic";
+            tooltip-text: _("Mute / Unmute");
+            focus-on-click: false;
+            can-focus: false;
+
+            styles [
+              "flat",
+              "circular",
+            ]
+          }
+
+          Scale volume_slider {
+            hexpand: true;
+            show-fill-level: true;
+            restrict-to-fill-level: false;
+            value-pos: left;
+
+            styles [
+              "volume-slider",
+            ]
+
+            adjustment: Adjustment {
+              lower: 0.0;
+              value: 0.7;
+              upper: 1.0;
+              step-increment: 0.01;
+              page-increment: 0.05;
+            };
           }
         }
 
         MenuButton volume_button {
           visible: false;
-          width-request: 40;
-          icon-name: 'multimedia-volume-control-symbolic';
+          width-request: 36;
+          height-request: 36;
+          icon-name: "multimedia-volume-control-symbolic";
           tooltip-text: _("Volume");
           halign: end;
           valign: center;
@@ -211,7 +536,8 @@ template $PlaybackWidget : Box {
           can-focus: false;
 
           styles [
-            "flat"
+            "flat",
+            "circular",
           ]
 
           popover: Popover {
@@ -223,7 +549,6 @@ template $PlaybackWidget : Box {
             };
           };
         }
-
       }
     };
   }

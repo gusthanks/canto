@@ -1,10 +1,16 @@
+use gio::prelude::SettingsExtManual;
+use glib::object::ObjectExt;
 use std::ops::Deref;
 use std::rc::Rc;
 
-use crate::app::components::EventListener;
+use crate::app::components::{
+    DeviceSelector, DeviceSelectorModel, EventListener, SleepTimerController, SleepTimerMode,
+};
 use crate::app::models::*;
 use crate::app::state::{HomePage, PlaybackAction, PlaybackEvent, Route, SelectionEvent};
 use crate::app::{AppEvent, AppModel, AppState, BrowserAction, Dispatcher};
+use riff_config::feature_flags::FeatureFlag;
+use riff_config::settings::SETTINGS;
 
 use super::playback_widget::PlaybackWidget;
 use super::{BarTrack, QueueBarWidget};
@@ -88,10 +94,16 @@ pub struct PlaybackControl {
     model: Rc<PlaybackModel>,
     widget: PlaybackWidget,
     queue_bar: QueueBarWidget,
+    device_selector: DeviceSelector,
 }
 
 impl PlaybackControl {
-    pub fn new(model: PlaybackModel, widget: PlaybackWidget, queue_bar: QueueBarWidget) -> Self {
+    pub fn new(
+        model: PlaybackModel,
+        widget: PlaybackWidget,
+        queue_bar: QueueBarWidget,
+        sleep_timer: Rc<SleepTimerController>,
+    ) -> Self {
         let model = Rc::new(model);
 
         widget.connect_play_pause(clone!(
@@ -135,10 +147,33 @@ impl PlaybackControl {
             move |value| model.set_volume(value)
         ));
 
+        let ds_widget = widget.device_selector();
+        let ds_model = DeviceSelectorModel::new(model.app_model.clone(), model.dispatcher.clone());
+        let device_selector = DeviceSelector::new(ds_widget.clone(), ds_model);
+        gio::Settings::new(SETTINGS)
+            .bind(FeatureFlag::DeviceSelector.key(), &ds_widget, "visible")
+            .get()
+            .build();
+
+        let timer_for_clicks = Rc::clone(&sleep_timer);
+        widget.connect_sleep_timer(move |mode| match mode {
+            SleepTimerMode::Off => timer_for_clicks.set_off(),
+            SleepTimerMode::EndOfTrack => timer_for_clicks.set_end_of_track(),
+            SleepTimerMode::Minutes(m) => timer_for_clicks.set_minutes(m),
+        });
+
+        let weak_widget = widget.downgrade();
+        sleep_timer.subscribe(move |snap| {
+            if let Some(w) = weak_widget.upgrade() {
+                w.set_sleep_timer_snapshot(snap);
+            }
+        });
+
         Self {
             model,
             widget,
             queue_bar,
+            device_selector,
         }
     }
 
@@ -205,18 +240,22 @@ impl EventListener for PlaybackControl {
     fn on_event(&mut self, event: &AppEvent) {
         match event {
             AppEvent::PlaybackEvent(PlaybackEvent::PlaybackPaused)
-            | AppEvent::PlaybackEvent(PlaybackEvent::PlaybackResumed) => {
+            | AppEvent::PlaybackEvent(PlaybackEvent::PlaybackResumed)
+            | AppEvent::PlaybackEvent(PlaybackEvent::PlayStateSynced(_)) => {
                 self.update_playing();
             }
-            AppEvent::PlaybackEvent(PlaybackEvent::RepeatModeChanged(mode)) => {
+            AppEvent::PlaybackEvent(PlaybackEvent::RepeatModeChanged(mode))
+            | AppEvent::PlaybackEvent(PlaybackEvent::RepeatSynced(mode)) => {
                 self.update_repeat(mode);
                 self.update_queue_bar();
             }
-            AppEvent::PlaybackEvent(PlaybackEvent::ShuffleChanged(_)) => {
+            AppEvent::PlaybackEvent(PlaybackEvent::ShuffleChanged(_))
+            | AppEvent::PlaybackEvent(PlaybackEvent::ShuffleSynced(_)) => {
                 self.update_shuffled();
                 self.update_queue_bar();
             }
-            AppEvent::PlaybackEvent(PlaybackEvent::TrackChanged(_)) => {
+            AppEvent::PlaybackEvent(PlaybackEvent::TrackChanged(_))
+            | AppEvent::PlaybackEvent(PlaybackEvent::TrackSynced) => {
                 self.update_playing();
                 self.update_current_info();
                 self.update_queue_bar();
@@ -236,7 +275,8 @@ impl EventListener for PlaybackControl {
             AppEvent::SelectionEvent(SelectionEvent::SelectionModeChanged(active)) => {
                 self.widget.set_seekbar_visible(!active);
             }
-            AppEvent::PlaybackEvent(PlaybackEvent::VolumeSet(value)) => {
+            AppEvent::PlaybackEvent(PlaybackEvent::VolumeSet(value))
+            | AppEvent::PlaybackEvent(PlaybackEvent::VolumeSynced(value)) => {
                 self.widget.set_volume(*value)
             }
             AppEvent::ConnectionLostChanged(lost) => {
@@ -244,5 +284,6 @@ impl EventListener for PlaybackControl {
             }
             _ => {}
         }
+        self.device_selector.on_event(event);
     }
 }

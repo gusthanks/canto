@@ -5,9 +5,13 @@
 
 use std::any::Any;
 use std::collections::HashMap;
+use std::fmt::{self, Write as _};
 use std::sync::Mutex;
 
-use serde::Serialize;
+use serde::ser::{
+    self, Serialize, SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant,
+    SerializeTuple, SerializeTupleStruct, SerializeTupleVariant, Serializer,
+};
 
 use super::lru::LruCache;
 use super::CacheKey;
@@ -16,23 +20,326 @@ type Stored = Box<dyn Any + Send + Sync>;
 
 const VALUE_OVERHEAD: usize = 64;
 
+/// Estimates the serialized footprint of `value` in a single zero-allocation
+/// pass over its serde structure, avoiding `serde_json` string escaping and
+/// integer/float formatting overhead on every cache insert.
 fn measured_bytes<T: Serialize>(value: &T) -> usize {
-    struct Counter(usize);
+    let mut sizer = ByteSizer(0);
+    let _ = value.serialize(&mut sizer);
+    VALUE_OVERHEAD + std::mem::size_of::<T>() + sizer.0
+}
 
-    impl std::io::Write for Counter {
-        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-            self.0 += buf.len();
-            Ok(buf.len())
-        }
+#[derive(Debug)]
+struct SizeError;
 
-        fn flush(&mut self) -> std::io::Result<()> {
-            Ok(())
-        }
+impl fmt::Display for SizeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("size estimation error")
+    }
+}
+
+impl std::error::Error for SizeError {}
+
+impl ser::Error for SizeError {
+    fn custom<T: fmt::Display>(_msg: T) -> Self {
+        Self
+    }
+}
+
+struct ByteSizer(usize);
+
+impl fmt::Write for ByteSizer {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.0 += s.len();
+        Ok(())
+    }
+}
+
+impl Serializer for &mut ByteSizer {
+    type Ok = ();
+    type Error = SizeError;
+    type SerializeSeq = Self;
+    type SerializeTuple = Self;
+    type SerializeTupleStruct = Self;
+    type SerializeTupleVariant = Self;
+    type SerializeMap = Self;
+    type SerializeStruct = Self;
+    type SerializeStructVariant = Self;
+
+    fn serialize_bool(self, _v: bool) -> Result<(), SizeError> {
+        self.0 += 1;
+        Ok(())
     }
 
-    let mut counter = Counter(0);
-    let _ = serde_json::to_writer(&mut counter, value);
-    VALUE_OVERHEAD + std::mem::size_of::<T>() + counter.0
+    fn serialize_i8(self, _v: i8) -> Result<(), SizeError> {
+        self.0 += 1;
+        Ok(())
+    }
+
+    fn serialize_i16(self, _v: i16) -> Result<(), SizeError> {
+        self.0 += 2;
+        Ok(())
+    }
+
+    fn serialize_i32(self, _v: i32) -> Result<(), SizeError> {
+        self.0 += 4;
+        Ok(())
+    }
+
+    fn serialize_i64(self, _v: i64) -> Result<(), SizeError> {
+        self.0 += 8;
+        Ok(())
+    }
+
+    fn serialize_u8(self, _v: u8) -> Result<(), SizeError> {
+        self.0 += 1;
+        Ok(())
+    }
+
+    fn serialize_u16(self, _v: u16) -> Result<(), SizeError> {
+        self.0 += 2;
+        Ok(())
+    }
+
+    fn serialize_u32(self, _v: u32) -> Result<(), SizeError> {
+        self.0 += 4;
+        Ok(())
+    }
+
+    fn serialize_u64(self, _v: u64) -> Result<(), SizeError> {
+        self.0 += 8;
+        Ok(())
+    }
+
+    fn serialize_f32(self, _v: f32) -> Result<(), SizeError> {
+        self.0 += 4;
+        Ok(())
+    }
+
+    fn serialize_f64(self, _v: f64) -> Result<(), SizeError> {
+        self.0 += 8;
+        Ok(())
+    }
+
+    fn serialize_char(self, v: char) -> Result<(), SizeError> {
+        self.0 += v.len_utf8();
+        Ok(())
+    }
+
+    fn serialize_str(self, v: &str) -> Result<(), SizeError> {
+        self.0 += v.len();
+        Ok(())
+    }
+
+    fn serialize_bytes(self, v: &[u8]) -> Result<(), SizeError> {
+        self.0 += v.len();
+        Ok(())
+    }
+
+    fn serialize_none(self) -> Result<(), SizeError> {
+        self.0 += 1;
+        Ok(())
+    }
+
+    fn serialize_some<T: ?Sized + Serialize>(self, value: &T) -> Result<(), SizeError> {
+        self.0 += 1;
+        value.serialize(self)
+    }
+
+    fn serialize_unit(self) -> Result<(), SizeError> {
+        Ok(())
+    }
+
+    fn serialize_unit_struct(self, _name: &'static str) -> Result<(), SizeError> {
+        Ok(())
+    }
+
+    fn serialize_unit_variant(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+    ) -> Result<(), SizeError> {
+        self.0 += 1;
+        Ok(())
+    }
+
+    fn serialize_newtype_struct<T: ?Sized + Serialize>(
+        self,
+        _name: &'static str,
+        value: &T,
+    ) -> Result<(), SizeError> {
+        value.serialize(self)
+    }
+
+    fn serialize_newtype_variant<T: ?Sized + Serialize>(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        value: &T,
+    ) -> Result<(), SizeError> {
+        self.0 += 1;
+        value.serialize(self)
+    }
+
+    fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, SizeError> {
+        Ok(self)
+    }
+
+    fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple, SizeError> {
+        Ok(self)
+    }
+
+    fn serialize_tuple_struct(
+        self,
+        _name: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleStruct, SizeError> {
+        Ok(self)
+    }
+
+    fn serialize_tuple_variant(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleVariant, SizeError> {
+        self.0 += 1;
+        Ok(self)
+    }
+
+    fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, SizeError> {
+        Ok(self)
+    }
+
+    fn serialize_struct(
+        self,
+        _name: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeStruct, SizeError> {
+        Ok(self)
+    }
+
+    fn serialize_struct_variant(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeStructVariant, SizeError> {
+        self.0 += 1;
+        Ok(self)
+    }
+
+    fn collect_str<T: ?Sized + fmt::Display>(self, value: &T) -> Result<(), SizeError> {
+        let _ = write!(self, "{value}");
+        Ok(())
+    }
+}
+
+impl SerializeSeq for &mut ByteSizer {
+    type Ok = ();
+    type Error = SizeError;
+
+    fn serialize_element<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), SizeError> {
+        value.serialize(&mut **self)
+    }
+
+    fn end(self) -> Result<(), SizeError> {
+        Ok(())
+    }
+}
+
+impl SerializeTuple for &mut ByteSizer {
+    type Ok = ();
+    type Error = SizeError;
+
+    fn serialize_element<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), SizeError> {
+        value.serialize(&mut **self)
+    }
+
+    fn end(self) -> Result<(), SizeError> {
+        Ok(())
+    }
+}
+
+impl SerializeTupleStruct for &mut ByteSizer {
+    type Ok = ();
+    type Error = SizeError;
+
+    fn serialize_field<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), SizeError> {
+        value.serialize(&mut **self)
+    }
+
+    fn end(self) -> Result<(), SizeError> {
+        Ok(())
+    }
+}
+
+impl SerializeTupleVariant for &mut ByteSizer {
+    type Ok = ();
+    type Error = SizeError;
+
+    fn serialize_field<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), SizeError> {
+        value.serialize(&mut **self)
+    }
+
+    fn end(self) -> Result<(), SizeError> {
+        Ok(())
+    }
+}
+
+impl SerializeMap for &mut ByteSizer {
+    type Ok = ();
+    type Error = SizeError;
+
+    fn serialize_key<T: ?Sized + Serialize>(&mut self, key: &T) -> Result<(), SizeError> {
+        key.serialize(&mut **self)
+    }
+
+    fn serialize_value<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), SizeError> {
+        value.serialize(&mut **self)
+    }
+
+    fn end(self) -> Result<(), SizeError> {
+        Ok(())
+    }
+}
+
+impl SerializeStruct for &mut ByteSizer {
+    type Ok = ();
+    type Error = SizeError;
+
+    fn serialize_field<T: ?Sized + Serialize>(
+        &mut self,
+        _key: &'static str,
+        value: &T,
+    ) -> Result<(), SizeError> {
+        value.serialize(&mut **self)
+    }
+
+    fn end(self) -> Result<(), SizeError> {
+        Ok(())
+    }
+}
+
+impl SerializeStructVariant for &mut ByteSizer {
+    type Ok = ();
+    type Error = SizeError;
+
+    fn serialize_field<T: ?Sized + Serialize>(
+        &mut self,
+        _key: &'static str,
+        value: &T,
+    ) -> Result<(), SizeError> {
+        value.serialize(&mut **self)
+    }
+
+    fn end(self) -> Result<(), SizeError> {
+        Ok(())
+    }
 }
 
 enum EntryData {

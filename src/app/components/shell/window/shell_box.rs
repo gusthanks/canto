@@ -10,7 +10,11 @@
 //! routes them through `GtkBoxLayout`), and reports only the bars as the
 //! vertical minimum so content can shrink to zero without squeezing them.
 
+use std::cell::Cell;
+use std::sync::OnceLock;
+
 use gtk::glib;
+use gtk::glib::subclass::Signal;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 
@@ -18,7 +22,10 @@ mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
-    pub struct ShellBox;
+    pub struct ShellBox {
+        pub(super) last_width: Cell<i32>,
+        pub(super) notify_scheduled: Cell<bool>,
+    }
 
     #[glib::object_subclass]
     impl ObjectSubclass for ShellBox {
@@ -41,9 +48,29 @@ mod imp {
             }
             children
         }
+
+        fn schedule_layout_signal(&self) {
+            if self.notify_scheduled.replace(true) {
+                return;
+            }
+            let obj = self.obj();
+            glib::idle_add_local_once(glib::clone!(
+                #[weak]
+                obj,
+                move || {
+                    obj.imp().notify_scheduled.set(false);
+                    obj.emit_by_name::<()>("layout-requested", &[]);
+                }
+            ));
+        }
     }
 
     impl ObjectImpl for ShellBox {
+        fn signals() -> &'static [Signal] {
+            static SIGNALS: OnceLock<Vec<Signal>> = OnceLock::new();
+            SIGNALS.get_or_init(|| vec![Signal::builder("layout-requested").build()])
+        }
+
         fn constructed(&self) {
             self.parent_constructed();
             // Clip over-small content; the bars stay pinned within bounds.
@@ -92,6 +119,9 @@ mod imp {
         }
 
         fn size_allocate(&self, width: i32, height: i32, _baseline: i32) {
+            self.last_width.set(width);
+            self.schedule_layout_signal();
+
             let children = self.layout_children();
             let Some((content, bars)) = children.split_first() else {
                 return;
@@ -124,6 +154,16 @@ mod imp {
 glib::wrapper! {
     pub struct ShellBox(ObjectSubclass<imp::ShellBox>) @extends gtk::Widget,
         @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget;
+}
+
+impl ShellBox {
+    pub fn connect_layout_requested<F: Fn(&Self) + 'static>(&self, f: F) -> glib::SignalHandlerId {
+        self.connect_closure(
+            "layout-requested",
+            false,
+            glib::closure_local!(move |this: &Self| f(this)),
+        )
+    }
 }
 
 /// Ensure the GObject type is registered so the builder can instantiate it.

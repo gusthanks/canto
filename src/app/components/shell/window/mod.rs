@@ -1,11 +1,9 @@
 mod close_dialog;
 mod shell_box;
-pub use shell_box::expose_widgets;
+pub use shell_box::{expose_widgets, ShellBox};
 
-use gettextrs::gettext;
 use gio::prelude::SettingsExt;
 use gtk::prelude::*;
-use libadwaita::prelude::*;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
@@ -80,24 +78,6 @@ impl MainWindow {
         }
     }
 
-    fn show_drm_blocked_dialog(&self) {
-        let dialog = libadwaita::AlertDialog::new(Some(&gettext("Playback Not Available")), None);
-
-        dialog.set_body(&gettext(
-            "This account appears to be using Spotify's new PlayPlay DRM, which \
-             prevents playback in Canto. Spotify's PlayPlay DRM is proprietary and only works in \
-             the official Spotify client.\n\n\
-             This is not a bug and Canto will never attempt to circumvent Spotify's PlayPlay DRM.",
-        ));
-
-        dialog.add_response("close", &gettext("Dismiss"));
-        dialog.set_default_response(Some("close"));
-        dialog.set_close_response("close");
-        dialog.set_prefer_wide_layout(true);
-
-        dialog.present(Some(&self.window));
-    }
-
     fn start(&self) {
         self.window.set_default_size(
             self.initial_window_geometry.width,
@@ -143,7 +123,6 @@ impl EventListener for MainWindow {
         match event {
             AppEvent::Started => self.start(),
             AppEvent::Raised => self.raise(),
-            AppEvent::DrmBlockedDialogShown => self.show_drm_blocked_dialog(),
             AppEvent::LoginEvent(LoginEvent::LoginCompleted) => self.show(),
             AppEvent::LoginEvent(LoginEvent::LogoutCompleted) => self.hide(),
             _ => {}

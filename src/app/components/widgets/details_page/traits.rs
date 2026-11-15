@@ -202,11 +202,16 @@ pub trait PinnedPageModel: PageModel + std::ops::Deref<Target = DetailsPageModel
 /// stopped, `None` otherwise.
 pub fn is_playback_event(event: &AppEvent) -> Option<bool> {
     match event {
-        AppEvent::PlaybackEvent(PlaybackEvent::PlaybackPaused | PlaybackEvent::PlaybackStopped) => {
-            Some(false)
-        }
-        AppEvent::PlaybackEvent(PlaybackEvent::PlaybackResumed)
-        | AppEvent::PlaybackEvent(PlaybackEvent::TrackChanged(_)) => Some(true),
+        AppEvent::PlaybackEvent(
+            PlaybackEvent::PlaybackPaused
+            | PlaybackEvent::PlaybackStopped
+            | PlaybackEvent::PlayStateSynced(false),
+        ) => Some(false),
+        AppEvent::PlaybackEvent(
+            PlaybackEvent::PlaybackResumed
+            | PlaybackEvent::TrackChanged(_)
+            | PlaybackEvent::PlayStateSynced(true),
+        ) => Some(true),
         _ => None,
     }
 }
