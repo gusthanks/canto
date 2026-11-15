@@ -70,10 +70,6 @@ impl<M: PinnedPageModel + 'static> DetailsPageComponent<M> {
         c
     }
 
-    pub fn header(&self) -> &PageHeader {
-        &self.header
-    }
-
     /// For content with its own component, like a `QueueList`.
     pub fn append_content(&self, widget: &impl IsA<gtk::Widget>) {
         self.content.append(widget);
@@ -353,6 +349,16 @@ impl<M: PinnedPageModel + 'static> DetailsPageComponent<M> {
         if let Some(caption) = self.model.get_caption() {
             self.page.header().set_caption(&caption);
             self.page.header().set_caption_visible(true);
+            if let Some(tooltip) = self.model.caption_tooltip() {
+                self.page.header().set_caption_link(
+                    &tooltip,
+                    clone!(
+                        #[weak(rename_to = m)]
+                        self.model,
+                        move || m.on_caption_clicked()
+                    ),
+                );
+            }
         }
         if self.model.has_like_button() {
             self.page.header().set_liked(self.model.is_liked());

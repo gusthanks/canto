@@ -92,7 +92,7 @@ impl NavigationPanelDestination {
     pub fn icon(&self) -> &'static str {
         match self {
             Self::Library => "library-music-symbolic",
-            Self::SavedTracks => "audio-x-generic-symbolic",
+            Self::SavedTracks => "emote-love-symbolic",
             Self::NowPlaying => "now-playing-symbolic",
             Self::SavedPlaylists => "playlist2-symbolic",
             Self::SavedArtists => "avatar-default-symbolic",

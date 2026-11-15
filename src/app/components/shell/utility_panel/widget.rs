@@ -143,8 +143,15 @@ impl UtilityPanelWidget {
         });
     }
 
+    pub fn connect_tab_changed<F: Fn() + 'static>(&self, f: F) {
+        self.imp()
+            .panel_stack
+            .connect_visible_child_name_notify(move |_| f());
+    }
+
+    /// What the panel shows, read from the page itself (not the tab buttons).
     pub fn active_tab(&self) -> &'static str {
-        if self.imp().lyrics_tab.is_active() {
+        if self.imp().panel_stack.visible_child_name().as_deref() == Some("lyrics") {
             "lyrics"
         } else {
             "queue"

@@ -16,9 +16,11 @@ template $PlaybackInfoWidget : Button {
     halign: start;
     spacing: 0;
 
-    Overlay {
+    Overlay cover_frame {
       valign: center;
       overflow: hidden;
+      /* Translators: Tooltip on the cover art in the player bar. */
+      tooltip-text: _("Go to Album");
 
       styles [
         "playback-cover-frame",

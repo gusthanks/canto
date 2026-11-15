@@ -233,11 +233,32 @@ mod imp {
                     volume_slider.set_value(restore);
                 }
             });
+
+            // Speaker icon that follows the volume (muted / low / medium / high).
+            let mute_button = self.mute_button.clone();
+            let sync_volume_icon = move |scale: &gtk::Scale| {
+                mute_button.set_icon_name(super::volume_icon_name(scale.value()));
+            };
+            sync_volume_icon(&self.volume_slider);
+            self.volume_slider.connect_value_changed(sync_volume_icon);
         }
     }
 
     impl WidgetImpl for PlaybackWidget {}
     impl BoxImpl for PlaybackWidget {}
+}
+
+/// Standard speaker icon for a volume level in `0.0..=1.0`.
+fn volume_icon_name(value: f64) -> &'static str {
+    if value <= 0.01 {
+        "audio-volume-muted-symbolic"
+    } else if value < 0.34 {
+        "audio-volume-low-symbolic"
+    } else if value < 0.67 {
+        "audio-volume-medium-symbolic"
+    } else {
+        "audio-volume-high-symbolic"
+    }
 }
 
 glib::wrapper! {
@@ -336,6 +357,10 @@ impl PlaybackWidget {
     /// Used when playback is paused, without altering anything else.
     pub fn freeze_seek_position(&self) {
         self.imp().clock.stop();
+    }
+
+    pub fn connect_cover_clicked<F: Fn() + 'static>(&self, f: F) {
+        self.imp().now_playing.connect_cover_clicked(f);
     }
 
     pub fn connect_now_playing_clicked<F>(&self, f: F)
@@ -538,6 +563,14 @@ impl PlaybackWidget {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn volume_icon_follows_level() {
+        assert_eq!(volume_icon_name(0.0), "audio-volume-muted-symbolic");
+        assert_eq!(volume_icon_name(0.2), "audio-volume-low-symbolic");
+        assert_eq!(volume_icon_name(0.5), "audio-volume-medium-symbolic");
+        assert_eq!(volume_icon_name(0.9), "audio-volume-high-symbolic");
+    }
 
     #[test]
     fn eq_presets_have_valid_10_band_ranges() {

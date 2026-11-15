@@ -83,13 +83,22 @@ Note: Spotify restricted `/v1/recommendations` and `/v1/artists/{id}/related-art
 
 ### 2. Genius (Credits, Samples & Liner Notes)
 
-Even without an API token, clicking the **Genius** pill in the Lyrics panel cleans edition tags (such as `(Remastered)` or `[Live]`) and opens a clean web search for the playing track.
+Even without an API token, the **Search on Genius** button in **About Track** cleans edition tags (such as `(Remastered)` or `[Live]`) and opens a clean web search for the playing track.
 
 To display producers, writers, featured artists, release dates, sample relationships, and liner notes directly inside **About Track**:
 
-1. Visit [genius.com/api-clients](https://genius.com/api-clients) and sign in.
-2. Click **New API Client**, enter an app name (for example `Canto`) and any local App Website / Redirect URI (such as `http://localhost`), then save.
-3. Click **Generate Access Token**, copy the **Client Access Token**, and paste it into **Preferences -> Integrations -> Genius**.
+1. Open [genius.com/api-clients/new](https://genius.com/api-clients/new) and sign in if asked. In Canto, **Preferences -> Integrations -> Genius -> How to get token** opens the same page and has copy buttons for every value below.
+2. Fill in the **New API Client** form and click **Save**:
+
+   | Field | Value |
+   | --- | --- |
+   | App Name | `Canto` |
+   | Icon URL | keep the default |
+   | App Website URL | `http://localhost` |
+   | Redirect URI | `http://localhost` |
+
+3. On the next page, click **Generate Access Token** and copy the **Client Access Token**. Canto doesn't need the Client ID or Client Secret.
+4. Paste it into **Preferences -> Integrations -> Genius -> Client Access Token**.
 
 Results are cached locally on disk so revisiting a track requires zero repeated API calls.
 

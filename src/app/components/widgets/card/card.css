@@ -80,5 +80,5 @@ overlay-split-view .card--round .card {
 
 .card--paused .card__playing {
   animation: none;
-  -gtk-icon-source: -gtk-icontheme("playback-paused-symbolic");
+  background-image: -gtk-icontheme("playback-paused-symbolic");
 }

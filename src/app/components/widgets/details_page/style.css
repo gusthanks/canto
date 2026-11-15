@@ -133,6 +133,18 @@
   font-weight: bold;
 }
 
+/* Caption that links somewhere (the album on Now Playing) */
+.details-header__caption--link {
+  font-weight: 600;
+  opacity: 0.8;
+  transition: opacity 150ms ease;
+}
+
+.details-header__caption--link:hover {
+  opacity: 1;
+  text-decoration-line: underline;
+}
+
 /* Subtitle label in headers */
 .details-header .body {
   min-height: 24px;

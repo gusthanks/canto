@@ -131,6 +131,13 @@ pub trait PageModel: ProvidesApi {
     /// Navigate to a subtitle link target by ID (e.g. artist page or user page).
     fn navigate_to_subtitle_link(&self, _id: &str) {}
 
+    /// When the caption is a link (like the album on Now Playing), its
+    /// tooltip. `None` keeps the caption as plain text.
+    fn caption_tooltip(&self) -> Option<String> {
+        None
+    }
+    fn on_caption_clicked(&self) {}
+
     // Event handling
 
     /// Returns true if this event means page details should be refreshed.

@@ -45,12 +45,16 @@
   animation: playing 1s steps(17) infinite;
   color: @accent_bg_color;
   min-width: 16px;
-  -gtk-icon-source: -gtk-icontheme("playback-0-symbolic");
+  min-height: 16px;
+  background-image: -gtk-icontheme("playback-0-symbolic");
+  background-size: 16px 16px;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .playlist--paused .song--playing .song__icon {
   animation: none;
-  -gtk-icon-source: -gtk-icontheme("playback-paused-symbolic");
+  background-image: -gtk-icontheme("playback-paused-symbolic");
 }
 
 

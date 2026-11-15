@@ -545,7 +545,7 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         title: gettext("Toggle Lyrics"),
         subtitle: gettext("Show or hide Lyrics and Track Notes"),
         category: action_cat.clone(),
-        icon_name: "audio-x-generic-symbolic",
+        icon_name: "canto-lyrics-symbolic",
         shortcut_hint: None,
         keywords: "toggle lyrics about track genius notes".into(),
         action: PaletteAction::ToggleLyrics,

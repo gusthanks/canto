@@ -62,6 +62,8 @@ impl WindowLayout {
         let utility_widget: UtilityPanelWidget = builder.object("utility_panel").unwrap();
         let utility_handle: gtk::Widget = utility_widget.resize_handle().clone().upcast();
         let header: AppHeaderBar = builder.object("app_header").unwrap();
+        let history_slot: gtk::Box = builder.object("history_slot").unwrap();
+        header.set_history_slot(&history_slot);
         let window: libadwaita::ApplicationWindow = builder.object("window").unwrap();
 
         let navigation = Panel::new(NAVIGATION_PANEL, navigation_split.clone(), Edge::Start);
@@ -334,6 +336,8 @@ impl WindowLayout {
         self.navigation
             .set_content_min_width(self.content_min_width());
         let navigation = &self.navigation.split;
+        self.header
+            .place_history_buttons(navigation.shows_sidebar() && !navigation.is_collapsed());
         self.header.set_compact_allowed(
             (navigation.is_collapsed() || !navigation.shows_sidebar())
                 && !self.collapsing_navigation.get(),
@@ -462,7 +466,6 @@ fn add_window_breakpoints(builder: &gtk::Builder) {
         .to_value();
 
     let narrow = max_width_breakpoint(NARROW_WIDTH_SP);
-    narrow.add_setter(&bottom_sheet, "reveal-bottom-bar", Some(&true.to_value()));
     narrow.add_setter(&bottom_sheet, "full-width", Some(&true.to_value()));
     narrow.add_setter(&bottom_sheet, "css-classes", Some(&no_classes));
     window.add_breakpoint(narrow);

@@ -132,13 +132,10 @@ Adw.ApplicationWindow window {
       vexpand: true;
 
       // Bottom sheet
+      // The queue, in narrow windows: opened from the player bar's queue
+      // button, with no bar of its own at the bottom
       Adw.BottomSheet bottom_sheet {
         reveal-bottom-bar: false;
-        // Narrow windows only. Beside the content, the queue isn't in the
-        // sheet: the bar shows the current track and doesn't open
-        bottom-bar: $QueueBarWidget queue_bar {
-          height-request: 36;
-        };
         full-width: false;
 
         // Dropped by the narrow breakpoints (see shell/layout)
@@ -151,9 +148,6 @@ Adw.ApplicationWindow window {
           show-sidebar: false;
           pin-sidebar: true;
           sidebar-width-unit: px;
-          // The bottom sheet's bottom bar is over the content: the content
-          // ends above it
-          margin-bottom: bind bottom_sheet.bottom-bar-height;
 
           // An OverlaySplitView collapses without reparenting its children,
           // which would rebuild every page
@@ -174,6 +168,13 @@ Adw.ApplicationWindow window {
                   styles [
                     "flat",
                   ]
+
+                  // Back/Forward move here while the sidebar is beside the
+                  // content (see AppHeaderBar::place_history_buttons)
+                  Box history_slot {
+                    visible: false;
+                    spacing: 2;
+                  }
 
                   Button search_button {
                     icon-name: "system-search-symbolic";

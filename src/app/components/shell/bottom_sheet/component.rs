@@ -1,10 +1,9 @@
 use gtk::prelude::*;
 use libadwaita::prelude::*;
 use std::cell::Cell;
-use std::rc::Rc;
 
 use super::BottomSheetContent;
-use crate::app::components::{QueueBarWidget, QueuePageWidget};
+use crate::app::components::QueuePageWidget;
 
 /// Inside the scroller, so the scrollbar stays at the sheet's edge
 const SHEET_MARGIN_X: i32 = 12;
@@ -19,13 +18,11 @@ const HOLD_AT_TOP_MICROS: i64 = 500_000;
 #[derive(Clone)]
 pub struct BottomSheet {
     sheet: libadwaita::BottomSheet,
-    queue_bar: QueueBarWidget,
     content: BottomSheetContent,
-    has_track: Rc<Cell<bool>>,
 }
 
 impl BottomSheet {
-    pub fn new(sheet: libadwaita::BottomSheet, queue_bar: QueueBarWidget, has_track: bool) -> Self {
+    pub fn new(sheet: libadwaita::BottomSheet) -> Self {
         let content = BottomSheetContent::default();
         sheet.connect_open_notify(clone!(
             #[weak]
@@ -38,13 +35,8 @@ impl BottomSheet {
                 }
             }
         ));
-        let bottom_sheet = Self {
-            sheet,
-            queue_bar,
-            content,
-            has_track: Rc::new(Cell::new(has_track)),
-        };
-        bottom_sheet.sync_bottom_bar();
+        let bottom_sheet = Self { sheet, content };
+        bottom_sheet.sync_can_open();
         bottom_sheet
     }
 
@@ -60,18 +52,13 @@ impl BottomSheet {
         self.content.set_child(page);
         self.sheet
             .set_sheet(page.is_some().then_some(&self.content));
-        self.sync_bottom_bar();
+        self.sync_can_open();
     }
 
     pub fn set_selecting(&self, selecting: bool) {
         self.sheet.set_show_drag_handle(!selecting);
         self.content
             .set_margin_top(if selecting { 0 } else { HANDLE_ROOM });
-    }
-
-    pub fn set_has_track(&self, has_track: bool) {
-        self.has_track.set(has_track);
-        self.sync_bottom_bar();
     }
 
     pub fn is_open(&self) -> bool {
@@ -86,12 +73,8 @@ impl BottomSheet {
         self.sheet.connect_open_notify(move |_| f());
     }
 
-    fn sync_bottom_bar(&self) {
-        let has_page = self.content.child().is_some();
-        self.queue_bar.set_show_track(!has_page);
-        self.sheet.set_can_open(has_page);
-        let shown = has_page || self.has_track.get();
-        self.sheet.set_bottom_bar(shown.then_some(&self.queue_bar));
+    fn sync_can_open(&self) {
+        self.sheet.set_can_open(self.content.child().is_some());
     }
 }
 

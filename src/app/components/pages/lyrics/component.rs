@@ -1,4 +1,3 @@
-use super::widget::open_external_url;
 use super::LyricsPageWidget;
 use crate::app::components::utils::Clock;
 use crate::app::components::{Component, EventListener};
@@ -154,31 +153,6 @@ impl LyricsPage {
                     &clock,
                     true,
                 );
-            }
-        ));
-
-        self.widget.connect_genius_clicked(clone!(
-            #[weak(rename_to = widget)]
-            self.widget,
-            #[weak(rename_to = app_model)]
-            self.app_model,
-            #[weak(rename_to = genius_info)]
-            self.genius_info,
-            move || {
-                let url = genius_info
-                    .borrow()
-                    .as_ref()
-                    .map(|info| info.url.clone())
-                    .or_else(|| {
-                        app_model
-                            .get_state()
-                            .playback
-                            .current_song()
-                            .map(|t| app_model.api().genius_search_url(&t.artists_name(), &t.title))
-                    });
-                if let Some(url) = url {
-                    open_external_url(&widget, &url);
-                }
             }
         ));
 
@@ -410,7 +384,6 @@ fn refresh_genius_for_current_track(
         genius_fetching.set(false);
         *genius_track_id.borrow_mut() = Some(track_id);
         *genius_info.borrow_mut() = None;
-        widget.set_genius_tooltip(&gettext("Search this track on Genius"));
         widget.set_about_prompt(&title, &artist, album.as_deref(), &search_url);
         return;
     }
@@ -426,14 +399,12 @@ fn refresh_genius_for_current_track(
         *genius_track_id.borrow_mut() = Some(track_id);
         *genius_info.borrow_mut() = None;
         genius_fetching.set(false);
-        widget.set_genius_tooltip(&gettext("Open track on Genius"));
         return;
     }
 
     *genius_track_id.borrow_mut() = Some(track_id.clone());
     *genius_info.borrow_mut() = None;
     genius_fetching.set(true);
-    widget.set_genius_tooltip(&gettext("Open track on Genius"));
     widget.set_about_loading(&title, &artist);
 
     let weak_widget = widget.downgrade();
@@ -462,17 +433,11 @@ fn refresh_genius_for_current_track(
         fetching.set(false);
         match result {
             Ok(info) => {
-                if info.is_exact_match {
-                    w.set_genius_tooltip(&gettext("Open verified track page on Genius"));
-                } else {
-                    w.set_genius_tooltip(&gettext("Search this track on Genius"));
-                }
                 w.set_about_info(&title, &artist, &info);
                 *info_cell.borrow_mut() = Some(info);
             }
             Err(err) => {
                 *info_cell.borrow_mut() = None;
-                w.set_genius_tooltip(&gettext("Search this track on Genius"));
                 w.set_about_error(&title, &artist, &err.to_string(), &search_url);
             }
         }

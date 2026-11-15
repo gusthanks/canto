@@ -3,9 +3,8 @@ use std::ops::Deref;
 use std::rc::Rc;
 
 use crate::app::components::{
-    dispatch_api_call, labels, DetailsPageModel, DeviceSelectorModel, HasHeaderBarModel,
-    HeaderImageShape, PageModel, PinnedPageModel, QueueListModel, SimpleHeaderBarModel,
-    TrackListModel,
+    dispatch_api_call, labels, DetailsPageModel, HasHeaderBarModel, HeaderImageShape, PageModel,
+    PinnedPageModel, QueueListModel, SimpleHeaderBarModel, TrackListModel,
 };
 use crate::app::models::{ArtistRef, ImageSet, Track, TrackExt};
 use crate::app::state::{PlaybackAction, PlaybackEvent};
@@ -52,10 +51,6 @@ impl NowPlayingModel {
     pub fn has_queue(&self) -> bool {
         self.queue_list.has_queue()
     }
-
-    pub fn device_selector_model(&self) -> DeviceSelectorModel {
-        DeviceSelectorModel::new(self.app_model.clone(), self.dispatcher.clone())
-    }
 }
 
 impl PageModel for NowPlayingModel {
@@ -67,8 +62,22 @@ impl PageModel for NowPlayingModel {
         Some(self.current_song()?.artists_name())
     }
 
+    // The album, clickable (see `on_caption_clicked`); "Now Playing" without one.
     fn get_caption(&self) -> Option<String> {
-        Some(gettext("Now Playing"))
+        let album = self
+            .current_song()
+            .and_then(|song| song.album)
+            .map(|album| album.name)
+            .filter(|name| !name.trim().is_empty());
+        Some(album.unwrap_or_else(|| gettext("Now Playing")))
+    }
+
+    fn caption_tooltip(&self) -> Option<String> {
+        Some(gettext("Go to Album"))
+    }
+
+    fn on_caption_clicked(&self) {
+        self.on_header_menu(VIEW_ALBUM);
     }
 
     fn get_artwork(&self) -> Option<ImageSet> {

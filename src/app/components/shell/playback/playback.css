@@ -74,11 +74,3 @@
   border-radius: 8px;
 }
 
-/* Like the open bottom sheet's drag handle */
-.queue-bar__handle {
-  background-color: color-mix(in srgb, currentColor 25%, transparent);
-  min-width: 54px;
-  min-height: 6px;
-  margin: 15px;
-  border-radius: 99px;
-}

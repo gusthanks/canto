@@ -13,6 +13,9 @@ mod imp {
     #[template(resource = "/dev/diegovsky/Riff/components/playback_info.ui")]
     pub struct PlaybackInfoWidget {
         #[template_child]
+        pub cover_frame: TemplateChild<gtk::Overlay>,
+
+        #[template_child]
         pub placeholder_art: TemplateChild<gtk::Image>,
 
         #[template_child]
@@ -60,6 +63,20 @@ glib::wrapper! {
 
 impl PlaybackInfoWidget {
     fn setup_hover_animations(&self) {}
+
+    /// Clicking the cover art runs `f` instead of the whole button's click.
+    pub fn connect_cover_clicked<F: Fn() + 'static>(&self, f: F) {
+        let gesture = gtk::GestureClick::new();
+        gesture.set_button(gdk::BUTTON_PRIMARY);
+        // Claim the press so the surrounding button does not also fire.
+        gesture.connect_pressed(|gesture, _, _, _| {
+            gesture.set_state(gtk::EventSequenceState::Claimed);
+        });
+        gesture.connect_released(move |_, _, _, _| f());
+        let cover = &self.imp().cover_frame;
+        cover.set_cursor_from_name(Some("pointer"));
+        cover.add_controller(gesture);
+    }
 
     pub fn set_title_and_artist(&self, title: &str, artist: &str) {
         let widget = self.imp();

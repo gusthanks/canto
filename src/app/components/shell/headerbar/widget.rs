@@ -94,6 +94,9 @@ mod imp {
         pub started: Cell<bool>,
         pub wide_width: Cell<i32>,
 
+        /// Sidebar spot for Back/Forward while the sidebar is beside the content.
+        pub history_slot: RefCell<Option<gtk::Box>>,
+
         #[template_child]
         pub selection_header: TemplateChild<libadwaita::HeaderBar>,
 
@@ -541,6 +544,43 @@ impl AppHeaderBar {
     }
 
     // --- Fixed control signals ---
+
+    pub fn set_history_slot(&self, slot: &gtk::Box) {
+        self.imp().history_slot.replace(Some(slot.clone()));
+    }
+
+    /// Puts Back/Forward in the sidebar header, before Search, while the
+    /// sidebar sits beside the content; otherwise back at the start of this
+    /// header bar.
+    pub fn place_history_buttons(&self, in_sidebar: bool) {
+        let imp = self.imp();
+        let Some(slot) = imp.history_slot.borrow().clone() else {
+            return;
+        };
+        let back = imp.go_back.get();
+        let forward = imp.go_forward.get();
+        let target: gtk::Box = if in_sidebar {
+            slot.clone()
+        } else {
+            imp.drawer_buttons.get()
+        };
+        slot.set_visible(in_sidebar);
+        if back.parent().as_ref() == Some(target.upcast_ref()) {
+            return;
+        }
+        for button in [&back, &forward] {
+            if let Some(parent) = button.parent().and_downcast::<gtk::Box>() {
+                parent.remove(button);
+            }
+        }
+        if in_sidebar {
+            target.append(&back);
+            target.append(&forward);
+        } else {
+            target.prepend(&forward);
+            target.prepend(&back);
+        }
+    }
 
     pub fn connect_go_back<F: Fn() + 'static>(&self, f: F) {
         self.imp().go_back.connect_clicked(move |_| f());

@@ -22,8 +22,6 @@ mod imp {
         #[template_child]
         pub tab_about_button: TemplateChild<gtk::ToggleButton>,
         #[template_child]
-        pub genius_button: TemplateChild<gtk::Button>,
-        #[template_child]
         pub content_mode_stack: TemplateChild<gtk::Stack>,
         #[template_child]
         pub about_scroller: TemplateChild<gtk::ScrolledWindow>,
@@ -163,14 +161,6 @@ impl LyricsPageWidget {
 
     pub fn is_about_selected(&self) -> bool {
         self.imp().tab_about_button.is_active()
-    }
-
-    pub fn set_genius_tooltip(&self, tooltip: &str) {
-        self.imp().genius_button.set_tooltip_text(Some(tooltip));
-    }
-
-    pub fn connect_genius_clicked<F: Fn() + 'static>(&self, f: F) {
-        self.imp().genius_button.connect_clicked(move |_| f());
     }
 
     pub fn connect_about_tab_activated<F: Fn() + 'static>(&self, f: F) {

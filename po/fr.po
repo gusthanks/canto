@@ -2,36 +2,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 11:51-0300\n"
+"POT-Creation-Date: 2026-11-15 19:57-0300\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: POEditor.com\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-
-#: crates/riff-api/src/defaults.rs:36
-#, fuzzy
-msgid "Untitled Album"
-msgstr "Voir l'album"
-
-#: crates/riff-api/src/defaults.rs:40
-#, fuzzy
-msgid "Untitled Playlist"
-msgstr "Liste de lecture sans titre"
-
-#: crates/riff-api/src/defaults.rs:44
-msgid "Untitled"
-msgstr ""
-
-#: crates/riff-api/src/defaults.rs:48 crates/riff-api/src/models.rs:149
-#, fuzzy
-msgid "Unknown Artist"
-msgstr "Artistes"
-
-#: crates/riff-api/src/defaults.rs:52
-msgid "Unknown User"
-msgstr ""
 
 #. translators: This is part of a contextual menu attached to a single track; this entry allows viewing the album containing a specific track.
 #: src/app/components/labels.rs:8
@@ -84,9 +61,9 @@ msgstr ""
 #. translators: Header of the current track, on the queue page (when shown in the list).
 #. translators: This is a navigation panel entry to browse to saved playlists.
 #: src/app/components/labels.rs:32
-#: src/app/components/pages/now_playing/model.rs:71
-#: src/app/components/pages/shortcuts/shortcuts.blp:84
+#: src/app/components/pages/now_playing/model.rs:72
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:80
+#: src/app/components/pages/shortcuts/shortcuts.blp:84
 #: src/app/components/shell/playback/playback_widget.blp:71
 msgid "Now Playing"
 msgstr "En cours de lecture"
@@ -109,8 +86,8 @@ msgstr "Retirer de la file d'attente"
 
 #. translators: This is part of a contextual menu attached to a single track; this entry saves the track to the user's saved tracks.
 #: src/app/components/labels.rs:44
-#: src/app/components/widgets/selection/selection_toolbar.blp:83
 #: src/app/components/widgets/track_list/track_row.blp:159
+#: src/app/components/widgets/selection/selection_toolbar.blp:83
 #, fuzzy
 msgid "Add to Saved Tracks"
 msgstr "Titres aimés"
@@ -169,8 +146,8 @@ msgstr "Aucune liste de lecture enregistrée."
 #. translators: This is part of a contextual menu attached to a playlist in the sidebar; this entry starts playing the playlist from the first track.
 #: src/app/components/labels.rs:74
 #: src/app/components/shell/playback/playback_controls.rs:71
+#: src/app/components/widgets/details_page/header.rs:249
 #: src/app/components/widgets/details_page/header.blp:140
-#: src/app/components/widgets/details_page/header.rs:233
 msgid "Play"
 msgstr "Lecture"
 
@@ -213,10 +190,10 @@ msgstr "Nouvelle liste de lecture"
 
 #. translators: This is the caption shown in the header of an album's detail page when the release is a full album.
 #. translators: An album in the back/forward history menu, while its name is loading.
-#: src/app/components/labels.rs:95 src/app/components/labels.rs:204
-#: src/app/components/pages/lyrics/widget.rs:389
+#: src/app/components/labels.rs:95 src/app/components/labels.rs:180
+#: src/app/components/pages/lyrics/widget.rs:379
+#: src/app/components/shell/command_palette/widget.rs:672
 #: src/app/components/pages/settings/settings.blp:254
-#: src/app/components/shell/command_palette/widget.rs:643
 #, fuzzy
 msgid "Album"
 msgstr "Albums"
@@ -246,8 +223,8 @@ msgstr "Normale"
 
 #. translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
 #: src/app/components/labels.rs:110
-#: src/app/components/shell/command_palette/widget.rs:527
-#: src/app/components/shell/playback/playback_widget.blp:458 src/window.blp:278
+#: src/app/components/shell/command_palette/widget.rs:556
+#: src/app/components/shell/playback/playback_widget.blp:458 src/window.blp:279
 msgid "Start Track Radio"
 msgstr ""
 
@@ -279,38 +256,14 @@ msgid_plural "{} tracks selected"
 msgstr[0] "{} morceau sélectionné"
 msgstr[1] "{} morceaux sélectionnés"
 
-#. translators: Shown from time to time in the bar at the bottom of the window that opens the queue. It's Pango markup: keep the tags, around the same words. The first {} is the title of the track playing, the second its artist.
-#: src/app/components/labels.rs:159
-#, rust-format
-msgid ""
-"<span size=\"small\" weight=\"light\">Now Playing</span> <b>{}</b> <span "
-"size=\"small\" weight=\"light\">by</span> {}"
-msgstr ""
-
-#. translators: Shown from time to time in the bar at the bottom of the window that opens the queue, while playback is paused. It's Pango markup: keep the tags, around the same words. The first {} is the title of the current track, the second its artist.
-#: src/app/components/labels.rs:165
-#, rust-format
-msgid ""
-"<span size=\"small\" weight=\"light\">Current Track</span> <b>{}</b> <span "
-"size=\"small\" weight=\"light\">by</span> {}"
-msgstr ""
-
-#. translators: Shown from time to time in the bar at the bottom of the window that opens the queue. It's Pango markup: keep the tags, around the same words. The first {} is the title of the track playing next, the second its artist.
-#: src/app/components/labels.rs:171
-#, rust-format
-msgid ""
-"<span size=\"small\" weight=\"light\">Up Next</span> <b>{}</b> <span "
-"size=\"small\" weight=\"light\">by</span> {}"
-msgstr ""
-
 #. translators: Header above the rest of the album, playlist or artist being played, on the queue page. {} is its name.
-#: src/app/components/labels.rs:177
+#: src/app/components/labels.rs:153
 #, fuzzy, rust-format
 msgid "Next from: {}"
 msgstr "Plus de {}"
 
 #. translators: Description of the shuffle separation preference. {} is the number of other songs, chosen by the user. "When possible" because an album or playlist can have too few songs.
-#: src/app/components/labels.rs:183
+#: src/app/components/labels.rs:159
 #, rust-format
 msgid ""
 "When possible, shuffle and repeat mode will play at least {} other song "
@@ -322,41 +275,41 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: This is part of a contextual menu attached to a single track; the full text is "More from <artist>".
-#: src/app/components/labels.rs:192
+#: src/app/components/labels.rs:168
 #, rust-format
 msgid "More from {}"
 msgstr "Plus de {}"
 
 #. translators: This is part of a larger label that reads "<Album> by <Artist>"
-#: src/app/components/labels.rs:197
+#: src/app/components/labels.rs:173
 #, rust-format
 msgid "{} by {}"
 msgstr "{} de {}"
 
 #. translators: An artist in the back/forward history menu, while their name is loading.
-#: src/app/components/labels.rs:206
-#: src/app/components/shell/command_palette/widget.rs:644
+#: src/app/components/labels.rs:182
+#: src/app/components/shell/command_palette/widget.rs:673
 #, fuzzy
 msgid "Artist"
 msgstr "Artistes"
 
 #. translators: A playlist in the back/forward history menu, while its name is loading.
-#: src/app/components/labels.rs:208
+#: src/app/components/labels.rs:184
 #: src/app/components/pages/details_playlist/model.rs:154
-#: src/app/components/shell/command_palette/widget.rs:645
+#: src/app/components/shell/command_palette/widget.rs:674
 #, fuzzy
 msgid "Playlist"
 msgstr "Listes de lecture"
 
 #. translators: A user's page in the back/forward history menu, while their name is loading.
-#: src/app/components/labels.rs:210
+#: src/app/components/labels.rs:186
 msgid "User"
 msgstr ""
 
 #. translators: The search page in the back/forward history menu.
-#: src/app/components/labels.rs:212
-#: src/app/components/pages/shortcuts/shortcuts.blp:64
-#: src/app/components/shell/command_palette/widget.rs:460 src/window.blp:180
+#: src/app/components/labels.rs:188
+#: src/app/components/shell/command_palette/widget.rs:489
+#: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:181
 #, fuzzy
 msgid "Search"
 msgstr "Rechercher dans Spotify."
@@ -377,31 +330,6 @@ msgid "An error occured. Check logs for details!"
 msgstr ""
 "Une erreur est survenue. Consultez les journaux de débogage pour plus "
 "d'information."
-
-#. Translators: This refers to a music label
-#: src/app/components/pages/details_album/release_details.blp:34
-msgid "Label"
-msgstr "Label"
-
-#. Translators: This refers to a release date
-#: src/app/components/pages/details_album/release_details.blp:45
-msgid "Released"
-msgstr "Date de publication"
-
-#. Translators: This refers to a number of tracks
-#: src/app/components/pages/details_album/release_details.blp:56
-#: src/app/components/pages/search/search.rs:395
-#: src/app/components/pages/shortcuts/shortcuts.blp:104
-msgid "Tracks"
-msgstr "Morceaux"
-
-#: src/app/components/pages/details_album/release_details.blp:65
-msgid "Copyright"
-msgstr "Copyright"
-
-#: src/app/components/pages/details_album/widget.rs:34
-msgid "Details"
-msgstr ""
 
 #: src/app/components/pages/details_artist/widget.rs:33
 msgid "Top Tracks"
@@ -433,248 +361,119 @@ msgstr ""
 msgid "Public Playlists"
 msgstr "Toutes les listes de lecture"
 
-#: src/app/components/pages/login/login.blp:49
-msgid "Welcome to Canto"
-msgstr ""
-
-#. Translators: Login window subtitle
-#: src/app/components/pages/login/login.blp:56
-#, fuzzy
-msgid "Log in with your Spotify Account"
-msgstr "Connexion à Spotify Premium"
-
-#. Translators: Premium requirement notice shown on the login page.
-#: src/app/components/pages/login/login.blp:86
-msgid "A Spotify Premium subscription is required."
-msgstr ""
-
-#. Translators: This error is shown when a non-premium account is detected.
-#: src/app/components/pages/login/login.blp:108
-msgid "Your account does not have a Spotify Premium subscription."
-msgstr ""
-
-#. Translators: This error is shown when login fails. Browser extensions such as ad or privacy blockers can break the login page.
-#: src/app/components/pages/login/login.blp:130
-msgid ""
-"Login failed. Please check your connection and browser extensions before "
-"trying again."
-msgstr ""
-
-#. Translators: Log in button label
-#: src/app/components/pages/login/login.blp:141
-msgid "Log in with Spotify…"
-msgstr ""
-
 #. Translators: Tab label switching to song lyrics view
 #. Translators: Tooltip of the player bar button that shows or hides synced lyrics.
 #. Translators: Tab label for lyrics in utility panel.
-#: src/app/components/pages/lyrics/component.rs:74
+#: src/app/components/pages/lyrics/component.rs:73
 #: src/app/components/pages/lyrics/lyrics_page.blp:28
-#: src/app/components/pages/now_playing/widget.rs:44
 #: src/app/components/shell/playback/playback_widget.blp:166
 #: src/app/components/shell/utility_panel/utility_panel.blp:47
 msgid "Lyrics"
 msgstr ""
 
-#: src/app/components/pages/lyrics/component.rs:413
-#: src/app/components/pages/lyrics/component.rs:468
-#: src/app/components/pages/lyrics/component.rs:475
-msgid "Search this track on Genius"
-msgstr ""
-
-#: src/app/components/pages/lyrics/component.rs:429
-#: src/app/components/pages/lyrics/component.rs:436
-#: src/app/components/pages/lyrics/lyrics_page.blp:46
-msgid "Open track on Genius"
-msgstr ""
-
-#: src/app/components/pages/lyrics/component.rs:466
-msgid "Open verified track page on Genius"
-msgstr ""
-
 #. translators: Short text displayed instead of a track title when nothing plays
-#: src/app/components/pages/lyrics/component.rs:500
-#: src/app/components/pages/lyrics/component.rs:738
-#: src/app/components/pages/now_playing/widget.rs:95
-#: src/app/components/shell/playback/playback_info.rs:78
+#: src/app/components/pages/lyrics/component.rs:465
+#: src/app/components/pages/lyrics/component.rs:703
+#: src/app/components/pages/now_playing/widget.rs:104
+#: src/app/components/shell/playback/playback_info.rs:95
 #, fuzzy
 msgid "No Track Playing"
 msgstr "En cours de lecture"
 
 #. Translators: Shown when no lyrics are found.
-#: src/app/components/pages/lyrics/component.rs:644
-#: src/app/components/pages/lyrics/lyrics_page.blp:118
+#: src/app/components/pages/lyrics/component.rs:609
+#: src/app/components/pages/lyrics/lyrics_page.blp:100
 msgid "No Lyrics Available"
 msgstr ""
 
-#: src/app/components/pages/lyrics/component.rs:645
-#: src/app/components/pages/lyrics/lyrics_page.blp:119
+#: src/app/components/pages/lyrics/component.rs:610
+#: src/app/components/pages/lyrics/lyrics_page.blp:101
 msgid "Lyrics couldn't be found for this song."
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:30
-#, fuzzy
-msgid "Show track lyrics"
-msgstr "En cours de lecture"
-
-#. Translators: Tab label switching to credits & liner notes
-#: src/app/components/pages/lyrics/lyrics_page.blp:35
-#, fuzzy
-msgid "About Track"
-msgstr "Morceaux"
-
-#: src/app/components/pages/lyrics/lyrics_page.blp:37
-msgid "Credits, samples, and liner notes"
-msgstr ""
-
-#. Translators: Short button label opening track on Genius
-#: src/app/components/pages/lyrics/lyrics_page.blp:56
-msgid "Genius"
-msgstr ""
-
-#. Translators: Shown when fetching song lyrics.
-#: src/app/components/pages/lyrics/lyrics_page.blp:85
-msgid "Loading Lyrics…"
-msgstr ""
-
-#. Translators: Button to retry fetching lyrics from LRCLIB.
-#: src/app/components/pages/lyrics/lyrics_page.blp:129
-msgid "Reload Lyrics"
-msgstr ""
-
-#: src/app/components/pages/lyrics/lyrics_page.blp:151
-msgid "Delay lyrics (-100 ms)"
-msgstr ""
-
-#: src/app/components/pages/lyrics/lyrics_page.blp:161
-msgid "Reset lyrics sync offset"
-msgstr ""
-
-#: src/app/components/pages/lyrics/lyrics_page.blp:171
-msgid "Advance lyrics (+100 ms)"
-msgstr ""
-
-#: src/app/components/pages/lyrics/lyrics_page.blp:187
-msgid "Reload lyrics"
-msgstr ""
-
-#: src/app/components/pages/lyrics/widget.rs:259
+#: src/app/components/pages/lyrics/widget.rs:249
 msgid "Loading credits and liner notes..."
 msgstr ""
 
-#: src/app/components/pages/lyrics/widget.rs:277
+#: src/app/components/pages/lyrics/widget.rs:267
 msgid "Credits & Liner Notes"
 msgstr ""
 
-#: src/app/components/pages/lyrics/widget.rs:283
+#: src/app/components/pages/lyrics/widget.rs:273
 msgid ""
 "Add a Genius Client Access Token in Preferences -> Integrations to load "
 "producers, writers, samples, and liner notes directly inside Canto."
 msgstr ""
 
-#: src/app/components/pages/lyrics/widget.rs:295
+#: src/app/components/pages/lyrics/widget.rs:285
 #, fuzzy
 msgid "Open Preferences"
 msgstr "Préférences"
 
-#: src/app/components/pages/lyrics/widget.rs:303
-#: src/app/components/pages/lyrics/widget.rs:332
-#: src/app/components/pages/lyrics/widget.rs:444
+#: src/app/components/pages/lyrics/widget.rs:293
+#: src/app/components/pages/lyrics/widget.rs:322
+#: src/app/components/pages/lyrics/widget.rs:434
 #, fuzzy
 msgid "Search on Genius"
 msgstr "Rechercher dans Spotify."
 
-#: src/app/components/pages/lyrics/widget.rs:320
+#: src/app/components/pages/lyrics/widget.rs:310
 msgid "Couldn't load Genius metadata"
 msgstr ""
 
-#: src/app/components/pages/lyrics/widget.rs:370
+#: src/app/components/pages/lyrics/widget.rs:360
 msgid "Credits"
 msgstr ""
 
-#: src/app/components/pages/lyrics/widget.rs:376
+#: src/app/components/pages/lyrics/widget.rs:366
 msgid "Producer(s)"
 msgstr ""
 
-#: src/app/components/pages/lyrics/widget.rs:379
+#: src/app/components/pages/lyrics/widget.rs:369
 msgid "Writer(s)"
 msgstr ""
 
-#: src/app/components/pages/lyrics/widget.rs:384
+#: src/app/components/pages/lyrics/widget.rs:374
 #, fuzzy
 msgid "Featured Artists"
 msgstr "Artistes"
 
-#: src/app/components/pages/lyrics/widget.rs:392
+#: src/app/components/pages/lyrics/widget.rs:382
 #, fuzzy
 msgid "Release Date"
 msgstr "Discographie"
 
-#: src/app/components/pages/lyrics/widget.rs:399
+#: src/app/components/pages/lyrics/widget.rs:389
 msgid "Samples & Connections"
 msgstr ""
 
-#: src/app/components/pages/lyrics/widget.rs:414
+#: src/app/components/pages/lyrics/widget.rs:404
 msgid "Liner Notes"
 msgstr ""
 
-#: src/app/components/pages/lyrics/widget.rs:431
+#: src/app/components/pages/lyrics/widget.rs:421
 msgid "No detailed credits or liner notes were found on Genius for this track."
 msgstr ""
 
-#: src/app/components/pages/lyrics/widget.rs:442
+#: src/app/components/pages/lyrics/widget.rs:432
 msgid "Open Verified Genius Page"
 msgstr ""
+
+#. Translators: Tooltip on the cover art in the player bar.
+#: src/app/components/pages/now_playing/model.rs:76
+#: src/app/components/shell/playback/playback_info.blp:23
+#, fuzzy
+msgid "Go to Album"
+msgstr "Albums"
 
 #. translators: Title of the queue, listing what plays next, when it's shown beside the content.
 #. Translators: Tooltip of the playback bar button that shows or hides the queue.
 #. Translators: Tab label for the queue in utility panel.
-#: src/app/components/pages/now_playing/widget.rs:42
 #: src/app/components/pages/queue/component.rs:58
 #: src/app/components/shell/playback/playback_widget.blp:183
 #: src/app/components/shell/utility_panel/utility_panel.blp:41
 msgid "Queue"
 msgstr ""
-
-#. Translators: Button label. Exits selection mode.
-#. translators: Button of a dialog asking to confirm something that cannot be undone: leaves things as they are.
-#. translators: Button of the dialog asking to confirm clearing the play queue: keeps the queue.
-#: src/app/components/pages/queue/queue_page.blp:19
-#: src/app/components/shell/clipboard_import/mod.rs:116
-#: src/app/components/shell/headerbar/headerbar.blp:116
-#: src/app/components/shell/utility_panel/utility_panel.blp:71
-#: src/app/components/utils.rs:226
-#: src/app/components/widgets/queue_list/model.rs:263
-msgid "Cancel"
-msgstr "Annuler"
-
-#. Translators: Button label. Selects all visible songs.
-#. translators: Button label. Selects all visible songs.
-#. Translators: Button label. Selects all visible songs.
-#. translators: Button label. Selects all visible songs.
-#. Translators: Button label. Selects all visible songs.
-#. translators: Button label. Selects all visible songs.
-#: src/app/components/pages/queue/queue_page.blp:34
-#: src/app/components/pages/queue/widget.rs:113
-#: src/app/components/shell/headerbar/headerbar.blp:129
-#: src/app/components/shell/headerbar/widget.rs:666
-#: src/app/components/shell/utility_panel/utility_panel.blp:79
-#: src/app/components/shell/utility_panel/widget.rs:142
-msgid "Select All"
-msgstr "Tout sélectionner"
-
-#. Translators: Shown in place of the queue when nothing plays or is queued.
-#: src/app/components/pages/queue/queue_page.blp:60
-msgid "Nothing Queued"
-msgstr ""
-
-#. translators: Button label. Deselects all songs, once they are all selected.
-#: src/app/components/pages/queue/widget.rs:110
-#: src/app/components/shell/headerbar/widget.rs:663
-#: src/app/components/shell/utility_panel/widget.rs:139
-#, fuzzy
-msgid "Deselect All"
-msgstr "Tout sélectionner"
 
 #: src/app/components/pages/saved_albums/model.rs:109
 msgid "You have no saved albums."
@@ -724,6 +523,837 @@ msgstr "Vos listes de lectures apparaîtrons ici."
 msgid "All Tracks"
 msgstr "Morceaux"
 
+#: src/app/components/pages/search/search.rs:267
+msgid "Show All"
+msgstr ""
+
+#. Translators: This refers to a number of tracks
+#: src/app/components/pages/search/search.rs:395
+#: src/app/components/pages/details_album/release_details.blp:56
+#: src/app/components/pages/shortcuts/shortcuts.blp:104
+msgid "Tracks"
+msgstr "Morceaux"
+
+#. translators: This is a navigation panel entry to browse to followed artists.
+#: src/app/components/pages/search/search.rs:432
+#: src/app/components/shell/command_palette/widget.rs:507
+#: src/app/components/shell/navigation/factory.rs:82
+#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:84
+#: src/app/components/pages/shortcuts/shortcuts.blp:89
+msgid "Artists"
+msgstr "Artistes"
+
+#: src/app/components/pages/search/search.rs:442
+#: src/app/models/card_enums.rs:173
+#: src/app/components/pages/shortcuts/shortcuts.blp:94
+msgid "Albums"
+msgstr "Albums"
+
+#. translators: This is a navigation panel entry that marks that the entries below are playlists.
+#: src/app/components/pages/search/search.rs:452
+#: src/app/components/shell/command_palette/widget.rs:516
+#: src/app/components/shell/navigation/factory.rs:71
+#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:82
+#: src/app/components/pages/shortcuts/shortcuts.blp:99
+msgid "Playlists"
+msgstr "Listes de lecture"
+
+#: src/app/components/pages/settings/settings.rs:310
+msgid "Unsupported due to legal restrictions."
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:889
+msgid "Experimental Features"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:891
+msgid ""
+"These features are still in development and may be unstable or incomplete."
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1034
+#: src/app/components/pages/settings/settings.rs:1137
+msgid "Connected to Last.fm"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1036
+msgid "Connected as"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1047
+msgid "Step 1 opened in browser. Approve access, then click 2. Complete."
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1049
+msgid "Click 1. Open Auth to approve Canto in your browser"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1051
+#: src/app/components/pages/settings/settings.blp:502
+msgid "Enter API Key and Secret above, then connect your account"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1068
+#: src/app/components/pages/settings/settings.rs:1115
+msgid "Enter your Last.fm API Key and Secret first"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1094
+msgid ""
+"Could not start Last.fm authorization. Check API credentials and network."
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1107
+msgid "Run Step 1 first to open browser authorization"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1139
+msgid "Connected to Last.fm as"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1146
+msgid ""
+"Last.fm authorization is not approved yet. Approve in browser, then try Step "
+"2 again."
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1174
+msgid "Locked by a Family plan parental control and cannot be changed here."
+msgstr ""
+
+#. translators: Genius form field that should be left untouched.
+#: src/app/components/pages/settings/settings.rs:1306
+msgid "Keep the default"
+msgstr ""
+
+#. translators: Tooltip of the button copying a value for a form field.
+#: src/app/components/pages/settings/settings.rs:1315
+#, fuzzy
+msgid "Copy"
+msgstr "Copier le lien"
+
+#. translators: Toast after copying a value; {} is the value.
+#: src/app/components/pages/settings/settings.rs:1322
+#, rust-format
+msgid "Copied {}"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1344
+msgid ""
+"1. Click the button below to open the New API Client form on Genius (sign in "
+"if asked)."
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1347
+msgid "2. Fill in the form like this, then click 'Save':"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1359
+msgid ""
+"3. On the next page, click 'Generate Access Token' and copy the Client "
+"Access Token. Canto doesn't need the Client ID or Client Secret."
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1362
+msgid "4. Back in Canto, paste it into Client Access Token, under Genius."
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1369
+#, fuzzy
+msgid "Open Genius"
+msgstr "Rechercher dans Spotify."
+
+#: src/app/components/pages/settings/settings.rs:1377
+#: src/app/components/pages/settings/settings.rs:1470
+#: src/app/components/shell/window/close_dialog.rs:67
+msgid "Close"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1389
+msgid "How to Get a Genius Token"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1414
+msgid "How to Set Up Scrobbling"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1427
+msgid "Last.fm (API Key + Browser Auth)"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1433
+msgid ""
+"1. Open last.fm/api/account/create, create an API application, and copy the "
+"API Key and Shared Secret into Canto."
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1436
+msgid ""
+"2. Click '1. Open Auth' to open Last.fm in your browser and approve access "
+"for Canto."
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1439
+msgid ""
+"3. Return to Canto and click '2. Complete' to store your persistent session "
+"key."
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1442
+msgid "ListenBrainz (User Token)"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1449
+msgid ""
+"Open listenbrainz.org/settings, copy your User Token, and paste it into "
+"ListenBrainz User Token."
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1456
+msgid "Open Last.fm API"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.rs:1463
+msgid "Open ListenBrainz"
+msgstr ""
+
+#: src/app/components/shell/clipboard_import/mod.rs:91
+msgid "Open Spotify link?"
+msgstr ""
+
+#: src/app/components/shell/clipboard_import/mod.rs:95
+msgid "There’s a Spotify album link in your clipboard. Open it in Canto?"
+msgstr ""
+
+#: src/app/components/shell/clipboard_import/mod.rs:99
+msgid "There’s a Spotify artist link in your clipboard. Open it in Canto?"
+msgstr ""
+
+#: src/app/components/shell/clipboard_import/mod.rs:103
+msgid "There’s a Spotify playlist link in your clipboard. Open it in Canto?"
+msgstr ""
+
+#: src/app/components/shell/clipboard_import/mod.rs:107
+msgid "There’s a Spotify profile link in your clipboard. Open it in Canto?"
+msgstr ""
+
+#: src/app/components/shell/clipboard_import/mod.rs:111
+msgid "There’s a Spotify track link in your clipboard. Open it in Canto?"
+msgstr ""
+
+#. translators: Button of the dialog asking to confirm clearing the play queue: keeps the queue.
+#. Translators: Button label. Exits selection mode.
+#. translators: Button of a dialog asking to confirm something that cannot be undone: leaves things as they are.
+#: src/app/components/shell/clipboard_import/mod.rs:116
+#: src/app/components/widgets/queue_list/model.rs:263
+#: src/app/components/pages/queue/queue_page.blp:19
+#: src/app/components/shell/headerbar/headerbar.blp:116
+#: src/app/components/shell/utility_panel/utility_panel.blp:71
+#: src/app/components/utils.rs:226
+msgid "Cancel"
+msgstr "Annuler"
+
+#: src/app/components/shell/clipboard_import/mod.rs:117
+msgid "Open"
+msgstr ""
+
+#: src/app/components/shell/command_palette/command_palette.blp:5
+#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:274
+msgid "Command Palette"
+msgstr ""
+
+#. Translators: Placeholder inside the Ctrl+K Command Palette search box.
+#: src/app/components/shell/command_palette/command_palette.blp:28
+msgid "Jump to page, theme, device, timer, or search Spotify…"
+msgstr ""
+
+#. Translators: Shown in Ctrl+K Command Palette when no command matches the query.
+#: src/app/components/shell/command_palette/command_palette.blp:67
+msgid "No matching commands"
+msgstr ""
+
+#: src/app/components/shell/command_palette/command_palette.blp:68
+msgid "Try a different keyword or search for an artist, album, or song."
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:464
+#: src/app/components/pages/shortcuts/shortcuts.blp:61
+#, fuzzy
+msgid "Navigation"
+msgstr "Normale"
+
+#: src/app/components/shell/command_palette/widget.rs:465
+msgid "Theme"
+msgstr "Thème"
+
+#: src/app/components/shell/command_palette/widget.rs:466
+msgid "Action"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:467
+#: src/app/components/shell/command_palette/widget.rs:587
+#: src/app/components/sleep_timer.rs:45 src/app/components/sleep_timer.rs:49
+#: src/app/components/shell/playback/playback_widget.blp:198
+#: src/app/components/shell/playback/playback_widget.blp:238
+msgid "Sleep Timer"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:468
+#, fuzzy
+msgid "Device"
+msgstr "Appareil ALSA"
+
+#: src/app/components/shell/command_palette/widget.rs:471
+msgid "Home"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:472
+msgid "Go to Now Playing overview"
+msgstr ""
+
+#. translators: This is a navigation panel entry to browse to saved albums.
+#: src/app/components/shell/command_palette/widget.rs:480
+#: src/app/components/shell/navigation/factory.rs:55
+#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:76
+#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:148
+msgid "Library"
+msgstr "Bibliothèque"
+
+#: src/app/components/shell/command_palette/widget.rs:481
+#, fuzzy
+msgid "Browse saved albums"
+msgstr "Aucun album dans votre bibliothèque."
+
+#: src/app/components/shell/command_palette/widget.rs:490
+#, fuzzy
+msgid "Open search page"
+msgstr "Saisissez un terme à rechercher."
+
+#: src/app/components/shell/command_palette/widget.rs:498
+msgid "Liked Songs"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:499
+#, fuzzy
+msgid "Open your saved tracks"
+msgstr "Titres aimés"
+
+#: src/app/components/shell/command_palette/widget.rs:508
+#, fuzzy
+msgid "Open followed artists"
+msgstr "Toutes les listes de lecture"
+
+#: src/app/components/shell/command_palette/widget.rs:517
+#, fuzzy
+msgid "Open saved playlists"
+msgstr "Aucune liste de lecture enregistrée."
+
+#: src/app/components/shell/command_palette/widget.rs:525
+msgid "Settings"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:526
+#, fuzzy
+msgid "Open Preferences dialog"
+msgstr "Préférences"
+
+#: src/app/components/shell/command_palette/widget.rs:536
+msgid "Toggle Queue"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:537
+msgid "Show or hide the playback queue panel"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:545
+msgid "Toggle Lyrics"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:546
+msgid "Show or hide Lyrics and Track Notes"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:568
+msgid "Sleep Timer: Off"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:569
+msgid "Disable active sleep timer"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:577
+msgid "Sleep Timer: End of Current Track"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:578
+msgid "Pause playback when this song finishes"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:588
+msgid "Pause playback after"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:588
+msgid "minutes"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:599
+#: src/app/components/pages/settings/settings.blp:37
+msgid "Omarchy Live"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:600
+msgid "Neutral"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:601
+#: src/app/components/pages/settings/settings.blp:39
+msgid "Spotify Green"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:602
+#: src/app/components/pages/settings/settings.blp:40
+#, fuzzy
+msgid "OLED Dark"
+msgstr "Sombre"
+
+#: src/app/components/shell/command_palette/widget.rs:603
+#: src/app/components/pages/settings/settings.blp:41
+msgid "Warm Vinyl"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:604
+#: src/app/components/pages/settings/settings.blp:42
+msgid "Purple Night"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:609
+msgid "Active theme"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:611
+msgid "Switch theme live"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:628
+#: src/app/components/shell/device_selector/widget.rs:142
+#: src/app/components/shell/device_selector/device_selector.blp:9
+#: src/app/components/shell/device_selector/device_selector.blp:37
+msgid "This Device"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:630
+msgid "Active playback device"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:632
+msgid "Transfer playback locally"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:657
+msgid "Active Connect device"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:659
+msgid "Transfer playback to device"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:671
+#: src/app/components/pages/settings/settings.blp:253
+#, fuzzy
+msgid "Track"
+msgstr "Morceaux"
+
+#: src/app/components/shell/command_palette/widget.rs:713
+msgid "Open artist page"
+msgstr ""
+
+#: src/app/components/sleep_timer.rs:33
+msgid "End"
+msgstr ""
+
+#: src/app/components/sleep_timer.rs:46
+msgid "Sleep Timer: Pause at end of current track"
+msgstr ""
+
+#: src/app/components/sleep_timer.rs:196
+msgid "Sleep timer paused playback"
+msgstr ""
+
+#: src/app/components/track_radio.rs:36
+msgid "Could not find similar tracks for this song"
+msgstr ""
+
+#: src/app/components/track_radio.rs:49 src/app/components/track_radio.rs:69
+#: src/app/components/track_radio.rs:140
+msgid "Radio"
+msgstr ""
+
+#: src/app/components/track_radio.rs:55 src/app/components/track_radio.rs:76
+#, fuzzy
+msgid "Started Track Radio"
+msgstr "Titres aimés"
+
+#: src/app/components/track_radio.rs:81
+msgid "Could not start Track Radio right now"
+msgstr ""
+
+#: src/app/components/track_radio.rs:147
+msgid "Playing similar tracks"
+msgstr ""
+
+#. translators: Shown in a toast after closing settings when a changed setting needs an app restart.
+#: src/app/components/shell/notification/mod.rs:93
+msgid "Please restart the app to apply the changes"
+msgstr ""
+
+#. translators: Button in the toast that restarts the app to apply changed settings.
+#: src/app/components/shell/notification/mod.rs:95
+msgid "Restart"
+msgstr ""
+
+#: src/app/components/shell/notification/mod.rs:111
+msgid "Connection lost. Trying to reconnect…"
+msgstr ""
+
+#. translators: Shown in a toast when the user presses Previous but there is no earlier track to play.
+#: src/app/components/shell/notification/mod.rs:137
+msgid "No previous track"
+msgstr ""
+
+#: src/app/components/shell/playback/playback_controls.rs:69
+#: src/app/components/widgets/details_page/header.rs:247
+msgid "Pause"
+msgstr "Pause"
+
+#. translators: Subtle hint displayed below "No Track Playing" in the bottom player bar
+#: src/app/components/shell/playback/playback_info.rs:99
+#, fuzzy
+msgid "Select a track to play"
+msgstr "Titres aimés"
+
+#: src/app/components/shell/navigation_panel/model.rs:87
+msgid "Unnamed Playlist"
+msgstr "Liste de lecture sans titre"
+
+#: src/app/components/shell/navigation_panel/model.rs:439
+#, fuzzy
+msgid "Pinned Playlist"
+msgstr "Liste de lecture sans titre"
+
+#: src/app/components/shell/navigation_panel/model.rs:440
+#, fuzzy
+msgid "Pinned Album"
+msgstr "Voir l'album"
+
+#: src/app/components/shell/navigation_panel/model.rs:441
+#, fuzzy
+msgid "Pinned Artist"
+msgstr "Artistes"
+
+#: src/app/components/shell/navigation_panel/model.rs:442
+#, fuzzy
+msgid "Pinned Track"
+msgstr "Titres aimés"
+
+#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:130
+msgid "All Playlists"
+msgstr "Toutes les listes de lecture"
+
+#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:139
+msgid "Pinned"
+msgstr ""
+
+#. Translators: title of the dialog that creates a new playlist
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:220
+#: src/app/components/widgets/playlist_dialog/playlist_dialog.blp:7
+msgid "New Playlist"
+msgstr "Nouvelle liste de lecture"
+
+#: src/app/components/shell/window/close_dialog.rs:12
+msgid "Canto is Still Playing"
+msgstr ""
+
+#: src/app/components/shell/window/close_dialog.rs:13
+msgid "How should Canto close while audio is playing?"
+msgstr ""
+
+#: src/app/components/shell/window/close_dialog.rs:16
+#: src/app/components/pages/settings/settings.blp:101
+#, fuzzy
+msgid "Run in Background"
+msgstr "Gestionnaire de l'audio"
+
+#: src/app/components/shell/window/close_dialog.rs:17
+#: src/app/components/pages/settings/settings.blp:102
+#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:313
+msgid "Quit"
+msgstr "Quitter"
+
+#: src/app/components/shell/window/close_dialog.rs:24
+msgid "Remember my choice"
+msgstr ""
+
+#: src/app/components/widgets/details_page/header.rs:406
+#: src/app/components/widgets/details_page/header.blp:166
+#, fuzzy
+msgid "Add to Library"
+msgstr "Enregistrer dans la bibliothèque"
+
+#: src/app/components/widgets/details_page/model.rs:373
+msgid "Link copied to clipboard"
+msgstr ""
+
+#: src/app/components/widgets/track_list/track_row.rs:371
+msgid "Explicit Content is Disabled"
+msgstr ""
+
+#: src/app/components/widgets/track_list/track_row.rs:373
+msgid "Not Available in Your Region"
+msgstr ""
+
+#: src/app/components/widgets/selection/component.rs:58
+msgid "Tracks saved!"
+msgstr "Pistes enregistrées !"
+
+#. translators: Title of the dialog asking to confirm clearing the play queue, from its trash button.
+#: src/app/components/widgets/queue_list/model.rs:258
+msgid "Clear the Queue?"
+msgstr ""
+
+#. translators: Body of the dialog asking to confirm clearing the play queue.
+#: src/app/components/widgets/queue_list/model.rs:260
+msgid "All tracks added to the queue will be removed."
+msgstr ""
+
+#. translators: Button of the dialog asking to confirm clearing the play queue: clears it.
+#. Translators: Label for the button that clears the cache
+#: src/app/components/widgets/queue_list/model.rs:265
+#: src/app/components/pages/settings/settings.blp:435
+msgid "Clear"
+msgstr ""
+
+#. translators: Header shown above the tracks of disc {} in a
+#. multi-disc album.
+#: src/app/components/widgets/track_list/track_list.rs:374
+#, rust-format
+msgid "Disc {}"
+msgstr ""
+
+#. Translators: Sort option. Shows items in the order they were saved,
+#. with the most recently added items appearing first.
+#: src/app/models/card_enums.rs:51
+msgid "Recently Added"
+msgstr ""
+
+#. Translators: Sort option. Orders items alphabetically by their title
+#. (A-Z, case-insensitive).
+#: src/app/models/card_enums.rs:54
+msgid "Alphabetic"
+msgstr ""
+
+#. Translators: Sort option. Groups items by their artist or creator name,
+#. sorted alphabetically.
+#: src/app/models/card_enums.rs:57
+#, fuzzy
+msgid "Creator"
+msgstr "Créer"
+
+#. Translators: Sort option. Orders items by their release date, with the
+#. newest releases appearing first.
+#: src/app/models/card_enums.rs:60
+#, fuzzy
+msgid "Date Released"
+msgstr "Date de publication"
+
+#. Translators: Sort option. Orders items by their popularity score, with
+#. the most popular items appearing first.
+#: src/app/models/card_enums.rs:63
+msgid "Popularity"
+msgstr ""
+
+#: src/app/models/card_enums.rs:174
+msgid "Singles"
+msgstr ""
+
+#: src/app/models/card_enums.rs:175
+msgid "EPs"
+msgstr ""
+
+#: src/app/models/card_enums.rs:176
+msgid "Compilations"
+msgstr ""
+
+#: src/app/mod.rs:259
+#, fuzzy
+msgid "No track is currently playing"
+msgstr "En cours de lecture"
+
+#: src/connect/player.rs:87
+msgid "Connection to device lost!"
+msgstr ""
+
+#: src/connect/player.rs:331
+msgid "Starting Spotify in the background…"
+msgstr ""
+
+#: src/connect/player.rs:338
+msgid "Could not start the Spotify app. Is it installed?"
+msgstr ""
+
+#: src/connect/player.rs:350
+msgid "The Spotify app did not show up as a device. Try again in a moment."
+msgstr ""
+
+#. translators: Shown when a Spotify Connect speaker is asleep or unreachable.
+#: src/connect/player.rs:438
+msgid ""
+"Spotify Connect device is asleep or inactive. Start playback on the device "
+"first."
+msgstr ""
+
+#. Translators: Reason shown to the session manager for keeping
+#. the device awake while music plays.
+#: src/inhibitor.rs:110
+msgid "Playing music"
+msgstr ""
+
+#: src/main.rs:102
+msgid "Failed to open link!"
+msgstr "Échec de l'ouverture du lien."
+
+#: src/player/mod.rs:139
+msgid "Playback is Temporarily Unavailable"
+msgstr ""
+
+#: crates/riff-api/src/defaults.rs:36
+#, fuzzy
+msgid "Untitled Album"
+msgstr "Voir l'album"
+
+#: crates/riff-api/src/defaults.rs:40
+#, fuzzy
+msgid "Untitled Playlist"
+msgstr "Liste de lecture sans titre"
+
+#: crates/riff-api/src/defaults.rs:44
+msgid "Untitled"
+msgstr ""
+
+#: crates/riff-api/src/defaults.rs:48 crates/riff-api/src/models.rs:149
+#, fuzzy
+msgid "Unknown Artist"
+msgstr "Artistes"
+
+#: crates/riff-api/src/defaults.rs:52
+msgid "Unknown User"
+msgstr ""
+
+#. Translators: This refers to a music label
+#: src/app/components/pages/details_album/release_details.blp:34
+msgid "Label"
+msgstr "Label"
+
+#. Translators: This refers to a release date
+#: src/app/components/pages/details_album/release_details.blp:45
+msgid "Released"
+msgstr "Date de publication"
+
+#: src/app/components/pages/details_album/release_details.blp:65
+msgid "Copyright"
+msgstr "Copyright"
+
+#: src/app/components/pages/login/login.blp:49
+msgid "Welcome to Canto"
+msgstr ""
+
+#. Translators: Login window subtitle
+#: src/app/components/pages/login/login.blp:56
+#, fuzzy
+msgid "Log in with your Spotify Account"
+msgstr "Connexion à Spotify Premium"
+
+#. Translators: Premium requirement notice shown on the login page.
+#: src/app/components/pages/login/login.blp:86
+msgid "A Spotify Premium subscription is required."
+msgstr ""
+
+#. Translators: This error is shown when a non-premium account is detected.
+#: src/app/components/pages/login/login.blp:108
+msgid "Your account does not have a Spotify Premium subscription."
+msgstr ""
+
+#. Translators: This error is shown when login fails. Browser extensions such as ad or privacy blockers can break the login page.
+#: src/app/components/pages/login/login.blp:130
+msgid ""
+"Login failed. Please check your connection and browser extensions before "
+"trying again."
+msgstr ""
+
+#. Translators: Log in button label
+#: src/app/components/pages/login/login.blp:141
+msgid "Log in with Spotify…"
+msgstr ""
+
+#: src/app/components/pages/lyrics/lyrics_page.blp:30
+#, fuzzy
+msgid "Show track lyrics"
+msgstr "En cours de lecture"
+
+#. Translators: Tab label switching to credits & liner notes
+#: src/app/components/pages/lyrics/lyrics_page.blp:35
+#, fuzzy
+msgid "About Track"
+msgstr "Morceaux"
+
+#: src/app/components/pages/lyrics/lyrics_page.blp:37
+msgid "Credits, samples, and liner notes"
+msgstr ""
+
+#. Translators: Shown when fetching song lyrics.
+#: src/app/components/pages/lyrics/lyrics_page.blp:67
+msgid "Loading Lyrics…"
+msgstr ""
+
+#. Translators: Button to retry fetching lyrics from LRCLIB.
+#: src/app/components/pages/lyrics/lyrics_page.blp:111
+msgid "Reload Lyrics"
+msgstr ""
+
+#: src/app/components/pages/lyrics/lyrics_page.blp:133
+msgid "Delay lyrics (-100 ms)"
+msgstr ""
+
+#: src/app/components/pages/lyrics/lyrics_page.blp:143
+msgid "Reset lyrics sync offset"
+msgstr ""
+
+#: src/app/components/pages/lyrics/lyrics_page.blp:153
+msgid "Advance lyrics (+100 ms)"
+msgstr ""
+
+#: src/app/components/pages/lyrics/lyrics_page.blp:169
+msgid "Reload lyrics"
+msgstr ""
+
+#. Translators: Button label. Selects all visible songs.
+#. translators: Button label. Selects all visible songs.
+#. Translators: Button label. Selects all visible songs.
+#. translators: Button label. Selects all visible songs.
+#: src/app/components/pages/queue/queue_page.blp:34
+#: src/app/components/shell/headerbar/headerbar.blp:129
+#: src/app/components/pages/queue/widget.rs:113
+#: src/app/components/shell/headerbar/widget.rs:706
+#: src/app/components/shell/utility_panel/utility_panel.blp:79
+#: src/app/components/shell/utility_panel/widget.rs:142
+msgid "Select All"
+msgstr "Tout sélectionner"
+
+#. Translators: Shown in place of the queue when nothing plays or is queued.
+#: src/app/components/pages/queue/queue_page.blp:60
+msgid "Nothing Queued"
+msgstr ""
+
 #: src/app/components/pages/search/search.blp:29
 msgid "Filter"
 msgstr ""
@@ -761,34 +1391,6 @@ msgstr "Rechercher dans Spotify."
 #: src/app/components/pages/search/search.blp:125
 msgid "Type to search"
 msgstr "Saisissez un terme à rechercher."
-
-#: src/app/components/pages/search/search.rs:267
-msgid "Show All"
-msgstr ""
-
-#. translators: This is a navigation panel entry to browse to followed artists.
-#: src/app/components/pages/search/search.rs:432
-#: src/app/components/pages/shortcuts/shortcuts.blp:89
-#: src/app/components/shell/command_palette/widget.rs:478
-#: src/app/components/shell/navigation/factory.rs:82
-#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:84
-msgid "Artists"
-msgstr "Artistes"
-
-#: src/app/components/pages/search/search.rs:442
-#: src/app/components/pages/shortcuts/shortcuts.blp:94
-#: src/app/models/card_enums.rs:173
-msgid "Albums"
-msgstr "Albums"
-
-#. translators: This is a navigation panel entry that marks that the entries below are playlists.
-#: src/app/components/pages/search/search.rs:452
-#: src/app/components/pages/shortcuts/shortcuts.blp:99
-#: src/app/components/shell/command_palette/widget.rs:487
-#: src/app/components/shell/navigation/factory.rs:71
-#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:82
-msgid "Playlists"
-msgstr "Listes de lecture"
 
 #: src/app/components/pages/settings/equalizer.blp:5
 msgid "Equalizer"
@@ -924,34 +1526,8 @@ msgstr "Thème"
 msgid "Applies immediately across the interface"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:37
-#: src/app/components/shell/command_palette/widget.rs:570
-msgid "Omarchy Live"
-msgstr ""
-
 #: src/app/components/pages/settings/settings.blp:38
 msgid "Neutral (Adwaita)"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.blp:39
-#: src/app/components/shell/command_palette/widget.rs:572
-msgid "Spotify Green"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.blp:40
-#: src/app/components/shell/command_palette/widget.rs:573
-#, fuzzy
-msgid "OLED Dark"
-msgstr "Sombre"
-
-#: src/app/components/pages/settings/settings.blp:41
-#: src/app/components/shell/command_palette/widget.rs:574
-msgid "Warm Vinyl"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.blp:42
-#: src/app/components/shell/command_palette/widget.rs:575
-msgid "Purple Night"
 msgstr ""
 
 #. Translators: Title for light/dark appearance mode when using the Neutral theme
@@ -1014,18 +1590,6 @@ msgstr ""
 #: src/app/components/pages/settings/settings.blp:100
 msgid "Ask"
 msgstr ""
-
-#: src/app/components/pages/settings/settings.blp:101
-#: src/app/components/shell/window/close_dialog.rs:16
-#, fuzzy
-msgid "Run in Background"
-msgstr "Gestionnaire de l'audio"
-
-#: src/app/components/pages/settings/settings.blp:102
-#: src/app/components/pages/shortcuts/shortcuts.blp:133
-#: src/app/components/shell/window/close_dialog.rs:17 src/window.blp:312
-msgid "Quit"
-msgstr "Quitter"
 
 #. Translators: Title for the keep device awake toggle in preferences
 #: src/app/components/pages/settings/settings.blp:110
@@ -1184,12 +1748,6 @@ msgstr ""
 msgid "Auto"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:253
-#: src/app/components/shell/command_palette/widget.rs:642
-#, fuzzy
-msgid "Track"
-msgstr "Morceaux"
-
 #: src/app/components/pages/settings/settings.blp:260
 msgid "Normalisation Method"
 msgstr ""
@@ -1316,253 +1874,104 @@ msgstr ""
 msgid "Remove all cached data and images stored on disk"
 msgstr ""
 
-#. Translators: Label for the button that clears the cache
-#. translators: Button of the dialog asking to confirm clearing the play queue: clears it.
-#: src/app/components/pages/settings/settings.blp:435
-#: src/app/components/widgets/queue_list/model.rs:265
-msgid "Clear"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.blp:447
+#: src/app/components/pages/settings/settings.blp:448
 msgid "Integrations"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:451
+#: src/app/components/pages/settings/settings.blp:452
 msgid "Genius (Credits and Liner Notes)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:452
+#: src/app/components/pages/settings/settings.blp:453
 msgid ""
 "Optional Client Access Token to fetch producers, writers, samples, and liner "
-"notes inside the Lyrics panel."
+"notes in the About Track tab."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:455
+#: src/app/components/pages/settings/settings.blp:456
 msgid "How to get token"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:464
+#: src/app/components/pages/settings/settings.blp:465
 msgid "Client Access Token"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:469
+#: src/app/components/pages/settings/settings.blp:470
 msgid "Scrobbling (Last.fm and ListenBrainz)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:470
+#: src/app/components/pages/settings/settings.blp:471
 msgid ""
 "Track played songs to Last.fm and/or ListenBrainz with automatic offline "
 "retry."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:473
+#: src/app/components/pages/settings/settings.blp:474
 msgid "How to set up scrobbling"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:482
+#: src/app/components/pages/settings/settings.blp:483
 msgid "Enable Scrobbling"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:483
+#: src/app/components/pages/settings/settings.blp:484
 msgid "Send Now Playing updates and scrobble tracks after listening"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:487
+#: src/app/components/pages/settings/settings.blp:488
 msgid "Scrobble Connect Devices"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:488
+#: src/app/components/pages/settings/settings.blp:489
 msgid "Also track plays from active Spotify Connect speakers and phones"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:492
+#: src/app/components/pages/settings/settings.blp:493
 msgid "Last.fm API Key"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:496
+#: src/app/components/pages/settings/settings.blp:497
 msgid "Last.fm API Secret"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:500
+#: src/app/components/pages/settings/settings.blp:501
 msgid "Authorize Last.fm"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:501
-#: src/app/components/pages/settings/settings.rs:1051
-msgid "Enter API Key and Secret above, then connect your account"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.blp:509
+#: src/app/components/pages/settings/settings.blp:510
 msgid "1. Open Auth"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:513
+#: src/app/components/pages/settings/settings.blp:514
 msgid "2. Complete"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:518
+#: src/app/components/pages/settings/settings.blp:519
 msgid "Disconnect"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:529
+#: src/app/components/pages/settings/settings.blp:530
 msgid "ListenBrainz User Token"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:534
+#: src/app/components/pages/settings/settings.blp:535
 msgid "Visual Bridge (External Visualizers)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:535
+#: src/app/components/pages/settings/settings.blp:536
 msgid ""
 "Opt-in lightweight local state and audio RMS/peak output for external 3D "
 "visualizers such as Chaosphere."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:538
+#: src/app/components/pages/settings/settings.blp:539
 msgid "Enable Visual Bridge"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:539
+#: src/app/components/pages/settings/settings.blp:540
 msgid ""
 "Write active track, theme colors, and audio energy levels to "
 "$XDG_RUNTIME_DIR/canto/state.json"
-msgstr ""
-
-#. Translators: Toast shown after the user clears the cache in settings.
-#: src/app/components/pages/settings/settings_model.rs:50
-msgid "Cache cleared"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:310
-msgid "Unsupported due to legal restrictions."
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:889
-msgid "Experimental Features"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:891
-msgid ""
-"These features are still in development and may be unstable or incomplete."
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1034
-#: src/app/components/pages/settings/settings.rs:1137
-msgid "Connected to Last.fm"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1036
-msgid "Connected as"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1047
-msgid "Step 1 opened in browser. Approve access, then click 2. Complete."
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1049
-msgid "Click 1. Open Auth to approve Canto in your browser"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1068
-#: src/app/components/pages/settings/settings.rs:1115
-msgid "Enter your Last.fm API Key and Secret first"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1094
-msgid ""
-"Could not start Last.fm authorization. Check API credentials and network."
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1107
-msgid "Run Step 1 first to open browser authorization"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1139
-msgid "Connected to Last.fm as"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1146
-msgid ""
-"Last.fm authorization is not approved yet. Approve in browser, then try Step "
-"2 again."
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1174
-msgid "Locked by a Family plan parental control and cannot be changed here."
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1283
-msgid "How to Get a Genius Token"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1297
-msgid "1. Open genius.com/api-clients and sign in to your Genius account."
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1300
-msgid ""
-"2. Click 'New API Client', enter an app name (such as Canto) and any local "
-"redirect URL (for example http://localhost), then save."
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1303
-msgid ""
-"3. Click 'Generate Access Token' and paste the Client Access Token into "
-"Canto."
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1310
-msgid "Open genius.com/api-clients"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1318
-#: src/app/components/pages/settings/settings.rs:1392
-#: src/app/components/shell/window/close_dialog.rs:67
-msgid "Close"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1336
-msgid "How to Set Up Scrobbling"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1349
-msgid "Last.fm (API Key + Browser Auth)"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1355
-msgid ""
-"1. Open last.fm/api/account/create, create an API application, and copy the "
-"API Key and Shared Secret into Canto."
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1358
-msgid ""
-"2. Click '1. Open Auth' to open Last.fm in your browser and approve access "
-"for Canto."
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1361
-msgid ""
-"3. Return to Canto and click '2. Complete' to store your persistent session "
-"key."
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1364
-msgid "ListenBrainz (User Token)"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1371
-msgid ""
-"Open listenbrainz.org/settings, copy your User Token, and paste it into "
-"ListenBrainz User Token."
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1378
-msgid "Open Last.fm API"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.rs:1385
-msgid "Open ListenBrainz"
 msgstr ""
 
 #: src/app/components/pages/shortcuts/shortcuts.blp:7
@@ -1610,18 +2019,6 @@ msgstr ""
 msgid "Repeat"
 msgstr "Répéter"
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:61
-#: src/app/components/shell/command_palette/widget.rs:435
-#, fuzzy
-msgid "Navigation"
-msgstr "Normale"
-
-#: src/app/components/pages/shortcuts/shortcuts.blp:69
-#: src/app/components/shell/command_palette/command_palette.blp:5
-#: src/window.blp:273
-msgid "Command Palette"
-msgstr ""
-
 #: src/app/components/pages/shortcuts/shortcuts.blp:74
 #, fuzzy
 msgid "Go Back"
@@ -1637,212 +2034,16 @@ msgstr ""
 msgid "Toggle Sidebar"
 msgstr ""
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:118 src/window.blp:188
+#: src/app/components/pages/shortcuts/shortcuts.blp:118 src/window.blp:189
 msgid "Main Menu"
 msgstr ""
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:285
+#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:286
 msgid "Preferences"
 msgstr "Préférences"
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:290
+#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:291
 msgid "Keyboard Shortcuts"
-msgstr ""
-
-#: src/app/components/shell/clipboard_import/mod.rs:91
-msgid "Open Spotify link?"
-msgstr ""
-
-#: src/app/components/shell/clipboard_import/mod.rs:95
-msgid "There’s a Spotify album link in your clipboard. Open it in Canto?"
-msgstr ""
-
-#: src/app/components/shell/clipboard_import/mod.rs:99
-msgid "There’s a Spotify artist link in your clipboard. Open it in Canto?"
-msgstr ""
-
-#: src/app/components/shell/clipboard_import/mod.rs:103
-msgid "There’s a Spotify playlist link in your clipboard. Open it in Canto?"
-msgstr ""
-
-#: src/app/components/shell/clipboard_import/mod.rs:107
-msgid "There’s a Spotify profile link in your clipboard. Open it in Canto?"
-msgstr ""
-
-#: src/app/components/shell/clipboard_import/mod.rs:111
-msgid "There’s a Spotify track link in your clipboard. Open it in Canto?"
-msgstr ""
-
-#: src/app/components/shell/clipboard_import/mod.rs:117
-msgid "Open"
-msgstr ""
-
-#. Translators: Placeholder inside the Ctrl+K Command Palette search box.
-#: src/app/components/shell/command_palette/command_palette.blp:28
-msgid "Jump to page, theme, device, timer, or search Spotify…"
-msgstr ""
-
-#. Translators: Shown in Ctrl+K Command Palette when no command matches the query.
-#: src/app/components/shell/command_palette/command_palette.blp:67
-msgid "No matching commands"
-msgstr ""
-
-#: src/app/components/shell/command_palette/command_palette.blp:68
-msgid "Try a different keyword or search for an artist, album, or song."
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:436
-msgid "Theme"
-msgstr "Thème"
-
-#: src/app/components/shell/command_palette/widget.rs:437
-msgid "Action"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:438
-#: src/app/components/shell/command_palette/widget.rs:558
-#: src/app/components/shell/playback/playback_widget.blp:198
-#: src/app/components/shell/playback/playback_widget.blp:238
-#: src/app/components/sleep_timer.rs:45 src/app/components/sleep_timer.rs:49
-msgid "Sleep Timer"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:439
-#, fuzzy
-msgid "Device"
-msgstr "Appareil ALSA"
-
-#: src/app/components/shell/command_palette/widget.rs:442
-msgid "Home"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:443
-msgid "Go to Now Playing overview"
-msgstr ""
-
-#. translators: This is a navigation panel entry to browse to saved albums.
-#: src/app/components/shell/command_palette/widget.rs:451
-#: src/app/components/shell/navigation/factory.rs:55
-#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:76
-#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:148
-msgid "Library"
-msgstr "Bibliothèque"
-
-#: src/app/components/shell/command_palette/widget.rs:452
-#, fuzzy
-msgid "Browse saved albums"
-msgstr "Aucun album dans votre bibliothèque."
-
-#: src/app/components/shell/command_palette/widget.rs:461
-#, fuzzy
-msgid "Open search page"
-msgstr "Saisissez un terme à rechercher."
-
-#: src/app/components/shell/command_palette/widget.rs:469
-msgid "Liked Songs"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:470
-#, fuzzy
-msgid "Open your saved tracks"
-msgstr "Titres aimés"
-
-#: src/app/components/shell/command_palette/widget.rs:479
-#, fuzzy
-msgid "Open followed artists"
-msgstr "Toutes les listes de lecture"
-
-#: src/app/components/shell/command_palette/widget.rs:488
-#, fuzzy
-msgid "Open saved playlists"
-msgstr "Aucune liste de lecture enregistrée."
-
-#: src/app/components/shell/command_palette/widget.rs:496
-msgid "Settings"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:497
-#, fuzzy
-msgid "Open Preferences dialog"
-msgstr "Préférences"
-
-#: src/app/components/shell/command_palette/widget.rs:507
-msgid "Toggle Queue"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:508
-msgid "Show or hide the playback queue panel"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:516
-msgid "Toggle Lyrics"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:517
-msgid "Show or hide Lyrics and Track Notes"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:539
-msgid "Sleep Timer: Off"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:540
-msgid "Disable active sleep timer"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:548
-msgid "Sleep Timer: End of Current Track"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:549
-msgid "Pause playback when this song finishes"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:559
-msgid "Pause playback after"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:559
-msgid "minutes"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:571
-msgid "Neutral"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:580
-msgid "Active theme"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:582
-msgid "Switch theme live"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:599
-#: src/app/components/shell/device_selector/device_selector.blp:9
-#: src/app/components/shell/device_selector/device_selector.blp:37
-#: src/app/components/shell/device_selector/widget.rs:142
-msgid "This Device"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:601
-msgid "Active playback device"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:603
-msgid "Transfer playback locally"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:628
-msgid "Active Connect device"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:630
-msgid "Transfer playback to device"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:684
-msgid "Open artist page"
 msgstr ""
 
 #: src/app/components/shell/device_selector/device_selector.blp:15
@@ -1863,63 +2064,6 @@ msgstr ""
 msgid "Forward"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:87
-msgid "Unnamed Playlist"
-msgstr "Liste de lecture sans titre"
-
-#: src/app/components/shell/navigation_panel/model.rs:439
-#, fuzzy
-msgid "Pinned Playlist"
-msgstr "Liste de lecture sans titre"
-
-#: src/app/components/shell/navigation_panel/model.rs:440
-#, fuzzy
-msgid "Pinned Album"
-msgstr "Voir l'album"
-
-#: src/app/components/shell/navigation_panel/model.rs:441
-#, fuzzy
-msgid "Pinned Artist"
-msgstr "Artistes"
-
-#: src/app/components/shell/navigation_panel/model.rs:442
-#, fuzzy
-msgid "Pinned Track"
-msgstr "Titres aimés"
-
-#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:130
-msgid "All Playlists"
-msgstr "Toutes les listes de lecture"
-
-#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:139
-msgid "Pinned"
-msgstr ""
-
-#. Translators: title of the dialog that creates a new playlist
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:220
-#: src/app/components/widgets/playlist_dialog/playlist_dialog.blp:7
-msgid "New Playlist"
-msgstr "Nouvelle liste de lecture"
-
-#. translators: Shown in a toast after closing settings when a changed setting needs an app restart.
-#: src/app/components/shell/notification/mod.rs:93
-msgid "Please restart the app to apply the changes"
-msgstr ""
-
-#. translators: Button in the toast that restarts the app to apply changed settings.
-#: src/app/components/shell/notification/mod.rs:95
-msgid "Restart"
-msgstr ""
-
-#: src/app/components/shell/notification/mod.rs:111
-msgid "Connection lost. Trying to reconnect…"
-msgstr ""
-
-#. translators: Shown in a toast when the user presses Previous but there is no earlier track to play.
-#: src/app/components/shell/notification/mod.rs:137
-msgid "No previous track"
-msgstr ""
-
 #: src/app/components/shell/playback/playback_controls.blp:30
 msgid "Previous"
 msgstr "Précédent"
@@ -1927,17 +2071,6 @@ msgstr "Précédent"
 #: src/app/components/shell/playback/playback_controls.blp:56
 msgid "Next"
 msgstr "Suivant"
-
-#: src/app/components/shell/playback/playback_controls.rs:69
-#: src/app/components/widgets/details_page/header.rs:231
-msgid "Pause"
-msgstr "Pause"
-
-#. translators: Subtle hint displayed below "No Track Playing" in the bottom player bar
-#: src/app/components/shell/playback/playback_info.rs:82
-#, fuzzy
-msgid "Select a track to play"
-msgstr "Titres aimés"
 
 #: src/app/components/shell/playback/playback_widget.blp:258
 msgid "Off"
@@ -2001,102 +2134,6 @@ msgstr ""
 msgid "Volume"
 msgstr ""
 
-#: src/app/components/shell/window/close_dialog.rs:12
-msgid "Canto is Still Playing"
-msgstr ""
-
-#: src/app/components/shell/window/close_dialog.rs:13
-msgid "How should Canto close while audio is playing?"
-msgstr ""
-
-#: src/app/components/shell/window/close_dialog.rs:24
-msgid "Remember my choice"
-msgstr ""
-
-#: src/app/components/sleep_timer.rs:33
-msgid "End"
-msgstr ""
-
-#: src/app/components/sleep_timer.rs:46
-msgid "Sleep Timer: Pause at end of current track"
-msgstr ""
-
-#: src/app/components/sleep_timer.rs:170
-msgid "Sleep timer paused playback"
-msgstr ""
-
-#: src/app/components/track_radio.rs:35
-msgid "Could not find similar tracks for this song"
-msgstr ""
-
-#: src/app/components/track_radio.rs:48 src/app/components/track_radio.rs:68
-#: src/app/components/track_radio.rs:133
-msgid "Radio"
-msgstr ""
-
-#: src/app/components/track_radio.rs:54 src/app/components/track_radio.rs:75
-#, fuzzy
-msgid "Started Track Radio"
-msgstr "Titres aimés"
-
-#: src/app/components/track_radio.rs:80
-msgid "Could not start Track Radio right now"
-msgstr ""
-
-#: src/app/components/track_radio.rs:140
-msgid "Playing similar tracks"
-msgstr ""
-
-#. translators: Title of the dialog asking to confirm deleting a playlist.
-#: src/app/components/utils.rs:253
-#, fuzzy
-msgid "Delete Playlist?"
-msgstr "Nouvelle liste de lecture"
-
-#. translators: Body of the dialog asking to confirm deleting a playlist.
-#: src/app/components/utils.rs:255
-msgid "The playlist will be removed from your library."
-msgstr ""
-
-#. translators: Button of the dialog asking to confirm deleting a playlist: deletes it.
-#: src/app/components/utils.rs:257
-msgid "Delete"
-msgstr ""
-
-#: src/app/components/widgets/card_list/card_view_menu.blp:17
-msgid "Icon Size"
-msgstr ""
-
-#: src/app/components/widgets/card_list/card_view_menu.blp:28
-msgid "Decrease Icon Size"
-msgstr ""
-
-#: src/app/components/widgets/card_list/card_view_menu.blp:38
-msgid "Increase Icon Size"
-msgstr ""
-
-#: src/app/components/widgets/card_list/card_view_menu.blp:57
-msgid "Sort By"
-msgstr ""
-
-#: src/app/components/widgets/card_list/card_view_menu.blp:83
-msgid "Filters"
-msgstr ""
-
-#: src/app/components/widgets/details_page/header.blp:166
-#: src/app/components/widgets/details_page/header.rs:390
-#, fuzzy
-msgid "Add to Library"
-msgstr "Enregistrer dans la bibliothèque"
-
-#: src/app/components/widgets/details_page/header.blp:196
-msgid "More Options"
-msgstr ""
-
-#: src/app/components/widgets/details_page/model.rs:373
-msgid "Link copied to clipboard"
-msgstr ""
-
 #. Translators: tooltip of the button picking the cover image of a new playlist
 #. translators: Title of the dialog picking a playlist's cover.
 #: src/app/components/widgets/playlist_dialog/playlist_dialog.blp:30
@@ -2130,6 +2167,92 @@ msgstr ""
 msgid "Create"
 msgstr "Créer"
 
+#. Translators: placeholder of the search entry of the list of playlists a track can be added to
+#: src/app/components/widgets/playlist_picker/playlist_picker.blp:16
+#, fuzzy
+msgid "Find a playlist"
+msgstr "Ajouter à..."
+
+#. Translators: shown in the list of playlists a track can be added to when the search matches none
+#: src/app/components/widgets/playlist_picker/playlist_picker.blp:26
+#, fuzzy
+msgid "No playlists found"
+msgstr "Liste de lecture créée."
+
+#: src/app/components/widgets/card_list/card_view_menu.blp:17
+msgid "Icon Size"
+msgstr ""
+
+#: src/app/components/widgets/card_list/card_view_menu.blp:28
+msgid "Decrease Icon Size"
+msgstr ""
+
+#: src/app/components/widgets/card_list/card_view_menu.blp:38
+msgid "Increase Icon Size"
+msgstr ""
+
+#: src/app/components/widgets/card_list/card_view_menu.blp:57
+msgid "Sort By"
+msgstr ""
+
+#: src/app/components/widgets/card_list/card_view_menu.blp:83
+msgid "Filters"
+msgstr ""
+
+#: src/app/components/widgets/details_page/header.blp:196
+msgid "More Options"
+msgstr ""
+
+#: src/app/components/widgets/selection/selection_toolbar.blp:61
+msgid "Remove"
+msgstr "Retirer"
+
+#: src/window.blp:296
+msgid "Report Issue"
+msgstr ""
+
+#: src/window.blp:301
+#, fuzzy
+msgid "About Canto"
+msgstr "À propos"
+
+#: src/window.blp:308
+msgid "Log Out"
+msgstr "Déconnexion"
+
+#: src/app/components/pages/details_album/widget.rs:34
+msgid "Details"
+msgstr ""
+
+#. translators: Button label. Deselects all songs, once they are all selected.
+#: src/app/components/pages/queue/widget.rs:110
+#: src/app/components/shell/headerbar/widget.rs:703
+#: src/app/components/shell/utility_panel/widget.rs:139
+#, fuzzy
+msgid "Deselect All"
+msgstr "Tout sélectionner"
+
+#. Translators: Toast shown after the user clears the cache in settings.
+#: src/app/components/pages/settings/settings_model.rs:50
+msgid "Cache cleared"
+msgstr ""
+
+#. translators: Title of the dialog asking to confirm deleting a playlist.
+#: src/app/components/utils.rs:253
+#, fuzzy
+msgid "Delete Playlist?"
+msgstr "Nouvelle liste de lecture"
+
+#. translators: Body of the dialog asking to confirm deleting a playlist.
+#: src/app/components/utils.rs:255
+msgid "The playlist will be removed from your library."
+msgstr ""
+
+#. translators: Button of the dialog asking to confirm deleting a playlist: deletes it.
+#: src/app/components/utils.rs:257
+msgid "Delete"
+msgstr ""
+
 #. translators: Title of the dialog editing the details of a playlist.
 #: src/app/components/widgets/playlist_dialog/widget.rs:152
 #, fuzzy
@@ -2152,153 +2275,9 @@ msgstr "Liste de lecture créée."
 msgid "Images"
 msgstr ""
 
-#. Translators: placeholder of the search entry of the list of playlists a track can be added to
-#: src/app/components/widgets/playlist_picker/playlist_picker.blp:16
-#, fuzzy
-msgid "Find a playlist"
-msgstr "Ajouter à..."
-
-#. Translators: shown in the list of playlists a track can be added to when the search matches none
-#: src/app/components/widgets/playlist_picker/playlist_picker.blp:26
-#, fuzzy
-msgid "No playlists found"
-msgstr "Liste de lecture créée."
-
-#. translators: Title of the dialog asking to confirm clearing the play queue, from its trash button.
-#: src/app/components/widgets/queue_list/model.rs:258
-msgid "Clear the Queue?"
-msgstr ""
-
-#. translators: Body of the dialog asking to confirm clearing the play queue.
-#: src/app/components/widgets/queue_list/model.rs:260
-msgid "All tracks added to the queue will be removed."
-msgstr ""
-
-#: src/app/components/widgets/selection/component.rs:58
-msgid "Tracks saved!"
-msgstr "Pistes enregistrées !"
-
-#: src/app/components/widgets/selection/selection_toolbar.blp:61
-msgid "Remove"
-msgstr "Retirer"
-
-#. translators: Header shown above the tracks of disc {} in a
-#. multi-disc album.
-#: src/app/components/widgets/track_list/track_list.rs:374
-#, rust-format
-msgid "Disc {}"
-msgstr ""
-
-#: src/app/components/widgets/track_list/track_row.rs:371
-msgid "Explicit Content is Disabled"
-msgstr ""
-
-#: src/app/components/widgets/track_list/track_row.rs:373
-msgid "Not Available in Your Region"
-msgstr ""
-
-#. Translators: Sort option. Shows items in the order they were saved,
-#. with the most recently added items appearing first.
-#: src/app/models/card_enums.rs:51
-msgid "Recently Added"
-msgstr ""
-
-#. Translators: Sort option. Orders items alphabetically by their title
-#. (A-Z, case-insensitive).
-#: src/app/models/card_enums.rs:54
-msgid "Alphabetic"
-msgstr ""
-
-#. Translators: Sort option. Groups items by their artist or creator name,
-#. sorted alphabetically.
-#: src/app/models/card_enums.rs:57
-#, fuzzy
-msgid "Creator"
-msgstr "Créer"
-
-#. Translators: Sort option. Orders items by their release date, with the
-#. newest releases appearing first.
-#: src/app/models/card_enums.rs:60
-#, fuzzy
-msgid "Date Released"
-msgstr "Date de publication"
-
-#. Translators: Sort option. Orders items by their popularity score, with
-#. the most popular items appearing first.
-#: src/app/models/card_enums.rs:63
-msgid "Popularity"
-msgstr ""
-
-#: src/app/models/card_enums.rs:174
-msgid "Singles"
-msgstr ""
-
-#: src/app/models/card_enums.rs:175
-msgid "EPs"
-msgstr ""
-
-#: src/app/models/card_enums.rs:176
-msgid "Compilations"
-msgstr ""
-
-#: src/app/mod.rs:258
-#, fuzzy
-msgid "No track is currently playing"
-msgstr "En cours de lecture"
-
 #: src/app/state/app_state.rs:336
 msgid "Queueing isn't available when playing on another device"
 msgstr ""
-
-#: src/connect/player.rs:87
-msgid "Connection to device lost!"
-msgstr ""
-
-#: src/connect/player.rs:331
-msgid "Starting Spotify in the background…"
-msgstr ""
-
-#: src/connect/player.rs:338
-msgid "Could not start the Spotify app. Is it installed?"
-msgstr ""
-
-#: src/connect/player.rs:350
-msgid "The Spotify app did not show up as a device. Try again in a moment."
-msgstr ""
-
-#. translators: Shown when a Spotify Connect speaker is asleep or unreachable.
-#: src/connect/player.rs:438
-msgid ""
-"Spotify Connect device is asleep or inactive. Start playback on the device "
-"first."
-msgstr ""
-
-#. Translators: Reason shown to the session manager for keeping
-#. the device awake while music plays.
-#: src/inhibitor.rs:110
-msgid "Playing music"
-msgstr ""
-
-#: src/main.rs:102
-msgid "Failed to open link!"
-msgstr "Échec de l'ouverture du lien."
-
-#: src/player/mod.rs:139
-msgid "Playback is Temporarily Unavailable"
-msgstr ""
-
-#: src/window.blp:295
-msgid "Report Issue"
-msgstr ""
-
-#: src/window.blp:300
-#, fuzzy
-msgid "About Canto"
-msgstr "À propos"
-
-#: src/window.blp:307
-msgid "Log Out"
-msgstr "Déconnexion"
 
 #~ msgid "View"
 #~ msgstr "Voir"

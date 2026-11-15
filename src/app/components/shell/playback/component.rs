@@ -13,7 +13,6 @@ use riff_config::feature_flags::FeatureFlag;
 use riff_config::settings::SETTINGS;
 
 use super::playback_widget::PlaybackWidget;
-use super::{BarTrack, QueueBarWidget};
 
 pub struct PlaybackModel {
     app_model: Rc<AppModel>,
@@ -41,6 +40,21 @@ impl PlaybackModel {
             .dispatch(BrowserAction::Navigate(Route::Home(HomePage::NowPlaying)).into());
     }
 
+    /// Opens the current track's album, or Now Playing when it has none.
+    fn go_to_album(&self) {
+        let album = self
+            .current_song()
+            .and_then(|song| song.album)
+            .map(|album| album.rri.id)
+            .filter(|id| !id.is_empty());
+        match album {
+            Some(id) => self
+                .dispatcher
+                .dispatch(BrowserAction::Navigate(Route::Album(id)).into()),
+            None => self.go_home(),
+        }
+    }
+
     fn is_playing(&self) -> bool {
         self.state().playback.is_playing()
     }
@@ -51,10 +65,6 @@ impl PlaybackModel {
 
     fn current_song(&self) -> Option<Track> {
         self.app_model.get_state().playback.current_song()
-    }
-
-    fn next_song(&self) -> Option<Track> {
-        self.app_model.get_state().playback.next_song()
     }
 
     fn play_next_song(&self) {
@@ -93,7 +103,6 @@ impl PlaybackModel {
 pub struct PlaybackControl {
     model: Rc<PlaybackModel>,
     widget: PlaybackWidget,
-    queue_bar: QueueBarWidget,
     device_selector: DeviceSelector,
 }
 
@@ -101,7 +110,6 @@ impl PlaybackControl {
     pub fn new(
         model: PlaybackModel,
         widget: PlaybackWidget,
-        queue_bar: QueueBarWidget,
         sleep_timer: Rc<SleepTimerController>,
     ) -> Self {
         let model = Rc::new(model);
@@ -141,6 +149,11 @@ impl PlaybackControl {
             model,
             move || model.go_home()
         ));
+        widget.connect_cover_clicked(clone!(
+            #[weak]
+            model,
+            move || model.go_to_album()
+        ));
         widget.connect_volume_changed(clone!(
             #[weak]
             model,
@@ -172,19 +185,8 @@ impl PlaybackControl {
         Self {
             model,
             widget,
-            queue_bar,
             device_selector,
         }
-    }
-
-    fn update_queue_bar(&self) {
-        let bar_track = |song: Track| BarTrack {
-            artist: song.artists_name(),
-            title: song.title,
-        };
-        let now_playing = self.model.current_song().map(bar_track);
-        let up_next = self.model.next_song().map(bar_track);
-        self.queue_bar.set_tracks(now_playing, up_next);
     }
 
     fn update_repeat(&self, mode: &RepeatMode) {
@@ -198,7 +200,6 @@ impl PlaybackControl {
     fn update_playing(&self) {
         let is_playing = self.model.is_playing();
         self.widget.set_playing(is_playing);
-        self.queue_bar.set_paused(!is_playing);
     }
 
     fn update_current_info(&self) {
@@ -247,26 +248,19 @@ impl EventListener for PlaybackControl {
             AppEvent::PlaybackEvent(PlaybackEvent::RepeatModeChanged(mode))
             | AppEvent::PlaybackEvent(PlaybackEvent::RepeatSynced(mode)) => {
                 self.update_repeat(mode);
-                self.update_queue_bar();
             }
             AppEvent::PlaybackEvent(PlaybackEvent::ShuffleChanged(_))
             | AppEvent::PlaybackEvent(PlaybackEvent::ShuffleSynced(_)) => {
                 self.update_shuffled();
-                self.update_queue_bar();
             }
             AppEvent::PlaybackEvent(PlaybackEvent::TrackChanged(_))
             | AppEvent::PlaybackEvent(PlaybackEvent::TrackSynced) => {
                 self.update_playing();
                 self.update_current_info();
-                self.update_queue_bar();
             }
             AppEvent::PlaybackEvent(PlaybackEvent::PlaybackStopped) => {
                 self.update_playing();
                 self.update_current_info();
-                self.update_queue_bar();
-            }
-            AppEvent::PlaybackEvent(PlaybackEvent::PlaylistChanged) => {
-                self.update_queue_bar();
             }
             AppEvent::PlaybackEvent(PlaybackEvent::SeekSynced(pos))
             | AppEvent::PlaybackEvent(PlaybackEvent::TrackSeeked(pos)) => {

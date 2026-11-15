@@ -148,30 +148,6 @@ pub fn fill(text: String, args: &[&str]) -> String {
     filled
 }
 
-fn fill_track(markup: String, title: &str, artist: &str) -> String {
-    let title = glib::markup_escape_text(title);
-    let artist = glib::markup_escape_text(artist);
-    fill(markup, &[&title, &artist])
-}
-
-pub fn now_playing_markup(title: &str, artist: &str) -> String {
-    // translators: Shown from time to time in the bar at the bottom of the window that opens the queue. It's Pango markup: keep the tags, around the same words. The first {} is the title of the track playing, the second its artist.
-    let markup = gettext("<span size=\"small\" weight=\"light\">Now Playing</span> <b>{}</b> <span size=\"small\" weight=\"light\">by</span> {}");
-    fill_track(markup, title, artist)
-}
-
-pub fn current_track_markup(title: &str, artist: &str) -> String {
-    // translators: Shown from time to time in the bar at the bottom of the window that opens the queue, while playback is paused. It's Pango markup: keep the tags, around the same words. The first {} is the title of the current track, the second its artist.
-    let markup = gettext("<span size=\"small\" weight=\"light\">Current Track</span> <b>{}</b> <span size=\"small\" weight=\"light\">by</span> {}");
-    fill_track(markup, title, artist)
-}
-
-pub fn up_next_markup(title: &str, artist: &str) -> String {
-    // translators: Shown from time to time in the bar at the bottom of the window that opens the queue. It's Pango markup: keep the tags, around the same words. The first {} is the title of the track playing next, the second its artist.
-    let markup = gettext("<span size=\"small\" weight=\"light\">Up Next</span> <b>{}</b> <span size=\"small\" weight=\"light\">by</span> {}");
-    fill_track(markup, title, artist)
-}
-
 pub fn queue_context_label(name: &str) -> String {
     // translators: Header above the rest of the album, playlist or artist being played, on the queue page. {} is its name.
     fill(gettext("Next from: {}"), &[name])
@@ -221,23 +197,11 @@ mod tests {
     fn test_formatted_labels() {
         assert!(shuffle_separation_label(1).contains("at least 1 other song before"));
         assert!(shuffle_separation_label(3).contains("at least 3 other songs before"));
-        for markup in [
-            now_playing_markup("Rock & Roll", "<Band>"),
-            current_track_markup("Rock & Roll", "<Band>"),
-            up_next_markup("Rock & Roll", "<Band>"),
-        ] {
-            let (_, text, _) = gtk::pango::parse_markup(&markup, '\0').unwrap();
-            assert!(text.contains("Rock & Roll") && text.contains("<Band>"));
-        }
         assert_eq!(queue_context_label("{} & Co"), "Next from: {} & Co");
         assert_eq!(more_from_label("Guns N' Roses"), "More from Guns N' Roses");
         assert_eq!(
             album_by_artist_label("Don't Look Back", "Guns N' Roses"),
             "Don't Look Back by Guns N' Roses"
-        );
-        assert_eq!(
-            now_playing_markup("{}", "<b>"),
-            "<span size=\"small\" weight=\"light\">Now Playing</span> <b>{}</b> <span size=\"small\" weight=\"light\">by</span> &lt;b&gt;"
         );
     }
 }

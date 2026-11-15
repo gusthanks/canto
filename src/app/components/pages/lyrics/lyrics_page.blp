@@ -38,24 +38,6 @@ template $LyricsPageWidget : Adw.Bin {
         }
       }
 
-      Box {
-        hexpand: true;
-      }
-
-      Button genius_button {
-        tooltip-text: _("Open track on Genius");
-
-        styles [
-          "pill",
-          "genius-pill",
-        ]
-
-        child: Adw.ButtonContent {
-          icon-name: "canto-genius-symbolic";
-          /* Translators: Short button label opening track on Genius */
-          label: _("Genius");
-        };
-      }
     }
 
     Stack content_mode_stack {

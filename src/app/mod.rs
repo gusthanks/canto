@@ -355,7 +355,6 @@ impl App {
         Box::new(PlaybackControl::new(
             model,
             builder.object("playback").unwrap(),
-            builder.object("queue_bar").unwrap(),
             sleep_timer,
         ))
     }
@@ -373,12 +372,7 @@ impl App {
             builder.object("utility_split").unwrap(),
             layout,
         );
-        let has_track = app_model.get_state().playback.current_song().is_some();
-        let sheet = BottomSheet::new(
-            builder.object("bottom_sheet").unwrap(),
-            builder.object("queue_bar").unwrap(),
-            has_track,
-        );
+        let sheet = BottomSheet::new(builder.object("bottom_sheet").unwrap());
         Box::new(PanelManager::new(
             &window, panel, sheet, app_header, app_model, dispatcher,
         ))

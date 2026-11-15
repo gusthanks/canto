@@ -186,6 +186,22 @@ impl DetailsHeader {
         self.widget.imp().caption_label.set_visible(visible);
     }
 
+    /// Makes the caption a link: pointer cursor, tooltip, and `f` on click.
+    /// Wired once; later calls only update the tooltip.
+    pub fn set_caption_link<F: Fn() + 'static>(&self, tooltip: &str, f: F) {
+        let label = self.widget.imp().caption_label.get();
+        label.set_tooltip_text(Some(tooltip));
+        if label.has_css_class("details-header__caption--link") {
+            return;
+        }
+        label.add_css_class("details-header__caption--link");
+        label.set_cursor_from_name(Some("pointer"));
+        let gesture = gtk::GestureClick::new();
+        gesture.set_button(gtk::gdk::BUTTON_PRIMARY);
+        gesture.connect_released(move |_, _, _, _| f());
+        label.add_controller(gesture);
+    }
+
     pub fn set_subtitle(&self, subtitle: &str) {
         let imp = self.widget.imp();
         imp.subtitle_label.set_label(subtitle);

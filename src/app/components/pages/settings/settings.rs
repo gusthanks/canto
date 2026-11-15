@@ -1283,14 +1283,56 @@ fn make_guide_step_label(text: &str) -> gtk::Label {
     lbl
 }
 
-fn present_genius_guide_dialog(parent: &SettingsDialog) {
-    let dialog = libadwaita::Dialog::builder()
-        .title(gettext("How to Get a Genius Token"))
-        .content_width(440)
-        .build();
+/// What to type in each field of Genius's "New API Client" form.
+/// `None` means "keep what Genius pre-fills".
+const GENIUS_FORM_FIELDS: [(&str, Option<&str>); 4] = [
+    ("App Name", Some("Canto")),
+    ("Icon URL", None),
+    ("App Website URL", Some("http://localhost")),
+    ("Redirect URI", Some("http://localhost")),
+];
 
-    let toolbar = libadwaita::ToolbarView::new();
-    toolbar.add_top_bar(&libadwaita::HeaderBar::new());
+/// A row showing a form field and the value to type, with a copy button.
+fn make_copy_row(
+    field: &str,
+    value: Option<&str>,
+    toasts: &libadwaita::ToastOverlay,
+) -> gtk::Widget {
+    let row = libadwaita::ActionRow::new();
+    row.set_title(field);
+    match value {
+        None => {
+            // translators: Genius form field that should be left untouched.
+            row.set_subtitle(&gettext("Keep the default"));
+        }
+        Some(value) => {
+            row.set_subtitle(value);
+            row.set_subtitle_selectable(true);
+            let copy = gtk::Button::from_icon_name("edit-copy-symbolic");
+            copy.set_valign(gtk::Align::Center);
+            copy.add_css_class("flat");
+            // translators: Tooltip of the button copying a value for a form field.
+            copy.set_tooltip_text(Some(&gettext("Copy")));
+            let value = value.to_string();
+            let toasts = toasts.downgrade();
+            copy.connect_clicked(move |button| {
+                button.clipboard().set_text(&value);
+                if let Some(toasts) = toasts.upgrade() {
+                    // translators: Toast after copying a value; {} is the value.
+                    let text = gettext("Copied {}").replace("{}", &value);
+                    toasts.add_toast(libadwaita::Toast::new(&text));
+                }
+            });
+            row.add_suffix(&copy);
+            row.set_activatable_widget(Some(&copy));
+        }
+    }
+    row.upcast()
+}
+
+/// The body of the Genius guide (kept apart from the dialog so tests can build it).
+fn genius_guide_content(on_close: impl Fn() + 'static) -> libadwaita::ToastOverlay {
+    let toasts = libadwaita::ToastOverlay::new();
 
     let content = gtk::Box::new(gtk::Orientation::Vertical, 12);
     content.set_margin_top(16);
@@ -1299,41 +1341,72 @@ fn present_genius_guide_dialog(parent: &SettingsDialog) {
     content.set_margin_end(20);
 
     content.append(&make_guide_step_label(&gettext(
-        "1. Open genius.com/api-clients and sign in to your Genius account.",
+        "1. Click the button below to open the New API Client form on Genius (sign in if asked).",
     )));
     content.append(&make_guide_step_label(&gettext(
-        "2. Click 'New API Client', enter an app name (such as Canto) and any local redirect URL (for example http://localhost), then save.",
+        "2. Fill in the form like this, then click 'Save':",
+    )));
+
+    let fields = gtk::ListBox::new();
+    fields.set_selection_mode(gtk::SelectionMode::None);
+    fields.add_css_class("boxed-list");
+    for (field, value) in GENIUS_FORM_FIELDS {
+        fields.append(&make_copy_row(field, value, &toasts));
+    }
+    content.append(&fields);
+
+    content.append(&make_guide_step_label(&gettext(
+        "3. On the next page, click 'Generate Access Token' and copy the Client Access Token. Canto doesn't need the Client ID or Client Secret.",
     )));
     content.append(&make_guide_step_label(&gettext(
-        "3. Click 'Generate Access Token' and paste the Client Access Token into Canto.",
+        "4. Back in Canto, paste it into Client Access Token, under Genius.",
     )));
 
     let buttons = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     buttons.set_halign(gtk::Align::End);
     buttons.set_margin_top(8);
 
-    let open_btn = gtk::Button::with_label(&gettext("Open genius.com/api-clients"));
+    let open_btn = gtk::Button::with_label(&gettext("Open Genius"));
     open_btn.add_css_class("pill");
     open_btn.add_css_class("suggested-action");
     open_btn.connect_clicked(|b| {
-        open_external_url(b, "https://genius.com/api-clients");
+        open_external_url(b, "https://genius.com/api-clients/new");
     });
     buttons.append(&open_btn);
 
     let close_btn = gtk::Button::with_label(&gettext("Close"));
     close_btn.add_css_class("pill");
+    close_btn.connect_clicked(move |_| on_close());
+    buttons.append(&close_btn);
+
+    content.append(&buttons);
+    toasts.set_child(Some(&content));
+    toasts
+}
+
+fn present_genius_guide_dialog(parent: &SettingsDialog) {
+    let dialog = libadwaita::Dialog::builder()
+        .title(gettext("How to Get a Genius Token"))
+        .content_width(460)
+        .build();
+
+    let toolbar = libadwaita::ToolbarView::new();
+    toolbar.add_top_bar(&libadwaita::HeaderBar::new());
+
     let weak_dialog = dialog.downgrade();
-    close_btn.connect_clicked(move |_| {
+    let content = genius_guide_content(move || {
         if let Some(d) = weak_dialog.upgrade() {
             d.close();
         }
     });
-    buttons.append(&close_btn);
-
-    content.append(&buttons);
     toolbar.set_content(Some(&content));
     dialog.set_child(Some(&toolbar));
     dialog.present(Some(parent));
+}
+
+#[cfg(test)]
+pub(crate) fn genius_guide_for_tests() -> gtk::Widget {
+    genius_guide_content(|| {}).upcast()
 }
 
 fn present_scrobbling_guide_dialog(parent: &SettingsDialog) {

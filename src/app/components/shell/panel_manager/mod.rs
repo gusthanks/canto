@@ -3,8 +3,8 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use crate::app::components::{
-    AppHeaderBar, BottomSheet, Component, EventListener, LyricsPage, QueuePage, QueuePageWidget,
-    UtilityPanel,
+    note_side_panel, show_inline_view, AppHeaderBar, BottomSheet, Component, EventListener,
+    LyricsPage, QueuePage, QueuePageWidget, UtilityPanel,
 };
 use crate::app::state::PlaybackEvent;
 use crate::app::{AppAction, AppEvent, AppModel, Dispatcher};
@@ -60,6 +60,36 @@ impl Panels {
     fn sync_header(&self) {
         self.app_header
             .set_utility_panel_beside(self.panel.is_open());
+    }
+
+    /// Whether the side panel holds `tab` ("queue" or "lyrics"). The queue
+    /// is in the bottom sheet instead when that's where it's placed.
+    fn panel_has(&self, tab: &str) -> bool {
+        tab == "lyrics" || self.placement.get() == Some(Placement::Side)
+    }
+
+    /// What the player bar's queue and lyrics buttons do.
+    fn toggle_view(&self, tab: &'static str) {
+        // An open side panel follows the buttons: switch tab, or close on
+        // the tab it already shows.
+        if self.panel.is_open() && self.panel_has(tab) {
+            if self.panel.active_tab() == tab {
+                self.panel.set_open(false);
+            } else {
+                self.panel.show_tab(tab);
+            }
+            return;
+        }
+        // On the Now Playing page, the page itself switches.
+        if show_inline_view(tab) {
+            return;
+        }
+        if self.panel_has(tab) {
+            self.panel.show_tab(tab);
+            self.panel.set_open(true);
+        } else {
+            self.sheet.set_open(!self.sheet.is_open());
+        }
     }
 
     fn place(&self, placement: Placement) {
@@ -178,22 +208,8 @@ impl PanelManager {
         let show_queue = gio::SimpleAction::new(SHOW_QUEUE_ACTION, None);
         let panels_weak = Rc::downgrade(&self.panels);
         show_queue.connect_activate(move |_, _| {
-            let Some(panels) = panels_weak.upgrade() else {
-                return;
-            };
-            match panels.placement.get() {
-                Some(Placement::Sheet) => {
-                    panels.sheet.set_open(!panels.sheet.is_open());
-                }
-                Some(Placement::Side) => {
-                    if panels.panel.is_open() && panels.panel.active_tab() == "queue" {
-                        panels.panel.set_open(false);
-                    } else {
-                        panels.panel.show_tab("queue");
-                        panels.panel.set_open(true);
-                    }
-                }
-                None => {}
+            if let Some(panels) = panels_weak.upgrade() {
+                panels.toggle_view("queue");
             }
         });
         window.add_action(&show_queue);
@@ -201,14 +217,8 @@ impl PanelManager {
         let show_lyrics = gio::SimpleAction::new(SHOW_LYRICS_ACTION, None);
         let panels_weak = Rc::downgrade(&self.panels);
         show_lyrics.connect_activate(move |_, _| {
-            let Some(panels) = panels_weak.upgrade() else {
-                return;
-            };
-            if panels.panel.is_open() && panels.panel.active_tab() == "lyrics" {
-                panels.panel.set_open(false);
-            } else {
-                panels.panel.show_tab("lyrics");
-                panels.panel.set_open(true);
+            if let Some(panels) = panels_weak.upgrade() {
+                panels.toggle_view("lyrics");
             }
         });
         window.add_action(&show_lyrics);
@@ -224,8 +234,15 @@ impl PanelManager {
                 action.set_state(&actual.to_variant());
             }
             panels.sync_header();
+            note_side_panel(panels.panel.is_open().then(|| panels.panel.active_tab()));
             if !panels.is_open() && app_model.get_state().selection.is_selecting_in(true) {
                 dispatcher.dispatch(AppAction::CancelSelection);
+            }
+        });
+        let panels_weak = Rc::downgrade(&self.panels);
+        self.panels.panel.connect_tab_changed(move || {
+            if let Some(panels) = panels_weak.upgrade() {
+                note_side_panel(panels.panel.is_open().then(|| panels.panel.active_tab()));
             }
         });
         self.panels.panel.connect_open_notify(clone!(
@@ -264,18 +281,6 @@ impl EventListener for PanelManager {
         | AppEvent::PlaybackEvent(PlaybackEvent::PlaylistChanged) = event
         {
             self.sync_selection();
-        }
-        if let AppEvent::PlaybackEvent(
-            PlaybackEvent::TrackChanged(_)
-            | PlaybackEvent::TrackSynced
-            | PlaybackEvent::PlaybackStopped
-            | PlaybackEvent::PlaylistChanged
-            | PlaybackEvent::SourceChanged,
-        ) = event
-        {
-            self.panels
-                .sheet
-                .set_has_track(self.app_model.get_state().playback.current_song().is_some());
         }
     }
 }

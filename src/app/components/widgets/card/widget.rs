@@ -85,7 +85,7 @@ mod imp {
         pub cover_image: TemplateChild<gtk::Picture>,
 
         #[template_child]
-        pub playing_indicator: TemplateChild<gtk::Spinner>,
+        pub playing_indicator: TemplateChild<gtk::Box>,
 
         /// Current pixel size of the card image.
         pub icon_size: Cell<i32>,
