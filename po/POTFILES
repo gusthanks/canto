@@ -5,6 +5,8 @@ src/app/components/pages/details_artist/widget.rs
 src/app/components/pages/details_playlist/model.rs
 src/app/components/pages/details_user/model.rs
 src/app/components/pages/details_user/widget.rs
+src/app/components/pages/lyrics/component.rs
+src/app/components/pages/lyrics/widget.rs
 src/app/components/pages/now_playing/model.rs
 src/app/components/pages/now_playing/widget.rs
 src/app/components/pages/queue/component.rs
@@ -15,6 +17,10 @@ src/app/components/pages/saved_tracks/model.rs
 src/app/components/pages/search/search.rs
 src/app/components/pages/settings/settings.rs
 src/app/components/shell/clipboard_import/mod.rs
+src/app/components/shell/command_palette/command_palette.blp
+src/app/components/shell/command_palette/widget.rs
+src/app/components/sleep_timer.rs
+src/app/components/track_radio.rs
 src/app/components/shell/device_selector/widget.rs
 src/app/components/shell/navigation/factory.rs
 src/app/components/shell/notification/mod.rs
@@ -32,6 +38,7 @@ src/app/components/widgets/selection/component.rs
 src/app/components/widgets/queue_list/model.rs
 src/app/components/widgets/track_list/track_list.rs
 src/app/models/card_enums.rs
+src/app/mod.rs
 src/connect/player.rs
 src/inhibitor.rs
 src/main.rs
@@ -42,6 +49,7 @@ crates/riff-api/src/models.rs
 # find src -name "*.blp" -print
 src/app/components/pages/details_album/release_details.blp
 src/app/components/pages/login/login.blp
+src/app/components/pages/lyrics/lyrics_page.blp
 src/app/components/pages/queue/queue_page.blp
 src/app/components/pages/search/search.blp
 src/app/components/pages/settings/equalizer.blp
@@ -70,3 +78,4 @@ src/app/components/shell/utility_panel/widget.rs
 src/app/components/utils.rs
 src/app/components/widgets/playlist_dialog/widget.rs
 src/app/state/app_state.rs
+src/settings.rs
