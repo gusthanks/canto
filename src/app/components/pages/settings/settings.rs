@@ -1,13 +1,16 @@
 use crate::app::components::{labels, EventListener};
 use crate::app::AppEvent;
 use crate::settings::RiffSettings;
+use gettextrs::gettext;
+use riff_api::scrobbler::{build_auth_url, LastFmClient};
 use riff_config::feature_flags::FeatureFlag;
+use std::cell::RefCell;
 
 use std::rc::Rc;
 
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk::CompositeTemplate;
+use gtk::{gio, glib, CompositeTemplate};
 use libadwaita::prelude::*;
 
 use super::EqualizerWidget;
@@ -15,7 +18,11 @@ use super::PanWidget;
 use super::PitchWidget;
 use super::SettingsModel;
 
-use riff_config::settings::{RESTART_REQUIRED_KEYS, SETTINGS};
+use riff_config::settings::{
+    GENIUS_ACCESS_TOKEN, LASTFM_API_KEY, LASTFM_API_SECRET, LASTFM_SESSION_KEY, LASTFM_USERNAME,
+    LISTENBRAINZ_TOKEN, RESTART_REQUIRED_KEYS, SCROBBLE_ENABLED, SCROBBLE_RESPECT_REMOTE, SETTINGS,
+    SMART_QUEUE_CONTINUATION, VISUAL_BRIDGE_ENABLED,
+};
 
 mod imp {
 
@@ -25,6 +32,9 @@ mod imp {
     #[derive(Debug, Default, CompositeTemplate)]
     #[template(resource = "/dev/diegovsky/Riff/components/settings.ui")]
     pub struct SettingsDialog {
+        #[template_child]
+        pub general_page: TemplateChild<libadwaita::PreferencesPage>,
+
         #[template_child]
         pub player_bitrate: TemplateChild<libadwaita::ComboRow>,
 
@@ -44,10 +54,22 @@ mod imp {
         pub ap_port: TemplateChild<gtk::Entry>,
 
         #[template_child]
+        pub language: TemplateChild<libadwaita::ComboRow>,
+
+        #[template_child]
+        pub app_theme: TemplateChild<libadwaita::ComboRow>,
+
+        #[template_child]
         pub theme: TemplateChild<libadwaita::ComboRow>,
 
         #[template_child]
+        pub adaptive_cover_colors: TemplateChild<libadwaita::SwitchRow>,
+
+        #[template_child]
         pub queue_side_panel_switch: TemplateChild<libadwaita::SwitchRow>,
+
+        #[template_child]
+        pub lyrics_offset_ms: TemplateChild<libadwaita::SpinRow>,
 
         #[template_child]
         pub close_behavior: TemplateChild<libadwaita::ComboRow>,
@@ -57,6 +79,9 @@ mod imp {
 
         #[template_child]
         pub skip_explicit_switch: TemplateChild<libadwaita::SwitchRow>,
+
+        #[template_child]
+        pub smart_queue_continuation_switch: TemplateChild<libadwaita::SwitchRow>,
 
         #[template_child]
         pub shuffle_separation: TemplateChild<libadwaita::SpinRow>,
@@ -117,6 +142,47 @@ mod imp {
 
         #[template_child]
         pub clear_cache_button: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub genius_guide_button: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub genius_token_entry: TemplateChild<libadwaita::PasswordEntryRow>,
+
+        #[template_child]
+        pub scrobbling_guide_button: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub scrobble_enabled_switch: TemplateChild<libadwaita::SwitchRow>,
+
+        #[template_child]
+        pub scrobble_respect_remote_switch: TemplateChild<libadwaita::SwitchRow>,
+
+        #[template_child]
+        pub lastfm_api_key_entry: TemplateChild<libadwaita::PasswordEntryRow>,
+
+        #[template_child]
+        pub lastfm_api_secret_entry: TemplateChild<libadwaita::PasswordEntryRow>,
+
+        #[template_child]
+        pub lastfm_auth_row: TemplateChild<libadwaita::ActionRow>,
+
+        #[template_child]
+        pub lastfm_step1_btn: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub lastfm_step2_btn: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub lastfm_disconnect_btn: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub listenbrainz_token_entry: TemplateChild<libadwaita::PasswordEntryRow>,
+
+        #[template_child]
+        pub visual_bridge_switch: TemplateChild<libadwaita::SwitchRow>,
+
+        pub lastfm_pending_token: RefCell<Option<String>>,
     }
 
     #[glib::object_subclass]
@@ -160,6 +226,7 @@ impl SettingsDialog {
         dialog.setup_bitrate_lossless_factory();
         dialog.bind_feature_flags();
         dialog.connect_theme_select();
+        dialog.setup_integrations();
         dialog
     }
 
@@ -544,6 +611,69 @@ impl SettingsDialog {
             .unwrap();
         bind_double_adjustment("normalisation-knee-db", &normalisation_knee.adjustment());
 
+        let language = widget.language.downcast_ref::<libadwaita::ComboRow>().unwrap();
+        settings
+            .bind(riff_config::settings::APP_LANGUAGE, language, "selected")
+            .mapping(|variant, _| {
+                variant.str().map(|s| {
+                    match s {
+                        "system" => 0,
+                        "en" => 1,
+                        "pt_BR" => 2,
+                        _ => 0,
+                    }
+                    .to_value()
+                })
+            })
+            .set_mapping(|value, _| {
+                value.get::<u32>().ok().map(|u| {
+                    match u {
+                        0 => "system",
+                        1 => "en",
+                        2 => "pt_BR",
+                        _ => "system",
+                    }
+                    .to_variant()
+                })
+            })
+            .build();
+
+        let app_theme = widget
+            .app_theme
+            .downcast_ref::<libadwaita::ComboRow>()
+            .unwrap();
+        settings
+            .bind(riff_config::settings::APP_THEME, app_theme, "selected")
+            .mapping(|variant, _| {
+                variant.str().map(|s| {
+                    match s {
+                        "omarchy" => 0,
+                        "neutral" => 1,
+                        "spotify-green" => 2,
+                        "oled-dark" => 3,
+                        "warm-vinyl" => 4,
+                        "purple-night" => 5,
+                        _ => 0,
+                    }
+                    .to_value()
+                })
+            })
+            .set_mapping(|value, _| {
+                value.get::<u32>().ok().map(|u| {
+                    match u {
+                        0 => "omarchy",
+                        1 => "neutral",
+                        2 => "spotify-green",
+                        3 => "oled-dark",
+                        4 => "warm-vinyl",
+                        5 => "purple-night",
+                        _ => "omarchy",
+                    }
+                    .to_variant()
+                })
+            })
+            .build();
+
         let theme = widget.theme.downcast_ref::<libadwaita::ComboRow>().unwrap();
         settings
             .bind("theme-preference", theme, "selected")
@@ -573,10 +703,37 @@ impl SettingsDialog {
 
         settings
             .bind(
+                riff_config::settings::ADAPTIVE_COVER_COLORS,
+                &*widget.adaptive_cover_colors,
+                "active",
+            )
+            .build();
+
+        settings
+            .bind(
                 crate::settings::QUEUE_SIDE_PANEL,
                 &*widget.queue_side_panel_switch,
                 "active",
             )
+            .build();
+
+        let lyrics_offset = widget
+            .lyrics_offset_ms
+            .downcast_ref::<libadwaita::SpinRow>()
+            .unwrap();
+        settings
+            .bind(
+                riff_config::settings::LYRICS_OFFSET_MS,
+                &lyrics_offset.adjustment(),
+                "value",
+            )
+            .mapping(|variant, _| variant.get::<i32>().map(|v| f64::from(v).to_value()))
+            .set_mapping(|value, _| {
+                value
+                    .get::<f64>()
+                    .ok()
+                    .map(|f| (f.round() as i32).clamp(-10_000, 10_000).to_variant())
+            })
             .build();
 
         let close_behavior = widget
@@ -688,6 +845,42 @@ impl SettingsDialog {
                 let _ = settings.set_uint("audio-cache-size-mb", adj.value() as u32);
             });
         }
+
+        // Smart Queue Continuation
+        settings
+            .bind(
+                SMART_QUEUE_CONTINUATION,
+                &*widget.smart_queue_continuation_switch,
+                "active",
+            )
+            .build();
+
+        // Integrations (Genius, Scrobbling, Visual Bridge)
+        settings
+            .bind(GENIUS_ACCESS_TOKEN, &*widget.genius_token_entry, "text")
+            .build();
+        settings
+            .bind(SCROBBLE_ENABLED, &*widget.scrobble_enabled_switch, "active")
+            .build();
+        settings
+            .bind(
+                SCROBBLE_RESPECT_REMOTE,
+                &*widget.scrobble_respect_remote_switch,
+                "active",
+            )
+            .build();
+        settings
+            .bind(LASTFM_API_KEY, &*widget.lastfm_api_key_entry, "text")
+            .build();
+        settings
+            .bind(LASTFM_API_SECRET, &*widget.lastfm_api_secret_entry, "text")
+            .build();
+        settings
+            .bind(LISTENBRAINZ_TOKEN, &*widget.listenbrainz_token_entry, "text")
+            .build();
+        settings
+            .bind(VISUAL_BRIDGE_ENABLED, &*widget.visual_bridge_switch, "active")
+            .build();
     }
 
     fn bind_feature_flags(&self) {
@@ -715,18 +908,27 @@ impl SettingsDialog {
             group.add(&row);
         }
 
-        let page = self
-            .upcast_ref::<libadwaita::PreferencesDialog>()
-            .visible_page()
-            .unwrap();
-        page.add(&group);
+        self.imp().general_page.add(&group);
     }
 
     fn connect_theme_select(&self) {
         let widget = self.imp();
         let theme = widget.theme.downcast_ref::<libadwaita::ComboRow>().unwrap();
+        let settings = gio::Settings::new(SETTINGS);
+        settings
+            .bind(riff_config::settings::APP_THEME, theme, "sensitive")
+            .flags(gio::SettingsBindFlags::GET)
+            .mapping(|variant, _| {
+                let is_neutral = variant.get::<String>().is_some_and(|s| s == "neutral");
+                Some(is_neutral.to_value())
+            })
+            .build();
         theme.connect_selected_notify(|theme| {
             debug!("Theme switched! --> value: {}", theme.selected());
+            let settings = gio::Settings::new(SETTINGS);
+            if settings.string(riff_config::settings::APP_THEME) != "neutral" {
+                return;
+            }
             let manager = libadwaita::StyleManager::default();
 
             let pref = match theme.selected() {
@@ -765,6 +967,188 @@ impl SettingsDialog {
         self.imp()
             .clear_cache_button
             .connect_clicked(move |_| on_clear());
+    }
+
+    fn setup_integrations(&self) {
+        let imp = self.imp();
+        let settings = gio::Settings::new(SETTINGS);
+
+        let weak_self = self.downgrade();
+        imp.genius_guide_button.connect_clicked(move |_| {
+            if let Some(dialog) = weak_self.upgrade() {
+                present_genius_guide_dialog(&dialog);
+            }
+        });
+
+        let weak_self = self.downgrade();
+        imp.scrobbling_guide_button.connect_clicked(move |_| {
+            if let Some(dialog) = weak_self.upgrade() {
+                present_scrobbling_guide_dialog(&dialog);
+            }
+        });
+
+        let weak_self = self.downgrade();
+        let disconnect_settings = settings.clone();
+        imp.lastfm_disconnect_btn.connect_clicked(move |_| {
+            let _ = disconnect_settings.set_string(LASTFM_SESSION_KEY, "");
+            let _ = disconnect_settings.set_string(LASTFM_USERNAME, "");
+            if let Some(dialog) = weak_self.upgrade() {
+                *dialog.imp().lastfm_pending_token.borrow_mut() = None;
+                dialog.refresh_lastfm_auth_row(&disconnect_settings);
+            }
+        });
+
+        for key in [
+            LASTFM_API_KEY,
+            LASTFM_API_SECRET,
+            LASTFM_SESSION_KEY,
+            LASTFM_USERNAME,
+        ] {
+            let weak_self = self.downgrade();
+            let clear_pending = key == LASTFM_API_KEY || key == LASTFM_API_SECRET;
+            settings.connect_changed(Some(key), move |s, _| {
+                if let Some(dialog) = weak_self.upgrade() {
+                    if clear_pending {
+                        *dialog.imp().lastfm_pending_token.borrow_mut() = None;
+                    }
+                    dialog.refresh_lastfm_auth_row(s);
+                }
+            });
+        }
+
+        self.refresh_lastfm_auth_row(&settings);
+    }
+
+    fn refresh_lastfm_auth_row(&self, settings: &gio::Settings) {
+        let imp = self.imp();
+        let api_key = settings.string(LASTFM_API_KEY);
+        let api_secret = settings.string(LASTFM_API_SECRET);
+        let session_key = settings.string(LASTFM_SESSION_KEY);
+        let username = settings.string(LASTFM_USERNAME);
+        let has_creds = !api_key.trim().is_empty() && !api_secret.trim().is_empty();
+        let has_session = !session_key.trim().is_empty();
+        let has_pending = imp.lastfm_pending_token.borrow().is_some();
+
+        if has_session {
+            let status = if username.trim().is_empty() {
+                gettext("Connected to Last.fm")
+            } else {
+                format!("{} {}", gettext("Connected as"), username.trim())
+            };
+            imp.lastfm_auth_row.set_subtitle(&status);
+            imp.lastfm_step1_btn.set_sensitive(false);
+            imp.lastfm_step2_btn.set_sensitive(false);
+            imp.lastfm_disconnect_btn.set_visible(true);
+        } else {
+            imp.lastfm_disconnect_btn.set_visible(false);
+            imp.lastfm_step1_btn.set_sensitive(has_creds);
+            imp.lastfm_step2_btn.set_sensitive(has_creds && has_pending);
+            let subtitle = if has_pending {
+                gettext("Step 1 opened in browser. Approve access, then click 2. Complete.")
+            } else if has_creds {
+                gettext("Click 1. Open Auth to approve Canto in your browser")
+            } else {
+                gettext("Enter API Key and Secret above, then connect your account")
+            };
+            imp.lastfm_auth_row.set_subtitle(&subtitle);
+        }
+    }
+
+    fn connect_lastfm_auth(&self, client: riff_api::HttpClient, notify: Rc<dyn Fn(String)>) {
+        let imp = self.imp();
+
+        let weak_self = self.downgrade();
+        let client_step1 = client.clone();
+        let notify_step1 = Rc::clone(&notify);
+        imp.lastfm_step1_btn.connect_clicked(move |btn| {
+            let settings = gio::Settings::new(SETTINGS);
+            let api_key = settings.string(LASTFM_API_KEY).trim().to_string();
+            let api_secret = settings.string(LASTFM_API_SECRET).trim().to_string();
+            if api_key.is_empty() || api_secret.is_empty() {
+                notify_step1(gettext("Enter your Last.fm API Key and Secret first"));
+                return;
+            }
+
+            btn.set_sensitive(false);
+            let client = client_step1.clone();
+            let weak_dialog = weak_self.clone();
+            let notify_err = Rc::clone(&notify_step1);
+
+            glib::spawn_future_local(async move {
+                let res = LastFmClient::get_token(&client, &api_key, &api_secret).await;
+                let Some(dialog) = weak_dialog.upgrade() else {
+                    return;
+                };
+                match res {
+                    Ok(token) => {
+                        let url = build_auth_url(&api_key, &token);
+                        *dialog.imp().lastfm_pending_token.borrow_mut() = Some(token);
+                        open_external_url(&dialog, &url);
+                        let s = gio::Settings::new(SETTINGS);
+                        dialog.refresh_lastfm_auth_row(&s);
+                    }
+                    Err(_) => {
+                        let s = gio::Settings::new(SETTINGS);
+                        dialog.refresh_lastfm_auth_row(&s);
+                        notify_err(gettext(
+                            "Could not start Last.fm authorization. Check API credentials and network.",
+                        ));
+                    }
+                }
+            });
+        });
+
+        let weak_self = self.downgrade();
+        imp.lastfm_step2_btn.connect_clicked(move |btn| {
+            let Some(dialog) = weak_self.upgrade() else {
+                return;
+            };
+            let Some(token) = dialog.imp().lastfm_pending_token.borrow().clone() else {
+                notify(gettext("Run Step 1 first to open browser authorization"));
+                return;
+            };
+
+            let settings = gio::Settings::new(SETTINGS);
+            let api_key = settings.string(LASTFM_API_KEY).trim().to_string();
+            let api_secret = settings.string(LASTFM_API_SECRET).trim().to_string();
+            if api_key.is_empty() || api_secret.is_empty() {
+                notify(gettext("Enter your Last.fm API Key and Secret first"));
+                return;
+            }
+
+            btn.set_sensitive(false);
+            let client = client.clone();
+            let weak_dialog = weak_self.clone();
+            let notify_cb = Rc::clone(&notify);
+
+            glib::spawn_future_local(async move {
+                let res = LastFmClient::get_session(&client, &api_key, &api_secret, &token).await;
+                let Some(dialog) = weak_dialog.upgrade() else {
+                    return;
+                };
+                let s = gio::Settings::new(SETTINGS);
+                match res {
+                    Ok(session) => {
+                        let _ = s.set_string(LASTFM_SESSION_KEY, &session.key);
+                        let _ = s.set_string(LASTFM_USERNAME, &session.username);
+                        *dialog.imp().lastfm_pending_token.borrow_mut() = None;
+                        dialog.refresh_lastfm_auth_row(&s);
+                        let msg = if session.username.is_empty() {
+                            gettext("Connected to Last.fm")
+                        } else {
+                            format!("{} {}", gettext("Connected to Last.fm as"), session.username)
+                        };
+                        notify_cb(msg);
+                    }
+                    Err(_) => {
+                        dialog.refresh_lastfm_auth_row(&s);
+                        notify_cb(gettext(
+                            "Last.fm authorization is not approved yet. Approve in browser, then try Step 2 again.",
+                        ));
+                    }
+                }
+            });
+        });
     }
 
     /// Re-lock the equalizer and pan controls. The locks are UI-only and never
@@ -843,6 +1227,12 @@ impl Settings {
             clear_model.clear_cache();
         });
 
+        let notify_model = model.clone();
+        settings_dialog.connect_lastfm_auth(
+            model.http_client(),
+            Rc::new(move |msg| notify_model.notify(msg)),
+        );
+
         Self {
             parent,
             settings_dialog,
@@ -863,8 +1253,159 @@ impl Settings {
             .set_explicit_filter_locked(self.model.explicit_filter_locked());
         self.dialog().present(Some(&self.parent));
     }
+
+    pub fn show_integrations(&self) {
+        self.settings_dialog.set_visible_page_name("integrations");
+        self.show_self();
+    }
 }
 
 impl EventListener for Settings {
     fn on_event(&mut self, _: &AppEvent) {}
+}
+
+fn open_external_url(widget: &impl IsA<gtk::Widget>, url: &str) {
+    if open::that_detached(url).is_err() {
+        let parent = widget
+            .root()
+            .and_then(|r| r.downcast::<gtk::Window>().ok());
+        let launcher = gtk::UriLauncher::new(url);
+        launcher.launch(parent.as_ref(), None::<&gio::Cancellable>, |_| {});
+    }
+}
+
+fn make_guide_step_label(text: &str) -> gtk::Label {
+    let lbl = gtk::Label::new(Some(text));
+    lbl.set_halign(gtk::Align::Start);
+    lbl.set_xalign(0.0);
+    lbl.set_wrap(true);
+    lbl.set_wrap_mode(gtk::pango::WrapMode::WordChar);
+    lbl
+}
+
+fn present_genius_guide_dialog(parent: &SettingsDialog) {
+    let dialog = libadwaita::Dialog::builder()
+        .title(gettext("How to Get a Genius Token"))
+        .content_width(440)
+        .build();
+
+    let toolbar = libadwaita::ToolbarView::new();
+    toolbar.add_top_bar(&libadwaita::HeaderBar::new());
+
+    let content = gtk::Box::new(gtk::Orientation::Vertical, 12);
+    content.set_margin_top(16);
+    content.set_margin_bottom(20);
+    content.set_margin_start(20);
+    content.set_margin_end(20);
+
+    content.append(&make_guide_step_label(&gettext(
+        "1. Open genius.com/api-clients and sign in to your Genius account.",
+    )));
+    content.append(&make_guide_step_label(&gettext(
+        "2. Click 'New API Client', enter an app name (such as Canto) and any local redirect URL (for example http://localhost), then save.",
+    )));
+    content.append(&make_guide_step_label(&gettext(
+        "3. Click 'Generate Access Token' and paste the Client Access Token into Canto.",
+    )));
+
+    let buttons = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    buttons.set_halign(gtk::Align::End);
+    buttons.set_margin_top(8);
+
+    let open_btn = gtk::Button::with_label(&gettext("Open genius.com/api-clients"));
+    open_btn.add_css_class("pill");
+    open_btn.add_css_class("suggested-action");
+    open_btn.connect_clicked(|b| {
+        open_external_url(b, "https://genius.com/api-clients");
+    });
+    buttons.append(&open_btn);
+
+    let close_btn = gtk::Button::with_label(&gettext("Close"));
+    close_btn.add_css_class("pill");
+    let weak_dialog = dialog.downgrade();
+    close_btn.connect_clicked(move |_| {
+        if let Some(d) = weak_dialog.upgrade() {
+            d.close();
+        }
+    });
+    buttons.append(&close_btn);
+
+    content.append(&buttons);
+    toolbar.set_content(Some(&content));
+    dialog.set_child(Some(&toolbar));
+    dialog.present(Some(parent));
+}
+
+fn present_scrobbling_guide_dialog(parent: &SettingsDialog) {
+    let dialog = libadwaita::Dialog::builder()
+        .title(gettext("How to Set Up Scrobbling"))
+        .content_width(480)
+        .build();
+
+    let toolbar = libadwaita::ToolbarView::new();
+    toolbar.add_top_bar(&libadwaita::HeaderBar::new());
+
+    let content = gtk::Box::new(gtk::Orientation::Vertical, 12);
+    content.set_margin_top(16);
+    content.set_margin_bottom(20);
+    content.set_margin_start(20);
+    content.set_margin_end(20);
+
+    let lfm_header = gtk::Label::new(Some(&gettext("Last.fm (API Key + Browser Auth)")));
+    lfm_header.add_css_class("heading");
+    lfm_header.set_halign(gtk::Align::Start);
+    content.append(&lfm_header);
+
+    content.append(&make_guide_step_label(&gettext(
+        "1. Open last.fm/api/account/create, create an API application, and copy the API Key and Shared Secret into Canto.",
+    )));
+    content.append(&make_guide_step_label(&gettext(
+        "2. Click '1. Open Auth' to open Last.fm in your browser and approve access for Canto.",
+    )));
+    content.append(&make_guide_step_label(&gettext(
+        "3. Return to Canto and click '2. Complete' to store your persistent session key.",
+    )));
+
+    let lb_header = gtk::Label::new(Some(&gettext("ListenBrainz (User Token)")));
+    lb_header.add_css_class("heading");
+    lb_header.set_halign(gtk::Align::Start);
+    lb_header.set_margin_top(6);
+    content.append(&lb_header);
+
+    content.append(&make_guide_step_label(&gettext(
+        "Open listenbrainz.org/settings, copy your User Token, and paste it into ListenBrainz User Token.",
+    )));
+
+    let buttons = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    buttons.set_halign(gtk::Align::End);
+    buttons.set_margin_top(8);
+
+    let lfm_btn = gtk::Button::with_label(&gettext("Open Last.fm API"));
+    lfm_btn.add_css_class("pill");
+    lfm_btn.connect_clicked(|b| {
+        open_external_url(b, "https://www.last.fm/api/account/create");
+    });
+    buttons.append(&lfm_btn);
+
+    let lb_btn = gtk::Button::with_label(&gettext("Open ListenBrainz"));
+    lb_btn.add_css_class("pill");
+    lb_btn.connect_clicked(|b| {
+        open_external_url(b, "https://listenbrainz.org/settings/");
+    });
+    buttons.append(&lb_btn);
+
+    let close_btn = gtk::Button::with_label(&gettext("Close"));
+    close_btn.add_css_class("pill");
+    let weak_dialog = dialog.downgrade();
+    close_btn.connect_clicked(move |_| {
+        if let Some(d) = weak_dialog.upgrade() {
+            d.close();
+        }
+    });
+    buttons.append(&close_btn);
+
+    content.append(&buttons);
+    toolbar.set_content(Some(&content));
+    dialog.set_child(Some(&toolbar));
+    dialog.present(Some(parent));
 }

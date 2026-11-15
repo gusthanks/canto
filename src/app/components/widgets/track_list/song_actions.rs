@@ -1,8 +1,10 @@
 use gio::SimpleAction;
+use std::rc::Rc;
 
+use crate::app::components::start_track_radio;
 use crate::app::models::Track;
 use crate::app::state::{AppAction, EntryKey, PlaybackAction};
-use crate::app::Dispatcher;
+use crate::app::{AppModel, Dispatcher};
 
 pub trait SongActions {
     fn make_queue_actions(&self, dispatcher: Dispatcher) -> Vec<SimpleAction>;
@@ -10,6 +12,7 @@ pub trait SongActions {
     fn make_link_action(&self) -> SimpleAction;
     fn make_album_action(&self, dispatcher: Dispatcher) -> SimpleAction;
     fn make_artist_actions(&self, dispatcher: Dispatcher) -> Vec<SimpleAction>;
+    fn make_radio_action(&self, app_model: Rc<AppModel>, dispatcher: Dispatcher) -> SimpleAction;
 }
 
 fn action(name: &str, activate: impl Fn() + 'static) -> SimpleAction {
@@ -63,5 +66,12 @@ impl SongActions for Track {
                 })
             })
             .collect()
+    }
+
+    fn make_radio_action(&self, app_model: Rc<AppModel>, dispatcher: Dispatcher) -> SimpleAction {
+        let song = self.clone();
+        action("radio", move || {
+            start_track_radio(&app_model, &dispatcher, song.clone());
+        })
     }
 }

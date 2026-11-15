@@ -65,6 +65,7 @@ fn selection_anchor<Model: TrackListModel + ?Sized>(
         .map(|(i, _)| *i)
 }
 
+#[cfg(test)]
 pub fn build_song_menu(
     song: &Track,
     show_view_album: bool,
@@ -73,6 +74,50 @@ pub fn build_song_menu(
     liked: Option<bool>,
     pinned: Option<bool>,
     removable_from_playlist: bool,
+) -> gio::MenuModel {
+    build_song_menu_impl(
+        song,
+        show_view_album,
+        exclude_artist_id,
+        queue_entry,
+        liked,
+        pinned,
+        removable_from_playlist,
+        false,
+    )
+}
+
+pub fn build_song_menu_with_radio(
+    song: &Track,
+    show_view_album: bool,
+    exclude_artist_id: Option<&str>,
+    queue_entry: QueueMenuEntry,
+    liked: Option<bool>,
+    pinned: Option<bool>,
+    removable_from_playlist: bool,
+) -> gio::MenuModel {
+    build_song_menu_impl(
+        song,
+        show_view_album,
+        exclude_artist_id,
+        queue_entry,
+        liked,
+        pinned,
+        removable_from_playlist,
+        true,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn build_song_menu_impl(
+    song: &Track,
+    show_view_album: bool,
+    exclude_artist_id: Option<&str>,
+    queue_entry: QueueMenuEntry,
+    liked: Option<bool>,
+    pinned: Option<bool>,
+    removable_from_playlist: bool,
+    include_radio: bool,
 ) -> gio::MenuModel {
     let track_section = gio::Menu::new();
     if song.rri.uri.is_some() {
@@ -118,6 +163,9 @@ pub fn build_song_menu(
             track_section.append(Some(&*labels::ADD_TO_QUEUE), Some("song.queue"));
             track_section.append(Some(&*labels::REMOVE_FROM_QUEUE), Some("song.dequeue"));
         }
+    }
+    if include_radio {
+        track_section.append(Some(&*labels::START_TRACK_RADIO), Some("song.radio"));
     }
     track_section.append(Some(&*labels::SELECT), Some("song.select"));
 
@@ -951,13 +999,17 @@ where
     fn on_event(&mut self, event: &AppEvent) {
         match event {
             AppEvent::PlaybackEvent(
-                PlaybackEvent::TrackChanged(_) | PlaybackEvent::PlaybackStopped,
+                PlaybackEvent::TrackChanged(_)
+                | PlaybackEvent::TrackSynced
+                | PlaybackEvent::PlaybackStopped,
             ) => {
                 self.update_paused();
                 self.update_song_states(true);
             }
             AppEvent::PlaybackEvent(
-                PlaybackEvent::PlaybackResumed | PlaybackEvent::PlaybackPaused,
+                PlaybackEvent::PlaybackResumed
+                | PlaybackEvent::PlaybackPaused
+                | PlaybackEvent::PlayStateSynced(_),
             ) => {
                 self.update_paused();
             }

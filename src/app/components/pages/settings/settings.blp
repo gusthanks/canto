@@ -4,16 +4,50 @@ using Adw 1;
 template $SettingsWindow : Adw.PreferencesDialog {
   search-enabled: false;
 
-  Adw.PreferencesPage {
+  Adw.PreferencesPage general_page {
+    title: _("General");
+    icon-name: "preferences-other-symbolic";
+
     Adw.PreferencesGroup {
       /* Translators: Header for a group of preference items regarding the application's appearance and behavior */
 
       title: _("General");
 
-      Adw.ComboRow theme {
-        /* Translators: Title for an item in preferences */
+      Adw.ComboRow language {
+        /* Translators: Title for the interface language preference in settings */
+        title: _("Language");
+        /* Translators: Subtitle explaining when a language change applies */
+        subtitle: _("Requires restarting the app to take effect");
+        model: StringList {
+          strings [
+            _("Follow System"),
+            "English",
+            "Português (Brasil)"
+          ]
+        };
+      }
 
-        title: _("Theme");
+      Adw.ComboRow app_theme {
+        /* Translators: Title for the live color theme selector in settings */
+        title: _("Color Theme");
+        /* Translators: Subtitle for the live color theme selector */
+        subtitle: _("Applies immediately across the interface");
+        model: StringList {
+          strings [
+            _("Omarchy Live"),
+            _("Neutral (Adwaita)"),
+            _("Spotify Green"),
+            _("OLED Dark"),
+            _("Warm Vinyl"),
+            _("Purple Night")
+          ]
+        };
+      }
+
+      Adw.ComboRow theme {
+        /* Translators: Title for light/dark appearance mode when using the Neutral theme */
+
+        title: _("Light/Dark Mode");
         model: StringList {
           strings [
             _("Light"),
@@ -21,6 +55,13 @@ template $SettingsWindow : Adw.PreferencesDialog {
             _("System")
           ]
         };
+      }
+
+      Adw.SwitchRow adaptive_cover_colors {
+        /* Translators: Title for adaptive album cover tinting preference */
+        title: _("Adaptive Cover Colors");
+        /* Translators: Description for adaptive album cover tinting */
+        subtitle: _("Subtle background tint from the playing album cover");
       }
 
       Adw.SwitchRow queue_side_panel_switch {
@@ -31,6 +72,19 @@ template $SettingsWindow : Adw.PreferencesDialog {
         /* Translators: Description for the queue side panel preference */
 
         subtitle: _("Show the queue in a panel at the side of the window");
+      }
+
+      Adw.SpinRow lyrics_offset_ms {
+        /* Translators: Title for the manual synced lyrics offset preference */
+        title: _("Lyrics Sync Offset (ms)");
+        /* Translators: Description explaining positive vs negative lyrics offset */
+        subtitle: _("Positive advances lyrics earlier; negative delays them");
+        adjustment: Adjustment {
+          lower: -10000;
+          upper: 10000;
+          step-increment: 50;
+          page-increment: 250;
+        };
       }
 
       Adw.ComboRow close_behavior {
@@ -68,6 +122,13 @@ template $SettingsWindow : Adw.PreferencesDialog {
         /* Translators: Description for the skip explicit tracks toggle */
 
         subtitle: _("Automatically skip tracks marked as explicit");
+      }
+
+      Adw.SwitchRow smart_queue_continuation_switch {
+        /* Translators: Title for automatic track radio continuation toggle */
+        title: _("Smart Queue Continuation");
+        /* Translators: Description for automatic track radio continuation */
+        subtitle: _("Continue playing similar tracks automatically when your queue finishes");
       }
 
       Adw.SpinRow shuffle_separation {
@@ -378,6 +439,105 @@ template $SettingsWindow : Adw.PreferencesDialog {
             "destructive-action",
           ]
         }
+      }
+    }
+  }
+
+  Adw.PreferencesPage integrations_page {
+    name: "integrations";
+    title: _("Integrations");
+    icon-name: "view-app-grid-symbolic";
+
+    Adw.PreferencesGroup {
+      title: _("Genius (Credits and Liner Notes)");
+      description: _("Optional Client Access Token to fetch producers, writers, samples, and liner notes inside the Lyrics panel.");
+
+      header-suffix: Button genius_guide_button {
+        label: _("How to get token");
+        valign: center;
+
+        styles [
+          "flat",
+        ]
+      };
+
+      Adw.PasswordEntryRow genius_token_entry {
+        title: _("Client Access Token");
+      }
+    }
+
+    Adw.PreferencesGroup {
+      title: _("Scrobbling (Last.fm and ListenBrainz)");
+      description: _("Track played songs to Last.fm and/or ListenBrainz with automatic offline retry.");
+
+      header-suffix: Button scrobbling_guide_button {
+        label: _("How to set up scrobbling");
+        valign: center;
+
+        styles [
+          "flat",
+        ]
+      };
+
+      Adw.SwitchRow scrobble_enabled_switch {
+        title: _("Enable Scrobbling");
+        subtitle: _("Send Now Playing updates and scrobble tracks after listening");
+      }
+
+      Adw.SwitchRow scrobble_respect_remote_switch {
+        title: _("Scrobble Connect Devices");
+        subtitle: _("Also track plays from active Spotify Connect speakers and phones");
+      }
+
+      Adw.PasswordEntryRow lastfm_api_key_entry {
+        title: _("Last.fm API Key");
+      }
+
+      Adw.PasswordEntryRow lastfm_api_secret_entry {
+        title: _("Last.fm API Secret");
+      }
+
+      Adw.ActionRow lastfm_auth_row {
+        title: _("Authorize Last.fm");
+        subtitle: _("Enter API Key and Secret above, then connect your account");
+
+        Box {
+          orientation: horizontal;
+          spacing: 6;
+          valign: center;
+
+          Button lastfm_step1_btn {
+            label: _("1. Open Auth");
+          }
+
+          Button lastfm_step2_btn {
+            label: _("2. Complete");
+            sensitive: false;
+          }
+
+          Button lastfm_disconnect_btn {
+            label: _("Disconnect");
+            visible: false;
+
+            styles [
+              "destructive-action",
+            ]
+          }
+        }
+      }
+
+      Adw.PasswordEntryRow listenbrainz_token_entry {
+        title: _("ListenBrainz User Token");
+      }
+    }
+
+    Adw.PreferencesGroup {
+      title: _("Visual Bridge (External Visualizers)");
+      description: _("Opt-in lightweight local state and audio RMS/peak output for external 3D visualizers such as Chaosphere.");
+
+      Adw.SwitchRow visual_bridge_switch {
+        title: _("Enable Visual Bridge");
+        subtitle: _("Write active track, theme colors, and audio energy levels to $XDG_RUNTIME_DIR/canto/state.json");
       }
     }
   }

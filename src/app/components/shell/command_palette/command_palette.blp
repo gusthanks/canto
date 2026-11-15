@@ -1,0 +1,77 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $CommandPaletteDialog : Adw.Dialog {
+  title: _("Command Palette");
+  content-width: 540;
+  content-height: 460;
+
+  child: Box {
+    orientation: vertical;
+    spacing: 0;
+
+    styles [
+      "command-palette",
+    ]
+
+    Box {
+      orientation: horizontal;
+      spacing: 8;
+      margin-top: 12;
+      margin-bottom: 8;
+      margin-start: 12;
+      margin-end: 12;
+
+      SearchEntry search_entry {
+        hexpand: true;
+        /* Translators: Placeholder inside the Ctrl+K Command Palette search box. */
+        placeholder-text: _("Jump to page, theme, device, timer, or search Spotify…");
+      }
+
+      Spinner search_spinner {
+        visible: false;
+        valign: center;
+      }
+    }
+
+    Separator {}
+
+    Stack results_stack {
+      vexpand: true;
+
+      StackPage {
+        name: "list";
+
+        child: ScrolledWindow scroller {
+          hscrollbar-policy: never;
+          vexpand: true;
+
+          ListBox results_list {
+            selection-mode: single;
+            activate-on-single-click: true;
+
+            styles [
+              "navigation-sidebar",
+              "command-palette__list",
+            ]
+          }
+        };
+      }
+
+      StackPage {
+        name: "empty";
+
+        child: Adw.StatusPage empty_page {
+          icon-name: "system-search-symbolic";
+          /* Translators: Shown in Ctrl+K Command Palette when no command matches the query. */
+          title: _("No matching commands");
+          description: _("Try a different keyword or search for an artist, album, or song.");
+
+          styles [
+            "compact",
+          ]
+        };
+      }
+    }
+  };
+}

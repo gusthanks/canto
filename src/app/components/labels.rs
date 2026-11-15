@@ -105,6 +105,9 @@ lazy_static! {
 
     // translators: This is the caption shown in the header of an album's detail page when the release is a compilation.
     pub static ref COMPILATION_CAPTION: String = gettext("Compilation");
+
+    // translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
+    pub static ref START_TRACK_RADIO: String = gettext("Start Track Radio");
 }
 
 pub fn added_to_playlist_label(playlist: &str) -> String {

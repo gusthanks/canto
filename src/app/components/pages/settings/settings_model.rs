@@ -30,6 +30,14 @@ impl SettingsModel {
         self.dispatcher.dispatch(AppAction::ShowRestartRequired);
     }
 
+    pub fn notify(&self, message: String) {
+        self.dispatcher.dispatch(AppAction::ShowNotification(message));
+    }
+
+    pub fn http_client(&self) -> riff_api::HttpClient {
+        self.app_model.api().http_client().clone()
+    }
+
     /// Clear the on-disk and in-memory data caches, plus librespot's
     /// downloaded audio cache, then notify the user.
     pub fn clear_cache(&self) {

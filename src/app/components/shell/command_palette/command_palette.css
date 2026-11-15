@@ -1,0 +1,13 @@
+.command-palette__list {
+  padding: 6px;
+}
+
+.command-palette__list row {
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.command-palette__badge {
+  font-size: 0.78em;
+  opacity: 0.7;
+}

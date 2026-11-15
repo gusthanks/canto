@@ -36,3 +36,6 @@ pub use bottom_sheet::*;
 
 pub mod panel_manager;
 pub use panel_manager::*;
+
+pub mod command_palette;
+pub use command_palette::*;

@@ -37,12 +37,23 @@ impl UserMenu {
             logout
         });
 
+        let settings = Rc::new(settings);
+        let settings_pref = Rc::clone(&settings);
         parent.add_action(&{
             let preferences_action = SimpleAction::new("preferences", None);
             preferences_action.connect_activate(move |_, _| {
-                settings.show_self();
+                settings_pref.show_self();
             });
             preferences_action
+        });
+
+        let settings_int = Rc::clone(&settings);
+        parent.add_action(&{
+            let integrations_action = SimpleAction::new("preferences-integrations", None);
+            integrations_action.connect_activate(move |_, _| {
+                settings_int.show_integrations();
+            });
+            integrations_action
         });
 
         parent.add_action(&{
