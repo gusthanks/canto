@@ -68,6 +68,8 @@ fn main() {
     gtk_app.set_accels_for_action("win.preferences", &["<Ctrl>comma"]);
     // Displayed as the accelerator hint next to "Keyboard Shortcuts" in the main menu.
     gtk_app.set_accels_for_action("win.show-shortcuts", &["<Ctrl>question"]);
+    // Displayed as the accelerator hint next to "Command Palette" in the main menu.
+    gtk_app.set_accels_for_action("win.command-palette", &["<Ctrl>k"]);
     app::components::setup_about(builder.object::<libadwaita::AboutDialog>("about").unwrap());
     setup_arrow_shortcuts(&window, builder.object("arrow_shortcuts").unwrap());
 
@@ -127,6 +129,156 @@ fn relaunch() {
     error!("Cannot restart: {err}");
 }
 
+#[derive(Debug, PartialEq, Eq)]
+struct LanguageEnvPlan {
+    language_var: &'static str,
+    locale_candidates: &'static [&'static str],
+}
+
+const ORIG_LOCALE_SAVED_ENV: &str = "CANTO_ORIG_LOCALE_SAVED";
+const ORIG_LANGUAGE_ENV: &str = "CANTO_ORIG_LANGUAGE";
+const ORIG_LC_ALL_ENV: &str = "CANTO_ORIG_LC_ALL";
+const ORIG_LC_MESSAGES_ENV: &str = "CANTO_ORIG_LC_MESSAGES";
+const ORIG_LANG_ENV: &str = "CANTO_ORIG_LANG";
+const UNSET_ENV_SENTINEL: &str = "__CANTO_UNSET__";
+
+fn is_c_locale(locale: &str) -> bool {
+    let base = locale
+        .split(['.', '@'])
+        .next()
+        .unwrap_or(locale)
+        .trim();
+    base.eq_ignore_ascii_case("C") || base.eq_ignore_ascii_case("POSIX")
+}
+
+fn snapshot_original_locale_env() {
+    if std::env::var_os(ORIG_LOCALE_SAVED_ENV).is_some() {
+        return;
+    }
+    for (orig_key, backup_key) in [
+        ("LANGUAGE", ORIG_LANGUAGE_ENV),
+        ("LC_ALL", ORIG_LC_ALL_ENV),
+        ("LC_MESSAGES", ORIG_LC_MESSAGES_ENV),
+        ("LANG", ORIG_LANG_ENV),
+    ] {
+        match std::env::var_os(orig_key) {
+            Some(val) => std::env::set_var(backup_key, val),
+            None => std::env::set_var(backup_key, UNSET_ENV_SENTINEL),
+        }
+    }
+    std::env::set_var(ORIG_LOCALE_SAVED_ENV, "1");
+}
+
+fn restore_original_locale_env() {
+    if std::env::var_os(ORIG_LOCALE_SAVED_ENV).is_none() {
+        return;
+    }
+    for (orig_key, backup_key) in [
+        ("LANGUAGE", ORIG_LANGUAGE_ENV),
+        ("LC_ALL", ORIG_LC_ALL_ENV),
+        ("LC_MESSAGES", ORIG_LC_MESSAGES_ENV),
+        ("LANG", ORIG_LANG_ENV),
+    ] {
+        if let Some(val) = std::env::var_os(backup_key) {
+            if val == UNSET_ENV_SENTINEL {
+                std::env::remove_var(orig_key);
+            } else {
+                std::env::set_var(orig_key, val);
+            }
+        }
+    }
+}
+
+fn language_env_plan(pref: &str) -> Option<LanguageEnvPlan> {
+    match pref.trim() {
+        "en" => Some(LanguageEnvPlan {
+            // Trailing `:C` stops GNU gettext from falling back to host LC_MESSAGES
+            // when no English `.mo` catalog exists on the system.
+            language_var: "en_US:en:C",
+            locale_candidates: &["en_US.UTF-8", "en_US.utf8", "C.UTF-8", "C.utf8", ""],
+        }),
+        "pt_BR" | "pt-br" => Some(LanguageEnvPlan {
+            language_var: "pt_BR:pt-br:pt_PT:pt",
+            // GNU gettext ignores `LANGUAGE` whenever `LC_MESSAGES` is `C`/`C.UTF-8`,
+            // so try non-C UTF-8 locales before falling back to the environment `""`.
+            locale_candidates: &[
+                "pt_BR.UTF-8",
+                "pt_BR.utf8",
+                "en_US.UTF-8",
+                "en_US.utf8",
+                "",
+                "C.UTF-8",
+            ],
+        }),
+        _ => None,
+    }
+}
+
+fn apply_language_preference() {
+    let pref = gio::SettingsSchemaSource::default()
+        .and_then(|src| src.lookup(riff_config::settings::SETTINGS, true))
+        .map(|_| {
+            gio::Settings::new(riff_config::settings::SETTINGS)
+                .string(riff_config::settings::APP_LANGUAGE)
+                .to_string()
+        })
+        .unwrap_or_else(|| "system".to_string());
+
+    apply_language_preference_for(&pref);
+}
+
+fn apply_language_preference_for(pref: &str) {
+    snapshot_original_locale_env();
+
+    if let Some(plan) = language_env_plan(pref) {
+        // Ensure `LC_ALL` does not override `LC_MESSAGES` when `gtk::init()` later calls `setlocale(LC_ALL, "")`.
+        if let Some(orig_lc_all) = std::env::var_os("LC_ALL") {
+            if std::env::var_os("LANG").is_none() {
+                std::env::set_var("LANG", &orig_lc_all);
+            }
+            std::env::remove_var("LC_ALL");
+        }
+        std::env::set_var("LANGUAGE", plan.language_var);
+
+        let needs_non_c_locale = !plan.language_var.split(':').any(|item| item == "C");
+        let mut chosen_locale: Option<String> = None;
+
+        // First try to obtain a non-C locale when `LANGUAGE` translations need to be honored.
+        if needs_non_c_locale {
+            for candidate in plan.locale_candidates {
+                if let Some(bytes) = unsafe { setlocale(LocaleCategory::LcMessages, *candidate) } {
+                    let resolved = String::from_utf8_lossy(&bytes).into_owned();
+                    if !is_c_locale(&resolved) {
+                        chosen_locale = Some(resolved);
+                        break;
+                    }
+                }
+            }
+        }
+
+        if chosen_locale.is_none() {
+            for candidate in plan.locale_candidates {
+                if let Some(bytes) = unsafe { setlocale(LocaleCategory::LcMessages, *candidate) } {
+                    let resolved = String::from_utf8_lossy(&bytes).into_owned();
+                    chosen_locale = Some(resolved);
+                    break;
+                }
+            }
+        }
+
+        if let Some(locale) = chosen_locale {
+            if !locale.is_empty() {
+                std::env::set_var("LC_MESSAGES", locale);
+            }
+        }
+    } else {
+        restore_original_locale_env();
+        unsafe {
+            setlocale(LocaleCategory::LcAll, "");
+        }
+    }
+}
+
 fn setup_gtk(settings: &settings::RiffSettings) {
     // Setup logging
     env_logger::init();
@@ -134,6 +286,9 @@ fn setup_gtk(settings: &settings::RiffSettings) {
     // Set application and program names so desktop environment and window manager identify Canto
     glib::set_application_name("Canto");
     glib::set_prgname(Some("canto"));
+
+    // Apply interface language override before initializing gettext and GTK.
+    apply_language_preference();
 
     // Setup translations
     textdomain("riff")
@@ -323,4 +478,101 @@ fn make_action(
         sender.unbounded_send(app_action.clone()).unwrap();
     });
     action
+}
+
+#[cfg(test)]
+mod language_tests {
+    use super::*;
+    use std::sync::Mutex;
+
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    fn clear_test_env() {
+        for k in [
+            "LANGUAGE",
+            "LC_ALL",
+            "LC_MESSAGES",
+            "LANG",
+            ORIG_LOCALE_SAVED_ENV,
+            ORIG_LANGUAGE_ENV,
+            ORIG_LC_ALL_ENV,
+            ORIG_LC_MESSAGES_ENV,
+            ORIG_LANG_ENV,
+        ] {
+            std::env::remove_var(k);
+        }
+    }
+
+    #[test]
+    fn language_env_plan_maps_supported_choices() {
+        assert_eq!(language_env_plan("system"), None);
+        assert_eq!(
+            language_env_plan("en"),
+            Some(LanguageEnvPlan {
+                language_var: "en_US:en:C",
+                locale_candidates: &["en_US.UTF-8", "en_US.utf8", "C.UTF-8", "C.utf8", ""],
+            })
+        );
+        assert_eq!(
+            language_env_plan("pt_BR"),
+            Some(LanguageEnvPlan {
+                language_var: "pt_BR:pt-br:pt_PT:pt",
+                locale_candidates: &[
+                    "pt_BR.UTF-8",
+                    "pt_BR.utf8",
+                    "en_US.UTF-8",
+                    "en_US.utf8",
+                    "",
+                    "C.UTF-8",
+                ],
+            })
+        );
+    }
+
+    #[test]
+    fn apply_language_handles_pt_br_under_c_utf8_and_restores_system_on_relaunch() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        clear_test_env();
+        std::env::set_var("LANG", "C.UTF-8");
+        std::env::set_var("LC_ALL", "C.UTF-8");
+
+        apply_language_preference_for("pt_BR");
+        assert_eq!(
+            std::env::var("LANGUAGE").as_deref(),
+            Ok("pt_BR:pt-br:pt_PT:pt")
+        );
+        assert!(std::env::var_os("LC_ALL").is_none());
+        if let Ok(lc_msg) = std::env::var("LC_MESSAGES") {
+            if unsafe { setlocale(LocaleCategory::LcMessages, "en_US.UTF-8") }.is_some() {
+                assert!(
+                    !is_c_locale(&lc_msg),
+                    "expected non-C LC_MESSAGES, got {}",
+                    lc_msg
+                );
+            }
+        }
+
+        apply_language_preference_for("system");
+        assert!(std::env::var_os("LANGUAGE").is_none());
+        assert_eq!(std::env::var("LC_ALL").as_deref(), Ok("C.UTF-8"));
+        assert_eq!(std::env::var("LANG").as_deref(), Ok("C.UTF-8"));
+
+        clear_test_env();
+    }
+
+    #[test]
+    fn apply_language_en_preserves_stop_fallback_and_restores_caller_language() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        clear_test_env();
+        std::env::set_var("LANG", "en_US.UTF-8");
+        std::env::set_var("LANGUAGE", "es:pt_BR");
+
+        apply_language_preference_for("en");
+        assert_eq!(std::env::var("LANGUAGE").as_deref(), Ok("en_US:en:C"));
+
+        apply_language_preference_for("system");
+        assert_eq!(std::env::var("LANGUAGE").as_deref(), Ok("es:pt_BR"));
+
+        clear_test_env();
+    }
 }

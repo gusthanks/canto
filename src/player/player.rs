@@ -21,8 +21,9 @@ use librespot::playback::player::{Player, PlayerEvent, PlayerEventChannel};
 use crate::app::models::RepeatMode;
 use crate::player::AppPlayerDelegate;
 use riff_audio_engine::{
-    CaptureSink, EqController, EqProcessor, MixController, MixProcessor, MonoController,
-    MonoProcessor, PanController, PanProcessor, PitchController, PitchProcessor, ProcessorChain,
+    CaptureSink, EqController, EqProcessor, LevelMeterController, LevelMeterProcessor,
+    MixController, MixProcessor, MonoController, MonoProcessor, PanController, PanProcessor,
+    PitchController, PitchProcessor, ProcessorChain,
 };
 
 use riff_auth::{
@@ -245,6 +246,9 @@ pub struct SpotifyPlayer {
     // Shared mixer setting (stub), updated live without recreating the player.
     mix_controller: MixController,
 
+    // Lock-free RMS/peak meter for opt-in external visualizers.
+    level_meter_controller: LevelMeterController,
+
     // Auth related stuff
     oauth_client: Arc<RiffOauthClient>,
     auth_challenge: Option<AuthcodeChallenge>,
@@ -327,6 +331,7 @@ impl SpotifyPlayer {
         token_store: TokenStore,
         session_tokens: SessionTokens,
         command_sender: UnboundedSender<Command>,
+        level_meter_controller: LevelMeterController,
     ) -> Self {
         let eq_controller = EqController::new(settings.eq_bands);
         let mono_controller = MonoController::new(settings.mono_audio);
@@ -343,6 +348,7 @@ impl SpotifyPlayer {
             pan_controller,
             pitch_controller,
             mix_controller,
+            level_meter_controller,
             oauth_client: Arc::new(RiffOauthClient::new(token_store, session_tokens)),
             auth_challenge: None,
             command_sender,
@@ -1070,6 +1076,7 @@ impl SpotifyPlayer {
         let pan_controller = self.pan_controller.clone();
         let pitch_controller = self.pitch_controller.clone();
         let mix_controller = self.mix_controller.clone();
+        let level_meter_controller = self.level_meter_controller.clone();
 
         Player::new(player_config, session, soft_volume, move || {
             let sink: Box<dyn Sink> = match backend {
@@ -1096,7 +1103,8 @@ impl SpotifyPlayer {
                 .with(Box::new(MonoProcessor::new(mono_controller)))
                 .with(Box::new(PanProcessor::new(pan_controller)))
                 .with(Box::new(PitchProcessor::new(pitch_controller)))
-                .with(Box::new(MixProcessor::new(mix_controller)));
+                .with(Box::new(MixProcessor::new(mix_controller)))
+                .with(Box::new(LevelMeterProcessor::new(level_meter_controller)));
 
             CaptureSink::wrap(sink, chain)
         })

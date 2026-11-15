@@ -4,7 +4,7 @@
 //! types from [`crate::models`].
 
 mod provider;
-pub use provider::MusicProvider;
+pub use provider::{MusicProvider, ProviderCapabilities, ProviderKind};
 
 pub mod spotify;
 

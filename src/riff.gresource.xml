@@ -60,6 +60,9 @@
     <!-- app header -->
     <file alias="components/headerbar.ui">app/components/shell/headerbar/headerbar.ui</file>
     <file alias="components/history_menu_row.ui">app/components/shell/headerbar/history_menu_row.ui</file>
+    <!-- command palette -->
+    <file alias="components/command_palette.ui">app/components/shell/command_palette/command_palette.ui</file>
+    <file alias="components/command_palette.css">app/components/shell/command_palette/command_palette.css</file>
     <!-- playlist dialog -->
     <file alias="components/playlist_dialog.ui">app/components/widgets/playlist_dialog/playlist_dialog.ui</file>
     <file alias="components/playlist_dialog.css">app/components/widgets/playlist_dialog/playlist_dialog.css</file>
@@ -84,6 +87,8 @@
     <file compressed="true" preprocess="xml-stripblanks" alias="search-filters-symbolic.svg">../data/hicolor/symbolic/actions/search-filters-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="view-pin-outline-symbolic.svg">../data/hicolor/symbolic/actions/view-pin-outline-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="paper-sheet-symbolic.svg">../data/hicolor/symbolic/actions/paper-sheet-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-genius-symbolic.svg">../data/hicolor/symbolic/actions/canto-genius-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="alarm-symbolic.svg">../data/hicolor/symbolic/actions/alarm-symbolic.svg</file>
     <!-- fallback copies of Adwaita icons for themes that lack them -->
     <file compressed="true" preprocess="xml-stripblanks" alias="audio-speakers-symbolic.svg">../data/hicolor/symbolic/actions/audio-speakers-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="audio-x-generic-symbolic.svg">../data/hicolor/symbolic/actions/audio-x-generic-symbolic.svg</file>

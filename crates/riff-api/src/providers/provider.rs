@@ -4,12 +4,86 @@
 //! [`crate::service::ApiService`] depends on.
 
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 
 use crate::error::DomainError;
 use crate::models::*;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ProviderKind {
+    Spotify,
+    YouTubeMusic,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ProviderCapabilities {
+    pub supports_connect: bool,
+    pub supports_recommendations: bool,
+    pub supports_audio_engine_dsp: bool,
+    pub supports_lyrics: bool,
+    pub supports_search: bool,
+    pub supports_library_sync: bool,
+}
+
+impl ProviderCapabilities {
+    pub const fn spotify() -> Self {
+        Self {
+            supports_connect: true,
+            supports_recommendations: true,
+            supports_audio_engine_dsp: true,
+            supports_lyrics: true,
+            supports_search: true,
+            supports_library_sync: true,
+        }
+    }
+
+    pub const fn youtube_music() -> Self {
+        Self {
+            supports_connect: false,
+            supports_recommendations: true,
+            supports_audio_engine_dsp: true,
+            supports_lyrics: true,
+            supports_search: true,
+            supports_library_sync: true,
+        }
+    }
+
+    pub const fn for_kind(kind: ProviderKind) -> Self {
+        match kind {
+            ProviderKind::Spotify => Self::spotify(),
+            ProviderKind::YouTubeMusic => Self::youtube_music(),
+        }
+    }
+}
+
+impl Default for ProviderCapabilities {
+    fn default() -> Self {
+        Self::spotify()
+    }
+}
+
 #[async_trait]
 pub trait MusicProvider: Send + Sync + 'static {
+    fn kind(&self) -> ProviderKind {
+        ProviderKind::Spotify
+    }
+
+    fn capabilities(&self) -> ProviderCapabilities {
+        ProviderCapabilities::for_kind(self.kind())
+    }
+
+    async fn get_recommendations_for_track(
+        &self,
+        _track_id: &str,
+        _limit: usize,
+    ) -> Result<Vec<Track>, DomainError> {
+        Ok(Vec::new())
+    }
+
+    async fn get_related_artists(&self, _artist_id: &str) -> Result<Vec<Artist>, DomainError> {
+        Ok(Vec::new())
+    }
+
     async fn get_album(&self, id: &str) -> Result<Album, DomainError>;
     async fn get_album_tracks(
         &self,

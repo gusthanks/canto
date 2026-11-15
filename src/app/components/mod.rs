@@ -42,9 +42,25 @@ pub mod labels;
 pub mod clipboard_link;
 pub use clipboard_link::{copy_link_to_clipboard, is_app_copied_link};
 
+pub mod scrobbler;
+pub use scrobbler::ScrobblerController;
+
+pub mod sleep_timer;
+pub use sleep_timer::{SleepTimerController, SleepTimerListener, SleepTimerMode, SleepTimerSnapshot};
+
+pub mod track_radio;
+pub use track_radio::{start_track_radio, SmartQueueController};
+
+pub mod visual_bridge;
+pub use visual_bridge::VisualBridge;
+
+#[cfg(test)]
+mod gtk_smoke_tests;
+
 // without this the builder doesn't seen to know about the custom widgets
 pub fn expose_custom_widgets() {
     shell::playback::expose_widgets();
+    shell::command_palette::expose_widgets();
     widgets::selection::expose_widgets();
     widgets::drawer::expose_widgets();
     shell::headerbar::expose_widgets();

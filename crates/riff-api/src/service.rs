@@ -49,6 +49,7 @@ struct PersistedPage {
 
 pub struct ApiService {
     provider: Arc<dyn MusicProvider>,
+    http_client: reqwest::Client,
     texture_cache: Arc<TextureCache>,
     json_cache: Arc<Store>,
     cdn_client: http::ServiceClient,
@@ -73,6 +74,7 @@ impl ApiService {
         let pool = http::build_shared_pool();
         Self {
             provider,
+            http_client: pool.clone(),
             texture_cache: Arc::new(TextureCache::new(memory_cache_bytes)),
             json_cache: Arc::new(Store::new(memory_cache_bytes)),
             cdn_client: http::cdn_service(pool),
@@ -118,6 +120,54 @@ impl ApiService {
         self.run_cache_maintenance().await;
     }
 
+    pub fn http_client(&self) -> &reqwest::Client {
+        &self.http_client
+    }
+
+    pub(crate) fn provider(&self) -> &dyn MusicProvider {
+        self.provider.as_ref()
+    }
+
+    pub fn provider_kind(&self) -> crate::ProviderKind {
+        self.provider.kind()
+    }
+
+    pub fn provider_capabilities(&self) -> crate::ProviderCapabilities {
+        self.provider.capabilities()
+    }
+
+    pub fn genius_search_url(&self, artist: &str, title: &str) -> String {
+        crate::genius::build_genius_search_url(artist, title)
+    }
+
+    pub async fn fetch_genius_track_info(
+        &self,
+        track_id: &str,
+        artist: &str,
+        title: &str,
+        token: &str,
+    ) -> Result<crate::GeniusTrackInfo, DomainError> {
+        crate::genius::fetch_genius_track_info(
+            &self.http_client,
+            Some(&self.api_disk),
+            track_id,
+            artist,
+            title,
+            token,
+        )
+        .await
+    }
+
+    pub async fn fetch_track_radio(
+        &self,
+        seed: &Track,
+        exclude_ids: &std::collections::HashSet<String>,
+        target_count: usize,
+        load: Load,
+    ) -> Result<Vec<Track>, DomainError> {
+        crate::radio::fetch_similar_tracks(self, seed, exclude_ids, target_count, load).await
+    }
+
     pub fn lyrics_service(&self) -> Arc<crate::lyrics::LyricsService> {
         Arc::clone(&self.lyrics_service)
     }
@@ -132,6 +182,19 @@ impl ApiService {
     ) -> Option<crate::lyrics::Lyrics> {
         self.lyrics_service
             .fetch_lyrics(key, track_name, artist_name, album_name, duration_secs)
+            .await
+    }
+
+    pub async fn refetch_lyrics(
+        &self,
+        key: &str,
+        track_name: &str,
+        artist_name: &str,
+        album_name: Option<&str>,
+        duration_secs: Option<u32>,
+    ) -> Option<crate::lyrics::Lyrics> {
+        self.lyrics_service
+            .refetch_lyrics(key, track_name, artist_name, album_name, duration_secs)
             .await
     }
 

@@ -134,7 +134,7 @@ impl AppPlayerDelegate {
             SpotifyError::NotPremium => LoginAction::SetNotPremium.into(),
             SpotifyError::LoginFailed => LoginAction::SetLoginFailure.into(),
             SpotifyError::LoggedOut => LoginAction::Logout.into(),
-            SpotifyError::PlaybackDrmBlocked => AppAction::ShowDrmBlockedDialog,
+            SpotifyError::PlaybackDrmBlocked => AppAction::UseOfficialClient,
             SpotifyError::PlaybackTemporarilyUnavailable => {
                 AppAction::ShowNotification(gettext("Playback is Temporarily Unavailable"))
             }
@@ -165,6 +165,7 @@ async fn player_main(
     appaction_sender: UnboundedSender<AppAction>,
     token_store: TokenStore,
     session_tokens: SessionTokens,
+    level_meter: riff_audio_engine::LevelMeterController,
     sender: UnboundedSender<Command>,
     receiver: UnboundedReceiver<Command>,
 ) {
@@ -176,6 +177,7 @@ async fn player_main(
             token_store,
             session_tokens,
             sender,
+            level_meter,
         );
         player.start(receiver).await.unwrap();
     })
@@ -188,6 +190,7 @@ pub fn start_player_service(
     appaction_sender: UnboundedSender<AppAction>,
     token_store: TokenStore,
     session_tokens: SessionTokens,
+    level_meter: riff_audio_engine::LevelMeterController,
 ) -> UnboundedSender<Command> {
     let (sender, receiver) = unbounded::<Command>();
     let sender_clone = sender.clone();
@@ -197,6 +200,7 @@ pub fn start_player_service(
             appaction_sender,
             token_store,
             session_tokens,
+            level_meter,
             sender_clone,
             receiver,
         )

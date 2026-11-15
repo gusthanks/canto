@@ -16,7 +16,9 @@ use super::internal_api::SpotifyInternalApi;
 use crate::defaults::{self, EntityKind};
 use crate::error::DomainError;
 use crate::models::*;
-use crate::providers::{content_rating_from_explicit, MusicProvider};
+use crate::providers::{
+    content_rating_from_explicit, MusicProvider, ProviderCapabilities, ProviderKind,
+};
 use crate::token::TokenProvider;
 
 /// Most URIs `GET /me/library/contains` accepts per request.
@@ -162,10 +164,116 @@ impl SpotifyDomain {
 
 #[async_trait]
 impl MusicProvider for SpotifyDomain {
+    fn kind(&self) -> ProviderKind {
+        ProviderKind::Spotify
+    }
+
+    fn capabilities(&self) -> ProviderCapabilities {
+        ProviderCapabilities::spotify()
+    }
+
     fn invalidate_config(&self) {
         debug!("spotify: dropping the cached API config after an auth failure");
         let mut guard = self.cached_config.write().unwrap();
         *guard = None;
+    }
+
+    async fn get_recommendations_for_track(
+        &self,
+        track_id: &str,
+        limit: usize,
+    ) -> Result<Vec<Track>, DomainError> {
+        let config = self.config_or_err()?;
+        let Some(token) = config.oauth_access_token.as_deref() else {
+            return Err(DomainError::NoToken);
+        };
+        let url = url::Url::parse_with_params(
+            "https://api.spotify.com/v1/recommendations",
+            &[
+                ("seed_tracks", track_id),
+                ("limit", &limit.clamp(1, 100).to_string()),
+            ],
+        )
+        .map_err(|e| DomainError::Parse(e.to_string()))?;
+
+        let resp = config
+            .client
+            .get(url)
+            .bearer_auth(token)
+            .send()
+            .await
+            .map_err(|e| DomainError::Network(e.without_url().to_string()))?;
+
+        let status = resp.status();
+        if matches!(status.as_u16(), 400 | 403 | 404) {
+            return Ok(Vec::new());
+        }
+        if status.as_u16() == 401 {
+            return Err(DomainError::AuthExpired);
+        }
+        if !status.is_success() {
+            return Err(DomainError::ServerError {
+                status: status.as_u16(),
+                message: "Spotify recommendations request failed".into(),
+            });
+        }
+        let bytes = resp
+            .bytes()
+            .await
+            .map_err(|e| DomainError::Network(e.without_url().to_string()))?;
+        let val: serde_json::Value =
+            serde_json::from_slice(&bytes).map_err(|e| DomainError::Parse(e.to_string()))?;
+        let Some(items) = val.get("tracks").and_then(serde_json::Value::as_array) else {
+            return Ok(Vec::new());
+        };
+        Ok(items
+            .iter()
+            .filter_map(|item| serde_json::from_value::<sp::TrackObject>(item.clone()).ok())
+            .filter_map(|t| track_from_object(&t))
+            .collect())
+    }
+
+    async fn get_related_artists(&self, artist_id: &str) -> Result<Vec<Artist>, DomainError> {
+        let config = self.config_or_err()?;
+        let Some(token) = config.oauth_access_token.as_deref() else {
+            return Err(DomainError::NoToken);
+        };
+        let url = format!("https://api.spotify.com/v1/artists/{artist_id}/related-artists");
+        let resp = config
+            .client
+            .get(&url)
+            .bearer_auth(token)
+            .send()
+            .await
+            .map_err(|e| DomainError::Network(e.without_url().to_string()))?;
+
+        let status = resp.status();
+        if matches!(status.as_u16(), 400 | 403 | 404) {
+            return Ok(Vec::new());
+        }
+        if status.as_u16() == 401 {
+            return Err(DomainError::AuthExpired);
+        }
+        if !status.is_success() {
+            return Err(DomainError::ServerError {
+                status: status.as_u16(),
+                message: "Spotify related-artists request failed".into(),
+            });
+        }
+        let bytes = resp
+            .bytes()
+            .await
+            .map_err(|e| DomainError::Network(e.without_url().to_string()))?;
+        let val: serde_json::Value =
+            serde_json::from_slice(&bytes).map_err(|e| DomainError::Parse(e.to_string()))?;
+        let Some(items) = val.get("artists").and_then(serde_json::Value::as_array) else {
+            return Ok(Vec::new());
+        };
+        Ok(items
+            .iter()
+            .filter_map(|item| serde_json::from_value::<sp::ArtistObject>(item.clone()).ok())
+            .map(|a| artist_from_object(&a))
+            .collect())
     }
 
     async fn get_album(&self, id: &str) -> Result<Album, DomainError> {

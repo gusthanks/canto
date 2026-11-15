@@ -2,7 +2,7 @@
 use crate::player::Command;
 use crate::settings::{RiffSettings, StateTracker};
 use futures::channel::mpsc::UnboundedSender;
-use gio::prelude::SettingsExt;
+use gio::prelude::*;
 use glib::object::Cast;
 use riff_auth::{SessionTokens, TokenStore};
 use riff_config::feature_flags::FeatureFlag;
@@ -24,6 +24,7 @@ mod list_store;
 pub use list_store::*;
 
 pub mod state;
+pub mod theme;
 pub use state::{
     AppAction, AppEvent, AppModel, AppState, BrowserAction, BrowserEvent, PaginationTarget,
     ProvidesApi,
@@ -51,6 +52,8 @@ pub struct App {
     // so it is compiled out of release builds entirely.
     #[cfg(debug_assertions)]
     player_command_sender: UnboundedSender<Command>,
+    theme_engine: Rc<theme::ThemeEngine>,
+    sleep_timer: Rc<SleepTimerController>,
     _live_settings: gio::Settings,
 }
 
@@ -60,6 +63,7 @@ impl App {
         builder: gtk::Builder,
         sender: UnboundedSender<AppAction>,
     ) -> Self {
+        let theme_engine = theme::ThemeEngine::install();
         let state = AppState::new();
 
         // Token
@@ -71,6 +75,9 @@ impl App {
 
         // Setting
         let gsettings = gio::Settings::new(crate::settings::SETTINGS);
+        let level_meter = riff_audio_engine::LevelMeterController::new(
+            gsettings.boolean(riff_config::settings::VISUAL_BRIDGE_ENABLED),
+        );
 
         // API
         let memory_cache_mb = gsettings.uint("memory-cache-size-mb").max(1) as usize;
@@ -91,10 +98,13 @@ impl App {
             sender.clone(),
             token_store,
             session_tokens,
+            level_meter.clone(),
         );
 
         let api = model.api();
         let connect_command_sender = crate::connect::start_connect_server(api, sender.clone());
+        let sleep_timer =
+            SleepTimerController::new(Rc::clone(&model), Dispatcher::new(sender.clone()));
 
         // Non widget components
         let components: Vec<Box<dyn EventListener>> = vec![
@@ -109,6 +119,18 @@ impl App {
                 Dispatcher::new(sender.clone()),
             )),
             Box::new(StateTracker::new_from_gsettings()),
+            Box::new(SleepTimerListener::new(Rc::clone(&sleep_timer))),
+            Box::new(ScrobblerController::new(Rc::clone(&model))),
+            Box::new(SmartQueueController::new(
+                Rc::clone(&model),
+                Dispatcher::new(sender.clone()),
+                Rc::clone(&sleep_timer),
+            )),
+            Box::new(VisualBridge::new(
+                Rc::clone(&model),
+                Rc::clone(&theme_engine),
+                level_meter,
+            )),
             App::make_dbus(Rc::clone(&model), sender.clone()),
             App::make_inhibitor(&builder, Rc::clone(&model)),
         ];
@@ -121,6 +143,8 @@ impl App {
             sender,
             #[cfg(debug_assertions)]
             player_command_sender,
+            theme_engine,
+            sleep_timer,
             _live_settings: live_settings,
         }
     }
@@ -175,7 +199,12 @@ impl App {
         let mut components: Vec<Box<dyn EventListener>> = vec![
             App::make_window(&self.settings, builder, Rc::clone(model)),
             App::make_selection_toolbar(builder, Rc::clone(model), dispatcher.clone()),
-            App::make_playback(builder, Rc::clone(model), dispatcher.clone()),
+            App::make_playback(
+                builder,
+                Rc::clone(model),
+                dispatcher.clone(),
+                Rc::clone(&self.sleep_timer),
+            ),
             App::make_panel_manager(
                 builder,
                 layout,
@@ -195,9 +224,43 @@ impl App {
             ),
             App::make_search_button(builder, dispatcher.clone()),
             App::make_clipboard_import(builder, Rc::clone(model), dispatcher.clone()),
-            App::make_user_menu(builder, Rc::clone(model), dispatcher),
+            App::make_user_menu(builder, Rc::clone(model), dispatcher.clone()),
             App::make_notification(builder),
+            Box::new(theme::ThemeController::new(
+                Rc::clone(model),
+                Rc::clone(&self.theme_engine),
+            )),
         ];
+
+        let window: libadwaita::ApplicationWindow = builder.object("window").unwrap();
+        let palette_action = gio::SimpleAction::new("command-palette", None);
+        let palette_win = window.clone();
+        let palette_model = Rc::clone(model);
+        let palette_disp = dispatcher.clone();
+        let palette_timer = Rc::clone(&self.sleep_timer);
+        palette_action.connect_activate(move |_, _| {
+            CommandPaletteDialog::open(
+                &palette_win,
+                Rc::clone(&palette_model),
+                palette_disp.clone(),
+                Rc::clone(&palette_timer),
+            );
+        });
+        window.add_action(&palette_action);
+
+        let radio_action = gio::SimpleAction::new("start-track-radio", None);
+        let radio_model = Rc::clone(model);
+        let radio_disp = dispatcher;
+        radio_action.connect_activate(move |_, _| {
+            if let Some(track) = radio_model.get_state().playback.current_song() {
+                start_track_radio(&radio_model, &radio_disp, track);
+            } else {
+                radio_disp.dispatch(AppAction::ShowNotification(gettextrs::gettext(
+                    "No track is currently playing",
+                )));
+            }
+        });
+        window.add_action(&radio_action);
 
         // Wire up dev tools menu (debug builds only)
         #[cfg(debug_assertions)]
@@ -286,12 +349,14 @@ impl App {
         builder: &gtk::Builder,
         app_model: Rc<AppModel>,
         dispatcher: Dispatcher,
+        sleep_timer: Rc<SleepTimerController>,
     ) -> Box<impl EventListener> {
         let model = PlaybackModel::new(app_model, dispatcher);
         Box::new(PlaybackControl::new(
             model,
             builder.object("playback").unwrap(),
             builder.object("queue_bar").unwrap(),
+            sleep_timer,
         ))
     }
 
