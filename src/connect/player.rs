@@ -220,6 +220,13 @@ impl ConnectPlayer {
             return;
         }
         if let Some(device) = self.wait_for_official_device(false, true).await {
+            // The app here also reports "playing" while it only shows what
+            // another device plays (an Alexa, a phone): taking over then
+            // pulled the music away from that device and paused it
+            if !device.is_active {
+                debug!("the Spotify app here shows another device playing; leaving it there");
+                return;
+            }
             info!("the Spotify app here is playing; taking over its playback");
             self.switch_to(device).await;
         }

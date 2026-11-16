@@ -50,6 +50,8 @@ pub struct Panel {
     share: Cell<Option<f64>>,
     rail: Cell<bool>,
     auto_rail: Cell<bool>,
+    /// Open over the content of a narrow window, at its own width
+    overlay: Cell<bool>,
 }
 
 impl Panel {
@@ -65,6 +67,7 @@ impl Panel {
             share: Cell::new(None),
             rail: Cell::new(false),
             auto_rail: Cell::new(false),
+            overlay: Cell::new(false),
         }
     }
 
@@ -84,6 +87,10 @@ impl Panel {
     /// The user chose the collapsed sidebar (not just squeezed into it).
     pub fn rail_chosen(&self) -> bool {
         self.rail.get()
+    }
+
+    pub fn set_overlay(&self, overlay: bool) {
+        self.overlay.set(overlay);
     }
 
     /// Collapsed to the rail only because the full sidebar doesn't fit.
@@ -151,7 +158,10 @@ impl Panel {
 
     pub fn apply(&self, window_width: i32) {
         let split = &self.split;
-        let (min, max) = if split.is_collapsed() {
+        let (min, max) = if split.is_collapsed() && self.overlay.get() {
+            let width = f64::from(self.size.shown_width(self.width.get(), window_width));
+            (width, width)
+        } else if split.is_collapsed() {
             (0.0, f64::from(i32::MAX))
         } else {
             let width = f64::from(self.shown_width(window_width));

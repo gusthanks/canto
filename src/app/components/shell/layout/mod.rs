@@ -222,6 +222,7 @@ impl WindowLayout {
             layout,
             move |split| {
                 if !split.shows_sidebar() && layout.navigation_overlay.replace(false) {
+                    layout.navigation.set_overlay(false);
                     split.set_collapsed(false);
                     layout.fit();
                 }
@@ -234,6 +235,7 @@ impl WindowLayout {
             layout.fit();
         }
 
+        Self::align_top_center_with_sidebar(builder);
         layout.wire_resize(Which::Navigation, navigation_handle);
         layout.wire_resize(Which::Utility, utility_handle);
         layout
@@ -341,12 +343,50 @@ impl WindowLayout {
         }
     }
 
+    /// In narrow windows home and search sit at the start of the top bar;
+    /// with the full sidebar open they move right, to end where it ends.
+    fn align_top_center_with_sidebar(builder: &gtk::Builder) {
+        let center: gtk::Widget = builder.object("top_center").unwrap();
+        let top_bar: gtk::Widget = builder.object("top_bar").unwrap();
+        let sidebar: gtk::Widget = builder.object("navigation_panel").unwrap();
+        let weak_bar = top_bar.downgrade();
+        let weak_sidebar = sidebar.downgrade();
+        center.add_tick_callback(move |center, _| {
+            let (Some(bar), Some(sidebar)) = (weak_bar.upgrade(), weak_sidebar.upgrade()) else {
+                return glib::ControlFlow::Break;
+            };
+            let current = center.margin_start();
+            let mut wanted = 0;
+            let beside = sidebar.is_mapped()
+                && !sidebar.has_css_class(RAIL_CLASS)
+                && center.halign() == gtk::Align::Start;
+            if beside {
+                if let (Some(side), Some(own)) =
+                    (sidebar.compute_bounds(&bar), center.compute_bounds(&bar))
+                {
+                    let sidebar_end = side.x() + side.width();
+                    let start_without_margin = own.x() - current as f32;
+                    let gap = 12.0;
+                    wanted = (sidebar_end - gap - own.width() - start_without_margin).max(0.0) as i32;
+                }
+            }
+            if (wanted - current).abs() > 1 {
+                center.set_margin_start(wanted);
+            }
+            glib::ControlFlow::Continue
+        });
+    }
+
     fn open_navigation_overlay(&self) {
-        self.navigation_overlay.set(true);
         self.navigation.set_auto_rail(false);
         self.apply_rail();
         let split = &self.navigation.split;
+        // Collapsing hides the sidebar on its own: only then is the overlay
+        // marked open, or that hiding would count as closing it
         split.set_collapsed(true);
+        self.navigation_overlay.set(true);
+        self.navigation.set_overlay(true);
+        self.show_navigation(true);
         split.set_show_sidebar(true);
         self.apply();
     }

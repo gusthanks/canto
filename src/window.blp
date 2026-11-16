@@ -135,6 +135,10 @@ Adw.ApplicationWindow window {
       vexpand: true;
 
       Adw.HeaderBar top_bar {
+        // No window buttons: Omarchy closes windows with Super+W
+        show-start-title-buttons: false;
+        show-end-title-buttons: false;
+
         styles [
           "top-bar",
         ]

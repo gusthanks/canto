@@ -78,8 +78,12 @@ impl NavigationPanel {
             .unwrap();
         context_menu.set_parent(&navigation_panel_box);
 
-        // The layout marks the sidebar when it collapses to covers and icons
+        // The layout marks the sidebar when it collapses to covers and icons.
+        // It may already have, before this panel existed (a narrow window or
+        // a remembered rail at start): rows then start as covers only, or
+        // their squeezed titles show as "…"
         if let Some(sidebar) = navigation_panel_box.parent() {
+            rail.set(sidebar.has_css_class("navigation-panel--rail"));
             sidebar.connect_css_classes_notify(clone!(
                 #[weak]
                 listbox,
