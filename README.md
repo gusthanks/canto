@@ -62,6 +62,20 @@ exec-once = [workspace special:canto silent] canto
 
 Toggle the scratchpad whenever you want to bring Canto forward (for example `bind = SUPER, M, togglespecialworkspace, canto`).
 
+## Hyprland Tip: Floating Mini Player
+
+The mini player (player bar button or `Ctrl+K` -> **Mini Player**) is a window titled `Canto Mini Player`. Tiling window managers tile it like any other window; to keep it floating on top in a corner:
+
+```lua
+-- Omarchy, ~/.config/hypr/hyprland.lua
+o.window({ title = "^Canto Mini Player$" }, {
+  float = true,
+  pin = true,
+  size = { 360, 130 },
+  move = { "(monitor_w-window_w-40)", "(monitor_h-window_h-40)" },
+})
+```
+
 ## BYOK API Setup Tutorials
 
 Canto works out of the box for Spotify browsing, LRCLIB synced lyrics, and zero-key Genius web search links. All extra integrations below are Bring-Your-Own-Key (BYOK): tokens stay local in your GSettings / keyring and are never sent anywhere except their respective official APIs.

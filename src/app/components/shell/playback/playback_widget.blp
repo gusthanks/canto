@@ -21,6 +21,7 @@ template $PlaybackWidget : Box {
         device_selector_box.visible: false;
         eq_button.visible: false;
         fullscreen_lyrics_button.visible: false;
+        mini_player_button.visible: false;
         playback_center.homogeneous: false;
       }
     }
@@ -38,6 +39,7 @@ template $PlaybackWidget : Box {
         now_playing_button_box.visible: true;
         lyrics_button.visible: false;
         fullscreen_lyrics_button.visible: false;
+        mini_player_button.visible: false;
         queue_button.visible: false;
         sleep_timer_button.visible: false;
         playback_center.margin-start: 10;
@@ -182,6 +184,23 @@ template $PlaybackWidget : Box {
           /* Translators: Tooltip of the player bar button that shows the lyrics full screen. */
           tooltip-text: _("Full-Screen Lyrics");
           action-name: "win.fullscreen-lyrics";
+          valign: center;
+          focus-on-click: false;
+          can-focus: false;
+
+          styles [
+            "flat",
+            "circular",
+          ]
+        }
+
+        Button mini_player_button {
+          width-request: 36;
+          height-request: 36;
+          icon-name: "view-dual-symbolic";
+          /* Translators: Tooltip of the player bar button that opens the small player window. */
+          tooltip-text: _("Mini Player");
+          action-name: "win.mini-player";
           valign: center;
           focus-on-click: false;
           can-focus: false;

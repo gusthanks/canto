@@ -295,6 +295,12 @@ fn dump_now_panel_sample() {
     distinct_colors(window.upcast_ref(), "fullscreen-lyrics-sample");
     window.destroy();
 
+    let window = super::shell::mini_player::sample_for_tests(cover.upcast_ref());
+    window.present();
+    pump(1200);
+    distinct_colors(window.upcast_ref(), "mini-player-sample");
+    window.destroy();
+
     // The sidebar with covers, open and collapsed
     for rail in [false, true] {
         let sidebar = super::shell::navigation_panel::sample_for_tests(cover.upcast_ref(), rail);

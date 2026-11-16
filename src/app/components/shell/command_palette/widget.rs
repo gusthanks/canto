@@ -28,6 +28,7 @@ enum PaletteAction {
     ToggleQueue,
     ToggleLyrics,
     FullscreenLyrics,
+    MiniPlayer,
     StartTrackRadio(Track),
     SetTheme(&'static str),
     SetSleepTimerOff,
@@ -561,6 +562,15 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         keywords: "fullscreen full screen lyrics karaoke big".into(),
         action: PaletteAction::FullscreenLyrics,
     });
+    entries.push(PaletteEntry {
+        title: gettext("Mini Player"),
+        subtitle: gettext("Keep the controls in a small window"),
+        category: action_cat.clone(),
+        icon_name: "view-dual-symbolic",
+        shortcut_hint: None,
+        keywords: "mini player small window compact pip".into(),
+        action: PaletteAction::MiniPlayer,
+    });
 
     if let Some(current) = runtime.app_model.get_state().playback.current_song() {
         entries.push(PaletteEntry {
@@ -798,6 +808,9 @@ fn execute_action(runtime: &PaletteRuntime, action: PaletteAction) {
         }
         PaletteAction::ToggleQueue => {
             let _ = WidgetExt::activate_action(&runtime.window, "win.show-queue", None);
+        }
+        PaletteAction::MiniPlayer => {
+            let _ = WidgetExt::activate_action(&runtime.window, "win.mini-player", None);
         }
         PaletteAction::FullscreenLyrics => {
             let _ = WidgetExt::activate_action(&runtime.window, "win.fullscreen-lyrics", None);
