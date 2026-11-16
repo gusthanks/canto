@@ -319,11 +319,37 @@ impl ConnectPlayer {
         }
     }
 
+    /// After a successful play or pause, the known state follows it.
+    fn remember_playing(&self, result: &Result<(), DomainError>, playing: bool) {
+        if result.is_ok() {
+            if let Ok(mut state) = self.last_state.write() {
+                state.is_playing = playing;
+            }
+            self.remote_playing.store(playing, Ordering::Relaxed);
+        }
+    }
+
     async fn handle_other_command(
         &self,
         device_id: String,
         command: ConnectCommand,
     ) -> Result<(), DomainError> {
+        // Always sent: the last polled state can be seconds old, and
+        // skipping on it dropped real presses. Handled before the state lock,
+        // which `remember_playing` takes for writing.
+        match command {
+            ConnectCommand::PlayerResume => {
+                let result = self.api.player_resume(&device_id).await;
+                self.remember_playing(&result, true);
+                return result;
+            }
+            ConnectCommand::PlayerPause => {
+                let result = self.api.player_pause(&device_id).await;
+                self.remember_playing(&result, false);
+                return result;
+            }
+            _ => {}
+        }
         let state = self.last_state.read();
         let Ok(state) = state.as_deref() else {
             return Ok(());
@@ -335,12 +361,6 @@ impl ConnectPlayer {
             }
             ConnectCommand::PlayerLoad { .. } => {
                 self.handle_player_load(device_id, state, command).await
-            }
-            ConnectCommand::PlayerResume if !state.is_playing => {
-                self.api.player_resume(&device_id).await
-            }
-            ConnectCommand::PlayerPause if state.is_playing => {
-                self.api.player_pause(&device_id).await
             }
             ConnectCommand::PlayerSeek(offset) => {
                 self.api.player_seek(&device_id, offset as u32).await

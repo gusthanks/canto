@@ -834,7 +834,10 @@ impl MusicProvider for SpotifyDomain {
 
     async fn player_resume(&self, device_id: &str) -> Result<(), DomainError> {
         let config = self.config_or_err()?;
-        Ok(apis::player_api::start_a_users_playback(&config, Some(device_id), None).await?)
+        // An empty object resumes; no body at all was sent as `null`, which
+        // Spotify answers with 500
+        let body = sp::StartAUsersPlaybackRequest::new();
+        Ok(apis::player_api::start_a_users_playback(&config, Some(device_id), Some(body)).await?)
     }
 
     async fn player_transfer(&self, device_id: &str) -> Result<(), DomainError> {
