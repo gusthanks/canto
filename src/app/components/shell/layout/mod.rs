@@ -49,6 +49,8 @@ pub struct WindowLayout {
     closed_to_fit: Cell<bool>,
     hid_navigation: Cell<bool>,
     collapsing_navigation: Rc<Cell<bool>>,
+    /// The full sidebar is open over the content of a narrow window
+    navigation_overlay: Cell<bool>,
     fitted_width: Cell<i32>,
     fitted_header_width: Cell<i32>,
     rail: RailWidgets,
@@ -60,6 +62,7 @@ struct RailWidgets {
     handle: gtk::Widget,
     header: libadwaita::HeaderBar,
     rail_header: gtk::Box,
+    top_bar: gtk::Widget,
 }
 
 impl WindowLayout {
@@ -88,6 +91,7 @@ impl WindowLayout {
             handle: navigation_handle.clone(),
             header: builder.object("navigation_panel_header").unwrap(),
             rail_header: builder.object("rail_header").unwrap(),
+            top_bar: builder.object("top_bar").unwrap(),
         };
 
         let navigation = Panel::new(NAVIGATION_PANEL, navigation_split.clone(), Edge::Start);
@@ -100,6 +104,7 @@ impl WindowLayout {
             closed_to_fit: Cell::new(false),
             hid_navigation: Cell::new(false),
             collapsing_navigation: Rc::new(Cell::new(false)),
+            navigation_overlay: Cell::new(false),
             fitted_width: Cell::new(0),
             fitted_header_width: Cell::new(0),
             rail,
@@ -197,10 +202,31 @@ impl WindowLayout {
                 layout.fit();
             }
         ));
-        rail_action.connect_activate(|action, _| {
-            let rail = action.state().and_then(|s| s.get::<bool>()).unwrap_or(false);
-            action.change_state(&(!rail).to_variant());
-        });
+        rail_action.connect_activate(clone!(
+            #[weak]
+            layout,
+            move |action, _| {
+                // Squeezed to the rail by a narrow window: the library icon
+                // opens the full sidebar over the content for a moment
+                if layout.navigation.is_rail() && !layout.navigation.rail_chosen() {
+                    layout.open_navigation_overlay();
+                    return;
+                }
+                let rail = action.state().and_then(|s| s.get::<bool>()).unwrap_or(false);
+                action.change_state(&(!rail).to_variant());
+            }
+        ));
+        // Closing the sidebar opened over the content brings the rail back
+        layout.navigation.split.connect_show_sidebar_notify(clone!(
+            #[weak]
+            layout,
+            move |split| {
+                if !split.shows_sidebar() && layout.navigation_overlay.replace(false) {
+                    split.set_collapsed(false);
+                    layout.fit();
+                }
+            }
+        ));
         window.add_action(&rail_action);
         if rail_saved {
             layout.navigation.set_rail(true);
@@ -315,9 +341,19 @@ impl WindowLayout {
         }
     }
 
+    fn open_navigation_overlay(&self) {
+        self.navigation_overlay.set(true);
+        self.navigation.set_auto_rail(false);
+        self.apply_rail();
+        let split = &self.navigation.split;
+        split.set_collapsed(true);
+        split.set_show_sidebar(true);
+        self.apply();
+    }
+
     fn collapse_navigation_to_fit(&self) {
         let window_width = self.window_width();
-        if window_width <= 0 {
+        if window_width <= 0 || self.navigation_overlay.get() {
             return;
         }
         let mobile = window_width <= sp_to_px(MOBILE_WIDTH_SP);
@@ -406,10 +442,13 @@ impl WindowLayout {
         if rail == w.sidebar.has_css_class(RAIL_CLASS) {
             return;
         }
+        // The top bar's menu lines up over the rail's library icon
         if rail {
             w.sidebar.add_css_class(RAIL_CLASS);
+            w.top_bar.add_css_class("top-bar--rail");
         } else {
             w.sidebar.remove_css_class(RAIL_CLASS);
+            w.top_bar.remove_css_class("top-bar--rail");
         }
         w.header.set_visible(!rail);
         w.rail_header.set_visible(rail);
@@ -538,9 +577,6 @@ impl WindowLayout {
     }
 }
 
-/// Below this width the top bar's search pill becomes a round button.
-const COMPACT_TOP_BAR_SP: f64 = 760.0;
-
 fn add_window_breakpoints(builder: &gtk::Builder) {
     let window: libadwaita::ApplicationWindow = builder.object("window").unwrap();
     let bottom_sheet: gtk::Widget = builder.object("bottom_sheet").unwrap();
@@ -554,21 +590,20 @@ fn add_window_breakpoints(builder: &gtk::Builder) {
         .collect::<Vec<String>>()
         .to_value();
 
-    // Narrow windows: the search pill turns into a round button beside home,
-    // both next to back and forward
-    let compact_top = max_width_breakpoint(COMPACT_TOP_BAR_SP);
-    let set = |id: &str, property: &str, value: glib::Value| {
-        let widget: glib::Object = builder.object(id).unwrap();
-        compact_top.add_setter(&widget, property, Some(&value));
-    };
-    set("search_button", "visible", false.to_value());
-    set("top_search_icon", "visible", true.to_value());
-    set("top_center", "halign", gtk::Align::Start.to_value());
-    window.add_breakpoint(compact_top);
-
     let narrow = max_width_breakpoint(NARROW_WIDTH_SP);
     narrow.add_setter(&bottom_sheet, "full-width", Some(&true.to_value()));
     narrow.add_setter(&bottom_sheet, "css-classes", Some(&no_classes));
+    // Only one window breakpoint applies at a time, so the top bar's narrow
+    // look rides on this one: the search pill turns into a round button
+    // beside home, both next to back and forward
+    for (id, property, value) in [
+        ("search_button", "visible", false.to_value()),
+        ("top_search_icon", "visible", true.to_value()),
+        ("top_center", "halign", gtk::Align::Start.to_value()),
+    ] {
+        let widget: glib::Object = builder.object(id).unwrap();
+        narrow.add_setter(&widget, property, Some(&value));
+    }
     window.add_breakpoint(narrow);
 }
 

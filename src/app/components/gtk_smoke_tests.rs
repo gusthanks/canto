@@ -265,6 +265,12 @@ fn dump_now_panel_sample() {
     main.present();
     pump(1500);
     distinct_colors(main.upcast_ref(), "main-window-sample");
+    // Narrow, laid out by the real window layout: the sidebar squeezed to
+    // its rail of covers, the search pill a round button
+    let _layout = super::WindowLayout::new(&builder);
+    main.set_default_size(583, 621);
+    pump(2500);
+    distinct_colors(main.upcast_ref(), "main-window-narrow-sample");
 
     // The search page's field takes the pill's place in the top bar
     header.set_top_search(

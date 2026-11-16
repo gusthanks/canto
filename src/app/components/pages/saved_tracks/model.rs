@@ -56,7 +56,11 @@ impl SavedTracksModel {
 
 impl PageModel for SavedTracksModel {
     fn get_title(&self) -> Option<String> {
-        Some(gettext("All Tracks"))
+        Some(gettext("Liked Songs"))
+    }
+
+    fn get_caption(&self) -> Option<String> {
+        Some(gettext("Playlist"))
     }
 
     fn get_subtitle(&self) -> Option<String> {

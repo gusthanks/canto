@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 19:59-0300\n"
+"POT-Creation-Date: 2026-11-16 20:27-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -294,6 +294,7 @@ msgstr ""
 #. translators: A playlist in the back/forward history menu, while its name is loading.
 #: src/app/components/labels.rs:184
 #: src/app/components/pages/details_playlist/model.rs:154
+#: src/app/components/pages/saved_tracks/model.rs:63
 #: src/app/components/shell/command_palette/widget.rs:695
 #: src/app/components/shell/navigation_panel/model.rs:187
 #: src/app/components/shell/navigation_panel/model.rs:548
@@ -342,7 +343,7 @@ msgid "A playlist's description can't be removed, so it was kept."
 msgstr ""
 
 #: src/app/components/pages/details_playlist/model.rs:141
-#: src/app/components/pages/saved_tracks/model.rs:71
+#: src/app/components/pages/saved_tracks/model.rs:75
 #, rust-format
 msgid "{} Track"
 msgid_plural "{} Tracks"
@@ -436,8 +437,11 @@ msgstr ""
 msgid "Your playlists will be shown here."
 msgstr ""
 
+#. translators: This is a navigation panel entry to browse to the songs the user liked (the heart).
 #: src/app/components/pages/saved_tracks/model.rs:59
-msgid "All Tracks"
+#: src/app/components/shell/command_palette/widget.rs:501
+#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:73
+msgid "Liked Songs"
 msgstr ""
 
 #: src/app/components/pages/search/search.rs:267
@@ -737,12 +741,6 @@ msgstr ""
 
 #: src/app/components/shell/command_palette/widget.rs:493
 msgid "Open search page"
-msgstr ""
-
-#. translators: This is a navigation panel entry to browse to the songs the user liked (the heart).
-#: src/app/components/shell/command_palette/widget.rs:501
-#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:73
-msgid "Liked Songs"
 msgstr ""
 
 #: src/app/components/shell/command_palette/widget.rs:502
@@ -1350,7 +1348,7 @@ msgstr ""
 #: src/app/components/pages/queue/queue_page.blp:34
 #: src/app/components/shell/headerbar/headerbar.blp:131
 #: src/app/components/pages/queue/widget.rs:113
-#: src/app/components/shell/headerbar/widget.rs:766
+#: src/app/components/shell/headerbar/widget.rs:780
 #: src/app/components/shell/utility_panel/utility_panel.blp:87
 #: src/app/components/shell/utility_panel/widget.rs:153
 msgid "Select All"
@@ -2242,7 +2240,7 @@ msgstr ""
 
 #. translators: Button label. Deselects all songs, once they are all selected.
 #: src/app/components/pages/queue/widget.rs:110
-#: src/app/components/shell/headerbar/widget.rs:763
+#: src/app/components/shell/headerbar/widget.rs:777
 #: src/app/components/shell/utility_panel/widget.rs:150
 msgid "Deselect All"
 msgstr ""

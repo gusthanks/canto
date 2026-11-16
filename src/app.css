@@ -443,3 +443,11 @@ row.navigation-row--playing label:not(.dim-label) {
 .playback-bar button image {
   -gtk-icon-size: 20px;
 }
+
+/* With the sidebar collapsed to its rail (72px), the main menu sits right
+   above the rail's library icon (headerbar padding 6px + 13px puts the 34px
+   button's center at 36px), and back/forward start past the rail's edge */
+.top-bar--rail menubutton {
+  margin-left: 13px;
+  margin-right: 26px;
+}
