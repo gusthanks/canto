@@ -19,6 +19,7 @@
 //!        ▼
 //!   ProcessorChain
 //!        │   EqProcessor → MonoProcessor → PanProcessor → PitchProcessor → MixProcessor
+//!        │   → LimiterProcessor → LevelMeterProcessor
 //!        ▼
 //!   backend Sink (PulseAudio / ALSA)
 //! ```
@@ -37,6 +38,7 @@ mod capture_sink;
 mod eq_processor;
 mod level_meter;
 mod mix_processor;
+mod limiter_processor;
 mod mono_processor;
 mod pan_processor;
 mod pitch_processor;
@@ -45,6 +47,7 @@ pub use buffer::AudioBuffer;
 pub use capture_sink::CaptureSink;
 pub use eq_processor::{EqController, EqProcessor};
 pub use level_meter::{LevelMeterController, LevelMeterProcessor};
+pub use limiter_processor::{LimiterProcessor, LIMITER_CEILING};
 pub use mix_processor::{MixController, MixProcessor};
 pub use mono_processor::{MonoController, MonoProcessor};
 pub use pan_processor::{PanController, PanProcessor};

@@ -22,7 +22,7 @@ use crate::app::models::RepeatMode;
 use crate::player::AppPlayerDelegate;
 use riff_audio_engine::{
     CaptureSink, EqController, EqProcessor, LevelMeterController, LevelMeterProcessor,
-    MixController, MixProcessor, MonoController, MonoProcessor, PanController, PanProcessor,
+    LimiterProcessor, MixController, MixProcessor, MonoController, MonoProcessor, PanController, PanProcessor,
     PitchController, PitchProcessor, ProcessorChain,
 };
 
@@ -1104,6 +1104,8 @@ impl SpotifyPlayer {
                 .with(Box::new(PanProcessor::new(pan_controller)))
                 .with(Box::new(PitchProcessor::new(pitch_controller)))
                 .with(Box::new(MixProcessor::new(mix_controller)))
+                // Keeps EQ boosts from clipping in the backend
+                .with(Box::new(LimiterProcessor::new()))
                 .with(Box::new(LevelMeterProcessor::new(level_meter_controller)));
 
             CaptureSink::wrap(sink, chain)
