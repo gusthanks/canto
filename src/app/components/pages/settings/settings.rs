@@ -148,6 +148,8 @@ mod imp {
 
         #[template_child]
         pub genius_token_entry: TemplateChild<libadwaita::PasswordEntryRow>,
+        #[template_child]
+        pub google_translate_key_entry: TemplateChild<libadwaita::PasswordEntryRow>,
 
         #[template_child]
         pub scrobbling_guide_button: TemplateChild<gtk::Button>,
@@ -858,6 +860,13 @@ impl SettingsDialog {
         // Integrations (Genius, Scrobbling, Visual Bridge)
         settings
             .bind(GENIUS_ACCESS_TOKEN, &*widget.genius_token_entry, "text")
+            .build();
+        settings
+            .bind(
+                riff_config::settings::GOOGLE_TRANSLATE_API_KEY,
+                &*widget.google_translate_key_entry,
+                "text",
+            )
             .build();
         settings
             .bind(SCROBBLE_ENABLED, &*widget.scrobble_enabled_switch, "active")

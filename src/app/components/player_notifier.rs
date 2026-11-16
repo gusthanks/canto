@@ -222,6 +222,8 @@ impl PlayerNotifier {
                 Some(ConnectCommand::PlayerSeek(position as usize))
             }
             PlaybackEvent::PlaybackPaused => Some(ConnectCommand::PlayerPause),
+            PlaybackEvent::RemoteSkip(true) => Some(ConnectCommand::PlayerNext),
+            PlaybackEvent::RemoteSkip(false) => Some(ConnectCommand::PlayerPrevious),
             PlaybackEvent::PlaybackResumed => Some(ConnectCommand::PlayerResume),
             PlaybackEvent::VolumeSet(volume) => Some(ConnectCommand::PlayerSetVolume(
                 (volume * 100f64).trunc() as u8,

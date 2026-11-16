@@ -88,6 +88,19 @@ pub fn pause() -> Result<(), String> {
     call(PLAYER, "Pause", None).map(drop)
 }
 
+/// Asks the app to quit (it allows it: `CanQuit` is true).
+pub fn quit() -> Result<(), String> {
+    call("org.mpris.MediaPlayer2", "Quit", None).map(drop)
+}
+
+pub fn next() -> Result<(), String> {
+    call(PLAYER, "Next", None).map(drop)
+}
+
+pub fn previous() -> Result<(), String> {
+    call(PLAYER, "Previous", None).map(drop)
+}
+
 /// Starts `uri` (e.g. `spotify:track:<id>`) from its beginning.
 pub fn open_uri(uri: &str) -> Result<(), String> {
     call(PLAYER, "OpenUri", Some(&(uri,).to_variant())).map(drop)

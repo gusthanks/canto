@@ -14,6 +14,20 @@ mod spotify_mpris;
 pub use official::{account_needs_official_client, remember_account_needs_official_client};
 pub use player::ConnectCommand;
 
+/// Quits the Spotify app Canto plays through (accounts that need it), so it
+/// doesn't keep playing once Canto is gone. Other accounts' apps are left
+/// alone: there the Spotify app is the user's own.
+pub fn quit_official_client() {
+    if !official::account_needs_official_client() || !spotify_mpris::is_running() {
+        return;
+    }
+    let _ = spotify_mpris::pause();
+    match spotify_mpris::quit() {
+        Ok(()) => log::info!("quit the hidden Spotify app along with Canto"),
+        Err(e) => log::warn!("couldn't quit the Spotify app: {e}"),
+    }
+}
+
 #[tokio::main]
 async fn connect_server(
     api: Arc<ApiService>,

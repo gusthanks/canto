@@ -75,13 +75,26 @@ impl Middleware for LoggingMiddleware {
 
 /// Spotify answers "411 Length Required" to a PUT or POST sent without a body
 /// (pause, next, previous, seek, repeat, shuffle, volume...), so those get an
-/// explicitly empty one.
+/// explicitly empty one. The generated client also sends the JSON `null` as
+/// the body of optional-body calls left empty (save, remove, follow...); that
+/// never means anything to Spotify and can make it fail, so it goes empty too.
 fn give_bodyless_writes_a_length(req: &mut Request) {
     let writes = matches!(
         *req.method(),
-        reqwest::Method::PUT | reqwest::Method::POST | reqwest::Method::PATCH
+        reqwest::Method::PUT | reqwest::Method::POST | reqwest::Method::PATCH | reqwest::Method::DELETE
     );
-    if writes && req.body().is_none() {
+    if !writes {
+        return;
+    }
+    let null_json = req
+        .body()
+        .and_then(|b| b.as_bytes())
+        .is_some_and(|bytes| bytes == b"null");
+    if null_json {
+        *req.body_mut() = None;
+        req.headers_mut().remove(reqwest::header::CONTENT_TYPE);
+    }
+    if req.body().is_none() && *req.method() != reqwest::Method::DELETE {
         *req.body_mut() = Some(reqwest::Body::from(Vec::<u8>::new()));
         req.headers_mut()
             .entry(reqwest::header::CONTENT_LENGTH)
@@ -189,11 +202,21 @@ mod tests {
         give_bodyless_writes_a_length(&mut get);
         assert!(get.body().is_none());
 
-        let mut with_body = Request::new(reqwest::Method::PUT, url);
+        let mut with_body = Request::new(reqwest::Method::PUT, url.clone());
         *with_body.body_mut() = Some(reqwest::Body::from("{}"));
         give_bodyless_writes_a_length(&mut with_body);
         assert_eq!(with_body.body().and_then(|b| b.as_bytes()), Some(&b"{}"[..]));
         assert!(with_body.headers().get(reqwest::header::CONTENT_LENGTH).is_none());
+
+        let mut null_put = Request::new(reqwest::Method::PUT, url.clone());
+        *null_put.body_mut() = Some(reqwest::Body::from("null"));
+        give_bodyless_writes_a_length(&mut null_put);
+        assert_eq!(null_put.body().and_then(|b| b.as_bytes()), Some(&[][..]));
+
+        let mut null_delete = Request::new(reqwest::Method::DELETE, url);
+        *null_delete.body_mut() = Some(reqwest::Body::from("null"));
+        give_bodyless_writes_a_length(&mut null_delete);
+        assert!(null_delete.body().is_none());
     }
 
     #[test]

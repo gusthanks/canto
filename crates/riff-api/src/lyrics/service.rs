@@ -12,6 +12,7 @@ const LRCLIB_SEARCH_URL: &str = "https://lrclib.net/api/search";
 pub struct LyricsService {
     client: reqwest::Client,
     cache: LyricsCache,
+    translator: super::translate::LyricsTranslator,
 }
 
 #[derive(Deserialize, Debug)]
@@ -140,6 +141,7 @@ impl LyricsService {
             .build()
             .unwrap_or_else(|_| reqwest::Client::new());
         Self {
+            translator: super::translate::LyricsTranslator::new(client.clone()),
             client,
             cache: LyricsCache::new(),
         }
@@ -150,11 +152,19 @@ impl LyricsService {
             .user_agent(USER_AGENT)
             .build()
             .unwrap_or_else(|_| reqwest::Client::new());
-        Self { client, cache }
+        Self {
+            translator: super::translate::LyricsTranslator::new(client.clone()),
+            client,
+            cache,
+        }
     }
 
     pub fn cache(&self) -> &LyricsCache {
         &self.cache
+    }
+
+    pub fn translator(&self) -> &super::translate::LyricsTranslator {
+        &self.translator
     }
 
     /// Fetch lyrics for a track, checking disk cache first (0ms), then LRCLIB API.

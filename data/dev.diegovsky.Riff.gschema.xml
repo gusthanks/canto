@@ -341,6 +341,15 @@
       <summary>Maximum disk space (MB) for the on-disk audio cache</summary>
       <description>Upper bound on disk space used to cache downloaded audio data.</description>
     </key>
+    <key name="lyrics-translation" type="b">
+      <default>false</default>
+      <summary>Show a translation under each lyric line</summary>
+    </key>
+    <key name="google-translate-api-key" type="s">
+      <default>""</default>
+      <summary>Google Cloud Translation API key</summary>
+      <description>Optional. Without it, lyrics are translated through Google's free keyless endpoint, which may stop working.</description>
+    </key>
     <key name="genius-access-token" type="s">
       <default>""</default>
       <summary>Genius Client Access Token</summary>

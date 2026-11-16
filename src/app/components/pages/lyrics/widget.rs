@@ -38,6 +38,8 @@ mod imp {
         pub reload_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub fullscreen_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub translate_button: TemplateChild<gtk::ToggleButton>,
 
         pub line_widgets: RefCell<Vec<gtk::Widget>>,
         pub active_index: RefCell<Option<usize>>,
@@ -204,7 +206,7 @@ impl LyricsPageWidget {
                     label.set_wrap_mode(gtk::pango::WrapMode::WordChar);
                     label.set_halign(gtk::Align::Start);
                     label.set_xalign(0.0);
-                    btn.set_child(Some(&label));
+                    btn.set_child(Some(&line_with_translation(&label)));
 
                     let seek_ms = line.start_time_ms.min(u64::from(u32::MAX)) as u32;
                     let on_seek_clone = on_seek.clone();
@@ -223,15 +225,16 @@ impl LyricsPageWidget {
                 let mut widgets = Vec::with_capacity(lines.len());
                 for text in lines {
                     let label = gtk::Label::new(Some(text));
-                    label.add_css_class("lyric-line");
-                    label.add_css_class("plain");
                     label.set_wrap(true);
                     label.set_wrap_mode(gtk::pango::WrapMode::WordChar);
                     label.set_halign(gtk::Align::Start);
                     label.set_xalign(0.0);
+                    let line = line_with_translation(&label);
+                    line.add_css_class("lyric-line");
+                    line.add_css_class("plain");
 
-                    imp.lyrics_container.append(&label);
-                    widgets.push(label.upcast());
+                    imp.lyrics_container.append(&line);
+                    widgets.push(line.upcast());
                 }
                 *imp.line_widgets.borrow_mut() = widgets;
                 false
@@ -268,13 +271,55 @@ impl LyricsPageWidget {
         }
     }
 
+    /// The box holding a line's label and its translation.
+    fn line_box(&self, index: usize) -> Option<gtk::Box> {
+        let widgets = self.imp().line_widgets.borrow();
+        let widget = widgets.get(index)?;
+        match widget.downcast_ref::<gtk::Button>() {
+            Some(button) => button.child().and_downcast::<gtk::Box>(),
+            None => widget.clone().downcast::<gtk::Box>().ok(),
+        }
+    }
+
     fn line_label(&self, index: usize) -> Option<gtk::Label> {
+        self.line_box(index)?.first_child().and_downcast::<gtk::Label>()
+    }
+
+    /// Shows `lines[i]` under lyric line `i` (`None` everywhere hides them).
+    pub fn set_translations(&self, lines: Option<&[Option<String>]>) {
+        let count = self.imp().line_widgets.borrow().len();
+        for index in 0..count {
+            let Some(translation) = self
+                .line_box(index)
+                .and_then(|b| b.last_child())
+                .and_downcast::<gtk::Label>()
+                .filter(|l| l.has_css_class("lyric-translation"))
+            else {
+                continue;
+            };
+            let text = lines.and_then(|l| l.get(index)).and_then(|t| t.as_deref());
+            translation.set_text(text.unwrap_or(""));
+            translation.set_visible(text.is_some());
+        }
+    }
+
+    /// The text of each shown lyric line, in order.
+    pub fn line_texts(&self) -> Vec<String> {
+        let count = self.imp().line_widgets.borrow().len();
+        (0..count)
+            .map(|i| self.line_label(i).map(|l| l.text().to_string()).unwrap_or_default())
+            .collect()
+    }
+
+    /// Shows the translate button pressed or not.
+    pub fn set_translate_active(&self, active: bool) {
+        self.imp().translate_button.set_active(active);
+    }
+
+    pub fn connect_translate_toggled<F: Fn(bool) + 'static>(&self, f: F) {
         self.imp()
-            .line_widgets
-            .borrow()
-            .get(index)
-            .and_then(|w| w.downcast_ref::<gtk::Button>().and_then(|b| b.child()))
-            .and_downcast::<gtk::Label>()
+            .translate_button
+            .connect_toggled(move |button| f(button.is_active()));
     }
 
     pub fn set_active_line(&self, new_index: Option<usize>) {
@@ -377,6 +422,21 @@ pub fn karaoke_markup(text: &str, lit: usize) -> String {
     }
     let rest = glib::markup_escape_text(&rest.join(" "));
     format!("{sung} <span alpha=\"45%\">{rest}</span>")
+}
+
+/// A lyric line's label with a hidden translation label under it.
+fn line_with_translation(label: &gtk::Label) -> gtk::Box {
+    let line = gtk::Box::new(gtk::Orientation::Vertical, 2);
+    line.append(label);
+    let translation = gtk::Label::new(None);
+    translation.set_wrap(true);
+    translation.set_wrap_mode(gtk::pango::WrapMode::WordChar);
+    translation.set_halign(gtk::Align::Start);
+    translation.set_xalign(0.0);
+    translation.set_visible(false);
+    translation.add_css_class("lyric-translation");
+    line.append(&translation);
+    line
 }
 
 pub fn expose_widgets() {

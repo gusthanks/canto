@@ -337,6 +337,10 @@ impl PlaybackState {
     }
 
     fn play_next_events(&mut self, auto: bool) -> Vec<PlaybackEvent> {
+        if !auto && !self.is_local() && !self.has_next() {
+            // The device knows its real queue, which Canto may only partly see
+            return vec![PlaybackEvent::RemoteSkip(true)];
+        }
         if let Some(id) = self.play_next_skippable(auto) {
             vec![PlaybackEvent::TrackChanged(id)]
         } else {
@@ -370,6 +374,10 @@ impl PlaybackState {
                 if let Some(id) = self.started_playing() {
                     return vec![PlaybackEvent::TrackChanged(id)];
                 }
+            }
+            if !self.is_local() {
+                // Canto may not know what played before on the device
+                return vec![PlaybackEvent::RemoteSkip(false)];
             }
             events.push(PlaybackEvent::NoPreviousTrack);
         }
@@ -662,6 +670,9 @@ pub enum PlaybackEvent {
     PlaylistChanged,
     PlaybackStopped,
     NoPreviousTrack,
+    /// Canto's copy of a Connect device's queue has nothing before/after:
+    /// ask the device itself to skip (`true` = next, `false` = previous).
+    RemoteSkip(bool),
     SwitchedDevice(Device),
     AvailableDevicesChanged,
     /// Emitted when the skip_explicit preference changes (either locally or
@@ -1834,6 +1845,31 @@ mod tests {
             is_active: true,
             volume_percent: Some(50),
         })
+    }
+
+    #[test]
+    fn connect_device_skips_past_what_canto_knows_of_its_queue() {
+        let mut state = PlaybackState::default();
+        state.act(PlaybackAction::SwitchDevice(connect_device("alexa")));
+        state.act(PlaybackAction::SyncRemoteState(Box::new(RemotePlaybackState {
+            tracks: Some(vec![song("only")]),
+            track_id: Some("only".to_string()),
+            is_playing: true,
+            position_ms: 500,
+            repeat: RepeatMode::Off,
+            shuffle: false,
+            volume: None,
+        })));
+        let was_playing = state.is_playing();
+
+        let previous = state.act(PlaybackAction::Previous);
+        assert!(previous.iter().any(|e| matches!(e, PlaybackEvent::RemoteSkip(false))));
+        assert!(!previous.iter().any(|e| matches!(e, PlaybackEvent::NoPreviousTrack)));
+
+        let next = state.act(PlaybackAction::Next);
+        assert!(next.iter().any(|e| matches!(e, PlaybackEvent::RemoteSkip(true))));
+        assert!(!next.iter().any(|e| matches!(e, PlaybackEvent::PlaybackStopped)));
+        assert_eq!(state.is_playing(), was_playing);
     }
 
     #[test]

@@ -25,6 +25,9 @@ struct View {
     artist: gtk::Label,
     play: gtk::Button,
     like: gtk::Button,
+    /// The cover and the titles: clicking them opens the full app.
+    cover_area: gtk::Box,
+    text_area: gtk::Box,
 }
 
 pub struct MiniPlayer {
@@ -43,15 +46,22 @@ impl MiniPlayer {
         let action_view = Rc::clone(&view);
         let action_model = Rc::clone(&app_model);
         let application = main_window.application();
+        let main = main_window.downgrade();
         action.connect_activate(move |_, _| {
             let mut slot = action_view.borrow_mut();
             let view = slot.get_or_insert_with(|| {
                 let view = build_view(&action_model, &dispatcher);
                 view.window.set_application(application.as_ref());
+                link_to_main_window(&view, main.clone());
                 view
             });
             update_view(view, &action_model);
             view.window.present();
+            // The mini player stands in for the app: the big window goes away
+            // until the mini player is clicked or closed
+            if let Some(main) = main.upgrade() {
+                main.set_visible(false);
+            }
         });
         main_window.add_action(&action);
         Self { app_model, view }
@@ -64,6 +74,38 @@ impl MiniPlayer {
             }
         }
     }
+}
+
+/// Clicking the cover or the titles brings the full app back (and closes
+/// the mini player); closing the mini player does too, so Canto never ends
+/// up with no window.
+fn link_to_main_window(view: &View, main: glib::WeakRef<libadwaita::ApplicationWindow>) {
+    let show_main = {
+        let main = main.clone();
+        move || {
+            if let Some(main) = main.upgrade() {
+                main.set_visible(true);
+                main.present();
+            }
+        }
+    };
+    for target in [view.cover_area.upcast_ref::<gtk::Widget>(), view.text_area.upcast_ref()] {
+        let click = gtk::GestureClick::new();
+        let mini = view.window.downgrade();
+        click.connect_released(move |gesture, _, _, _| {
+            gesture.set_state(gtk::EventSequenceState::Claimed);
+            if let Some(mini) = mini.upgrade() {
+                // `close` shows the main window through the handler below
+                mini.close();
+            }
+        });
+        target.add_controller(click);
+        target.set_cursor_from_name(Some("pointer"));
+    }
+    view.window.connect_close_request(move |_| {
+        show_main();
+        glib::Propagation::Proceed
+    });
 }
 
 fn icon_button(icon: &str, tooltip: &str) -> gtk::Button {
@@ -139,11 +181,15 @@ fn build_layout() -> (View, [gtk::Button; 2]) {
     controls.append(&spacer);
     controls.append(&like);
 
+    let titles = gtk::Box::new(gtk::Orientation::Vertical, 2);
+    titles.set_tooltip_text(Some(&gettext("Open Canto")));
+    titles.append(&title);
+    titles.append(&artist);
+
     let text = gtk::Box::new(gtk::Orientation::Vertical, 2);
     text.set_hexpand(true);
     text.set_valign(gtk::Align::Center);
-    text.append(&title);
-    text.append(&artist);
+    text.append(&titles);
     text.append(&controls);
 
     let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
@@ -169,6 +215,7 @@ fn build_layout() -> (View, [gtk::Button; 2]) {
     });
     window.add_controller(keys);
 
+    cover_clip.set_tooltip_text(Some(&gettext("Open Canto")));
     let view = View {
         window,
         cover,
@@ -176,6 +223,8 @@ fn build_layout() -> (View, [gtk::Button; 2]) {
         artist,
         play,
         like,
+        cover_area: cover_clip,
+        text_area: titles,
     };
     (view, [previous, next])
 }

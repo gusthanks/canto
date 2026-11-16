@@ -248,6 +248,38 @@ fn dump_now_panel_sample() {
     distinct_colors(window.upcast_ref(), "now-panel-sample");
     window.destroy();
 
+    // Lyrics with a translation under each line
+    let lyrics: LyricsPageWidget = glib::Object::new();
+    let lines = ["Eu vim do nada", "", "Hoje eu tô aqui"];
+    lyrics.set_lyrics(
+        &riff_api::Lyrics::Synced(
+            lines
+                .iter()
+                .enumerate()
+                .map(|(i, t)| riff_api::lyrics::LyricLine {
+                    start_time_ms: i as u64 * 4000,
+                    text: t.to_string(),
+                })
+                .collect(),
+        ),
+        |_| {},
+    );
+    assert_eq!(lyrics.line_texts(), lines);
+    lyrics.set_translate_active(true);
+    lyrics.set_translations(Some(&[
+        Some("I came from nothing".to_string()),
+        None,
+        Some("Today I'm here".to_string()),
+    ]));
+    lyrics.set_position(Some((1, 0.5)));
+    let window = gtk::Window::new();
+    window.set_default_size(700, 600);
+    window.set_child(Some(&lyrics));
+    window.present();
+    pump(1500);
+    distinct_colors(window.upcast_ref(), "lyrics-translation-sample");
+    window.destroy();
+
     let bar: super::shell::playback::PlaybackWidget = glib::Object::new();
     bar.set_track(
         "TODOS ESSES MANOS",

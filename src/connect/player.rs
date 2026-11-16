@@ -44,6 +44,9 @@ pub enum ConnectCommand {
     PlayerRepeat(RepeatMode),
     PlayerShuffle(bool),
     PlayerSetVolume(u8),
+    /// Skip on the device itself, past what Canto knows of its queue.
+    PlayerNext,
+    PlayerPrevious,
 }
 
 pub struct ConnectPlayer {
@@ -598,6 +601,8 @@ impl ConnectPlayer {
         let result = match command {
             ConnectCommand::PlayerResume => spotify_mpris::play(),
             ConnectCommand::PlayerPause => spotify_mpris::pause(),
+            ConnectCommand::PlayerNext => spotify_mpris::next(),
+            ConnectCommand::PlayerPrevious => spotify_mpris::previous(),
             ConnectCommand::PlayerSeek(offset) => {
                 let item = spotify_mpris::snapshot()?.item_path?;
                 spotify_mpris::set_position(&item, *offset as u32)

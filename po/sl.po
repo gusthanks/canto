@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 12:06-0300\n"
+"POT-Creation-Date: 2026-11-16 15:34-0300\n"
 "Language: sl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -151,8 +151,8 @@ msgstr "Nimaš shranjenih seznamov predvajanja."
 #. translators: This is part of a contextual menu attached to a playlist in the sidebar; this entry starts playing the playlist from the first track.
 #: src/app/components/labels.rs:74
 #: src/app/components/shell/playback/playback_controls.rs:71
-#: src/app/components/shell/mini_player.rs:126
-#: src/app/components/shell/mini_player.rs:191
+#: src/app/components/shell/mini_player.rs:168
+#: src/app/components/shell/mini_player.rs:240
 #: src/app/components/widgets/details_page/header.rs:249
 #: src/app/components/widgets/details_page/header.blp:144
 msgid "Play"
@@ -331,7 +331,7 @@ msgid "The playlist's cover could not be uploaded."
 msgstr ""
 
 #. translators: This notification is shown when Spotify throttles requests.
-#: src/app/components/mod.rs:245 src/connect/player.rs:523
+#: src/app/components/mod.rs:245 src/connect/player.rs:765
 msgid "Rate limited by Spotify. Please wait a moment and try again."
 msgstr ""
 
@@ -375,7 +375,7 @@ msgstr "Seznami predvajanja"
 #. translators: Title of the full-screen lyrics window.
 #. Translators: Tooltip of the player bar button that shows or hides synced lyrics.
 #. Translators: Tab label for lyrics in utility panel.
-#: src/app/components/pages/lyrics/component.rs:68
+#: src/app/components/pages/lyrics/component.rs:70
 #: src/app/components/shell/now_panel/mod.rs:350
 #: src/app/components/shell/fullscreen_lyrics.rs:78
 #: src/app/components/shell/playback/playback_widget.blp:166
@@ -384,8 +384,8 @@ msgid "Lyrics"
 msgstr ""
 
 #. translators: Short text displayed instead of a track title when nothing plays
-#: src/app/components/pages/lyrics/component.rs:289
-#: src/app/components/pages/lyrics/component.rs:523
+#: src/app/components/pages/lyrics/component.rs:320
+#: src/app/components/pages/lyrics/component.rs:609
 #: src/app/components/shell/playback/playback_info.rs:112
 #: src/app/components/shell/fullscreen_lyrics.rs:161
 #, fuzzy
@@ -393,12 +393,12 @@ msgid "No Track Playing"
 msgstr "Se predvaja"
 
 #. Translators: Shown when no lyrics are found.
-#: src/app/components/pages/lyrics/component.rs:433
+#: src/app/components/pages/lyrics/component.rs:467
 #: src/app/components/pages/lyrics/lyrics_page.blp:54
 msgid "No Lyrics Available"
 msgstr ""
 
-#: src/app/components/pages/lyrics/component.rs:434
+#: src/app/components/pages/lyrics/component.rs:468
 #: src/app/components/pages/lyrics/lyrics_page.blp:55
 msgid "Lyrics couldn't be found for this song."
 msgstr ""
@@ -494,162 +494,162 @@ msgstr "Albumi"
 msgid "Playlists"
 msgstr "Seznami predvajanja"
 
-#: src/app/components/pages/settings/settings.rs:310
+#: src/app/components/pages/settings/settings.rs:312
 msgid "Unsupported due to legal restrictions."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:889
+#: src/app/components/pages/settings/settings.rs:898
 msgid "Experimental Features"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:891
+#: src/app/components/pages/settings/settings.rs:900
 msgid ""
 "These features are still in development and may be unstable or incomplete."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1034
-#: src/app/components/pages/settings/settings.rs:1137
+#: src/app/components/pages/settings/settings.rs:1043
+#: src/app/components/pages/settings/settings.rs:1146
 msgid "Connected to Last.fm"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1036
+#: src/app/components/pages/settings/settings.rs:1045
 msgid "Connected as"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1047
+#: src/app/components/pages/settings/settings.rs:1056
 msgid "Step 1 opened in browser. Approve access, then click 2. Complete."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1049
+#: src/app/components/pages/settings/settings.rs:1058
 msgid "Click 1. Open Auth to approve Canto in your browser"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1051
-#: src/app/components/pages/settings/settings.blp:502
+#: src/app/components/pages/settings/settings.rs:1060
+#: src/app/components/pages/settings/settings.blp:511
 msgid "Enter API Key and Secret above, then connect your account"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1068
-#: src/app/components/pages/settings/settings.rs:1115
+#: src/app/components/pages/settings/settings.rs:1077
+#: src/app/components/pages/settings/settings.rs:1124
 msgid "Enter your Last.fm API Key and Secret first"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1094
+#: src/app/components/pages/settings/settings.rs:1103
 msgid ""
 "Could not start Last.fm authorization. Check API credentials and network."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1107
+#: src/app/components/pages/settings/settings.rs:1116
 msgid "Run Step 1 first to open browser authorization"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1139
+#: src/app/components/pages/settings/settings.rs:1148
 msgid "Connected to Last.fm as"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1146
+#: src/app/components/pages/settings/settings.rs:1155
 msgid ""
 "Last.fm authorization is not approved yet. Approve in browser, then try Step "
 "2 again."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1174
+#: src/app/components/pages/settings/settings.rs:1183
 msgid "Locked by a Family plan parental control and cannot be changed here."
 msgstr ""
 
 #. translators: Genius form field that should be left untouched.
-#: src/app/components/pages/settings/settings.rs:1306
+#: src/app/components/pages/settings/settings.rs:1315
 msgid "Keep the default"
 msgstr ""
 
 #. translators: Tooltip of the button copying a value for a form field.
-#: src/app/components/pages/settings/settings.rs:1315
+#: src/app/components/pages/settings/settings.rs:1324
 #, fuzzy
 msgid "Copy"
 msgstr "Kopiraj povezavo"
 
 #. translators: Toast after copying a value; {} is the value.
-#: src/app/components/pages/settings/settings.rs:1322
+#: src/app/components/pages/settings/settings.rs:1331
 #, rust-format
 msgid "Copied {}"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1344
+#: src/app/components/pages/settings/settings.rs:1353
 msgid ""
 "1. Click the button below to open the New API Client form on Genius (sign in "
 "if asked)."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1347
+#: src/app/components/pages/settings/settings.rs:1356
 msgid "2. Fill in the form like this, then click 'Save':"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1359
+#: src/app/components/pages/settings/settings.rs:1368
 msgid ""
 "3. On the next page, click 'Generate Access Token' and copy the Client "
 "Access Token. Canto doesn't need the Client ID or Client Secret."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1362
+#: src/app/components/pages/settings/settings.rs:1371
 msgid "4. Back in Canto, paste it into Client Access Token, under Genius."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1369
+#: src/app/components/pages/settings/settings.rs:1378
 #, fuzzy
 msgid "Open Genius"
 msgstr "Razišči Spotify."
 
-#: src/app/components/pages/settings/settings.rs:1377
-#: src/app/components/pages/settings/settings.rs:1470
+#: src/app/components/pages/settings/settings.rs:1386
+#: src/app/components/pages/settings/settings.rs:1479
 #: src/app/components/shell/window/close_dialog.rs:67
 msgid "Close"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1389
+#: src/app/components/pages/settings/settings.rs:1398
 msgid "How to Get a Genius Token"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1414
+#: src/app/components/pages/settings/settings.rs:1423
 msgid "How to Set Up Scrobbling"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1427
+#: src/app/components/pages/settings/settings.rs:1436
 msgid "Last.fm (API Key + Browser Auth)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1433
+#: src/app/components/pages/settings/settings.rs:1442
 msgid ""
 "1. Open last.fm/api/account/create, create an API application, and copy the "
 "API Key and Shared Secret into Canto."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1436
+#: src/app/components/pages/settings/settings.rs:1445
 msgid ""
 "2. Click '1. Open Auth' to open Last.fm in your browser and approve access "
 "for Canto."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1439
+#: src/app/components/pages/settings/settings.rs:1448
 msgid ""
 "3. Return to Canto and click '2. Complete' to store your persistent session "
 "key."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1442
+#: src/app/components/pages/settings/settings.rs:1451
 msgid "ListenBrainz (User Token)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1449
+#: src/app/components/pages/settings/settings.rs:1458
 msgid ""
 "Open listenbrainz.org/settings, copy your User Token, and paste it into "
 "ListenBrainz User Token."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1456
+#: src/app/components/pages/settings/settings.rs:1465
 msgid "Open Last.fm API"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1463
+#: src/app/components/pages/settings/settings.rs:1472
 msgid "Open ListenBrainz"
 msgstr ""
 
@@ -804,7 +804,7 @@ msgstr ""
 
 #. Translators: Tooltip of the button in the lyrics that shows them full screen.
 #: src/app/components/shell/command_palette/widget.rs:557
-#: src/app/components/pages/lyrics/lyrics_page.blp:134
+#: src/app/components/pages/lyrics/lyrics_page.blp:145
 msgid "Full-Screen Lyrics"
 msgstr ""
 
@@ -970,7 +970,7 @@ msgid "No previous track"
 msgstr ""
 
 #: src/app/components/shell/playback/playback_controls.rs:69
-#: src/app/components/shell/mini_player.rs:191
+#: src/app/components/shell/mini_player.rs:240
 #: src/app/components/widgets/details_page/header.rs:247
 msgid "Pause"
 msgstr "Premor"
@@ -989,7 +989,7 @@ msgstr "Albumi"
 
 #. translators: Side panel view of the current track, when nothing plays.
 #: src/app/components/shell/now_panel/mod.rs:313
-#: src/app/components/shell/mini_player.rs:199
+#: src/app/components/shell/mini_player.rs:248
 #, fuzzy
 msgid "Nothing Playing"
 msgstr "Se predvaja"
@@ -1075,15 +1075,20 @@ msgstr ""
 msgid "Exit Full Screen (Esc)"
 msgstr ""
 
-#: src/app/components/shell/mini_player.rs:125
+#: src/app/components/shell/mini_player.rs:167
 #: src/app/components/shell/playback/playback_controls.blp:30
 msgid "Previous"
 msgstr "Prejšna skladba"
 
-#: src/app/components/shell/mini_player.rs:129
+#: src/app/components/shell/mini_player.rs:171
 #: src/app/components/shell/playback/playback_controls.blp:56
 msgid "Next"
 msgstr "Naslednja skladba"
+
+#: src/app/components/shell/mini_player.rs:185
+#: src/app/components/shell/mini_player.rs:218
+msgid "Open Canto"
+msgstr ""
 
 #: src/app/components/shell/navigation_panel/model.rs:133
 msgid "Unnamed Playlist"
@@ -1235,29 +1240,29 @@ msgstr ""
 msgid "Compilations"
 msgstr ""
 
-#: src/app/mod.rs:259
+#: src/app/mod.rs:261
 #, fuzzy
 msgid "No track is currently playing"
 msgstr "Se predvaja"
 
-#: src/connect/player.rs:92
+#: src/connect/player.rs:101
 msgid "Connection to device lost!"
 msgstr ""
 
-#: src/connect/player.rs:336 src/connect/player.rs:443
+#: src/connect/player.rs:517 src/connect/player.rs:680
 msgid "Starting Spotify in the background…"
 msgstr ""
 
-#: src/connect/player.rs:343
+#: src/connect/player.rs:524
 msgid "Could not start the Spotify app. Is it installed?"
 msgstr ""
 
-#: src/connect/player.rs:355
+#: src/connect/player.rs:536
 msgid "The Spotify app did not show up as a device. Try again in a moment."
 msgstr ""
 
 #. translators: Shown when a Spotify Connect speaker is asleep or unreachable.
-#: src/connect/player.rs:528
+#: src/connect/player.rs:770
 msgid ""
 "Spotify Connect device is asleep or inactive. Start playback on the device "
 "first."
@@ -1269,7 +1274,7 @@ msgstr ""
 msgid "Playing music"
 msgstr ""
 
-#: src/main.rs:102
+#: src/main.rs:111
 msgid "Failed to open link!"
 msgstr ""
 
@@ -1370,6 +1375,11 @@ msgstr ""
 
 #: src/app/components/pages/lyrics/lyrics_page.blp:123
 msgid "Reload lyrics"
+msgstr ""
+
+#. Translators: Tooltip of the lyrics button that shows a translation under each line.
+#: src/app/components/pages/lyrics/lyrics_page.blp:134
+msgid "Translate Lyrics"
 msgstr ""
 
 #. Translators: Button label. Selects all visible songs.
@@ -1913,8 +1923,8 @@ msgstr ""
 
 #: src/app/components/pages/settings/settings.blp:453
 msgid ""
-"Optional Client Access Token to fetch producers, writers, samples, and liner "
-"notes in the About Track tab."
+"Optional Client Access Token to show producers, writers and featured artists "
+"in the Now Playing panel."
 msgstr ""
 
 #: src/app/components/pages/settings/settings.blp:456
@@ -1926,78 +1936,94 @@ msgid "Client Access Token"
 msgstr ""
 
 #: src/app/components/pages/settings/settings.blp:470
-msgid "Scrobbling (Last.fm and ListenBrainz)"
+msgid "Lyrics Translation"
 msgstr ""
 
 #: src/app/components/pages/settings/settings.blp:471
+msgid ""
+"Lyrics are translated through Google Translate for free, without a key. That "
+"free route isn't official and may stop working; a Google Cloud API key "
+"(500,000 characters a month free, a billing account required) makes it "
+"reliable."
+msgstr ""
+
+#: src/app/components/pages/settings/settings.blp:474
+msgid "Google Cloud API Key (optional)"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.blp:479
+msgid "Scrobbling (Last.fm and ListenBrainz)"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.blp:480
 msgid ""
 "Track played songs to Last.fm and/or ListenBrainz with automatic offline "
 "retry."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:474
+#: src/app/components/pages/settings/settings.blp:483
 msgid "How to set up scrobbling"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:483
+#: src/app/components/pages/settings/settings.blp:492
 msgid "Enable Scrobbling"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:484
+#: src/app/components/pages/settings/settings.blp:493
 msgid "Send Now Playing updates and scrobble tracks after listening"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:488
+#: src/app/components/pages/settings/settings.blp:497
 msgid "Scrobble Connect Devices"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:489
+#: src/app/components/pages/settings/settings.blp:498
 msgid "Also track plays from active Spotify Connect speakers and phones"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:493
+#: src/app/components/pages/settings/settings.blp:502
 msgid "Last.fm API Key"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:497
+#: src/app/components/pages/settings/settings.blp:506
 msgid "Last.fm API Secret"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:501
+#: src/app/components/pages/settings/settings.blp:510
 msgid "Authorize Last.fm"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:510
+#: src/app/components/pages/settings/settings.blp:519
 msgid "1. Open Auth"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:514
+#: src/app/components/pages/settings/settings.blp:523
 msgid "2. Complete"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:519
+#: src/app/components/pages/settings/settings.blp:528
 msgid "Disconnect"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:530
+#: src/app/components/pages/settings/settings.blp:539
 msgid "ListenBrainz User Token"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:535
+#: src/app/components/pages/settings/settings.blp:544
 msgid "Visual Bridge (External Visualizers)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:536
+#: src/app/components/pages/settings/settings.blp:545
 msgid ""
 "Opt-in lightweight local state and audio RMS/peak output for external 3D "
 "visualizers such as Chaosphere."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:539
+#: src/app/components/pages/settings/settings.blp:548
 msgid "Enable Visual Bridge"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:540
+#: src/app/components/pages/settings/settings.blp:549
 msgid ""
 "Write active track, theme colors, and audio energy levels to "
 "$XDG_RUNTIME_DIR/canto/state.json"

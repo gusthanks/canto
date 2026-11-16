@@ -347,3 +347,14 @@ bottom-sheet.bottom-sheet--padded > sheet {
   background-color: @accent_bg_color;
   color: @accent_fg_color;
 }
+
+/* Lyrics translation, under each line */
+.lyric-translation {
+  font-size: 0.78em;
+  font-weight: normal;
+  opacity: 0.72;
+}
+
+.lyrics--fullscreen .lyric-translation {
+  font-size: 0.55em;
+}

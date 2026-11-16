@@ -80,14 +80,23 @@ fn main() {
     let sender_clone = sender.clone();
     gtk_app.connect_activate(move |gtk_app| {
         debug!("activate");
-        if let Some(existing_window) = gtk_app.active_window() {
-            existing_window.present();
+        if window.application().is_some() {
+            // The main window, even when the mini player is the active one
+            // or the main window was hidden for it
+            window.set_visible(true);
+            window.present();
         } else {
             // Only send the Start action if we've just created the window
             window.set_application(Some(gtk_app));
             gtk_app.add_window(&window);
             sender_clone.unbounded_send(AppAction::Start).unwrap();
         }
+    });
+
+    // Canto plays through a hidden Spotify app on accounts that need it:
+    // quitting Canto quits that app too, so it doesn't keep playing unseen
+    gtk_app.connect_shutdown(|_| {
+        connect::quit_official_client();
     });
 
     gtk_app.connect_open(move |gtk_app, targets, _| {
