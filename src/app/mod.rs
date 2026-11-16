@@ -194,6 +194,8 @@ impl App {
         let registrar = HeaderRegistrar::new(app_header.clone(), Rc::clone(&header_models));
 
         let layout = WindowLayout::new(builder);
+        let main_window: libadwaita::ApplicationWindow = builder.object("window").unwrap();
+        install_space_toggle(&main_window);
 
         // All components that will be available initially
         let mut components: Vec<Box<dyn EventListener>> = vec![
@@ -473,4 +475,44 @@ impl App {
             })
             .await;
     }
+}
+
+/// Space plays and pauses from anywhere in the window, like in Spotify: it's
+/// caught before the focused button or list row can take it as a click.
+/// Text fields keep it for typing.
+fn install_space_toggle(window: &libadwaita::ApplicationWindow) {
+    use gtk::prelude::{EventControllerExt, GtkWindowExt, WidgetExt};
+    let keys = gtk::EventControllerKey::new();
+    keys.set_propagation_phase(gtk::PropagationPhase::Capture);
+    let weak = window.downgrade();
+    keys.connect_key_pressed(move |_, key, _, modifiers| {
+        let Some(window) = weak.upgrade() else {
+            return glib::Propagation::Proceed;
+        };
+        let plain = !modifiers.intersects(
+            gtk::gdk::ModifierType::CONTROL_MASK
+                | gtk::gdk::ModifierType::ALT_MASK
+                | gtk::gdk::ModifierType::SUPER_MASK
+                | gtk::gdk::ModifierType::SHIFT_MASK,
+        );
+        if key != gtk::gdk::Key::space || !plain || space_is_typing(window.focus()) {
+            return glib::Propagation::Proceed;
+        }
+        let _ = WidgetExt::activate_action(&window, "app.toggle_playback", None);
+        glib::Propagation::Stop
+    });
+    window.add_controller(keys);
+}
+
+/// Whether a space typed now goes into a text field.
+pub(crate) fn space_is_typing(focus: Option<gtk::Widget>) -> bool {
+    use gtk::prelude::WidgetExt;
+    let mut widget = focus;
+    while let Some(w) = widget {
+        if w.is::<gtk::Text>() || w.is::<gtk::TextView>() || w.is::<gtk::Editable>() {
+            return true;
+        }
+        widget = w.parent();
+    }
+    false
 }

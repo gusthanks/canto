@@ -57,6 +57,10 @@ pub struct ConnectPlayer {
     remote_playing: AtomicBool,
     official: OfficialClient,
     last_recovery: std::sync::Mutex<Option<std::time::Instant>>,
+    /// When the last playback command was sent. A poll that started before
+    /// Spotify could apply it would undo it in the UI (the play button
+    /// "not working"), so such polls are dropped.
+    last_command: std::sync::Mutex<Option<std::time::Instant>>,
 }
 
 impl ConnectPlayer {
@@ -73,6 +77,7 @@ impl ConnectPlayer {
             remote_playing: AtomicBool::new(false),
             official: Default::default(),
             last_recovery: Default::default(),
+            last_command: Default::default(),
         }
     }
 
@@ -163,6 +168,25 @@ impl ConnectPlayer {
         .into()]);
     }
 
+    /// Spotify can take this long to reflect a command in its state.
+    const COMMAND_SETTLE: Duration = Duration::from_millis(1500);
+
+    fn mark_command(&self) {
+        if let Ok(mut last) = self.last_command.lock() {
+            *last = Some(std::time::Instant::now());
+        }
+    }
+
+    /// Whether a playback command was sent after (or shortly before) a poll
+    /// that started at `request_started`.
+    fn command_overlaps(&self, request_started: std::time::Instant) -> bool {
+        self.last_command
+            .lock()
+            .ok()
+            .and_then(|last| *last)
+            .is_some_and(|sent| sent + Self::COMMAND_SETTLE > request_started)
+    }
+
     pub fn has_device(&self) -> bool {
         self.device_id
             .read()
@@ -177,6 +201,10 @@ impl ConnectPlayer {
         let Ok(mut state) = player_state else {
             return;
         };
+        if self.command_overlaps(request_started) {
+            debug!("dropping a poll that raced a playback command");
+            return;
+        }
         if !self.has_device() {
             return;
         }
@@ -506,6 +534,7 @@ impl ConnectPlayer {
             _ => {
                 let device_id = self.device_id.read().ok()?.clone();
                 if let Some(device_id) = device_id {
+                    self.mark_command();
                     let mut result = self
                         .handle_other_command(device_id.clone(), command.clone())
                         .await;

@@ -111,6 +111,16 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
 
     assert_card_playing_badge_shows_bars();
 
+    // Space plays/pauses unless it's typed into a text field
+    let entry = gtk::SearchEntry::new();
+    let text = entry.first_child().filter(|c| c.is::<gtk::Text>());
+    assert!(crate::app::space_is_typing(Some(entry.clone().upcast())));
+    if let Some(text) = text {
+        assert!(crate::app::space_is_typing(Some(text)));
+    }
+    assert!(!crate::app::space_is_typing(Some(gtk::Button::new().upcast())));
+    assert!(!crate::app::space_is_typing(None));
+
     // The Now Playing side panel builds, with its heart icons available.
     let now_panel = super::shell::now_panel::widgets_for_tests();
     drop(now_panel);
