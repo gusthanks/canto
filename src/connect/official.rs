@@ -143,6 +143,7 @@ impl OfficialClient {
 
     /// Starts the official client hidden, unless Canto already started one.
     pub fn spawn(&self) -> Result<(), String> {
+        keep_hidden_workspace_closed(Duration::from_secs(60));
         if self.is_spawned() {
             return Ok(());
         }
@@ -325,7 +326,7 @@ fn build_hyprland_shell_command(pid_file: &Path, program: &str) -> String {
 
 fn build_hyprland_exec_spec(workspace: &str, pid_file: &Path, program: &str) -> String {
     let cmd = build_hyprland_shell_command(pid_file, program);
-    format!("[workspace {workspace} silent] {cmd}")
+    format!("[workspace {workspace} silent; suppressevent {QUIET_EVENTS}] {cmd}")
 }
 
 /// Builds a Hyprland Lua `hl.exec_cmd` call targeting a silent workspace.
@@ -333,10 +334,63 @@ fn build_hyprland_lua_exec(workspace: &str, pid_file: &Path, program: &str) -> S
     let cmd = build_hyprland_shell_command(pid_file, program);
     let rule = format!("{workspace} silent");
     format!(
-        "hl.exec_cmd({}, {{ workspace = {} }})",
+        "hl.exec_cmd({}, {{ workspace = {}, suppress_event = {} }})",
         lua_quote(&cmd),
-        lua_quote(&rule)
+        lua_quote(&rule),
+        lua_quote(QUIET_EVENTS)
     )
+}
+
+/// Window events the hidden Spotify app may not use to show itself.
+const QUIET_EVENTS: &str = "activate activatefocus";
+
+/// A named (so re-adding replaces it) Hyprland rule that stops the Spotify app
+/// from asking for focus. With `misc:focus_on_activate` on (Omarchy's
+/// default), its request would open the hidden workspace over the user's.
+fn build_hyprland_lua_quiet_rule() -> String {
+    format!(
+        "hl.window_rule({{ name = \"canto-official-quiet\", match = {{ class = \"^([Ss]potify)$\" }}, suppress_event = {} }})",
+        lua_quote(QUIET_EVENTS)
+    )
+}
+
+/// Whether `hyprctl monitors -j` shows the hidden workspace open somewhere.
+fn hidden_workspace_shown(monitors_json: &[u8]) -> bool {
+    let Ok(serde_json::Value::Array(monitors)) = serde_json::from_slice(monitors_json) else {
+        return false;
+    };
+    monitors.iter().any(|m| {
+        m.get("specialWorkspace")
+            .and_then(|w| w.get("name"))
+            .and_then(|n| n.as_str())
+            == Some(HIDDEN_WORKSPACE)
+    })
+}
+
+/// For `duration`, closes the hidden workspace whenever the Spotify app pops
+/// it open (it can still ask for focus when playback moves to it).
+pub fn keep_hidden_workspace_closed(duration: Duration) {
+    if std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE").is_none() {
+        return;
+    }
+    hyprctl_eval(&build_hyprland_lua_quiet_rule());
+    std::thread::spawn(move || {
+        let deadline = Instant::now() + duration;
+        let name = HIDDEN_WORKSPACE.trim_start_matches("special:");
+        let toggle = format!("hl.dispatch(hl.dsp.workspace.toggle_special({}))", lua_quote(name));
+        while Instant::now() < deadline {
+            let shown = Command::new("hyprctl")
+                .args(["monitors", "-j"])
+                .stdin(Stdio::null())
+                .output()
+                .is_ok_and(|o| o.status.success() && hidden_workspace_shown(&o.stdout));
+            if shown {
+                info!("the Spotify app opened its hidden workspace; closing it");
+                hyprctl_eval(&toggle);
+            }
+            std::thread::sleep(Duration::from_millis(250));
+        }
+    });
 }
 
 /// Builds a Hyprland Lua call moving an existing window silently to a workspace.
@@ -602,7 +656,9 @@ mod tests {
             Path::new("/run/user/1000/canto.pid"),
             "/usr/bin/spotify",
         );
-        assert!(spec.starts_with("[workspace special:canto silent] sh -c "));
+        assert!(spec.starts_with(
+            "[workspace special:canto silent; suppressevent activate activatefocus] sh -c "
+        ));
         assert!(spec.contains("'/run/user/1000/canto.pid'"));
         assert!(spec.contains("'/usr/bin/spotify'"));
     }
@@ -620,9 +676,29 @@ mod tests {
             "/usr/bin/spotify",
         );
         assert!(lua.starts_with("hl.exec_cmd(\"sh -c "));
-        assert!(lua.ends_with(", { workspace = \"special:canto silent\" })"));
+        assert!(lua.ends_with(
+            ", { workspace = \"special:canto silent\", suppress_event = \"activate activatefocus\" })"
+        ));
         assert!(lua.contains("'/run/user/1000/canto.pid'"));
         assert!(lua.contains("'/usr/bin/spotify'"));
+    }
+
+    #[test]
+    fn hidden_workspace_detection_reads_special_workspace() {
+        let open = br#"[{"specialWorkspace":{"id":-98,"name":"special:canto"}}]"#;
+        let closed = br#"[{"specialWorkspace":{"id":0,"name":""}}]"#;
+        let other = br#"[{"specialWorkspace":{"id":-97,"name":"special:scratchpad"}}]"#;
+        assert!(hidden_workspace_shown(open));
+        assert!(!hidden_workspace_shown(closed));
+        assert!(!hidden_workspace_shown(other));
+        assert!(!hidden_workspace_shown(b"not json"));
+    }
+
+    #[test]
+    fn quiet_rule_names_itself_and_suppresses_activation() {
+        let rule = build_hyprland_lua_quiet_rule();
+        assert!(rule.starts_with("hl.window_rule({ name = \"canto-official-quiet\""));
+        assert!(rule.contains("suppress_event = \"activate activatefocus\""));
     }
 
     #[test]

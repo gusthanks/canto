@@ -387,6 +387,8 @@ impl ConnectPlayer {
             *official_id = Some(device.id.clone());
         }
         official::remember_official_device_id(&device.id);
+        // Taking over playback can make the app ask for focus
+        official::keep_hidden_workspace_closed(Duration::from_secs(20));
         // SwitchDevice makes the notifier send SetDevice + the current track.
         self.send_actions([PlaybackAction::SwitchDevice(Device::Connect(device)).into()]);
     }
@@ -449,6 +451,7 @@ impl ConnectPlayer {
         let Some(device) = self.wait_for_official_device(true, true).await else {
             return false;
         };
+        official::keep_hidden_workspace_closed(Duration::from_secs(20));
         let _ = self.api.player_transfer(&device.id).await;
         tokio::time::sleep(Duration::from_millis(500)).await;
         if let Ok(mut id) = self.device_id.write() {
@@ -479,6 +482,9 @@ impl ConnectPlayer {
                     *t = None;
                 }
                 self.poll_count.store(0, Ordering::Relaxed);
+                if self.is_local_official(&new_device_id).await {
+                    official::keep_hidden_workspace_closed(Duration::from_secs(20));
+                }
                 let _ = self.api.player_transfer(&new_device_id).await;
                 self.device_id.write().ok()?.replace(new_device_id);
                 tokio::time::sleep(Duration::from_millis(250)).await;
