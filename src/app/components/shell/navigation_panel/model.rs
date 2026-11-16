@@ -77,6 +77,56 @@ impl NavigationPanelModel {
         Some(())
     }
 
+    /// The cover of a playlist, album, artist or track the sidebar shows.
+    fn cover_for(&self, kind: settings::PinnedKind, id: &str) -> Option<String> {
+        let state = self.app_model.get_state();
+        let home = state.browser.home_state()?;
+        let card = |cards: &crate::app::ListStore<CardModel>| {
+            cards.iter().find(|c| c.id() == id).and_then(|c| c.image())
+        };
+        match kind {
+            settings::PinnedKind::Playlist => card(&home.playlists),
+            settings::PinnedKind::Album => card(&home.albums),
+            settings::PinnedKind::Artist => card(&home.artists),
+            settings::PinnedKind::Track => home
+                .saved_tracks
+                .get(id)
+                .and_then(|sm| sm.description().art.best_for_width(64).map(str::to_owned)),
+        }
+    }
+
+    fn with_cover(&self, item: NavigationPanelItem) -> NavigationPanelItem {
+        let kind = match item.destination() {
+            Some(NavigationPanelDestination::Playlist(_)) => settings::PinnedKind::Playlist,
+            Some(NavigationPanelDestination::Album { .. }) => settings::PinnedKind::Album,
+            Some(NavigationPanelDestination::Artist { .. }) => settings::PinnedKind::Artist,
+            Some(NavigationPanelDestination::Track { .. }) => settings::PinnedKind::Track,
+            _ => return item,
+        };
+        if let Some(url) = self.cover_for(kind, &item.data()) {
+            item.set_image(url);
+        }
+        item
+    }
+
+    /// Shows the cover at `url` in `image`, `px` pixels wide.
+    pub(super) fn load_cover(&self, image: &gtk::Image, url: &str, px: i32) {
+        if riff_api::models::is_resource_url(url) {
+            return;
+        }
+        let api = self.app_model.api();
+        let url = url.to_owned();
+        let weak = image.downgrade();
+        // Behind whatever page is loading
+        let tag = riff_api::Load::new(riff_api::LoadPriority::Visible, riff_api::BACKGROUND_EPOCH);
+        glib::MainContext::default().spawn_local(async move {
+            let texture = api.load_image(&url, px, px, tag).await;
+            if let (Some(image), Some(texture)) = (weak.upgrade(), texture) {
+                image.set_paintable(Some(&texture));
+            }
+        });
+    }
+
     fn map_to_destination(a: CardModel) -> NavigationPanelDestination {
         let title = Some(a.title())
             .filter(|s| !s.is_empty())
@@ -512,7 +562,7 @@ impl NavigationPanelModel {
             if !pinned.is_empty() {
                 pinned_items.push(NavigationPanelItem::pinned_section());
                 for object in pinned {
-                    pinned_items.push(self.to_pinned_item(object));
+                    pinned_items.push(self.with_cover(self.to_pinned_item(object)));
                 }
             }
 
@@ -529,13 +579,15 @@ impl NavigationPanelModel {
             items.extend(
                 unpinned
                     .into_iter()
-                    .map(NavigationPanelItem::from_destination),
+                    .map(NavigationPanelItem::from_destination)
+                    .map(|item| self.with_cover(item)),
             );
         } else {
             items.extend(
                 playlists
                     .into_iter()
-                    .map(NavigationPanelItem::from_destination),
+                    .map(NavigationPanelItem::from_destination)
+                    .map(|item| self.with_cover(item)),
             );
         }
 

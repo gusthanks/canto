@@ -27,6 +27,8 @@ use std::rc::Rc;
 use crate::app::components::{AppHeaderBar, UtilityPanelWidget};
 
 const NAVIGATION_ACTION: &str = "show-navigation-panel";
+const RAIL_ACTION: &str = "sidebar-rail";
+const RAIL_CLASS: &str = "navigation-panel--rail";
 
 fn sp_to_px(sp: f64) -> i32 {
     let settings = gtk::Settings::default();
@@ -49,6 +51,18 @@ pub struct WindowLayout {
     collapsing_navigation: Rc<Cell<bool>>,
     fitted_width: Cell<i32>,
     fitted_header_width: Cell<i32>,
+    rail: RailWidgets,
+}
+
+/// What moves when the sidebar collapses to covers and icons.
+struct RailWidgets {
+    sidebar: gtk::Widget,
+    handle: gtk::Widget,
+    header: libadwaita::HeaderBar,
+    rail_header: gtk::Box,
+    search: gtk::Widget,
+    menu: gtk::Widget,
+    collapse: gtk::Widget,
 }
 
 impl WindowLayout {
@@ -66,6 +80,16 @@ impl WindowLayout {
         header.set_history_slot(&history_slot);
         let window: libadwaita::ApplicationWindow = builder.object("window").unwrap();
 
+        let rail = RailWidgets {
+            sidebar: builder.object("navigation_panel").unwrap(),
+            handle: navigation_handle.clone(),
+            header: builder.object("navigation_panel_header").unwrap(),
+            rail_header: builder.object("rail_header").unwrap(),
+            search: builder.object("search_button").unwrap(),
+            menu: builder.object("user").unwrap(),
+            collapse: builder.object("rail_collapse").unwrap(),
+        };
+
         let navigation = Panel::new(NAVIGATION_PANEL, navigation_split.clone(), Edge::Start);
         let utility = Panel::new(UTILITY_PANEL, utility_split.clone(), Edge::End);
         let layout = Rc::new(Self {
@@ -78,6 +102,7 @@ impl WindowLayout {
             collapsing_navigation: Rc::new(Cell::new(false)),
             fitted_width: Cell::new(0),
             fitted_header_width: Cell::new(0),
+            rail,
         });
         layout.fit();
         window.connect_realize(clone!(
@@ -149,9 +174,30 @@ impl WindowLayout {
             navigation_handle,
             move |split| {
                 layout.fit();
-                navigation_handle.set_visible(!split.is_collapsed());
+                navigation_handle.set_visible(!split.is_collapsed() && !layout.navigation.is_rail());
+                layout.apply_rail();
             }
         ));
+
+        let rail_action = gio::SimpleAction::new_stateful(RAIL_ACTION, None, &false.to_variant());
+        rail_action.connect_change_state(clone!(
+            #[weak]
+            layout,
+            move |action, state| {
+                let Some(rail) = state.and_then(|s| s.get::<bool>()) else {
+                    return;
+                };
+                action.set_state(&rail.to_variant());
+                layout.navigation.set_rail(rail);
+                layout.apply_rail();
+                layout.fit();
+            }
+        ));
+        rail_action.connect_activate(|action, _| {
+            let rail = action.state().and_then(|s| s.get::<bool>()).unwrap_or(false);
+            action.change_state(&(!rail).to_variant());
+        });
+        window.add_action(&rail_action);
 
         layout.wire_resize(Which::Navigation, navigation_handle);
         layout.wire_resize(Which::Utility, utility_handle);
@@ -330,6 +376,39 @@ impl WindowLayout {
         self.apply();
     }
 
+    /// Moves the sidebar's buttons between its header and the rail's, and
+    /// marks the sidebar so its rows show covers and icons only.
+    fn apply_rail(&self) {
+        let rail = self.navigation.is_rail();
+        let w = &self.rail;
+        if rail == w.sidebar.has_css_class(RAIL_CLASS) {
+            return;
+        }
+        if rail {
+            w.sidebar.add_css_class(RAIL_CLASS);
+            w.header.remove(&w.search);
+            w.header.remove(&w.menu);
+            w.rail_header.append(&w.search);
+            w.rail_header.append(&w.menu);
+            w.search.add_css_class("flat");
+            w.menu.add_css_class("flat");
+        } else {
+            w.sidebar.remove_css_class(RAIL_CLASS);
+            w.rail_header.remove(&w.search);
+            w.rail_header.remove(&w.menu);
+            w.search.remove_css_class("flat");
+            w.menu.remove_css_class("flat");
+            w.header.remove(&w.collapse);
+            w.header.pack_start(&w.search);
+            w.header.pack_end(&w.menu);
+            w.header.pack_end(&w.collapse);
+        }
+        w.header.set_visible(!rail);
+        w.rail_header.set_visible(rail);
+        w.handle
+            .set_visible(!rail && !self.navigation.split.is_collapsed());
+    }
+
     fn apply(&self) {
         let window_width = self.window_width();
         self.navigation.set_capped(self.utility_beside());
@@ -337,7 +416,9 @@ impl WindowLayout {
             .set_content_min_width(self.content_min_width());
         let navigation = &self.navigation.split;
         self.header
-            .place_history_buttons(navigation.shows_sidebar() && !navigation.is_collapsed());
+            .place_history_buttons(
+                navigation.shows_sidebar() && !navigation.is_collapsed() && !self.navigation.is_rail(),
+            );
         self.header.set_compact_allowed(
             (navigation.is_collapsed() || !navigation.shows_sidebar())
                 && !self.collapsing_navigation.get(),

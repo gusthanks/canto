@@ -294,4 +294,17 @@ fn dump_now_panel_sample() {
     pump(2000);
     distinct_colors(window.upcast_ref(), "fullscreen-lyrics-sample");
     window.destroy();
+
+    // The sidebar with covers, open and collapsed
+    for rail in [false, true] {
+        let sidebar = super::shell::navigation_panel::sample_for_tests(cover.upcast_ref(), rail);
+        let window = gtk::Window::new();
+        window.set_default_size(if rail { 72 } else { 280 }, 360);
+        window.set_child(Some(&sidebar));
+        window.present();
+        pump(1200);
+        let name = if rail { "sidebar-rail-sample" } else { "sidebar-sample" };
+        distinct_colors(window.upcast_ref(), name);
+        window.destroy();
+    }
 }

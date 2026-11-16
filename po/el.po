@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 21:23-0300\n"
+"POT-Creation-Date: 2026-11-15 21:36-0300\n"
 "Language: el\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -226,7 +226,7 @@ msgstr ""
 #. translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
 #: src/app/components/labels.rs:110
 #: src/app/components/shell/command_palette/widget.rs:567
-#: src/app/components/shell/playback/playback_widget.blp:475 src/window.blp:279
+#: src/app/components/shell/playback/playback_widget.blp:475 src/window.blp:311
 msgid "Start Track Radio"
 msgstr ""
 
@@ -311,7 +311,7 @@ msgstr ""
 #. translators: The search page in the back/forward history menu.
 #: src/app/components/labels.rs:188
 #: src/app/components/shell/command_palette/widget.rs:491
-#: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:181
+#: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:204
 #, fuzzy
 msgid "Search"
 msgstr "Αναζητήστε στο Spotify."
@@ -684,7 +684,7 @@ msgid "Open"
 msgstr ""
 
 #: src/app/components/shell/command_palette/command_palette.blp:5
-#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:274
+#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:306
 msgid "Command Palette"
 msgstr ""
 
@@ -1056,26 +1056,26 @@ msgstr ""
 msgid "Exit Full Screen (Esc)"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:83
+#: src/app/components/shell/navigation_panel/model.rs:133
 msgid "Unnamed Playlist"
 msgstr "Ανώνυμη λίστα"
 
-#: src/app/components/shell/navigation_panel/model.rs:434
+#: src/app/components/shell/navigation_panel/model.rs:484
 #, fuzzy
 msgid "Pinned Playlist"
 msgstr "Ανώνυμη λίστα"
 
-#: src/app/components/shell/navigation_panel/model.rs:435
+#: src/app/components/shell/navigation_panel/model.rs:485
 #, fuzzy
 msgid "Pinned Album"
 msgstr "Προβολή δίσκων"
 
-#: src/app/components/shell/navigation_panel/model.rs:436
+#: src/app/components/shell/navigation_panel/model.rs:486
 #, fuzzy
 msgid "Pinned Artist"
 msgstr "Καλλιτέχνες"
 
-#: src/app/components/shell/navigation_panel/model.rs:437
+#: src/app/components/shell/navigation_panel/model.rs:487
 #, fuzzy
 msgid "Pinned Track"
 msgstr "Αποθηκευμένα τραγούδια"
@@ -1089,7 +1089,7 @@ msgid "Pinned"
 msgstr ""
 
 #. Translators: title of the dialog that creates a new playlist
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:216
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:257
 #: src/app/components/widgets/playlist_dialog/playlist_dialog.blp:7
 msgid "New Playlist"
 msgstr "Νέα Λίστα"
@@ -1110,7 +1110,7 @@ msgstr "Backend ήχου"
 
 #: src/app/components/shell/window/close_dialog.rs:17
 #: src/app/components/pages/settings/settings.blp:102
-#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:313
+#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:345
 msgid "Quit"
 msgstr "Κλείσιμο"
 
@@ -2042,15 +2042,15 @@ msgstr ""
 msgid "Toggle Sidebar"
 msgstr ""
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:118 src/window.blp:189
+#: src/app/components/pages/shortcuts/shortcuts.blp:118 src/window.blp:212
 msgid "Main Menu"
 msgstr ""
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:286
+#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:318
 msgid "Preferences"
 msgstr "Προτιμήσεις"
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:291
+#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:323
 msgid "Keyboard Shortcuts"
 msgstr ""
 
@@ -2215,16 +2215,24 @@ msgstr ""
 msgid "Remove"
 msgstr "Αφαίρεση"
 
-#: src/window.blp:296
+#: src/window.blp:177
+msgid "Expand Sidebar"
+msgstr ""
+
+#: src/window.blp:222
+msgid "Collapse Sidebar"
+msgstr ""
+
+#: src/window.blp:328
 msgid "Report Issue"
 msgstr ""
 
-#: src/window.blp:301
+#: src/window.blp:333
 #, fuzzy
 msgid "About Canto"
 msgstr "Σχετικά"
 
-#: src/window.blp:308
+#: src/window.blp:340
 msgid "Log Out"
 msgstr "Αποσύνδεση"
 

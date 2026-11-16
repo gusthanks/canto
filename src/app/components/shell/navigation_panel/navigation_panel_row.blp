@@ -1,11 +1,17 @@
 using Gtk 4.0;
 
 template $NavigationPanelRow : ListBoxRow {
-  Box {
+  Box content {
     visible: true;
     spacing: 12;
 
-    Image icon {
+    // Clips the cover's corners
+    Box icon_clip {
+      overflow: hidden;
+      valign: center;
+
+      Image icon {
+      }
     }
 
     Label title {

@@ -10,3 +10,5 @@ mod model;
 pub use model::*;
 
 mod navigation_panel_row;
+#[cfg(test)]
+pub(crate) use navigation_panel::sample_for_tests;

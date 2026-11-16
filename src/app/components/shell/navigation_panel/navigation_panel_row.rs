@@ -4,9 +4,29 @@ use gtk::CompositeTemplate;
 
 use super::NavigationPanelItem;
 
+/// Side of a cover in the sidebar.
+pub const COVER_PX: i32 = 32;
+
 impl NavigationPanelRow {
     pub fn new(item: NavigationPanelItem) -> Self {
         glib::Object::builder().property("item", item).build()
+    }
+
+    /// The image the cover goes into, when the item has one.
+    pub fn cover_target(&self) -> Option<(gtk::Image, String)> {
+        let image = self.item().image();
+        (!image.is_empty()).then(|| (self.imp().icon.get(), image))
+    }
+
+    /// Icons only, for the collapsed sidebar.
+    pub fn set_rail(&self, rail: bool) {
+        let imp = self.imp();
+        imp.title.set_visible(!rail);
+        imp.content.set_halign(if rail {
+            gtk::Align::Center
+        } else {
+            gtk::Align::Fill
+        });
     }
 }
 
@@ -19,6 +39,12 @@ mod imp {
     #[template(resource = "/dev/diegovsky/Riff/navigation_panel/navigation_panel_row.ui")]
     #[properties(wrapper_type = super::NavigationPanelRow)]
     pub struct NavigationPanelRow {
+        #[template_child]
+        pub content: TemplateChild<gtk::Box>,
+
+        #[template_child]
+        pub icon_clip: TemplateChild<gtk::Box>,
+
         #[template_child]
         pub icon: TemplateChild<gtk::Image>,
 
@@ -33,6 +59,13 @@ mod imp {
         fn set_item(&self, item: NavigationPanelItem) {
             self.title.set_text(item.title().as_str());
             self.icon.set_icon_name(item.icon());
+            if !item.image().is_empty() {
+                self.icon.set_pixel_size(COVER_PX);
+                self.icon_clip.add_css_class("navigation-row__cover");
+                if item.round_cover() {
+                    self.icon_clip.add_css_class("navigation-row__cover--round");
+                }
+            }
             self.obj().set_tooltip_text(Some(item.title().as_str()));
             self.item.replace(item);
         }
@@ -54,6 +87,8 @@ mod imp {
 
         fn new() -> Self {
             Self {
+                content: Default::default(),
+                icon_clip: Default::default(),
                 icon: Default::default(),
                 title: Default::default(),
                 item: RefCell::new(glib::Object::new()),

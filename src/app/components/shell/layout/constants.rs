@@ -23,6 +23,9 @@ pub const NAVIGATION_PANEL: PanelSize = PanelSize {
     default_width: 280,
 };
 
+/// Width of the collapsed sidebar: covers and icons only.
+pub const NAVIGATION_RAIL_WIDTH: i32 = 72;
+
 pub const UTILITY_PANEL: PanelSize = PanelSize {
     min_width: 280,
     max_width: 600,

@@ -167,6 +167,11 @@ impl NavigationPanelItem {
         }
     }
 
+    /// Whether the cover is round (artists).
+    pub fn round_cover(&self) -> bool {
+        self.id() == ARTIST
+    }
+
     pub fn icon(&self) -> Option<&str> {
         self.destination().map(|d| d.icon())
     }
@@ -187,6 +192,9 @@ mod imp {
         pub title: RefCell<String>,
         #[property(get, set)]
         pub navigatable: Cell<bool>,
+        /// Cover URL of a playlist, album, artist or track; empty for none.
+        #[property(get, set)]
+        pub image: RefCell<String>,
     }
 
     #[glib::object_subclass]

@@ -1,11 +1,12 @@
 use gettextrs::gettext;
 use gtk::prelude::*;
 use libadwaita::prelude::*;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use super::{
-    context_menu::build_context_menu, navigation_panel_row::NavigationPanelRow,
+    context_menu::build_context_menu,
+    navigation_panel_row::{NavigationPanelRow, COVER_PX},
     NavigationPanelDestination, NavigationPanelItem, NavigationPanelModel, LIBRARY_SECTION,
     PINNED_SECTION, SAVED_PLAYLISTS_SECTION,
 };
@@ -39,21 +40,28 @@ impl NavigationPanel {
         ));
         list_store.append(&NavigationPanelItem::playlists_section());
 
+        let rail = Rc::new(Cell::new(false));
         let weak_model = Rc::downgrade(&model);
-        listbox.bind_model(Some(&list_store), move |obj| {
-            let item = obj.downcast_ref::<NavigationPanelItem>().unwrap();
-            if item.navigatable() {
-                Self::make_navigatable(item)
-            } else {
-                match item.id().as_str() {
-                    SAVED_PLAYLISTS_SECTION => {
-                        Self::make_section_label(item, weak_model.upgrade().as_ref())
+        listbox.bind_model(Some(&list_store), clone!(
+            #[strong]
+            rail,
+            move |obj| {
+                let item = obj.downcast_ref::<NavigationPanelItem>().unwrap();
+                let row = if item.navigatable() {
+                    Self::make_navigatable(item, weak_model.upgrade().as_deref())
+                } else {
+                    match item.id().as_str() {
+                        SAVED_PLAYLISTS_SECTION => {
+                            Self::make_section_label(item, weak_model.upgrade().as_ref())
+                        }
+                        PINNED_SECTION | LIBRARY_SECTION => Self::make_section_label(item, None),
+                        _ => unimplemented!(),
                     }
-                    PINNED_SECTION | LIBRARY_SECTION => Self::make_section_label(item, None),
-                    _ => unimplemented!(),
-                }
+                };
+                Self::set_row_rail(&row, rail.get());
+                row
             }
-        });
+        ));
 
         listbox.connect_row_activated(clone!(
             #[weak]
@@ -82,6 +90,26 @@ impl NavigationPanel {
             .and_downcast::<gtk::Box>()
             .unwrap();
         context_menu.set_parent(&navigation_panel_box);
+
+        // The layout marks the sidebar when it collapses to covers and icons
+        if let Some(sidebar) = navigation_panel_box.parent() {
+            sidebar.connect_css_classes_notify(clone!(
+                #[weak]
+                listbox,
+                #[strong]
+                rail,
+                move |sidebar| {
+                    let collapsed = sidebar.has_css_class("navigation-panel--rail");
+                    if rail.replace(collapsed) != collapsed {
+                        let mut child = listbox.first_child();
+                        while let Some(row) = child {
+                            Self::set_row_rail(&row, collapsed);
+                            child = row.next_sibling();
+                        }
+                    }
+                }
+            ));
+        }
         context_menu.set_has_arrow(false);
 
         let context_row: Rc<RefCell<Option<NavigationPanelRow>>> = Default::default();
@@ -190,10 +218,23 @@ impl NavigationPanel {
         panel
     }
 
-    fn make_navigatable(item: &NavigationPanelItem) -> gtk::Widget {
+    fn make_navigatable(item: &NavigationPanelItem, model: Option<&NavigationPanelModel>) -> gtk::Widget {
         let row = NavigationPanelRow::new(item.clone());
         row.set_selectable(false);
+        if let (Some(model), Some((image, url))) = (model, row.cover_target()) {
+            let scale = image.scale_factor().max(2);
+            model.load_cover(&image, &url, COVER_PX * scale);
+        }
         row.upcast()
+    }
+
+    /// Covers and icons only while the sidebar is collapsed.
+    fn set_row_rail(row: &gtk::Widget, rail: bool) {
+        if let Some(row) = row.downcast_ref::<NavigationPanelRow>() {
+            row.set_rail(rail);
+        } else if row.has_css_class("navigation-section") {
+            row.set_visible(!rail);
+        }
     }
 
     fn make_section_label(
@@ -287,4 +328,51 @@ impl EventListener for NavigationPanel {
             _ => {}
         }
     }
+}
+
+/// A sidebar with a few covered playlists, to look at its rendering.
+#[cfg(test)]
+pub(crate) fn sample_for_tests(cover: &gtk::gdk::Paintable, rail: bool) -> gtk::Widget {
+    use crate::app::models::PlaylistSummary;
+
+    let listbox = gtk::ListBox::new();
+    listbox.add_css_class("navigation-sidebar");
+    let mut rows = vec![
+        NavigationPanel::make_navigatable(
+            &NavigationPanelItem::from_destination(NavigationPanelDestination::SavedArtists),
+            None,
+        ),
+        NavigationPanel::make_navigatable(
+            &NavigationPanelItem::from_destination(NavigationPanelDestination::SavedTracks),
+            None,
+        ),
+        NavigationPanel::make_section_label(&NavigationPanelItem::playlists_section(), None),
+    ];
+    for (i, title) in ["Rap Nacional", "Treino", "Madrugada"].iter().enumerate() {
+        let item = NavigationPanelItem::from_destination(NavigationPanelDestination::Playlist(
+            PlaylistSummary {
+                id: i.to_string(),
+                title: title.to_string(),
+            },
+        ));
+        item.set_image("https://example.com/cover.jpg");
+        let row = NavigationPanel::make_navigatable(&item, None);
+        if let Some((image, _)) = row
+            .downcast_ref::<NavigationPanelRow>()
+            .and_then(|r| r.cover_target())
+        {
+            image.set_paintable(Some(cover));
+        }
+        rows.push(row);
+    }
+    for row in &rows {
+        NavigationPanel::set_row_rail(row, rail);
+        listbox.append(row);
+    }
+    let sidebar = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    if rail {
+        sidebar.add_css_class("navigation-panel--rail");
+    }
+    sidebar.append(&listbox);
+    sidebar.upcast()
 }

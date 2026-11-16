@@ -321,3 +321,19 @@ bottom-sheet.bottom-sheet--padded > sheet {
 .lyrics--fullscreen .lyric-line:hover {
   background: alpha(#ffffff, 0.06);
 }
+
+/* Covers in the sidebar */
+.navigation-row__cover {
+  border-radius: 4px;
+}
+
+.navigation-row__cover--round {
+  border-radius: 999px;
+}
+
+/* The collapsed sidebar: covers and icons only */
+.navigation-panel--rail .navigation-sidebar > row {
+  padding-left: 0;
+  padding-right: 0;
+  min-height: 44px;
+}

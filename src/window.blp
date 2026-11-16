@@ -162,6 +162,29 @@ Adw.ApplicationWindow window {
                 orientation: vertical;
                 hexpand: true;
 
+                // The header of the collapsed sidebar: its buttons move here
+                // (see shell/layout)
+                Box rail_header {
+                  orientation: vertical;
+                  visible: false;
+                  spacing: 6;
+                  margin-top: 8;
+                  margin-bottom: 6;
+                  halign: center;
+
+                  Button rail_expand {
+                    icon-name: "pan-end-symbolic";
+                    tooltip-text: _("Expand Sidebar");
+                    action-name: "win.sidebar-rail";
+                    focus-on-click: false;
+                    can-focus: false;
+
+                    styles [
+                      "flat",
+                    ]
+                  }
+                }
+
                 Adw.HeaderBar navigation_panel_header {
                   show-title: false;
 
@@ -189,6 +212,15 @@ Adw.ApplicationWindow window {
                     tooltip-text: _("Main Menu");
                     // Opens with F10
                     primary: true;
+                    focus-on-click: false;
+                    can-focus: false;
+                  }
+
+                  [end]
+                  Button rail_collapse {
+                    icon-name: "pan-start-symbolic";
+                    tooltip-text: _("Collapse Sidebar");
+                    action-name: "win.sidebar-rail";
                     focus-on-click: false;
                     can-focus: false;
                   }

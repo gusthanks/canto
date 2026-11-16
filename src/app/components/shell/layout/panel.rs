@@ -4,7 +4,7 @@ use std::cell::Cell;
 
 use gtk::prelude::*;
 
-use super::PANEL_COLLAPSE_SLACK;
+use super::{NAVIGATION_RAIL_WIDTH, PANEL_COLLAPSE_SLACK};
 
 #[derive(Clone, Copy, Debug)]
 pub struct PanelSize {
@@ -48,6 +48,7 @@ pub struct Panel {
     content_min_width: Cell<i32>,
     contents_min_width: Cell<i32>,
     share: Cell<Option<f64>>,
+    rail: Cell<bool>,
 }
 
 impl Panel {
@@ -61,6 +62,7 @@ impl Panel {
             content_min_width: Cell::new(0),
             contents_min_width: Cell::new(0),
             share: Cell::new(None),
+            rail: Cell::new(false),
         }
     }
 
@@ -68,7 +70,19 @@ impl Panel {
         self.width.get()
     }
 
+    /// Collapsed to covers and icons (beside the content only).
+    pub fn set_rail(&self, rail: bool) {
+        self.rail.set(rail);
+    }
+
+    pub fn is_rail(&self) -> bool {
+        self.rail.get() && !self.split.is_collapsed()
+    }
+
     pub fn least_width(&self) -> i32 {
+        if self.is_rail() {
+            return NAVIGATION_RAIL_WIDTH;
+        }
         if !self.split.is_collapsed() || self.contents_min_width.get() == 0 {
             if let Some(sidebar) = self.split.sidebar() {
                 let (min, _, _, _) = sidebar.measure(gtk::Orientation::Horizontal, -1);
@@ -95,6 +109,9 @@ impl Panel {
     }
 
     pub fn shown_width(&self, window_width: i32) -> i32 {
+        if self.is_rail() {
+            return NAVIGATION_RAIL_WIDTH;
+        }
         let mut width = self.width.get();
         if let Some(share) = self.share.get().filter(|_| window_width > 0) {
             width = width.min((share * f64::from(window_width)) as i32);
