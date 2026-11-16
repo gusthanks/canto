@@ -264,6 +264,10 @@
       <default>0</default>
       <summary>Manual synced lyrics timing offset in milliseconds</summary>
     </key>
+    <key name="navigation-rail" type="b">
+      <default>false</default>
+      <summary>Show the sidebar collapsed to covers and icons</summary>
+    </key>
     <key name="pinned-objects-by-user" type="s">
       <default>'{}'</default>
       <summary>JSON map of Spotify user ID to pinned objects (playlists, albums, artists, tracks)</summary>

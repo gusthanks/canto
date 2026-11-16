@@ -8,6 +8,7 @@ pub const APP_LANGUAGE: &str = "app-language";
 pub const APP_THEME: &str = "app-theme";
 pub const ADAPTIVE_COVER_COLORS: &str = "adaptive-cover-colors";
 pub const LYRICS_OFFSET_MS: &str = "lyrics-offset-ms";
+pub const NAVIGATION_RAIL: &str = "navigation-rail";
 pub const GENIUS_ACCESS_TOKEN: &str = "genius-access-token";
 pub const SCROBBLE_ENABLED: &str = "scrobble-enabled";
 pub const SCROBBLE_RESPECT_REMOTE: &str = "scrobble-respect-remote";

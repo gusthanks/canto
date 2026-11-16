@@ -22,7 +22,9 @@
 - **Minimalist Native Interface:** GTK4 and libadwaita layout with responsive side/bottom utility panels, live color themes, and optional subtle background tinting sampled from album artwork.
 - **Omarchy Live Theme Integration:** Automatically watches the active Omarchy desktop theme palette and applies changes live without restarting. Also includes curated built-in themes: Neutral (Adwaita), Spotify Green, OLED Dark, Warm Vinyl, and Purple Night.
 - **Built-in DSP Engine:** Gapless playback with a 10-band equalizer (plus quick presets), stereo balance/pan, mono fold-down, and pitch shift.
-- **Synced Lyrics & Liner Notes:** Real-time synced lyrics via LRCLIB with clickable line seeking and `-100 ms` / `+100 ms` live offset adjustment. Includes **Genius** integration with a direct track search fallback and an optional **About Track** view (producers, writers, featured artists, sample connections, and liner notes).
+- **Now Playing Side Panel:** Big cover, title linking to the album, artists linking to their pages, a like button, a live lyrics preview tinted with the cover color, the next track in the queue, and **Genius** credits (producers, writers, featured artists).
+- **Synced Lyrics:** Real-time synced lyrics via LRCLIB with clickable line seeking and `-100 ms` / `+100 ms` live offset adjustment, in the side panel or full screen over the blurred cover.
+- **Library Sidebar:** Playlist, album and artist covers, and a collapsed mode that keeps only the covers.
 - **`Ctrl+K` Command Palette:** Keyboard-first quick launcher for navigation, theme switching, Spotify Connect device transfer, Sleep Timer presets, Track Radio, and debounced catalog search.
 - **Resilient Track Radio & Smart Queue Continuation:** Launches queues of similar tracks from any track menu, the playback bar, or `Ctrl+K`, with automatic top-tracks and catalog search fallback if `/v1/recommendations` is restricted for newer Spotify apps.
 - **Scrobbling (Last.fm & ListenBrainz):** Tracks active listening time (immune to pauses and Spotify Connect poll ticks) with Now Playing updates and a bounded 500-item persistent offline retry queue.
@@ -83,9 +85,7 @@ Note: Spotify restricted `/v1/recommendations` and `/v1/artists/{id}/related-art
 
 ### 2. Genius (Credits, Samples & Liner Notes)
 
-Even without an API token, the **Search on Genius** button in **About Track** cleans edition tags (such as `(Remastered)` or `[Live]`) and opens a clean web search for the playing track.
-
-To display producers, writers, featured artists, release dates, sample relationships, and liner notes directly inside **About Track**:
+To display producers, writers and featured artists in the **Now Playing** side panel:
 
 1. Open [genius.com/api-clients/new](https://genius.com/api-clients/new) and sign in if asked. In Canto, **Preferences -> Integrations -> Genius -> How to get token** opens the same page and has copy buttons for every value below.
 2. Fill in the **New API Client** form and click **Save**:
@@ -134,6 +134,11 @@ For production installation into `~/.local`:
 ```
 
 See the [Development Guide](doc/Development.md) for architecture notes, feature flags, and developer tools (`Ctrl+Shift+D`).
+
+## Acknowledgements
+
+- [Riff](https://github.com/Diegovsky/riff) by Diego Augusto and contributors, and [Spot](https://github.com/xou816/spot) by Alexandre Trendel, which Canto is forked from (MIT).
+- [ytm-rs](https://github.com/grapedjuice/ytm-rs) by grapedjuice and contributors, studied as a reference for future lyrics and audio features. Canto does not include ytm-rs code.
 
 ## Code of Conduct
 
