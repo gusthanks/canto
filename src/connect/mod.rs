@@ -10,6 +10,7 @@ use riff_api::ApiService;
 
 mod official;
 mod player;
+mod spotify_mpris;
 pub use official::{account_needs_official_client, remember_account_needs_official_client};
 pub use player::ConnectCommand;
 
@@ -23,16 +24,21 @@ async fn connect_server(
 
     let player_clone = Arc::clone(&player);
     task::spawn(async move {
+        // Soon after start, so a reopened Canto picks up what the Spotify
+        // app is already playing
+        let mut delay = Duration::from_secs(4);
         loop {
-            let delay = if player_clone.has_device() && player_clone.is_remote_playing() {
+            time::sleep(delay).await;
+            if player_clone.has_device() {
+                player_clone.sync_state().await;
+            } else {
+                player_clone.attach_to_playing_official().await;
+            }
+            delay = if player_clone.has_device() && player_clone.is_remote_playing() {
                 Duration::from_secs(3)
             } else {
                 Duration::from_secs(12)
             };
-            time::sleep(delay).await;
-            if player_clone.has_device() {
-                player_clone.sync_state().await;
-            }
         }
     });
 

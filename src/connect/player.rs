@@ -15,6 +15,7 @@ use riff_api::ApiService;
 use riff_api::DomainError;
 
 use super::official::{self, OfficialClient};
+use super::spotify_mpris;
 
 const OFFICIAL_CLIENT_STARTUP_TIMEOUT: Duration = Duration::from_secs(45);
 const OFFICIAL_CLIENT_IDLE_LIMIT: Duration = Duration::from_secs(10 * 60);
@@ -100,9 +101,22 @@ impl ConnectPlayer {
         ]);
     }
 
-    async fn get_queue_if_changed(&self) -> Result<Option<Vec<Track>>, DomainError> {
+    async fn get_queue_if_changed(
+        &self,
+        current: Option<&str>,
+    ) -> Result<Option<Vec<Track>>, DomainError> {
         let last_queue = *self.last_queue.read().ok().as_deref().unwrap_or(&0u64);
-        let songs = queue_songs(self.api.get_player_queue(load::transport()).await?);
+        let mut songs = queue_songs(self.api.get_player_queue(load::transport()).await?);
+        // The queue endpoint sometimes comes back empty, or without the track
+        // playing, while the app plays: fetch that track so it still shows
+        if let Some(id) = current {
+            if songs.first().is_none_or(|s| s.rri.id != id) {
+                match self.api.get_track(id, load::transport()).await {
+                    Ok(track) => songs.insert(0, track),
+                    Err(e) => debug!("couldn't fetch the playing track: {e:?}"),
+                }
+            }
+        }
         let hash = {
             let mut hasher = DefaultHasher::new();
             for s in &songs {
@@ -131,7 +145,7 @@ impl ConnectPlayer {
             .unwrap_or(true);
         let poll_idx = self.poll_count.fetch_add(1, Ordering::Relaxed);
         let tracks = if track_changed || poll_idx.is_multiple_of(4) {
-            match self.get_queue_if_changed().await {
+            match self.get_queue_if_changed(remote_track.as_deref()).await {
                 Ok(queue) => {
                     if let Ok(mut last) = self.last_track_id.write() {
                         *last = remote_track.clone();
@@ -168,6 +182,46 @@ impl ConnectPlayer {
         .into()]);
     }
 
+    /// A player state built from the Spotify app's MPRIS report, keeping the
+    /// device from the last Web API state.
+    fn state_from_snapshot(&self, snapshot: spotify_mpris::Snapshot) -> PlayerState {
+        let device = self.last_state.read().ok().and_then(|s| s.device.clone());
+        let volume = snapshot.volume;
+        PlayerState {
+            is_playing: snapshot.playing,
+            current_track_id: snapshot
+                .track_id
+                .map(|id| riff_api::models::ResourceId::new(riff_api::models::Provider::Spotify, id)),
+            progress_ms: snapshot.position_ms,
+            // Read just now: nothing to compensate for
+            timestamp_ms: None,
+            repeat: snapshot.repeat,
+            shuffle: snapshot.shuffle,
+            device: device.map(|mut d| {
+                if let Some(volume) = volume {
+                    d.volume_percent = Some((volume * 100.0).round() as u8);
+                }
+                d
+            }),
+        }
+    }
+
+    /// When nothing is being controlled yet but the Spotify app here is
+    /// playing (Canto was reopened, or playback started in the app), take
+    /// over: show what it plays and control it.
+    pub async fn attach_to_playing_official(&self) {
+        if self.has_device()
+            || !official::account_needs_official_client()
+            || !spotify_mpris::snapshot().is_some_and(|s| s.playing)
+        {
+            return;
+        }
+        if let Some(device) = self.wait_for_official_device(false, true).await {
+            info!("the Spotify app here is playing; taking over its playback");
+            self.switch_to(device).await;
+        }
+    }
+
     /// Spotify can take this long to reflect a command in its state.
     const COMMAND_SETTLE: Duration = Duration::from_millis(1500);
 
@@ -197,7 +251,16 @@ impl ConnectPlayer {
     pub async fn sync_state(&self) {
         debug!("polling connect device...");
         let request_started = std::time::Instant::now();
-        let player_state = self.api.get_player_state(load::transport()).await;
+        let active = self.device_id.read().ok().and_then(|d| d.clone());
+        let local = active
+            .as_deref()
+            .filter(|id| self.controls_locally(id))
+            .and_then(|_| spotify_mpris::snapshot());
+        let player_state = match local {
+            // The app's own report: immediate, and no "device not found"
+            Some(snapshot) => Ok(self.state_from_snapshot(snapshot)),
+            None => self.api.get_player_state(load::transport()).await,
+        };
         let Ok(mut state) = player_state else {
             return;
         };
@@ -273,9 +336,12 @@ impl ConnectPlayer {
         let is_paused = !current_state.is_playing;
         if is_diff_song {
             let context = source.spotify_uri().unwrap();
-            self.api
-                .player_play_in_context(&device_id, &context, offset)
-                .await
+            let result = self
+                .retrying(&device_id, || {
+                    self.api.player_play_in_context(&device_id, &context, offset)
+                })
+                .await;
+            self.fall_back_to_open_uri(&device_id, result, &song)
         } else if is_paused {
             self.api.player_resume(&device_id).await
         } else {
@@ -302,20 +368,72 @@ impl ConnectPlayer {
             .unwrap_or(true);
         let is_paused = !current_state.is_playing;
         if is_diff_song {
-            self.api
-                .player_play_uris(
-                    &device_id,
-                    songs
-                        .into_iter()
-                        .map(|s| format!("spotify:track:{}", s))
-                        .collect(),
-                    offset,
-                )
-                .await
+            let target = target_id.clone();
+            let uris: Vec<String> = songs
+                .into_iter()
+                .map(|s| format!("spotify:track:{}", s))
+                .collect();
+            let result = self
+                .retrying(&device_id, || {
+                    self.api.player_play_uris(&device_id, uris.clone(), offset)
+                })
+                .await;
+            self.fall_back_to_open_uri(&device_id, result, &target)
         } else if is_paused {
             self.api.player_resume(&device_id).await
         } else {
             Ok(())
+        }
+    }
+
+    /// Runs a Web API play request, trying again twice when the Spotify app
+    /// on this computer is the target: its Connect side often answers "not
+    /// found" or a server error for a moment while the app plays fine.
+    async fn retrying<F, Fut>(&self, device_id: &str, request: F) -> Result<(), DomainError>
+    where
+        F: Fn() -> Fut,
+        Fut: std::future::Future<Output = Result<(), DomainError>>,
+    {
+        let mut result = request().await;
+        if !self.controls_locally(device_id) {
+            return result;
+        }
+        for wait_ms in [600, 1500] {
+            let retry = match &result {
+                Ok(()) | Err(DomainError::RateLimited { .. }) => false,
+                Err(_) => true,
+            };
+            if !retry {
+                break;
+            }
+            debug!("play request failed ({result:?}); trying again in {wait_ms} ms");
+            tokio::time::sleep(Duration::from_millis(wait_ms)).await;
+            result = request().await;
+        }
+        result
+    }
+
+    /// When the Web API still can't start `track_id` on the Spotify app here,
+    /// opens it over MPRIS: it plays, outside its album or playlist.
+    fn fall_back_to_open_uri(
+        &self,
+        device_id: &str,
+        result: Result<(), DomainError>,
+        track_id: &str,
+    ) -> Result<(), DomainError> {
+        if result.is_ok() || !self.controls_locally(device_id) {
+            return result;
+        }
+        warn!("Web API couldn't start the track ({result:?}); opening it over MPRIS");
+        match spotify_mpris::open_uri(&format!("spotify:track:{track_id}")) {
+            Ok(()) => {
+                self.remember_playing(&Ok(()), true);
+                Ok(())
+            }
+            Err(e) => {
+                warn!("MPRIS OpenUri failed too: {e}");
+                result
+            }
         }
     }
 
@@ -334,6 +452,16 @@ impl ConnectPlayer {
         device_id: String,
         command: ConnectCommand,
     ) -> Result<(), DomainError> {
+        if self.controls_locally(&device_id) {
+            if let Some(result) = self.try_local_command(&command) {
+                match command {
+                    ConnectCommand::PlayerResume => self.remember_playing(&result, true),
+                    ConnectCommand::PlayerPause => self.remember_playing(&result, false),
+                    _ => {}
+                }
+                return result;
+            }
+        }
         // Always sent: the last polled state can be seconds old, and
         // skipping on it dropped real presses. Handled before the state lock,
         // which `remember_playing` takes for writing.
@@ -350,10 +478,12 @@ impl ConnectPlayer {
             }
             _ => {}
         }
-        let state = self.last_state.read();
-        let Ok(state) = state.as_deref() else {
+        // A copy: holding the lock across the awaits below deadlocked the
+        // whole Connect thread once a fallback needed to write the state
+        let Some(state) = self.last_state.read().ok().map(|s| s.clone()) else {
             return Ok(());
         };
+        let state = &state;
         match command {
             ConnectCommand::PlayerLoadInContext { .. } => {
                 self.handle_player_load_in_context(device_id, state, command)
@@ -441,6 +571,56 @@ impl ConnectPlayer {
         self.send_actions([PlaybackAction::SwitchDevice(Device::Connect(device)).into()]);
     }
 
+    /// Whether `device_id` is known (without asking Spotify) to be the
+    /// Spotify app on this computer.
+    fn is_known_official(&self, device_id: &str) -> bool {
+        let known = |id: Option<String>| id.as_deref() == Some(device_id);
+        known(self.official_device_id.read().ok().and_then(|d| d.clone()))
+            || known(official::remembered_official_device_id())
+            || self
+                .last_state
+                .read()
+                .ok()
+                .and_then(|s| s.device.clone())
+                .is_some_and(|d| d.id == device_id && official::is_this_computer(&d.label))
+    }
+
+    /// Whether commands for `device_id` can go to the Spotify app here over
+    /// MPRIS instead of the Web API.
+    fn controls_locally(&self, device_id: &str) -> bool {
+        self.is_known_official(device_id) && spotify_mpris::is_running()
+    }
+
+    /// Plays, pauses, seeks, repeats, shuffles or sets the volume over MPRIS.
+    /// `None` when the command isn't one of those or MPRIS failed, so the
+    /// caller falls back to the Web API.
+    fn try_local_command(&self, command: &ConnectCommand) -> Option<Result<(), DomainError>> {
+        let result = match command {
+            ConnectCommand::PlayerResume => spotify_mpris::play(),
+            ConnectCommand::PlayerPause => spotify_mpris::pause(),
+            ConnectCommand::PlayerSeek(offset) => {
+                let item = spotify_mpris::snapshot()?.item_path?;
+                spotify_mpris::set_position(&item, *offset as u32)
+            }
+            ConnectCommand::PlayerRepeat(mode) => spotify_mpris::set_repeat(*mode),
+            ConnectCommand::PlayerShuffle(shuffle) => spotify_mpris::set_shuffle(*shuffle),
+            ConnectCommand::PlayerSetVolume(volume) => {
+                spotify_mpris::set_volume(f64::from(*volume) / 100.0)
+            }
+            _ => return None,
+        };
+        match result {
+            Ok(()) => {
+                debug!("{command:?} sent to the Spotify app over MPRIS");
+                Some(Ok(()))
+            }
+            Err(e) => {
+                warn!("MPRIS {command:?} failed ({e}); using the Web API");
+                None
+            }
+        }
+    }
+
     /// Whether `device_id` is the Spotify app on this computer.
     async fn is_local_official(&self, device_id: &str) -> bool {
         let known = |id: Option<String>| id.as_deref() == Some(device_id);
@@ -475,8 +655,10 @@ impl ConnectPlayer {
         );
         if !wants_playback
             || !official::account_needs_official_client()
+            || spotify_mpris::is_running()
             || !self.is_local_official(device_id).await
         {
+            // A running app that won't answer isn't fixed by starting it again
             return false;
         }
         {
