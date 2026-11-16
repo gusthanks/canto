@@ -731,6 +731,11 @@ impl PlayQueue {
         };
     }
 
+    /// Whether the queue plays from a known album, playlist or other source.
+    pub fn has_source(&self) -> bool {
+        self.context.source.is_some()
+    }
+
     pub fn set_shuffled_flag(&mut self, shuffled: bool) {
         self.shuffled = shuffled;
         if shuffled {

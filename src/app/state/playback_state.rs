@@ -422,7 +422,22 @@ impl PlaybackState {
         let prev_position = self.seek_position.current();
 
         let mut queue_changed = false;
-        if let Some(tracks) = remote.tracks {
+        // Spotify's queue only lists what plays from now on. When Canto
+        // started this album or playlist itself and the track is in it, its
+        // own copy is kept: it knows the tracks before, so "previous" works
+        let kept_own_queue = self.queue.has_source()
+            && remote.track_id.as_deref().is_some_and(|id| {
+                self.current_song_id().as_deref() == Some(id) || self.queue.select_remote_id(id)
+            });
+        if kept_own_queue {
+            if prev_track != self.current_song_id() {
+                queue_changed = true;
+            }
+            if self.queue.is_shuffled() != remote.shuffle {
+                self.queue.set_shuffled_flag(remote.shuffle);
+                queue_changed = true;
+            }
+        } else if let Some(tracks) = remote.tracks {
             self.queue
                 .set_remote_queue(tracks, remote.track_id.as_deref(), remote.shuffle);
             queue_changed = true;
@@ -1845,6 +1860,51 @@ mod tests {
             is_active: true,
             volume_percent: Some(50),
         })
+    }
+
+    #[test]
+    fn connect_sync_keeps_the_album_canto_started_so_previous_works() {
+        let mut state = PlaybackState::default();
+        state.act(PlaybackAction::SwitchDevice(connect_device("alexa")));
+        let source = SongsSource::Album("x".to_string());
+        state.act(PlaybackAction::LoadPagedSongs(
+            source.clone(),
+            Page {
+                items: ["1", "2", "3", "4"].iter().map(|i| song(i)).collect(),
+                offset: Some(0),
+                total: Some(4),
+                next_cursor: None,
+            },
+        ));
+        state.act(PlaybackAction::Load("3".to_string()));
+        // Spotify reports only what plays from now on
+        state.act(PlaybackAction::SyncRemoteState(Box::new(RemotePlaybackState {
+            tracks: Some(vec![song("3"), song("4")]),
+            track_id: Some("3".to_string()),
+            is_playing: true,
+            position_ms: 500,
+            repeat: RepeatMode::Off,
+            shuffle: false,
+            volume: None,
+        })));
+        assert_eq!(state.current_source(), Some(&source));
+
+        let events = state.act(PlaybackAction::Previous);
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::TrackChanged(id) if id == "2")));
+
+        // A track from elsewhere still takes Spotify's queue
+        state.act(PlaybackAction::SyncRemoteState(Box::new(RemotePlaybackState {
+            tracks: Some(vec![song("z")]),
+            track_id: Some("z".to_string()),
+            is_playing: true,
+            position_ms: 0,
+            repeat: RepeatMode::Off,
+            shuffle: false,
+            volume: None,
+        })));
+        assert_eq!(state.song_ids(), ["z"]);
     }
 
     #[test]
