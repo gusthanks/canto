@@ -20,7 +20,6 @@ template $PlaybackWidget : Box {
         volume_button.visible: true;
         device_selector_box.visible: false;
         eq_button.visible: false;
-        fullscreen_lyrics_button.visible: false;
         mini_player_button.visible: false;
         playback_center.homogeneous: false;
       }
@@ -38,7 +37,6 @@ template $PlaybackWidget : Box {
         now_playing_box.visible: false;
         now_playing_button_box.visible: true;
         lyrics_button.visible: false;
-        fullscreen_lyrics_button.visible: false;
         mini_player_button.visible: false;
         queue_button.visible: false;
         sleep_timer_button.visible: false;
@@ -177,27 +175,10 @@ template $PlaybackWidget : Box {
           ]
         }
 
-        Button fullscreen_lyrics_button {
-          width-request: 36;
-          height-request: 36;
-          icon-name: "view-fullscreen-symbolic";
-          /* Translators: Tooltip of the player bar button that shows the lyrics full screen. */
-          tooltip-text: _("Full-Screen Lyrics");
-          action-name: "win.fullscreen-lyrics";
-          valign: center;
-          focus-on-click: false;
-          can-focus: false;
-
-          styles [
-            "flat",
-            "circular",
-          ]
-        }
-
         Button mini_player_button {
           width-request: 36;
           height-request: 36;
-          icon-name: "view-dual-symbolic";
+          icon-name: "canto-mini-player-symbolic";
           /* Translators: Tooltip of the player bar button that opens the small player window. */
           tooltip-text: _("Mini Player");
           action-name: "win.mini-player";
@@ -214,7 +195,7 @@ template $PlaybackWidget : Box {
         Button queue_button {
           width-request: 36;
           height-request: 36;
-          icon-name: "queue-symbolic";
+          icon-name: "canto-queue-symbolic";
           /* Translators: Tooltip of the playback bar button that shows or hides the queue. */
           tooltip-text: _("Queue");
           action-name: "win.show-queue";

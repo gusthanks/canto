@@ -127,6 +127,18 @@ template $LyricsPageWidget : Adw.Bin {
           "circular",
         ]
       }
+
+      Button fullscreen_button {
+        icon-name: "view-fullscreen-symbolic";
+        /* Translators: Tooltip of the button in the lyrics that shows them full screen. */
+        tooltip-text: _("Full-Screen Lyrics");
+        action-name: "win.fullscreen-lyrics";
+
+        styles [
+          "flat",
+          "circular",
+        ]
+      }
     }
   };
 }

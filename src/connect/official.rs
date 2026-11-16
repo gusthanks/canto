@@ -24,6 +24,35 @@ fn marker_path() -> PathBuf {
     glib::user_data_dir().join("canto").join("use-official-client")
 }
 
+/// Path of the file remembering the Connect id of this computer's Spotify app.
+fn device_id_path() -> PathBuf {
+    glib::user_data_dir().join("canto").join("official-device-id")
+}
+
+/// Remembers the Connect id of the Spotify app on this computer, so a later
+/// session recognises it even while the app is closed.
+pub fn remember_official_device_id(id: &str) {
+    let path = device_id_path();
+    if let Some(dir) = path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    if let Err(e) = std::fs::write(&path, format!("{id}\n")) {
+        warn!("could not persist the official device id: {e}");
+    }
+}
+
+pub fn remembered_official_device_id() -> Option<String> {
+    std::fs::read_to_string(device_id_path())
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
+/// Whether a Connect device label names this computer.
+pub fn is_this_computer(label: &str) -> bool {
+    hostname().is_some_and(|h| label.eq_ignore_ascii_case(&h))
+}
+
 pub fn account_needs_official_client() -> bool {
     marker_path().exists()
 }

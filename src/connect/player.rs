@@ -18,6 +18,9 @@ use super::official::{self, OfficialClient};
 
 const OFFICIAL_CLIENT_STARTUP_TIMEOUT: Duration = Duration::from_secs(45);
 const OFFICIAL_CLIENT_IDLE_LIMIT: Duration = Duration::from_secs(10 * 60);
+/// At most one automatic restart of the Spotify app per this long, so a
+/// device that stays unreachable ends in a message instead of a loop.
+const OFFICIAL_RECOVERY_COOLDOWN: Duration = Duration::from_secs(60);
 
 #[derive(Debug, Clone)]
 pub enum ConnectCommand {
@@ -53,6 +56,7 @@ pub struct ConnectPlayer {
     poll_count: AtomicU32,
     remote_playing: AtomicBool,
     official: OfficialClient,
+    last_recovery: std::sync::Mutex<Option<std::time::Instant>>,
 }
 
 impl ConnectPlayer {
@@ -68,6 +72,7 @@ impl ConnectPlayer {
             poll_count: AtomicU32::new(0),
             remote_playing: AtomicBool::new(false),
             official: Default::default(),
+            last_recovery: Default::default(),
         }
     }
 
@@ -381,8 +386,86 @@ impl ConnectPlayer {
         if let Ok(mut official_id) = self.official_device_id.write() {
             *official_id = Some(device.id.clone());
         }
+        official::remember_official_device_id(&device.id);
         // SwitchDevice makes the notifier send SetDevice + the current track.
         self.send_actions([PlaybackAction::SwitchDevice(Device::Connect(device)).into()]);
+    }
+
+    /// Whether `device_id` is the Spotify app on this computer.
+    async fn is_local_official(&self, device_id: &str) -> bool {
+        let known = |id: Option<String>| id.as_deref() == Some(device_id);
+        if known(self.official_device_id.read().ok().and_then(|d| d.clone()))
+            || known(official::remembered_official_device_id())
+        {
+            return true;
+        }
+        let from_state = self.last_state.read().ok().and_then(|s| s.device.clone());
+        if from_state.is_some_and(|d| d.id == device_id && official::is_this_computer(&d.label)) {
+            return true;
+        }
+        self.api
+            .get_devices(load::transport())
+            .await
+            .is_ok_and(|devices| {
+                devices
+                    .iter()
+                    .any(|d| d.id == device_id && official::is_this_computer(&d.label))
+            })
+    }
+
+    /// The Spotify app on this computer stopped answering (closed, crashed or
+    /// asleep): start it again in the background and replay `command` on it.
+    /// Returns whether the command went through.
+    async fn recover_local_official(&self, device_id: &str, command: ConnectCommand) -> bool {
+        let wants_playback = matches!(
+            command,
+            ConnectCommand::PlayerResume
+                | ConnectCommand::PlayerLoad { .. }
+                | ConnectCommand::PlayerLoadInContext { .. }
+        );
+        if !wants_playback
+            || !official::account_needs_official_client()
+            || !self.is_local_official(device_id).await
+        {
+            return false;
+        }
+        {
+            let Ok(mut last) = self.last_recovery.lock() else {
+                return false;
+            };
+            if last.is_some_and(|t| t.elapsed() < OFFICIAL_RECOVERY_COOLDOWN) {
+                return false;
+            }
+            *last = Some(std::time::Instant::now());
+        }
+        info!("official client unreachable; starting it again");
+        self.send_actions([AppAction::ShowNotification(gettext(
+            "Starting Spotify in the background…",
+        ))]);
+        if let Err(e) = self.official.spawn() {
+            warn!("{e}");
+            return false;
+        }
+        let Some(device) = self.wait_for_official_device(true, true).await else {
+            return false;
+        };
+        let _ = self.api.player_transfer(&device.id).await;
+        tokio::time::sleep(Duration::from_millis(500)).await;
+        if let Ok(mut id) = self.device_id.write() {
+            *id = Some(device.id.clone());
+        }
+        let changed = device.id != device_id;
+        let new_id = device.id.clone();
+        if changed {
+            // The UI follows; SwitchDevice re-sends the current track
+            self.switch_to(device).await;
+            return true;
+        }
+        if let Ok(mut official_id) = self.official_device_id.write() {
+            *official_id = Some(new_id.clone());
+        }
+        official::remember_official_device_id(&new_id);
+        self.handle_other_command(new_id, command).await.is_ok()
     }
 
     pub async fn handle_command(&self, command: ConnectCommand) -> Option<()> {
@@ -424,8 +507,15 @@ impl ConnectPlayer {
                         // Wake a sleeping Connect device (e.g. Alexa) by transferring and retrying once.
                         if self.api.player_transfer(&device_id).await.is_ok() {
                             tokio::time::sleep(Duration::from_millis(350)).await;
-                            result = self.handle_other_command(device_id, command).await;
+                            result = self
+                                .handle_other_command(device_id.clone(), command.clone())
+                                .await;
                         }
+                    }
+                    if matches!(result, Err(DomainError::NotFound { .. }))
+                        && self.recover_local_official(&device_id, command).await
+                    {
+                        result = Ok(());
                     }
                     if matches!(result, Err(DomainError::RateLimited { .. })) {
                         self.send_actions([AppAction::ShowNotification(gettext(

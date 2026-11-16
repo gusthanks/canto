@@ -36,6 +36,8 @@ mod imp {
         pub offset_plus_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub reload_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub fullscreen_button: TemplateChild<gtk::Button>,
 
         pub line_widgets: RefCell<Vec<gtk::Widget>>,
         pub active_index: RefCell<Option<usize>>,
@@ -122,6 +124,11 @@ pub fn open_external_url(widget: &impl IsA<gtk::Widget>, url: &str) {
 }
 
 impl LyricsPageWidget {
+    /// The full-screen view hides its own way in.
+    pub fn set_fullscreen_button_visible(&self, visible: bool) {
+        self.imp().fullscreen_button.set_visible(visible);
+    }
+
     pub fn set_loading(&self) {
         let imp = self.imp();
         imp.reload_empty_button.set_visible(false);

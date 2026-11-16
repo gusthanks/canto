@@ -90,6 +90,9 @@
     <file compressed="true" preprocess="xml-stripblanks" alias="alarm-symbolic.svg">../data/hicolor/symbolic/actions/alarm-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-equalizer-symbolic.svg">../data/hicolor/symbolic/actions/canto-equalizer-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-lyrics-symbolic.svg">../data/hicolor/symbolic/actions/canto-lyrics-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-queue-symbolic.svg">../data/hicolor/symbolic/actions/canto-queue-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-mini-player-symbolic.svg">../data/hicolor/symbolic/actions/canto-mini-player-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-more-symbolic.svg">../data/hicolor/symbolic/actions/canto-more-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-heart-symbolic.svg">../data/hicolor/symbolic/actions/canto-heart-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-heart-filled-symbolic.svg">../data/hicolor/symbolic/actions/canto-heart-filled-symbolic.svg</file>
     <!-- fallback copies of Adwaita icons for themes that lack them -->

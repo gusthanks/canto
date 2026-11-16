@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 22:51-0300\n"
+"POT-Creation-Date: 2026-11-16 12:06-0300\n"
 "Language: nb\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -67,7 +67,7 @@ msgstr ""
 #: src/app/components/shell/command_palette/widget.rs:474
 #: src/app/components/pages/shortcuts/shortcuts.blp:84
 #: src/app/components/shell/playback/playback_info.blp:18
-#: src/app/components/shell/playback/playback_widget.blp:75
+#: src/app/components/shell/playback/playback_widget.blp:73
 #: src/app/components/shell/utility_panel/utility_panel.blp:41
 msgid "Now Playing"
 msgstr "Nå spiller"
@@ -229,7 +229,7 @@ msgstr "Normal"
 #. translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
 #: src/app/components/labels.rs:110
 #: src/app/components/shell/command_palette/widget.rs:577
-#: src/app/components/shell/playback/playback_widget.blp:494 src/window.blp:311
+#: src/app/components/shell/playback/playback_widget.blp:475 src/window.blp:311
 msgid "Start Track Radio"
 msgstr ""
 
@@ -325,7 +325,7 @@ msgid "The playlist's cover could not be uploaded."
 msgstr ""
 
 #. translators: This notification is shown when Spotify throttles requests.
-#: src/app/components/mod.rs:245 src/connect/player.rs:433
+#: src/app/components/mod.rs:245 src/connect/player.rs:523
 msgid "Rate limited by Spotify. Please wait a moment and try again."
 msgstr ""
 
@@ -367,10 +367,10 @@ msgstr "Alle Spillelister"
 #. translators: Title of the full-screen lyrics window.
 #. Translators: Tooltip of the player bar button that shows or hides synced lyrics.
 #. Translators: Tab label for lyrics in utility panel.
-#: src/app/components/pages/lyrics/component.rs:67
+#: src/app/components/pages/lyrics/component.rs:68
 #: src/app/components/shell/now_panel/mod.rs:350
-#: src/app/components/shell/fullscreen_lyrics.rs:77
-#: src/app/components/shell/playback/playback_widget.blp:168
+#: src/app/components/shell/fullscreen_lyrics.rs:78
+#: src/app/components/shell/playback/playback_widget.blp:166
 #: src/app/components/shell/utility_panel/utility_panel.blp:53
 msgid "Lyrics"
 msgstr ""
@@ -379,7 +379,7 @@ msgstr ""
 #: src/app/components/pages/lyrics/component.rs:289
 #: src/app/components/pages/lyrics/component.rs:523
 #: src/app/components/shell/playback/playback_info.rs:112
-#: src/app/components/shell/fullscreen_lyrics.rs:160
+#: src/app/components/shell/fullscreen_lyrics.rs:161
 #, fuzzy
 msgid "No Track Playing"
 msgstr "Nå spiller"
@@ -399,7 +399,7 @@ msgstr ""
 #. Translators: Tooltip of the playback bar button that shows or hides the queue.
 #. Translators: Tab label for the queue in utility panel.
 #: src/app/components/pages/queue/component.rs:58
-#: src/app/components/shell/playback/playback_widget.blp:219
+#: src/app/components/shell/playback/playback_widget.blp:200
 #: src/app/components/shell/utility_panel/utility_panel.blp:47
 msgid "Queue"
 msgstr ""
@@ -721,8 +721,8 @@ msgstr ""
 #: src/app/components/shell/command_palette/widget.rs:470
 #: src/app/components/shell/command_palette/widget.rs:608
 #: src/app/components/sleep_timer.rs:45 src/app/components/sleep_timer.rs:49
-#: src/app/components/shell/playback/playback_widget.blp:234
-#: src/app/components/shell/playback/playback_widget.blp:274
+#: src/app/components/shell/playback/playback_widget.blp:215
+#: src/app/components/shell/playback/playback_widget.blp:255
 msgid "Sleep Timer"
 msgstr ""
 
@@ -797,9 +797,9 @@ msgstr ""
 msgid "Show or hide Lyrics and Track Notes"
 msgstr ""
 
-#. Translators: Tooltip of the player bar button that shows the lyrics full screen.
+#. Translators: Tooltip of the button in the lyrics that shows them full screen.
 #: src/app/components/shell/command_palette/widget.rs:557
-#: src/app/components/shell/playback/playback_widget.blp:185
+#: src/app/components/pages/lyrics/lyrics_page.blp:134
 msgid "Full-Screen Lyrics"
 msgstr ""
 
@@ -809,7 +809,7 @@ msgstr ""
 
 #. Translators: Tooltip of the player bar button that opens the small player window.
 #: src/app/components/shell/command_palette/widget.rs:566
-#: src/app/components/shell/playback/playback_widget.blp:202
+#: src/app/components/shell/playback/playback_widget.blp:183
 msgid "Mini Player"
 msgstr ""
 
@@ -1067,7 +1067,7 @@ msgid "Couldn't load the credits from Genius."
 msgstr ""
 
 #. translators: Tooltip of the button leaving full-screen lyrics.
-#: src/app/components/shell/fullscreen_lyrics.rs:113
+#: src/app/components/shell/fullscreen_lyrics.rs:114
 msgid "Exit Full Screen (Esc)"
 msgstr ""
 
@@ -1237,24 +1237,24 @@ msgstr ""
 msgid "No track is currently playing"
 msgstr "Nå spiller"
 
-#: src/connect/player.rs:87
+#: src/connect/player.rs:92
 msgid "Connection to device lost!"
 msgstr ""
 
-#: src/connect/player.rs:331
+#: src/connect/player.rs:336 src/connect/player.rs:443
 msgid "Starting Spotify in the background…"
 msgstr ""
 
-#: src/connect/player.rs:338
+#: src/connect/player.rs:343
 msgid "Could not start the Spotify app. Is it installed?"
 msgstr ""
 
-#: src/connect/player.rs:350
+#: src/connect/player.rs:355
 msgid "The Spotify app did not show up as a device. Try again in a moment."
 msgstr ""
 
 #. translators: Shown when a Spotify Connect speaker is asleep or unreachable.
-#: src/connect/player.rs:438
+#: src/connect/player.rs:528
 msgid ""
 "Spotify Connect device is asleep or inactive. Start playback on the device "
 "first."
@@ -2097,65 +2097,65 @@ msgstr ""
 msgid "Forward"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:294
+#: src/app/components/shell/playback/playback_widget.blp:275
 msgid "Off"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:308
+#: src/app/components/shell/playback/playback_widget.blp:289
 msgid "End of current track"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:322
+#: src/app/components/shell/playback/playback_widget.blp:303
 msgid "15 min"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:336
+#: src/app/components/shell/playback/playback_widget.blp:317
 msgid "30 min"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:350
+#: src/app/components/shell/playback/playback_widget.blp:331
 msgid "45 min"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:364
+#: src/app/components/shell/playback/playback_widget.blp:345
 msgid "60 min"
 msgstr ""
 
 #. Translators: Tooltip of the player bar equalizer presets menu button.
-#: src/app/components/shell/playback/playback_widget.blp:377
-#: src/app/components/shell/playback/playback_widget.blp:398
+#: src/app/components/shell/playback/playback_widget.blp:358
+#: src/app/components/shell/playback/playback_widget.blp:379
 msgid "Equalizer Presets"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:418
+#: src/app/components/shell/playback/playback_widget.blp:399
 msgid "Flat"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:432
+#: src/app/components/shell/playback/playback_widget.blp:413
 msgid "Bass Boost"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:446
+#: src/app/components/shell/playback/playback_widget.blp:427
 msgid "Vocal"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:460
+#: src/app/components/shell/playback/playback_widget.blp:441
 msgid "Lo-Fi"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:474
+#: src/app/components/shell/playback/playback_widget.blp:455
 msgid "Acoustic"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:509
+#: src/app/components/shell/playback/playback_widget.blp:490
 msgid "Audio Settings…"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:532
+#: src/app/components/shell/playback/playback_widget.blp:513
 msgid "Mute / Unmute"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:567
+#: src/app/components/shell/playback/playback_widget.blp:548
 msgid "Volume"
 msgstr ""
 

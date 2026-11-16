@@ -38,6 +38,7 @@ impl FullscreenLyrics {
     ) -> Self {
         let lyrics = LyricsPage::new(app_model.clone(), dispatcher);
         lyrics.widget().add_css_class("lyrics--fullscreen");
+        lyrics.widget().set_fullscreen_button_visible(false);
         let this = Self {
             lyrics,
             app_model,
@@ -204,6 +205,7 @@ pub(crate) fn sample_for_tests(cover: &gtk::gdk::Texture) -> gtk::Window {
 
     let lyrics_widget = LyricsPageWidget::default();
     lyrics_widget.add_css_class("lyrics--fullscreen");
+    lyrics_widget.set_fullscreen_button_visible(false);
     let lines = [
         "Todos esses manos querem ser",
         "Mas ninguém quer pagar o preço",

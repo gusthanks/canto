@@ -38,6 +38,9 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
         "alarm-symbolic",
         "canto-equalizer-symbolic",
         "canto-lyrics-symbolic",
+        "canto-queue-symbolic",
+        "canto-mini-player-symbolic",
+        "canto-more-symbolic",
     ] {
         assert!(
             icon_theme.has_icon(icon),
