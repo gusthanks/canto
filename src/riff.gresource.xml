@@ -93,6 +93,8 @@
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-queue-symbolic.svg">../data/hicolor/symbolic/actions/canto-queue-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-mini-player-symbolic.svg">../data/hicolor/symbolic/actions/canto-mini-player-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-more-symbolic.svg">../data/hicolor/symbolic/actions/canto-more-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-back-symbolic.svg">../data/hicolor/symbolic/actions/canto-back-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-forward-symbolic.svg">../data/hicolor/symbolic/actions/canto-forward-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-library-symbolic.svg">../data/hicolor/symbolic/actions/canto-library-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-translate-symbolic.svg">../data/hicolor/symbolic/actions/canto-translate-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-heart-symbolic.svg">../data/hicolor/symbolic/actions/canto-heart-symbolic.svg</file>

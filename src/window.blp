@@ -181,31 +181,51 @@ Adw.ApplicationWindow window {
               hexpand: true;
               hhomogeneous: false;
 
-              Button search_button {
-                hexpand: true;
-                valign: center;
-                tooltip-text: _("Search");
-                focus-on-click: false;
-                can-focus: false;
+              Box top_search_entry {
+                spacing: 8;
 
-                styles [
-                  "top-bar__search",
-                ]
+                Button search_button {
+                  hexpand: true;
+                  valign: center;
+                  tooltip-text: _("Search");
+                  focus-on-click: false;
+                  can-focus: false;
 
-                child: Box {
-                  spacing: 8;
+                  styles [
+                    "top-bar__search",
+                  ]
 
-                  Image {
-                    icon-name: "system-search-symbolic";
-                  }
+                  child: Box {
+                    spacing: 8;
 
-                  Label {
-                    /* Translators: Placeholder of the search field in the top bar. */
-                    label: _("What do you want to play?");
-                    ellipsize: end;
-                    xalign: 0;
-                  }
-                };
+                    Image {
+                      icon-name: "system-search-symbolic";
+                    }
+
+                    Label {
+                      /* Translators: Placeholder of the search field in the top bar. */
+                      label: _("What do you want to play?");
+                      ellipsize: end;
+                      xalign: 0;
+                    }
+                  };
+                }
+
+                // Narrow windows: just a round search button
+                Button top_search_icon {
+                  visible: false;
+                  icon-name: "system-search-symbolic";
+                  tooltip-text: _("Search");
+                  action-name: "app.search";
+                  valign: center;
+                  focus-on-click: false;
+                  can-focus: false;
+
+                  styles [
+                    "circular",
+                    "top-bar__home",
+                  ]
+                }
               }
 
               Adw.Bin top_search_slot {

@@ -628,6 +628,20 @@ impl AppHeaderBar {
             imp.drawer_buttons.get()
         };
         slot.set_visible(in_sidebar);
+        // The "show library" button goes with them, so it never floats over
+        // a page that runs up under the page bar
+        let toggle = imp.navigation_panel_toggle.get();
+        if in_sidebar && toggle.parent().as_ref() != Some(slot.upcast_ref()) {
+            if let Some(parent) = toggle.parent() {
+                if let Some(header) = parent.ancestor(libadwaita::HeaderBar::static_type()) {
+                    header.downcast_ref::<libadwaita::HeaderBar>().unwrap().remove(&toggle);
+                } else if let Some(parent) = parent.downcast_ref::<gtk::Box>() {
+                    parent.remove(&toggle);
+                }
+            }
+            toggle.set_icon_name("canto-library-symbolic");
+            slot.prepend(&toggle);
+        }
         if back.parent().as_ref() == Some(target.upcast_ref()) {
             return;
         }

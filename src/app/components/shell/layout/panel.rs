@@ -49,6 +49,7 @@ pub struct Panel {
     contents_min_width: Cell<i32>,
     share: Cell<Option<f64>>,
     rail: Cell<bool>,
+    auto_rail: Cell<bool>,
 }
 
 impl Panel {
@@ -63,6 +64,7 @@ impl Panel {
             contents_min_width: Cell::new(0),
             share: Cell::new(None),
             rail: Cell::new(false),
+            auto_rail: Cell::new(false),
         }
     }
 
@@ -76,14 +78,33 @@ impl Panel {
     }
 
     pub fn is_rail(&self) -> bool {
-        self.rail.get() && !self.split.is_collapsed()
+        (self.rail.get() || self.auto_rail.get()) && !self.split.is_collapsed()
+    }
+
+    /// The user chose the collapsed sidebar (not just squeezed into it).
+    pub fn rail_chosen(&self) -> bool {
+        self.rail.get()
+    }
+
+    /// Collapsed to the rail only because the full sidebar doesn't fit.
+    pub fn set_auto_rail(&self, auto: bool) {
+        self.auto_rail.set(auto);
     }
 
     pub fn least_width(&self) -> i32 {
         if self.is_rail() {
             return NAVIGATION_RAIL_WIDTH;
         }
-        if !self.split.is_collapsed() || self.contents_min_width.get() == 0 {
+        self.full_least_width()
+    }
+
+    /// The least width of the full (not rail) sidebar.
+    pub fn full_least_width(&self) -> i32 {
+        let rail_showing = self
+            .split
+            .sidebar()
+            .is_some_and(|s| s.has_css_class("navigation-panel--rail"));
+        if !rail_showing && (!self.split.is_collapsed() || self.contents_min_width.get() == 0) {
             if let Some(sidebar) = self.split.sidebar() {
                 let (min, _, _, _) = sidebar.measure(gtk::Orientation::Horizontal, -1);
                 self.contents_min_width.set(min);

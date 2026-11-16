@@ -69,8 +69,8 @@ impl NavigationPanelDestination {
         match self {
             // translators: This is a navigation panel entry to browse to saved albums.
             Self::Library => gettext("Library"),
-            // translators: This is a navigation panel entry to browse to saved tracks.
-            Self::SavedTracks => gettext("Saved Tracks"),
+            // translators: This is a navigation panel entry to browse to the songs the user liked (the heart).
+            Self::SavedTracks => gettext("Liked Songs"),
             // translators: This is a navigation panel entry that marks that the entries below are playlists.
             Self::SavedPlaylists => gettext("Playlists"),
             // translators: This is a navigation panel entry to browse to followed artists.

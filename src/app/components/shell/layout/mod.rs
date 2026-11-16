@@ -320,8 +320,21 @@ impl WindowLayout {
         if window_width <= 0 {
             return;
         }
-        let collapse = window_width <= sp_to_px(MOBILE_WIDTH_SP)
-            || window_width - self.navigation.least_width() < self.content_min_width();
+        let mobile = window_width <= sp_to_px(MOBILE_WIDTH_SP);
+        let content = self.content_min_width();
+        let full_fits = window_width - self.navigation.full_least_width() >= content;
+        let rail_fits = window_width - NAVIGATION_RAIL_WIDTH >= content;
+        // Too narrow for the full sidebar: covers only, like big music apps,
+        // before hiding it altogether
+        let auto = !mobile && !full_fits && rail_fits && !self.navigation.rail_chosen();
+        self.navigation.set_auto_rail(auto);
+        self.apply_rail();
+        let collapse = mobile
+            || if self.navigation.rail_chosen() || auto {
+                !rail_fits
+            } else {
+                !full_fits
+            };
         let split = &self.navigation.split;
         let collapsing = &self.collapsing_navigation;
         if !collapse {
@@ -525,6 +538,9 @@ impl WindowLayout {
     }
 }
 
+/// Below this width the top bar's search pill becomes a round button.
+const COMPACT_TOP_BAR_SP: f64 = 760.0;
+
 fn add_window_breakpoints(builder: &gtk::Builder) {
     let window: libadwaita::ApplicationWindow = builder.object("window").unwrap();
     let bottom_sheet: gtk::Widget = builder.object("bottom_sheet").unwrap();
@@ -537,6 +553,18 @@ fn add_window_breakpoints(builder: &gtk::Builder) {
         .map(|class| class.to_string())
         .collect::<Vec<String>>()
         .to_value();
+
+    // Narrow windows: the search pill turns into a round button beside home,
+    // both next to back and forward
+    let compact_top = max_width_breakpoint(COMPACT_TOP_BAR_SP);
+    let set = |id: &str, property: &str, value: glib::Value| {
+        let widget: glib::Object = builder.object(id).unwrap();
+        compact_top.add_setter(&widget, property, Some(&value));
+    };
+    set("search_button", "visible", false.to_value());
+    set("top_search_icon", "visible", true.to_value());
+    set("top_center", "halign", gtk::Align::Start.to_value());
+    window.add_breakpoint(compact_top);
 
     let narrow = max_width_breakpoint(NARROW_WIDTH_SP);
     narrow.add_setter(&bottom_sheet, "full-width", Some(&true.to_value()));

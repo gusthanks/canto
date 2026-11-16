@@ -433,3 +433,13 @@ row.navigation-row--playing label:not(.dim-label) {
 .navigation-row__pin {
   color: @accent_color;
 }
+
+/* Bigger icons in the window's top bar and on the playback bar */
+.top-bar button image,
+.top-bar menubutton image {
+  -gtk-icon-size: 20px;
+}
+
+.playback-bar button image {
+  -gtk-icon-size: 20px;
+}

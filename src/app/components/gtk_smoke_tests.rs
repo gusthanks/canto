@@ -42,6 +42,8 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
         "canto-mini-player-symbolic",
         "canto-more-symbolic",
         "canto-library-symbolic",
+        "canto-back-symbolic",
+        "canto-forward-symbolic",
         "canto-translate-symbolic",
     ] {
         assert!(

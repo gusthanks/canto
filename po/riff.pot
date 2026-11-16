@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 19:27-0300\n"
+"POT-Creation-Date: 2026-11-16 19:59-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -53,9 +53,7 @@ msgid "Remove from Playlist"
 msgstr ""
 
 #. translators: Name of the user's saved tracks, as the source of what's playing (e.g. "Next from: Saved Tracks").
-#. translators: This is a navigation panel entry to browse to saved tracks.
 #: src/app/components/labels.rs:26
-#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:73
 msgid "Saved Tracks"
 msgstr ""
 
@@ -192,7 +190,8 @@ msgstr ""
 #. translators: An album in the back/forward history menu, while its name is loading.
 #: src/app/components/labels.rs:95 src/app/components/labels.rs:180
 #: src/app/components/shell/command_palette/widget.rs:693
-#: src/app/components/shell/navigation_panel/model.rs:537
+#: src/app/components/shell/navigation_panel/model.rs:167
+#: src/app/components/shell/navigation_panel/model.rs:586
 #: src/app/components/pages/settings/settings.blp:254
 msgid "Album"
 msgstr ""
@@ -222,7 +221,7 @@ msgstr ""
 #. translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
 #: src/app/components/labels.rs:110
 #: src/app/components/shell/command_palette/widget.rs:577
-#: src/app/components/shell/playback/playback_widget.blp:475 src/window.blp:393
+#: src/app/components/shell/playback/playback_widget.blp:475 src/window.blp:416
 msgid "Start Track Radio"
 msgstr ""
 
@@ -287,7 +286,8 @@ msgstr ""
 #. translators: An artist in the back/forward history menu, while their name is loading.
 #: src/app/components/labels.rs:182
 #: src/app/components/shell/command_palette/widget.rs:694
-#: src/app/components/shell/navigation_panel/model.rs:561
+#: src/app/components/shell/navigation_panel/model.rs:169
+#: src/app/components/shell/navigation_panel/model.rs:610
 msgid "Artist"
 msgstr ""
 
@@ -295,8 +295,8 @@ msgstr ""
 #: src/app/components/labels.rs:184
 #: src/app/components/pages/details_playlist/model.rs:154
 #: src/app/components/shell/command_palette/widget.rs:695
-#: src/app/components/shell/navigation_panel/model.rs:143
-#: src/app/components/shell/navigation_panel/model.rs:504
+#: src/app/components/shell/navigation_panel/model.rs:187
+#: src/app/components/shell/navigation_panel/model.rs:548
 msgid "Playlist"
 msgstr ""
 
@@ -308,7 +308,8 @@ msgstr ""
 #. translators: The search page in the back/forward history menu.
 #: src/app/components/labels.rs:188
 #: src/app/components/shell/command_palette/widget.rs:492
-#: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:187
+#: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:190
+#: src/window.blp:218
 msgid "Search"
 msgstr ""
 
@@ -675,7 +676,7 @@ msgid "Open"
 msgstr ""
 
 #: src/app/components/shell/command_palette/command_palette.blp:5
-#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:388
+#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:411
 msgid "Command Palette"
 msgstr ""
 
@@ -738,7 +739,9 @@ msgstr ""
 msgid "Open search page"
 msgstr ""
 
+#. translators: This is a navigation panel entry to browse to the songs the user liked (the heart).
 #: src/app/components/shell/command_palette/widget.rs:501
+#: src/app/components/shell/navigation_panel/navigation_panel_item.rs:73
 msgid "Liked Songs"
 msgstr ""
 
@@ -1054,23 +1057,27 @@ msgstr ""
 msgid "Open Canto"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:182
+#: src/app/components/shell/navigation_panel/model.rs:170
+msgid "Song"
+msgstr ""
+
+#: src/app/components/shell/navigation_panel/model.rs:226
 msgid "Unnamed Playlist"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:572
+#: src/app/components/shell/navigation_panel/model.rs:621
 msgid "Pinned Playlist"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:573
+#: src/app/components/shell/navigation_panel/model.rs:622
 msgid "Pinned Album"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:574
+#: src/app/components/shell/navigation_panel/model.rs:623
 msgid "Pinned Artist"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:575
+#: src/app/components/shell/navigation_panel/model.rs:624
 msgid "Pinned Track"
 msgstr ""
 
@@ -1084,7 +1091,7 @@ msgstr ""
 
 #. Translators: title of the dialog that creates a new playlist
 #: src/app/components/shell/navigation_panel/navigation_panel.rs:210
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:362
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:365
 #: src/app/components/widgets/playlist_dialog/playlist_dialog.blp:7
 msgid "New Playlist"
 msgstr ""
@@ -1104,7 +1111,7 @@ msgstr ""
 
 #: src/app/components/shell/window/close_dialog.rs:17
 #: src/app/components/pages/settings/settings.blp:102
-#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:427
+#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:450
 msgid "Quit"
 msgstr ""
 
@@ -1343,7 +1350,7 @@ msgstr ""
 #: src/app/components/pages/queue/queue_page.blp:34
 #: src/app/components/shell/headerbar/headerbar.blp:131
 #: src/app/components/pages/queue/widget.rs:113
-#: src/app/components/shell/headerbar/widget.rs:730
+#: src/app/components/shell/headerbar/widget.rs:766
 #: src/app/components/shell/utility_panel/utility_panel.blp:87
 #: src/app/components/shell/utility_panel/widget.rs:153
 msgid "Select All"
@@ -2036,11 +2043,11 @@ msgstr ""
 msgid "Main Menu"
 msgstr ""
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:400
+#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:423
 msgid "Preferences"
 msgstr ""
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:405
+#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:428
 msgid "Keyboard Shortcuts"
 msgstr ""
 
@@ -2200,32 +2207,32 @@ msgid "Home"
 msgstr ""
 
 #. Translators: Placeholder of the search field in the top bar.
-#: src/window.blp:204
+#: src/window.blp:207
 msgid "What do you want to play?"
 msgstr ""
 
-#: src/window.blp:270
+#: src/window.blp:290
 msgid "Expand Your Library"
 msgstr ""
 
 #. Translators: Title of the left panel, which lists the user's playlists, albums and artists.
-#: src/window.blp:292
+#: src/window.blp:312
 msgid "Your Library"
 msgstr ""
 
-#: src/window.blp:303
+#: src/window.blp:323
 msgid "Collapse Sidebar"
 msgstr ""
 
-#: src/window.blp:410
+#: src/window.blp:433
 msgid "Report Issue"
 msgstr ""
 
-#: src/window.blp:415
+#: src/window.blp:438
 msgid "About Canto"
 msgstr ""
 
-#: src/window.blp:422
+#: src/window.blp:445
 msgid "Log Out"
 msgstr ""
 
@@ -2235,7 +2242,7 @@ msgstr ""
 
 #. translators: Button label. Deselects all songs, once they are all selected.
 #: src/app/components/pages/queue/widget.rs:110
-#: src/app/components/shell/headerbar/widget.rs:727
+#: src/app/components/shell/headerbar/widget.rs:763
 #: src/app/components/shell/utility_panel/widget.rs:150
 msgid "Deselect All"
 msgstr ""
