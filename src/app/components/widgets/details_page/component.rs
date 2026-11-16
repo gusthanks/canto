@@ -70,11 +70,6 @@ impl<M: PinnedPageModel + 'static> DetailsPageComponent<M> {
         c
     }
 
-    /// For content with its own component, like a `QueueList`.
-    pub fn append_content(&self, widget: &impl IsA<gtk::Widget>) {
-        self.content.append(widget);
-    }
-
     /// Create a [`TrackList`] child, appending an optional label and a `ListView`
     /// to the content box. Registers the track list as an event listener.
     pub fn create_track_list(&mut self, label: Option<&str>) -> gtk::ListView
@@ -186,10 +181,6 @@ impl<M: PinnedPageModel + 'static> DetailsPageComponent<M> {
 
     pub fn model(&self) -> &Rc<M> {
         &self.model
-    }
-
-    pub fn add_child(&mut self, child: Box<dyn EventListener>) {
-        self.children.push(child);
     }
 
     /// For entries that need the page's widgets, like a dialog.

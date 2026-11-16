@@ -3,8 +3,8 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use crate::app::components::{
-    note_side_panel, show_inline_view, AppHeaderBar, BottomSheet, Component, EventListener,
-    LyricsPage, QueuePage, QueuePageWidget, UtilityPanel,
+    AppHeaderBar, BottomSheet, Component, EventListener, LyricsPage, NowPanel, QueuePage,
+    QueuePageWidget, UtilityPanel,
 };
 use crate::app::state::PlaybackEvent;
 use crate::app::{AppAction, AppEvent, AppModel, Dispatcher};
@@ -13,6 +13,7 @@ use crate::settings::{QUEUE_SIDE_PANEL, SETTINGS};
 const TOGGLE_ACTION: &str = "utility-panel";
 const SHOW_QUEUE_ACTION: &str = "show-queue";
 const SHOW_LYRICS_ACTION: &str = "show-lyrics";
+const SHOW_NOW_PLAYING_ACTION: &str = "show-now-playing";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Placement {
@@ -31,6 +32,7 @@ impl Placement {
 }
 
 struct Panels {
+    now: gtk::Widget,
     queue: gtk::Widget,
     lyrics: gtk::Widget,
     panel: UtilityPanel,
@@ -62,26 +64,22 @@ impl Panels {
             .set_utility_panel_beside(self.panel.is_open());
     }
 
-    /// Whether the side panel holds `tab` ("queue" or "lyrics"). The queue
-    /// is in the bottom sheet instead when that's where it's placed.
+    /// Whether the side panel holds `tab` ("now", "queue" or "lyrics"). The
+    /// queue is in the bottom sheet instead when that's where it's placed.
     fn panel_has(&self, tab: &str) -> bool {
-        tab == "lyrics" || self.placement.get() == Some(Placement::Side)
+        tab != "queue" || self.placement.get() == Some(Placement::Side)
     }
 
-    /// What the player bar's queue and lyrics buttons do.
+    /// What the player bar's cover, queue and lyrics buttons do: an open
+    /// side panel switches to that tab, or closes on the tab it already
+    /// shows; a closed one opens on it.
     fn toggle_view(&self, tab: &'static str) {
-        // An open side panel follows the buttons: switch tab, or close on
-        // the tab it already shows.
         if self.panel.is_open() && self.panel_has(tab) {
             if self.panel.active_tab() == tab {
                 self.panel.set_open(false);
             } else {
                 self.panel.show_tab(tab);
             }
-            return;
-        }
-        // On the Now Playing page, the page itself switches.
-        if show_inline_view(tab) {
             return;
         }
         if self.panel_has(tab) {
@@ -101,12 +99,12 @@ impl Panels {
         match self.placement.get() {
             Some(Placement::Side) => {
                 self.panel.set_selection(None, false);
-                self.panel.set_pages(None, None);
+                self.panel.set_pages(None, None, None);
             }
             Some(Placement::Sheet) => {
                 self.sheet.set_selecting(false);
                 self.sheet.set_page(None);
-                self.panel.set_pages(None, None);
+                self.panel.set_pages(None, None, None);
             }
             None => {}
         }
@@ -115,12 +113,14 @@ impl Panels {
             page.set_selection_bar_hidden(placement == Placement::Side);
         }
         match placement {
-            Placement::Side => self
-                .panel
-                .set_pages(Some(&self.queue), Some(&self.lyrics)),
+            Placement::Side => {
+                self.panel
+                    .set_pages(Some(&self.now), Some(&self.queue), Some(&self.lyrics))
+            }
             Placement::Sheet => {
                 self.sheet.set_page(self.queue.downcast_ref());
-                self.panel.set_pages(None, Some(&self.lyrics));
+                self.panel
+                    .set_pages(Some(&self.now), None, Some(&self.lyrics));
             }
         }
         let open = self.is_open();
@@ -132,6 +132,7 @@ impl Panels {
 }
 
 pub struct PanelManager {
+    now: NowPanel,
     queue: QueuePage,
     lyrics: LyricsPage,
     panels: Rc<Panels>,
@@ -150,6 +151,7 @@ impl PanelManager {
     ) -> Self {
         let queue = QueuePage::new(app_model.clone(), dispatcher.clone());
         let lyrics = LyricsPage::new(app_model.clone(), dispatcher.clone());
+        let now = NowPanel::new(app_model.clone(), dispatcher.clone());
         panel.connect_selection_cancel(clone!(
             #[weak(rename_to = model)]
             queue.model(),
@@ -161,6 +163,7 @@ impl PanelManager {
             move || model.toggle_select_all()
         ));
         let panels = Rc::new(Panels {
+            now: now.widget().clone(),
             queue: queue.widget().clone().upcast(),
             lyrics: lyrics.widget().clone().upcast(),
             panel,
@@ -181,6 +184,7 @@ impl PanelManager {
         );
 
         let manager = Self {
+            now,
             queue,
             lyrics,
             panels,
@@ -223,6 +227,15 @@ impl PanelManager {
         });
         window.add_action(&show_lyrics);
 
+        let show_now = gio::SimpleAction::new(SHOW_NOW_PLAYING_ACTION, None);
+        let panels_weak = Rc::downgrade(&self.panels);
+        show_now.connect_activate(move |_, _| {
+            if let Some(panels) = panels_weak.upgrade() {
+                panels.toggle_view("now");
+            }
+        });
+        window.add_action(&show_now);
+
         let panels = Rc::downgrade(&self.panels);
         let app_model = self.app_model.clone();
         let open_changed = Rc::new(move || {
@@ -234,15 +247,8 @@ impl PanelManager {
                 action.set_state(&actual.to_variant());
             }
             panels.sync_header();
-            note_side_panel(panels.panel.is_open().then(|| panels.panel.active_tab()));
             if !panels.is_open() && app_model.get_state().selection.is_selecting_in(true) {
                 dispatcher.dispatch(AppAction::CancelSelection);
-            }
-        });
-        let panels_weak = Rc::downgrade(&self.panels);
-        self.panels.panel.connect_tab_changed(move || {
-            if let Some(panels) = panels_weak.upgrade() {
-                note_side_panel(panels.panel.is_open().then(|| panels.panel.active_tab()));
             }
         });
         self.panels.panel.connect_open_notify(clone!(
@@ -275,6 +281,7 @@ impl Component for PanelManager {
 
 impl EventListener for PanelManager {
     fn on_event(&mut self, event: &AppEvent) {
+        self.now.on_event(event);
         self.queue.on_event(event);
         self.lyrics.on_event(event);
         if let AppEvent::SelectionEvent(_)

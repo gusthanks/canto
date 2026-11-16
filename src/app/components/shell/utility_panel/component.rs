@@ -26,13 +26,18 @@ impl UtilityPanel {
             split,
             layout,
         };
-        panel.set_pages(None, None);
+        panel.set_pages(None, None, None);
         panel
     }
 
-    pub fn set_pages(&self, queue: Option<&gtk::Widget>, lyrics: Option<&gtk::Widget>) {
-        self.widget.set_pages(queue, lyrics);
-        let has_content = queue.is_some() || lyrics.is_some();
+    pub fn set_pages(
+        &self,
+        now: Option<&gtk::Widget>,
+        queue: Option<&gtk::Widget>,
+        lyrics: Option<&gtk::Widget>,
+    ) {
+        self.widget.set_pages(now, queue, lyrics);
+        let has_content = now.is_some() || queue.is_some() || lyrics.is_some();
         self.split
             .set_sidebar(has_content.then_some(&self.widget));
         self.widget
@@ -42,7 +47,7 @@ impl UtilityPanel {
 
     #[allow(dead_code)]
     pub fn set_content(&self, content: Option<&gtk::Widget>, _title: &str) {
-        self.set_pages(content, None);
+        self.set_pages(None, content, None);
     }
 
     pub fn set_selection(&self, selected: Option<usize>, all_selected: bool) {
@@ -67,10 +72,6 @@ impl UtilityPanel {
 
     pub fn connect_open_notify<F: Fn() + 'static>(&self, f: F) {
         self.split.connect_show_sidebar_notify(move |_| f());
-    }
-
-    pub fn connect_tab_changed<F: Fn() + 'static>(&self, f: F) {
-        self.widget.connect_tab_changed(f);
     }
 
     pub fn active_tab(&self) -> &'static str {

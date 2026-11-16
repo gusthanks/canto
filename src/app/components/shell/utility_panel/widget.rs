@@ -18,6 +18,8 @@ mod imp {
         #[template_child]
         pub header: TemplateChild<libadwaita::HeaderBar>,
         #[template_child]
+        pub now_tab: TemplateChild<gtk::ToggleButton>,
+        #[template_child]
         pub queue_tab: TemplateChild<gtk::ToggleButton>,
         #[template_child]
         pub lyrics_tab: TemplateChild<gtk::ToggleButton>,
@@ -31,6 +33,8 @@ mod imp {
         pub select_all: TemplateChild<gtk::Button>,
         #[template_child]
         pub panel_stack: TemplateChild<gtk::Stack>,
+        #[template_child]
+        pub now_content: TemplateChild<libadwaita::Bin>,
         #[template_child]
         pub queue_content: TemplateChild<libadwaita::Bin>,
         #[template_child]
@@ -68,49 +72,56 @@ impl UtilityPanelWidget {
         &self.imp().resize_handle
     }
 
-    pub fn wire_tabs(&self) {
+    fn tabs(&self) -> [(&'static str, gtk::ToggleButton); 3] {
         let imp = self.imp();
-        let stack = imp.panel_stack.clone();
-        let lyrics_tab = imp.lyrics_tab.clone();
-        imp.queue_tab.connect_toggled(clone!(
-            #[weak]
-            stack,
-            move |btn| {
-                if btn.is_active() {
-                    stack.set_visible_child_name("queue");
-                } else if !lyrics_tab.is_active() {
-                    btn.set_active(true);
-                }
-            }
-        ));
-        let stack2 = imp.panel_stack.clone();
-        let queue_tab = imp.queue_tab.clone();
-        imp.lyrics_tab.connect_toggled(move |btn| {
-            if btn.is_active() {
-                stack2.set_visible_child_name("lyrics");
-            } else if !queue_tab.is_active() {
-                btn.set_active(true);
-            }
-        });
+        [
+            ("now", imp.now_tab.get()),
+            ("queue", imp.queue_tab.get()),
+            ("lyrics", imp.lyrics_tab.get()),
+        ]
     }
 
-    pub fn set_pages(&self, queue: Option<&gtk::Widget>, lyrics: Option<&gtk::Widget>) {
+    pub fn wire_tabs(&self) {
+        // Grouped toggles: clicking the active one does nothing.
+        for (name, tab) in self.tabs().iter().cloned() {
+            let stack = self.imp().panel_stack.get();
+            tab.connect_toggled(move |tab| {
+                if tab.is_active() {
+                    stack.set_visible_child_name(name);
+                }
+            });
+        }
+    }
+
+    pub fn set_pages(
+        &self,
+        now: Option<&gtk::Widget>,
+        queue: Option<&gtk::Widget>,
+        lyrics: Option<&gtk::Widget>,
+    ) {
         let imp = self.imp();
+        imp.now_content.set_child(now);
         imp.queue_content.set_child(queue);
         imp.lyrics_content.set_child(lyrics);
+        imp.now_tab.set_visible(now.is_some());
         imp.queue_tab.set_visible(queue.is_some());
         imp.lyrics_tab.set_visible(lyrics.is_some());
-        if queue.is_none() && lyrics.is_some() {
-            imp.lyrics_tab.set_active(true);
-            imp.panel_stack.set_visible_child_name("lyrics");
-        } else if lyrics.is_none() && queue.is_some() {
-            imp.queue_tab.set_active(true);
-            imp.panel_stack.set_visible_child_name("queue");
+        // Off a tab that went away
+        let shown = self.active_tab();
+        let available = |name: &str| match name {
+            "now" => now.is_some(),
+            "queue" => queue.is_some(),
+            _ => lyrics.is_some(),
+        };
+        if !available(shown) {
+            if let Some((name, _)) = self.tabs().iter().find(|(name, _)| available(name)) {
+                self.show_tab(name);
+            }
         }
     }
 
     pub fn set_content(&self, content: Option<&gtk::Widget>, _title: &str) {
-        self.set_pages(content, None);
+        self.set_pages(None, content, None);
     }
 
     pub fn connect_selection_cancel<F: Fn() + 'static>(&self, f: F) {
@@ -143,32 +154,19 @@ impl UtilityPanelWidget {
         });
     }
 
-    pub fn connect_tab_changed<F: Fn() + 'static>(&self, f: F) {
-        self.imp()
-            .panel_stack
-            .connect_visible_child_name_notify(move |_| f());
-    }
-
     /// What the panel shows, read from the page itself (not the tab buttons).
     pub fn active_tab(&self) -> &'static str {
-        if self.imp().panel_stack.visible_child_name().as_deref() == Some("lyrics") {
-            "lyrics"
-        } else {
-            "queue"
+        match self.imp().panel_stack.visible_child_name().as_deref() {
+            Some("queue") => "queue",
+            Some("lyrics") => "lyrics",
+            _ => "now",
         }
     }
 
     pub fn show_tab(&self, tab: &str) {
-        let imp = self.imp();
-        match tab {
-            "lyrics" => {
-                imp.lyrics_tab.set_active(true);
-                imp.panel_stack.set_visible_child_name("lyrics");
-            }
-            _ => {
-                imp.queue_tab.set_active(true);
-                imp.panel_stack.set_visible_child_name("queue");
-            }
+        if let Some((name, button)) = self.tabs().iter().find(|(name, _)| *name == tab) {
+            button.set_active(true);
+            self.imp().panel_stack.set_visible_child_name(name);
         }
     }
 }

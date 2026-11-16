@@ -45,10 +45,6 @@ impl NavigationPanelModel {
         }
     }
 
-    pub fn is_playing(&self) -> bool {
-        self.app_model.get_state().playback.is_playing()
-    }
-
     fn get_playlists(&self) -> Vec<NavigationPanelDestination> {
         self.app_model
             .get_state()
@@ -253,7 +249,6 @@ impl NavigationPanelModel {
         let actions = match dest {
             NavigationPanelDestination::Library
             | NavigationPanelDestination::SavedTracks
-            | NavigationPanelDestination::NowPlaying
             | NavigationPanelDestination::SavedPlaylists
             | NavigationPanelDestination::SavedArtists => {
                 let page = dest.home_page().expect("home destination");

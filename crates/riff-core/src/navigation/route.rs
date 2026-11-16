@@ -5,16 +5,14 @@ pub enum HomePage {
     SavedTracks,
     SavedPlaylists,
     SavedArtists,
-    NowPlaying,
 }
 
 impl HomePage {
-    pub const ALL: [HomePage; 5] = [
+    pub const ALL: [HomePage; 4] = [
         Self::Library,
         Self::SavedTracks,
         Self::SavedPlaylists,
         Self::SavedArtists,
-        Self::NowPlaying,
     ];
 
     pub fn id(self) -> &'static str {
@@ -23,7 +21,6 @@ impl HomePage {
             Self::SavedTracks => "saved_tracks",
             Self::SavedPlaylists => "saved_playlists",
             Self::SavedArtists => "saved_artists",
-            Self::NowPlaying => "now_playing",
         }
     }
 

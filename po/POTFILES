@@ -7,8 +7,6 @@ src/app/components/pages/details_user/model.rs
 src/app/components/pages/details_user/widget.rs
 src/app/components/pages/lyrics/component.rs
 src/app/components/pages/lyrics/widget.rs
-src/app/components/pages/now_playing/model.rs
-src/app/components/pages/now_playing/widget.rs
 src/app/components/pages/queue/component.rs
 src/app/components/pages/saved_albums/model.rs
 src/app/components/pages/saved_artists/model.rs
@@ -26,6 +24,7 @@ src/app/components/shell/navigation/factory.rs
 src/app/components/shell/notification/mod.rs
 src/app/components/shell/playback/playback_controls.rs
 src/app/components/shell/playback/playback_info.rs
+src/app/components/shell/now_panel/mod.rs
 src/app/components/shell/navigation_panel/model.rs
 src/app/components/shell/navigation_panel/navigation_panel_item.rs
 src/app/components/shell/navigation_panel/navigation_panel.rs

@@ -8,7 +8,6 @@ use crate::app::state::HomePage;
 
 const LIBRARY: &str = "library";
 const SAVED_TRACKS: &str = "saved_tracks";
-const NOW_PLAYING: &str = "now_playing";
 const SAVED_PLAYLISTS: &str = "saved_playlists";
 const SAVED_ARTISTS: &str = "saved_artists";
 const PLAYLIST: &str = "playlist";
@@ -23,7 +22,6 @@ pub const LIBRARY_SECTION: &str = "library_section";
 pub enum NavigationPanelDestination {
     Library,
     SavedTracks,
-    NowPlaying,
     SavedPlaylists,
     SavedArtists,
     Playlist(PlaylistSummary),
@@ -37,7 +35,6 @@ impl NavigationPanelDestination {
         match self {
             Self::Library => Some(HomePage::Library),
             Self::SavedTracks => Some(HomePage::SavedTracks),
-            Self::NowPlaying => Some(HomePage::NowPlaying),
             Self::SavedPlaylists => Some(HomePage::SavedPlaylists),
             Self::SavedArtists => Some(HomePage::SavedArtists),
             Self::Playlist(_) | Self::Album { .. } | Self::Artist { .. } | Self::Track { .. } => {
@@ -50,7 +47,6 @@ impl NavigationPanelDestination {
         match page {
             HomePage::Library => Self::Library,
             HomePage::SavedTracks => Self::SavedTracks,
-            HomePage::NowPlaying => Self::NowPlaying,
             HomePage::SavedPlaylists => Self::SavedPlaylists,
             HomePage::SavedArtists => Self::SavedArtists,
         }
@@ -60,7 +56,6 @@ impl NavigationPanelDestination {
         match self {
             Self::Library => LIBRARY,
             Self::SavedTracks => SAVED_TRACKS,
-            Self::NowPlaying => NOW_PLAYING,
             Self::SavedPlaylists => SAVED_PLAYLISTS,
             Self::SavedArtists => SAVED_ARTISTS,
             Self::Playlist(_) => PLAYLIST,
@@ -76,8 +71,6 @@ impl NavigationPanelDestination {
             Self::Library => gettext("Library"),
             // translators: This is a navigation panel entry to browse to saved tracks.
             Self::SavedTracks => gettext("Saved Tracks"),
-            // translators: This is a navigation panel entry to browse to saved playlists.
-            Self::NowPlaying => gettext("Now Playing"),
             // translators: This is a navigation panel entry that marks that the entries below are playlists.
             Self::SavedPlaylists => gettext("Playlists"),
             // translators: This is a navigation panel entry to browse to followed artists.
@@ -93,7 +86,6 @@ impl NavigationPanelDestination {
         match self {
             Self::Library => "library-music-symbolic",
             Self::SavedTracks => "emote-love-symbolic",
-            Self::NowPlaying => "now-playing-symbolic",
             Self::SavedPlaylists => "playlist2-symbolic",
             Self::SavedArtists => "avatar-default-symbolic",
             Self::Playlist(_) => "playlist2-symbolic",
@@ -159,7 +151,6 @@ impl NavigationPanelItem {
             match id.as_str() {
                 LIBRARY => Some(NavigationPanelDestination::Library),
                 SAVED_TRACKS => Some(NavigationPanelDestination::SavedTracks),
-                NOW_PLAYING => Some(NavigationPanelDestination::NowPlaying),
                 SAVED_PLAYLISTS => Some(NavigationPanelDestination::SavedPlaylists),
                 SAVED_ARTISTS => Some(NavigationPanelDestination::SavedArtists),
                 PLAYLIST => Some(NavigationPanelDestination::Playlist(PlaylistSummary {

@@ -271,11 +271,17 @@ impl PlaybackWidget {
         self.imp().device_selector.clone()
     }
 
-    pub fn set_title_and_artist(&self, title: &str, artist: &str) {
+    pub fn set_track(&self, title: &str, has_album: bool, artists_markup: &str) {
         let widget = self.imp();
         widget.now_playing.set_visible(true);
-        widget.now_playing.set_title_and_artist(title, artist);
+        widget
+            .now_playing
+            .set_track(title, has_album, artists_markup);
         widget.now_playing_button.set_visible(true);
+    }
+
+    pub fn set_liked(&self, liked: Option<bool>) {
+        self.imp().now_playing.set_liked(liked);
     }
 
     pub fn reset_info(&self) {
@@ -363,17 +369,12 @@ impl PlaybackWidget {
         self.imp().now_playing.connect_cover_clicked(f);
     }
 
-    pub fn connect_now_playing_clicked<F>(&self, f: F)
-    where
-        F: Fn() + Clone + 'static,
-    {
-        let widget = self.imp();
-        let f_info = f.clone();
-        widget.now_playing.connect_clicked(move |_| f_info());
-        let f_button = f.clone();
-        widget
-            .now_playing_button
-            .connect_clicked(move |_| f_button());
+    pub fn connect_link_activated<F: Fn(&str) + Clone + 'static>(&self, f: F) {
+        self.imp().now_playing.connect_link_activated(f);
+    }
+
+    pub fn connect_like_clicked<F: Fn() + 'static>(&self, f: F) {
+        self.imp().now_playing.connect_like_clicked(f);
     }
 
     pub fn connect_seek<Seek>(&self, seek: Seek)

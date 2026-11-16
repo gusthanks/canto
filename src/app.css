@@ -256,3 +256,60 @@ bottom-sheet.bottom-sheet--padded > sheet {
   font-weight: 600;
   color: @accent_color;
 }
+
+/* Title and artist labels whose links open the album and the artists */
+.track-links link {
+  color: inherit;
+  text-decoration-line: none;
+}
+
+.track-links link:hover {
+  text-decoration-line: underline;
+}
+
+.heart-button.heart--liked {
+  color: @accent_color;
+}
+
+/* Now Playing side panel */
+.now-panel__cover {
+  border-radius: 12px;
+  box-shadow: 0 8px 28px alpha(black, 0.35);
+}
+
+.now-panel__title {
+  font-weight: 800;
+}
+
+.now-panel__card {
+  padding: 16px;
+  border-radius: 14px;
+  background-color: alpha(@card_bg_color, 0.8);
+}
+
+.now-panel__card--link {
+  transition: filter 150ms ease;
+}
+
+.now-panel__card--link:hover {
+  filter: brightness(1.1);
+}
+
+.now-panel__lyrics {
+  background-color: mix(@canto_cover_accent, #000000, 0.45);
+  color: #ffffff;
+}
+
+.now-panel__lyric-line {
+  font-size: 1.2rem;
+  font-weight: 700;
+  opacity: 0.55;
+}
+
+.now-panel__lyric-line--active {
+  opacity: 1;
+}
+
+.now-panel__next-cover {
+  border-radius: 6px;
+}

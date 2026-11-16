@@ -6,7 +6,7 @@ use glib::clone;
 
 use crate::app::components::navigation_panel::NavigationPanelDestination;
 use crate::app::components::{labels, EventListener};
-use crate::app::state::{Entry, HomePage, Route, SelectionAction, SelectionEvent};
+use crate::app::state::{Entry, Route, SelectionAction, SelectionEvent};
 use crate::app::{AppAction, AppEvent, AppModel, BrowserAction, BrowserEvent, Dispatcher};
 
 use super::widget::{AppHeaderBar, HistoryMenuItem, HistorySide};
@@ -113,8 +113,7 @@ fn history_menu<'a>(entries: impl Iterator<Item = &'a Entry>) -> Vec<HistoryMenu
 
 fn route_icon(route: &Route) -> &'static str {
     match route {
-        Route::Home(HomePage::NowPlaying) => NavigationPanelDestination::NowPlaying.icon(),
-        Route::Home(_) => "paper-sheet-symbolic",
+        Route::Home(page) => NavigationPanelDestination::from_home_page(*page).icon(),
         Route::Album(_) => "library-music-symbolic",
         Route::Artist(_) | Route::User(_) => "avatar-default-symbolic",
         Route::Playlist(_) => "playlist2-symbolic",
@@ -298,10 +297,6 @@ mod tests {
         assert_eq!(
             resolve_active_page(&Route::Home(HomePage::SavedTracks)),
             "saved_tracks"
-        );
-        assert_eq!(
-            resolve_active_page(&Route::Home(HomePage::NowPlaying)),
-            "now_playing"
         );
     }
 

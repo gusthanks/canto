@@ -256,9 +256,9 @@ impl DetailsHeader {
     /// Update the like button icon to reflect saved/unsaved state.
     pub fn set_liked(&self, is_liked: bool) {
         let icon = if is_liked {
-            "starred-symbolic"
+            "canto-heart-filled-symbolic"
         } else {
-            "non-starred-symbolic"
+            "canto-heart-symbolic"
         };
         self.widget.imp().like_button.set_icon_name(icon);
         if let Some((_, like, _)) = &*self.like_pin.seg.borrow() {
@@ -403,7 +403,7 @@ impl DetailsHeader {
         seg.widget().set_valign(gtk::Align::Center);
         seg.widget().add_css_class("like-pin__button");
 
-        let like = seg.add_icon("non-starred-symbolic", &gettext("Add to Library"), || {});
+        let like = seg.add_icon("canto-heart-symbolic", &gettext("Add to Library"), || {});
         let pin = seg.add_icon("view-pin-outline-symbolic", &labels::PIN_TO_SIDEBAR, || {});
 
         let imp = self.widget.imp();

@@ -1,99 +1,90 @@
 using Gtk 4.0;
 
-template $PlaybackInfoWidget : Button {
-  receives-default: true;
+// The current track in the player bar: cover (opens the Now Playing panel),
+// title (opens the album), artists (open their pages) and a like button.
+template $PlaybackInfoWidget : Box {
   halign: start;
   valign: center;
-  has-frame: false;
-
-  layout {
-    column-span: "1";
-    column: "0";
-    row: "0";
-  }
-
-  Box {
-    halign: start;
-    spacing: 0;
-
-    Overlay cover_frame {
-      valign: center;
-      overflow: hidden;
-      /* Translators: Tooltip on the cover art in the player bar. */
-      tooltip-text: _("Go to Album");
-
-      styles [
-        "playback-cover-frame",
-      ]
-
-      child: Image placeholder_art {
-        icon-name: "audio-x-generic-symbolic";
-        pixel-size: 20;
-
-        styles [
-          "dim-label",
-        ]
-      };
-
-      [overlay]
-      Image playing_image {
-        pixel-size: 48;
-        overflow: hidden;
-
-        styles [
-          "playing-image",
-        ]
-      }
-    }
-
-    Box song_info_box {
-      visible: true;
-      orientation: vertical;
-      halign: start;
-      hexpand: true;
-      margin-start: 12;
-      margin-end: 8;
-      valign: center;
-
-      Box title_container {
-        overflow: hidden;
-        hexpand: true;
-
-        Label song_title {
-          halign: start;
-          hexpand: true;
-          max-width-chars: 20;
-          ellipsize: end;
-          single-line-mode: true;
-
-          styles [
-            "heading",
-          ]
-        }
-      }
-
-      Box artist_container {
-        overflow: hidden;
-        hexpand: true;
-
-        Label song_artist {
-          halign: start;
-          hexpand: true;
-          max-width-chars: 20;
-          ellipsize: end;
-          single-line-mode: true;
-
-          styles [
-            "dim-label",
-            "caption",
-          ]
-        }
-      }
-
-    }
-  }
+  spacing: 12;
 
   styles [
     "playback-info",
   ]
+
+  Overlay cover_frame {
+    valign: center;
+    overflow: hidden;
+    /* Translators: Tooltip on the cover art in the player bar. */
+    tooltip-text: _("Now Playing");
+
+    styles [
+      "playback-cover-frame",
+    ]
+
+    child: Image placeholder_art {
+      icon-name: "audio-x-generic-symbolic";
+      pixel-size: 20;
+
+      styles [
+        "dim-label",
+      ]
+    };
+
+    [overlay]
+    Image playing_image {
+      pixel-size: 48;
+      overflow: hidden;
+
+      styles [
+        "playing-image",
+      ]
+    }
+  }
+
+  Box song_info_box {
+    orientation: vertical;
+    halign: start;
+    valign: center;
+    spacing: 2;
+
+    Label song_title {
+      halign: start;
+      xalign: 0;
+      max-width-chars: 24;
+      ellipsize: end;
+      single-line-mode: true;
+
+      styles [
+        "heading",
+        "track-links",
+      ]
+    }
+
+    Label song_artist {
+      halign: start;
+      xalign: 0;
+      max-width-chars: 28;
+      ellipsize: end;
+      single-line-mode: true;
+
+      styles [
+        "caption",
+        "dim-label",
+        "track-links",
+      ]
+    }
+  }
+
+  Button like_button {
+    visible: false;
+    valign: center;
+    icon-name: "canto-heart-symbolic";
+    focus-on-click: false;
+
+    styles [
+      "flat",
+      "circular",
+      "heart-button",
+    ]
+  }
 }

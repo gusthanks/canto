@@ -90,6 +90,8 @@
     <file compressed="true" preprocess="xml-stripblanks" alias="alarm-symbolic.svg">../data/hicolor/symbolic/actions/alarm-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-equalizer-symbolic.svg">../data/hicolor/symbolic/actions/canto-equalizer-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-lyrics-symbolic.svg">../data/hicolor/symbolic/actions/canto-lyrics-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-heart-symbolic.svg">../data/hicolor/symbolic/actions/canto-heart-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-heart-filled-symbolic.svg">../data/hicolor/symbolic/actions/canto-heart-filled-symbolic.svg</file>
     <!-- fallback copies of Adwaita icons for themes that lack them -->
     <file compressed="true" preprocess="xml-stripblanks" alias="audio-speakers-symbolic.svg">../data/hicolor/symbolic/actions/audio-speakers-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="audio-x-generic-symbolic.svg">../data/hicolor/symbolic/actions/audio-x-generic-symbolic.svg</file>

@@ -10,7 +10,7 @@ use super::{
     PINNED_SECTION, SAVED_PLAYLISTS_SECTION,
 };
 use crate::app::components::PlaylistDialog;
-use crate::app::state::{HomePage, PlaybackEvent, Route, Transition};
+use crate::app::state::{HomePage, Route, Transition};
 use crate::app::{AppEvent, BrowserEvent, Component, EventListener};
 
 pub struct NavigationPanel {
@@ -25,9 +25,6 @@ impl NavigationPanel {
     pub fn new(listbox: gtk::ListBox, model: Rc<NavigationPanelModel>) -> Self {
         let list_store = gio::ListStore::new::<NavigationPanelItem>();
 
-        list_store.append(&NavigationPanelItem::from_destination(
-            NavigationPanelDestination::NowPlaying,
-        ));
         list_store.append(&NavigationPanelItem::from_destination(
             NavigationPanelDestination::SavedArtists,
         ));
@@ -190,7 +187,6 @@ impl NavigationPanel {
             _context_menu: context_menu,
             num_fixed_entries,
         };
-        panel.update_playing();
         panel
     }
 
@@ -251,15 +247,6 @@ impl NavigationPanel {
         row.upcast()
     }
 
-    // The Now Playing row's icon (see app.css)
-    fn update_playing(&self) {
-        if self.model.is_playing() {
-            self.listbox.remove_css_class("now-playing--idle");
-        } else {
-            self.listbox.add_css_class("now-playing--idle");
-        }
-    }
-
     fn select_home_page(&self, page: HomePage) {
         let index = (0..self.list_store.n_items()).find(|&i| {
             self.list_store
@@ -297,14 +284,6 @@ impl EventListener for NavigationPanel {
                 to: Route::Home(page),
                 ..
             })) => self.select_home_page(*page),
-            AppEvent::PlaybackEvent(
-                PlaybackEvent::PlaybackPaused
-                | PlaybackEvent::PlaybackResumed
-                | PlaybackEvent::PlaybackStopped
-                | PlaybackEvent::TrackChanged(_)
-                | PlaybackEvent::TrackSynced
-                | PlaybackEvent::PlayStateSynced(_),
-            ) => self.update_playing(),
             _ => {}
         }
     }

@@ -36,16 +36,22 @@ template $UtilityPanelWidget : Adw.Bin {
             "linked",
           ]
 
+          ToggleButton now_tab {
+            /* Translators: Tab label for the current track in utility panel. */
+            label: _("Now Playing");
+            active: true;
+          }
+
           ToggleButton queue_tab {
             /* Translators: Tab label for the queue in utility panel. */
             label: _("Queue");
-            active: true;
+            group: now_tab;
           }
 
           ToggleButton lyrics_tab {
             /* Translators: Tab label for lyrics in utility panel. */
             label: _("Lyrics");
-            group: queue_tab;
+            group: now_tab;
           }
         };
       }
@@ -82,6 +88,15 @@ template $UtilityPanelWidget : Adw.Bin {
 
       Stack panel_stack {
         vexpand: true;
+        transition-type: crossfade;
+
+        StackPage {
+          name: "now";
+
+          child: Adw.Bin now_content {
+            vexpand: true;
+          };
+        }
 
         StackPage {
           name: "queue";

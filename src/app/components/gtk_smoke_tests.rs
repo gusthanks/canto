@@ -112,8 +112,17 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
         "copy icon must resolve"
     );
 
-    assert_sidebar_now_playing_row_paints();
     assert_card_playing_badge_shows_bars();
+
+    // The Now Playing side panel builds, with its heart icons available.
+    let now_panel = super::shell::now_panel::widgets_for_tests();
+    drop(now_panel);
+    if std::env::var_os("CANTO_TEST_DUMP_DIR").is_some() {
+        dump_now_panel_sample();
+    }
+    for icon in ["canto-heart-symbolic", "canto-heart-filled-symbolic"] {
+        assert!(icon_theme.has_icon(icon), "{} must resolve", icon);
+    }
 }
 
 /// The round "playing" badge on album cards must show the bars on top of
@@ -195,85 +204,55 @@ fn pump(ms: u64) {
     }
 }
 
-/// Counts pixels in the first `max_x` columns of `widget` that differ from
-/// the row's own background (sampled at its right edge).
-fn icon_pixels(widget: &gtk::Widget, max_x: usize, tag: &str) -> usize {
-    let (w, h) = (widget.width(), widget.height());
-    let paintable = gtk::WidgetPaintable::new(Some(widget));
-    // The paintable is empty until the window has drawn a frame; retry briefly.
-    let mut node = None;
-    for _ in 0..60 {
-        let snapshot = gtk::Snapshot::new();
-        paintable.snapshot(&snapshot, w as f64, h as f64);
-        node = snapshot.to_node();
-        if node.is_some() {
-            break;
+/// Renders the Now Playing panel with a sample track into CANTO_TEST_DUMP_DIR.
+fn dump_now_panel_sample() {
+    libadwaita::StyleManager::default().set_color_scheme(libadwaita::ColorScheme::ForceDark);
+    // A warm gradient standing in for a cover
+    let (w, h) = (256usize, 256usize);
+    let mut data = Vec::with_capacity(w * h * 4);
+    for y in 0..h {
+        for x in 0..w {
+            data.extend_from_slice(&[(200 + x / 8) as u8, (40 + y / 3) as u8, 20, 255]);
         }
-        widget.queue_draw();
-        pump(50);
     }
-    let Some(node) = node else {
-        eprintln!("{tag}: {}x{} produced no render node", w, h);
-        return 0;
-    };
-    let renderer = widget
-        .native()
-        .and_then(|n| n.renderer())
-        .expect("widget should be in a realized window");
-    let texture = renderer.render_texture(&node, None);
-    if let Some(dir) = std::env::var_os("CANTO_TEST_DUMP_DIR") {
-        let _ = texture.save_to_png(std::path::Path::new(&dir).join(format!("{tag}.png")));
-    }
-    let mut downloader = gtk::gdk::TextureDownloader::new(&texture);
-    downloader.set_format(gtk::gdk::MemoryFormat::R8g8b8a8);
-    let (bytes, stride) = downloader.download_bytes();
-    bytes
-        .chunks_exact(stride)
-        .map(|line| {
-            let bg = &line[line.len() - 4..];
-            line.chunks_exact(4)
-                .take(max_x)
-                .filter(|px| (0..4).any(|i| px[i].abs_diff(bg[i]) > 24))
-                .count()
-        })
-        .sum()
-}
-
-/// Puts the real sidebar "Now Playing" row in a window and returns it.
-fn now_playing_row_in_window(idle: bool) -> (gtk::Window, gtk::ListBox, gtk::Widget) {
-    let row = super::shell::navigation_panel::now_playing_row_for_tests();
-    let listbox = gtk::ListBox::new();
-    listbox.add_css_class("navigation-sidebar");
-    if idle {
-        listbox.add_css_class("now-playing--idle");
-    }
-    listbox.append(&row);
+    let bytes = glib::Bytes::from_owned(data);
+    let cover = gtk::gdk::MemoryTexture::new(
+        w as i32,
+        h as i32,
+        gtk::gdk::MemoryFormat::R8g8b8a8,
+        &bytes,
+        w * 4,
+    );
+    let theme = gtk::CssProvider::new();
+    theme.load_from_string(
+        "@define-color canto_cover_accent #c0392b;",
+    );
+    gtk::style_context_add_provider_for_display(
+        &gtk::gdk::Display::default().unwrap(),
+        &theme,
+        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 1,
+    );
+    let panel = super::shell::now_panel::sample_for_tests(cover.upcast_ref());
     let window = gtk::Window::new();
-    window.set_default_size(240, 48);
-    window.set_child(Some(&listbox));
+    window.set_default_size(380, 1100);
+    window.set_child(Some(&panel));
     window.present();
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
-    while !row.is_mapped() && std::time::Instant::now() < deadline {
-        pump(10);
-    }
-    assert!(row.is_mapped(), "test window should map");
-    pump(1000);
-    (window, listbox, row)
-}
+    pump(1500);
+    distinct_colors(window.upcast_ref(), "now-panel-sample");
+    window.destroy();
 
-/// Renders the real sidebar "Now Playing" row while playing and while paused,
-/// so a broken indicator (nothing drawn) fails here instead of in the app.
-fn assert_sidebar_now_playing_row_paints() {
-    for idle in [false, true] {
-        let (window, listbox, _row) = now_playing_row_in_window(idle);
-        let tag = format!("now-playing-row-idle-{}", idle);
-        let painted = icon_pixels(listbox.upcast_ref(), 32, &tag);
-        eprintln!("sidebar now playing icon (idle={}): {} px", idle, painted);
-        assert!(
-            painted > 0,
-            "sidebar now playing icon painted nothing (idle={})",
-            idle
-        );
-        window.destroy();
-    }
+    let bar: super::shell::playback::PlaybackWidget = glib::Object::new();
+    bar.set_track(
+        "TODOS ESSES MANOS",
+        true,
+        "<a href=\"artist:1\">Niink</a>, <a href=\"artist:2\">Jotapê</a>, <a href=\"artist:3\">Supernova Ent</a>",
+    );
+    bar.set_liked(Some(false));
+    let window = gtk::Window::new();
+    window.set_default_size(1180, 100);
+    window.set_child(Some(&bar));
+    window.present();
+    pump(1500);
+    distinct_colors(window.upcast_ref(), "player-bar-sample");
+    window.destroy();
 }

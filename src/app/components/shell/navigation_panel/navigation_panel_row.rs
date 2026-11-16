@@ -2,7 +2,7 @@ use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::CompositeTemplate;
 
-use super::{NavigationPanelDestination, NavigationPanelItem};
+use super::NavigationPanelItem;
 
 impl NavigationPanelRow {
     pub fn new(item: NavigationPanelItem) -> Self {
@@ -23,9 +23,6 @@ mod imp {
         pub icon: TemplateChild<gtk::Image>,
 
         #[template_child]
-        pub now_playing_icon: TemplateChild<gtk::Overlay>,
-
-        #[template_child]
         pub title: TemplateChild<gtk::Label>,
 
         #[property(get, set = Self::set_item)]
@@ -36,12 +33,6 @@ mod imp {
         fn set_item(&self, item: NavigationPanelItem) {
             self.title.set_text(item.title().as_str());
             self.icon.set_icon_name(item.icon());
-            let now_playing = matches!(
-                item.destination(),
-                Some(NavigationPanelDestination::NowPlaying)
-            );
-            self.icon.set_visible(!now_playing);
-            self.now_playing_icon.set_visible(now_playing);
             self.obj().set_tooltip_text(Some(item.title().as_str()));
             self.item.replace(item);
         }
@@ -64,7 +55,6 @@ mod imp {
         fn new() -> Self {
             Self {
                 icon: Default::default(),
-                now_playing_icon: Default::default(),
                 title: Default::default(),
                 item: RefCell::new(glib::Object::new()),
             }

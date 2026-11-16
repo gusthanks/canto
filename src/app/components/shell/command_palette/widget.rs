@@ -24,6 +24,7 @@ use crate::app::{AppAction, AppModel, Dispatcher, SongsSource};
 enum PaletteAction {
     Navigate(Route),
     OpenPreferences,
+    ShowNowPlaying,
     ToggleQueue,
     ToggleLyrics,
     StartTrackRadio(Track),
@@ -468,13 +469,13 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
     let device_cat = gettext("Device");
 
     entries.push(PaletteEntry {
-        title: gettext("Home"),
-        subtitle: gettext("Go to Now Playing overview"),
+        title: gettext("Now Playing"),
+        subtitle: gettext("Show the current track in the side panel"),
         category: nav_cat.clone(),
         icon_name: "now-playing-symbolic",
         shortcut_hint: Some("Alt+1"),
-        keywords: "home now playing overview".into(),
-        action: PaletteAction::Navigate(Route::Home(HomePage::NowPlaying)),
+        keywords: "home now playing current track cover credits".into(),
+        action: PaletteAction::ShowNowPlaying,
     });
     entries.push(PaletteEntry {
         title: gettext("Library"),
@@ -781,6 +782,9 @@ fn execute_action(runtime: &PaletteRuntime, action: PaletteAction) {
         }
         PaletteAction::OpenPreferences => {
             let _ = WidgetExt::activate_action(&runtime.window, "win.preferences", None);
+        }
+        PaletteAction::ShowNowPlaying => {
+            let _ = WidgetExt::activate_action(&runtime.window, "win.show-now-playing", None);
         }
         PaletteAction::ToggleQueue => {
             let _ = WidgetExt::activate_action(&runtime.window, "win.show-queue", None);

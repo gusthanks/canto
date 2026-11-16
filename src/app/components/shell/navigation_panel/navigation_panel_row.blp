@@ -8,27 +8,6 @@ template $NavigationPanelRow : ListBoxRow {
     Image icon {
     }
 
-    // The Now Playing row's icon (see app.css)
-    Overlay now_playing_icon {
-      visible: false;
-
-      child: Image {
-        icon-name: "now-playing-symbolic";
-
-        styles [
-          "now-playing__idle",
-        ]
-      };
-
-      [overlay]
-      Box {
-        styles [
-          "playback-indicator",
-          "now-playing__playing",
-        ]
-      }
-    }
-
     Label title {
       hexpand: true;
       ellipsize: end;

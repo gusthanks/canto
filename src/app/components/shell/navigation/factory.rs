@@ -82,14 +82,6 @@ impl ScreenFactory {
         self.register_card_page("saved_artists", &gettext("Artists"), page)
     }
 
-    pub fn make_now_playing(&self) -> impl ListenerComponent {
-        let model = Rc::new(NowPlayingModel::new(
-            Rc::clone(&self.app_model),
-            self.dispatcher.clone(),
-        ));
-        NowPlaying::new(model, self.registrar.page("now_playing"))
-    }
-
     pub fn make_saved_tracks(&self) -> impl ListenerComponent {
         let model = Rc::new(SavedTracksModel::new(
             Rc::clone(&self.app_model),

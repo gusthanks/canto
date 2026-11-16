@@ -4,6 +4,7 @@ use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 
 use crate::app::components::utils::set_missing_art;
+use crate::app::components::now_panel::{show_like_state, title_markup};
 
 mod imp {
 
@@ -29,13 +30,16 @@ mod imp {
 
         #[template_child]
         pub song_artist: TemplateChild<gtk::Label>,
+
+        #[template_child]
+        pub like_button: TemplateChild<gtk::Button>,
     }
 
     #[glib::object_subclass]
     impl ObjectSubclass for PlaybackInfoWidget {
         const NAME: &'static str = "PlaybackInfoWidget";
         type Type = super::PlaybackInfoWidget;
-        type ParentType = gtk::Button;
+        type ParentType = gtk::Box;
 
         fn class_init(klass: &mut Self::Class) {
             klass.bind_template();
@@ -46,45 +50,58 @@ mod imp {
         }
     }
 
-    impl ObjectImpl for PlaybackInfoWidget {
-        fn constructed(&self) {
-            self.parent_constructed();
-            self.obj().setup_hover_animations();
-        }
-    }
+    impl ObjectImpl for PlaybackInfoWidget {}
     impl WidgetImpl for PlaybackInfoWidget {}
-    impl ButtonImpl for PlaybackInfoWidget {}
+    impl BoxImpl for PlaybackInfoWidget {}
 }
 
 glib::wrapper! {
-    pub struct PlaybackInfoWidget(ObjectSubclass<imp::PlaybackInfoWidget>) @extends gtk::Widget, gtk::Button,
-        @implements gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::ConstraintTarget;
+    pub struct PlaybackInfoWidget(ObjectSubclass<imp::PlaybackInfoWidget>) @extends gtk::Widget, gtk::Box,
+        @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget, gtk::Orientable;
 }
 
 impl PlaybackInfoWidget {
-    fn setup_hover_animations(&self) {}
-
-    /// Clicking the cover art runs `f` instead of the whole button's click.
+    /// Clicking the cover art runs `f`.
     pub fn connect_cover_clicked<F: Fn() + 'static>(&self, f: F) {
         let gesture = gtk::GestureClick::new();
-        gesture.set_button(gdk::BUTTON_PRIMARY);
-        // Claim the press so the surrounding button does not also fire.
-        gesture.connect_pressed(|gesture, _, _, _| {
+        gesture.set_button(gtk::gdk::BUTTON_PRIMARY);
+        gesture.connect_released(move |gesture, _, _, _| {
             gesture.set_state(gtk::EventSequenceState::Claimed);
+            f();
         });
-        gesture.connect_released(move |_, _, _, _| f());
         let cover = &self.imp().cover_frame;
         cover.set_cursor_from_name(Some("pointer"));
         cover.add_controller(gesture);
     }
 
-    pub fn set_title_and_artist(&self, title: &str, artist: &str) {
+    /// A link in the title or the artists was clicked (see `now_panel::TrackLink`).
+    pub fn connect_link_activated<F: Fn(&str) + Clone + 'static>(&self, f: F) {
+        let imp = self.imp();
+        for label in [&*imp.song_title, &*imp.song_artist] {
+            let f = f.clone();
+            label.connect_activate_link(move |_, uri| {
+                f(uri);
+                glib::Propagation::Stop
+            });
+        }
+    }
+
+    pub fn connect_like_clicked<F: Fn() + 'static>(&self, f: F) {
+        self.imp().like_button.connect_clicked(move |_| f());
+    }
+
+    pub fn set_liked(&self, liked: Option<bool>) {
+        show_like_state(&self.imp().like_button, liked);
+    }
+
+    /// `artists_markup` comes from `now_panel::artists_markup`.
+    pub fn set_track(&self, title: &str, has_album: bool, artists_markup: &str) {
         let widget = self.imp();
-        widget.song_title.set_text(title);
-        widget.song_artist.set_text(artist);
+        widget.song_title.set_markup(&title_markup(title, has_album));
+        widget.song_artist.set_markup(artists_markup);
         widget.song_title.remove_css_class("dim-label");
         widget.song_info_box.set_visible(true);
-        self.set_sensitive(true);
+        widget.cover_frame.set_sensitive(true);
     }
 
     pub fn reset_info(&self) {
@@ -104,7 +121,8 @@ impl PlaybackInfoWidget {
             .set_paintable(None::<gdk::Paintable>.as_ref());
         widget.placeholder_art.set_visible(true);
         set_missing_art(&*widget.playing_image, false);
-        self.set_sensitive(false);
+        widget.cover_frame.set_sensitive(false);
+        self.set_liked(None);
     }
 
     pub fn set_info_visible(&self, visible: bool) {

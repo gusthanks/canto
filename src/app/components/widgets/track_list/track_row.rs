@@ -186,10 +186,10 @@ mod imp {
                 "liked" => {
                     set_css_class(&*obj, LIKED_CLASS, on);
                     if on {
-                        self.like_btn.set_icon_name("starred-symbolic");
+                        self.like_btn.set_icon_name("canto-heart-filled-symbolic");
                         self.like_btn.set_tooltip_text(Some(&labels::UNLIKE));
                     } else {
-                        self.like_btn.set_icon_name("non-starred-symbolic");
+                        self.like_btn.set_icon_name("canto-heart-symbolic");
                         self.like_btn.set_tooltip_text(Some(&labels::LIKE));
                     }
                     obj.update_layout();

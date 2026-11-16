@@ -1,5 +1,6 @@
 use gio::prelude::SettingsExtManual;
 use glib::object::ObjectExt;
+use gtk::prelude::WidgetExt;
 use std::ops::Deref;
 use std::rc::Rc;
 
@@ -7,12 +8,15 @@ use crate::app::components::{
     DeviceSelector, DeviceSelectorModel, EventListener, SleepTimerController, SleepTimerMode,
 };
 use crate::app::models::*;
-use crate::app::state::{HomePage, PlaybackAction, PlaybackEvent, Route, SelectionEvent};
-use crate::app::{AppEvent, AppModel, AppState, BrowserAction, Dispatcher};
+use crate::app::state::{PlaybackAction, PlaybackEvent, SelectionEvent};
+use crate::app::{AppEvent, AppModel, AppState, BrowserEvent, Dispatcher};
 use riff_config::feature_flags::FeatureFlag;
 use riff_config::settings::SETTINGS;
 
 use super::playback_widget::PlaybackWidget;
+use crate::app::components::now_panel::{
+    artists_markup, current_track_liked, follow_track_link, toggle_current_track_like,
+};
 
 pub struct PlaybackModel {
     app_model: Rc<AppModel>,
@@ -35,24 +39,16 @@ impl PlaybackModel {
         self.app_model.api()
     }
 
-    fn go_home(&self) {
-        self.dispatcher
-            .dispatch(BrowserAction::Navigate(Route::Home(HomePage::NowPlaying)).into());
+    fn follow_link(&self, uri: &str) {
+        follow_track_link(&self.app_model, &self.dispatcher, uri);
     }
 
-    /// Opens the current track's album, or Now Playing when it has none.
-    fn go_to_album(&self) {
-        let album = self
-            .current_song()
-            .and_then(|song| song.album)
-            .map(|album| album.rri.id)
-            .filter(|id| !id.is_empty());
-        match album {
-            Some(id) => self
-                .dispatcher
-                .dispatch(BrowserAction::Navigate(Route::Album(id)).into()),
-            None => self.go_home(),
-        }
+    fn toggle_like(&self) {
+        toggle_current_track_like(&self.app_model, &self.dispatcher);
+    }
+
+    fn liked(&self) -> Option<bool> {
+        current_track_liked(&self.app_model)
     }
 
     fn is_playing(&self) -> bool {
@@ -144,15 +140,22 @@ impl PlaybackControl {
             model,
             move |position| model.seek_to(position)
         ));
-        widget.connect_now_playing_clicked(clone!(
-            #[weak]
-            model,
-            move || model.go_home()
-        ));
         widget.connect_cover_clicked(clone!(
             #[weak]
+            widget,
+            move || {
+                let _ = widget.activate_action("win.show-now-playing", None);
+            }
+        ));
+        widget.connect_link_activated(clone!(
+            #[weak]
             model,
-            move || model.go_to_album()
+            move |uri| model.follow_link(uri)
+        ));
+        widget.connect_like_clicked(clone!(
+            #[weak]
+            model,
+            move || model.toggle_like()
         ));
         widget.connect_volume_changed(clone!(
             #[weak]
@@ -205,7 +208,8 @@ impl PlaybackControl {
     fn update_current_info(&self) {
         if let Some(song) = self.model.current_song() {
             self.widget
-                .set_title_and_artist(&song.title, &song.artists_name());
+                .set_track(&song.title, song.album.is_some(), &artists_markup(&song));
+            self.widget.set_liked(self.model.liked());
             self.widget.set_song_duration(Some(song.duration_ms as f64));
             if let Some(url) = song.art.best_for_width(120) {
                 self.widget
@@ -272,6 +276,9 @@ impl EventListener for PlaybackControl {
             AppEvent::PlaybackEvent(PlaybackEvent::VolumeSet(value))
             | AppEvent::PlaybackEvent(PlaybackEvent::VolumeSynced(value)) => {
                 self.widget.set_volume(*value)
+            }
+            AppEvent::BrowserEvent(BrowserEvent::SavedTracksUpdated) => {
+                self.widget.set_liked(self.model.liked());
             }
             AppEvent::ConnectionLostChanged(lost) => {
                 self.set_connection_lost(*lost);

@@ -3,6 +3,8 @@ mod playback_controls;
 mod playback_info;
 mod playback_widget;
 pub use component::*;
+#[cfg(test)]
+pub(crate) use playback_widget::PlaybackWidget;
 
 use glib::prelude::*;
 

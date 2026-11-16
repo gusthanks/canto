@@ -109,6 +109,7 @@ impl QueueListModel {
             .dispatch(SelectionAction::SelectKeyed(rows).into());
     }
 
+    #[cfg(test)]
     pub fn play_id(&self, id: &str) {
         let key = self.listed_keys().into_iter().find(|&key| {
             self.queue()
@@ -126,9 +127,6 @@ impl QueueListModel {
         Some((key.parse().ok()?, target.parse().ok()?))
     }
 
-    pub fn toggle_play(&self) {
-        self.base.toggle_playback(true, || None);
-    }
 }
 
 fn queue_entry(row: &SongModel) -> Option<(EntryKey, QueueRole)> {

@@ -18,7 +18,6 @@ impl HomePane {
         let saved_playlists = screen_factory.make_saved_playlists();
         let saved_tracks = screen_factory.make_saved_tracks();
         let saved_artists = screen_factory.make_saved_artists();
-        let now_playing = screen_factory.make_now_playing();
         let navigation_panel = screen_factory.make_navigation_panel(listbox);
 
         let stack = gtk::Stack::new();
@@ -29,7 +28,6 @@ impl HomePane {
             (HomePage::SavedTracks, saved_tracks.get_root_widget()),
             (HomePage::SavedPlaylists, saved_playlists.get_root_widget()),
             (HomePage::SavedArtists, saved_artists.get_root_widget()),
-            (HomePage::NowPlaying, now_playing.get_root_widget()),
         ] {
             let title = NavigationPanelDestination::from_home_page(page).title();
             stack.add_titled(widget, Some(page.id()), &title);
@@ -44,7 +42,6 @@ impl HomePane {
                 Box::new(saved_playlists),
                 Box::new(saved_tracks),
                 Box::new(saved_artists),
-                Box::new(now_playing),
             ],
         }
     }

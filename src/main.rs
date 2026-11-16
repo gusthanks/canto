@@ -435,7 +435,6 @@ fn register_actions(app: &gtk::Application, sender: UnboundedSender<AppAction>) 
     ));
 
     for (name, page) in [
-        ("nav_now_playing", HomePage::NowPlaying),
         ("nav_artists", HomePage::SavedArtists),
         ("nav_albums", HomePage::Library),
         ("nav_playlists", HomePage::SavedPlaylists),
