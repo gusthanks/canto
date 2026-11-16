@@ -3,7 +3,8 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use crate::app::components::{
-    AppHeaderBar, BottomSheet, Component, EventListener, LyricsPage, NowPanel, QueuePage,
+    AppHeaderBar, BottomSheet, Component, EventListener, FullscreenLyrics, LyricsPage, NowPanel,
+    QueuePage,
     QueuePageWidget, UtilityPanel,
 };
 use crate::app::state::PlaybackEvent;
@@ -133,6 +134,7 @@ impl Panels {
 
 pub struct PanelManager {
     now: NowPanel,
+    fullscreen: FullscreenLyrics,
     queue: QueuePage,
     lyrics: LyricsPage,
     panels: Rc<Panels>,
@@ -152,6 +154,7 @@ impl PanelManager {
         let queue = QueuePage::new(app_model.clone(), dispatcher.clone());
         let lyrics = LyricsPage::new(app_model.clone(), dispatcher.clone());
         let now = NowPanel::new(app_model.clone(), dispatcher.clone());
+        let fullscreen = FullscreenLyrics::new(window, app_model.clone(), dispatcher.clone());
         panel.connect_selection_cancel(clone!(
             #[weak(rename_to = model)]
             queue.model(),
@@ -185,6 +188,7 @@ impl PanelManager {
 
         let manager = Self {
             now,
+            fullscreen,
             queue,
             lyrics,
             panels,
@@ -282,6 +286,7 @@ impl Component for PanelManager {
 impl EventListener for PanelManager {
     fn on_event(&mut self, event: &AppEvent) {
         self.now.on_event(event);
+        self.fullscreen.on_event(event);
         self.queue.on_event(event);
         self.lyrics.on_event(event);
         if let AppEvent::SelectionEvent(_)

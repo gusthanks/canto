@@ -226,30 +226,6 @@ bottom-sheet.bottom-sheet--padded > sheet {
   transition: background-image 400ms ease;
 }
 
-.lyrics-top-bar {
-  padding: 2px 0;
-}
-
-.about-track-card {
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: alpha(@card_bg_color, 0.72);
-  border: 1px solid alpha(@window_fg_color, 0.08);
-}
-
-.about-track-section-title {
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  opacity: 0.65;
-}
-
-.about-track-notes {
-  font-size: 0.94rem;
-  line-height: 1.48;
-  opacity: 0.9;
-}
-
 .sleep-timer-countdown {
   font-variant-numeric: tabular-nums;
   font-size: 0.78rem;
@@ -312,4 +288,36 @@ bottom-sheet.bottom-sheet--padded > sheet {
 
 .now-panel__next-cover {
   border-radius: 6px;
+}
+
+/* Full-screen lyrics */
+.lyrics-fullscreen-window {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.lyrics-fullscreen__shade {
+  background-color: alpha(#000000, 0.55);
+}
+
+.lyrics--fullscreen .lyric-line {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: #ffffff;
+  opacity: 0.38;
+}
+
+.lyrics--fullscreen .lyric-line.past {
+  opacity: 0.55;
+}
+
+.lyrics--fullscreen .lyric-line.active {
+  opacity: 1;
+  color: #ffffff;
+  background: transparent;
+  box-shadow: none;
+}
+
+.lyrics--fullscreen .lyric-line:hover {
+  background: alpha(#ffffff, 0.06);
 }

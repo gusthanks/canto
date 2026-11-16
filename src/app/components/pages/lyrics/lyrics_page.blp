@@ -5,195 +5,127 @@ template $LyricsPageWidget : Adw.Bin {
   child: Box {
     orientation: vertical;
 
-    Box lyrics_top_bar {
-      orientation: horizontal;
-      spacing: 8;
-      visible: false;
-      margin-top: 8;
-      margin-bottom: 4;
-      margin-start: 12;
-      margin-end: 12;
+    Stack lyrics_stack {
+      vexpand: true;
 
       styles [
-        "lyrics-top-bar",
+        "lyrics-page__content",
       ]
 
-      Box {
-        styles [
-          "linked",
-        ]
-
-        ToggleButton tab_lyrics_button {
-          /* Translators: Tab label switching to song lyrics view */
-          label: _("Lyrics");
-          active: true;
-          tooltip-text: _("Show track lyrics");
-        }
-
-        ToggleButton tab_about_button {
-          /* Translators: Tab label switching to credits & liner notes */
-          label: _("About Track");
-          group: tab_lyrics_button;
-          tooltip-text: _("Credits, samples, and liner notes");
-        }
-      }
-
-    }
-
-    Stack content_mode_stack {
-      vexpand: true;
-      transition-type: crossfade;
-
       StackPage {
-        name: "lyrics";
+        name: "loading";
 
-        child: Box {
-          orientation: vertical;
-          vexpand: true;
+        child: Adw.StatusPage loading_page {
+          icon-name: "audio-x-generic-symbolic";
+          /* Translators: Shown when fetching song lyrics. */
+          title: _("Loading Lyrics…");
 
-          Stack lyrics_stack {
-            vexpand: true;
-
-            styles [
-              "lyrics-page__content",
-            ]
-
-            StackPage {
-              name: "loading";
-
-              child: Adw.StatusPage loading_page {
-                icon-name: "audio-x-generic-symbolic";
-                /* Translators: Shown when fetching song lyrics. */
-                title: _("Loading Lyrics…");
-
-                styles [
-                  "compact",
-                ]
-              };
-            }
-
-            StackPage {
-              name: "list";
-
-              child: ScrolledWindow lyrics_scroller {
-                hscrollbar-policy: never;
-                vexpand: true;
-
-                Box lyrics_container {
-                  orientation: vertical;
-                  valign: start;
-                  margin-top: 24;
-                  margin-bottom: 48;
-                  margin-start: 16;
-                  margin-end: 16;
-                  spacing: 8;
-                }
-              };
-            }
-
-            StackPage {
-              name: "empty";
-
-              child: Adw.StatusPage empty_page {
-                icon-name: "audio-x-generic-symbolic";
-                /* Translators: Shown when no lyrics are found. */
-                title: _("No Lyrics Available");
-                description: _("Lyrics couldn't be found for this song.");
-
-                styles [
-                  "compact",
-                ]
-
-                child: Button reload_empty_button {
-                  halign: center;
-                  visible: false;
-                  /* Translators: Button to retry fetching lyrics from LRCLIB. */
-                  label: _("Reload Lyrics");
-
-                  styles [
-                    "pill",
-                  ]
-                };
-              };
-            }
-          }
-
-          Box sync_toolbar {
-            orientation: horizontal;
-            halign: center;
-            spacing: 4;
-            visible: false;
-
-            styles [
-              "lyric-sync-bar",
-            ]
-
-            Button offset_minus_button {
-              label: "-100 ms";
-              tooltip-text: _("Delay lyrics (-100 ms)");
-
-              styles [
-                "flat",
-                "circular",
-              ]
-            }
-
-            Button offset_reset_button {
-              label: "0 ms";
-              tooltip-text: _("Reset lyrics sync offset");
-
-              styles [
-                "flat",
-                "lyric-sync-offset",
-              ]
-            }
-
-            Button offset_plus_button {
-              label: "+100 ms";
-              tooltip-text: _("Advance lyrics (+100 ms)");
-
-              styles [
-                "flat",
-                "circular",
-              ]
-            }
-
-            Separator {
-              orientation: vertical;
-              margin-top: 4;
-              margin-bottom: 4;
-            }
-
-            Button reload_button {
-              icon-name: "view-refresh-symbolic";
-              tooltip-text: _("Reload lyrics");
-
-              styles [
-                "flat",
-                "circular",
-              ]
-            }
-          }
+          styles [
+            "compact",
+          ]
         };
       }
 
       StackPage {
-        name: "about";
+        name: "list";
 
-        child: ScrolledWindow about_scroller {
+        child: ScrolledWindow lyrics_scroller {
           hscrollbar-policy: never;
           vexpand: true;
 
-          Box about_container {
+          Box lyrics_container {
             orientation: vertical;
             valign: start;
-            margin-top: 16;
-            margin-bottom: 32;
+            margin-top: 24;
+            margin-bottom: 48;
             margin-start: 16;
             margin-end: 16;
-            spacing: 14;
+            spacing: 8;
           }
         };
+      }
+
+      StackPage {
+        name: "empty";
+
+        child: Adw.StatusPage empty_page {
+          icon-name: "audio-x-generic-symbolic";
+          /* Translators: Shown when no lyrics are found. */
+          title: _("No Lyrics Available");
+          description: _("Lyrics couldn't be found for this song.");
+
+          styles [
+            "compact",
+          ]
+
+          child: Button reload_empty_button {
+            halign: center;
+            visible: false;
+            /* Translators: Button to retry fetching lyrics from LRCLIB. */
+            label: _("Reload Lyrics");
+
+            styles [
+              "pill",
+            ]
+          };
+        };
+      }
+    }
+
+    Box sync_toolbar {
+      orientation: horizontal;
+      halign: center;
+      spacing: 4;
+      visible: false;
+
+      styles [
+        "lyric-sync-bar",
+      ]
+
+      Button offset_minus_button {
+        label: "-100 ms";
+        tooltip-text: _("Delay lyrics (-100 ms)");
+
+        styles [
+          "flat",
+          "circular",
+        ]
+      }
+
+      Button offset_reset_button {
+        label: "0 ms";
+        tooltip-text: _("Reset lyrics sync offset");
+
+        styles [
+          "flat",
+          "lyric-sync-offset",
+        ]
+      }
+
+      Button offset_plus_button {
+        label: "+100 ms";
+        tooltip-text: _("Advance lyrics (+100 ms)");
+
+        styles [
+          "flat",
+          "circular",
+        ]
+      }
+
+      Separator {
+        orientation: vertical;
+        margin-top: 4;
+        margin-bottom: 4;
+      }
+
+      Button reload_button {
+        icon-name: "view-refresh-symbolic";
+        tooltip-text: _("Reload lyrics");
+
+        styles [
+          "flat",
+          "circular",
+        ]
       }
     }
   };

@@ -25,6 +25,7 @@ src/app/components/shell/notification/mod.rs
 src/app/components/shell/playback/playback_controls.rs
 src/app/components/shell/playback/playback_info.rs
 src/app/components/shell/now_panel/mod.rs
+src/app/components/shell/fullscreen_lyrics.rs
 src/app/components/shell/navigation_panel/model.rs
 src/app/components/shell/navigation_panel/navigation_panel_item.rs
 src/app/components/shell/navigation_panel/navigation_panel.rs

@@ -67,12 +67,6 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     drop(playback);
 
     let lyrics: LyricsPageWidget = glib::Object::new();
-    lyrics.set_about_prompt(
-        "Test Track",
-        "Test Artist",
-        Some("Test Album"),
-        "https://genius.com/search?q=Test%20Artist%20Test%20Track",
-    );
     drop(lyrics);
 
     let settings: SettingsDialog = glib::Object::new();
@@ -292,5 +286,12 @@ fn dump_now_panel_sample() {
     window.present();
     pump(1500);
     distinct_colors(window.upcast_ref(), "album-header-sample");
+    window.destroy();
+
+    let window = super::shell::fullscreen_lyrics::sample_for_tests(cover.upcast_ref());
+    window.set_default_size(1280, 720);
+    window.present();
+    pump(2000);
+    distinct_colors(window.upcast_ref(), "fullscreen-lyrics-sample");
     window.destroy();
 }

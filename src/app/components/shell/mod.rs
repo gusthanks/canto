@@ -40,5 +40,8 @@ pub use panel_manager::*;
 pub mod now_panel;
 pub use now_panel::NowPanel;
 
+pub mod fullscreen_lyrics;
+pub use fullscreen_lyrics::FullscreenLyrics;
+
 pub mod command_palette;
 pub use command_palette::*;

@@ -27,6 +27,7 @@ enum PaletteAction {
     ShowNowPlaying,
     ToggleQueue,
     ToggleLyrics,
+    FullscreenLyrics,
     StartTrackRadio(Track),
     SetTheme(&'static str),
     SetSleepTimerOff,
@@ -551,6 +552,15 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         keywords: "toggle lyrics about track genius notes".into(),
         action: PaletteAction::ToggleLyrics,
     });
+    entries.push(PaletteEntry {
+        title: gettext("Full-Screen Lyrics"),
+        subtitle: gettext("Show the lyrics big, over the cover"),
+        category: action_cat.clone(),
+        icon_name: "view-fullscreen-symbolic",
+        shortcut_hint: None,
+        keywords: "fullscreen full screen lyrics karaoke big".into(),
+        action: PaletteAction::FullscreenLyrics,
+    });
 
     if let Some(current) = runtime.app_model.get_state().playback.current_song() {
         entries.push(PaletteEntry {
@@ -788,6 +798,9 @@ fn execute_action(runtime: &PaletteRuntime, action: PaletteAction) {
         }
         PaletteAction::ToggleQueue => {
             let _ = WidgetExt::activate_action(&runtime.window, "win.show-queue", None);
+        }
+        PaletteAction::FullscreenLyrics => {
+            let _ = WidgetExt::activate_action(&runtime.window, "win.fullscreen-lyrics", None);
         }
         PaletteAction::ToggleLyrics => {
             let _ = WidgetExt::activate_action(&runtime.window, "win.show-lyrics", None);

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 21:04-0300\n"
+"POT-Creation-Date: 2026-11-15 21:23-0300\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -17,7 +17,7 @@ msgstr "アルバムを見る"
 
 #. translators: This is part of a contextual menu attached to a single track; the intent is to copy the link (public URL) to a specific track.
 #: src/app/components/labels.rs:11
-#: src/app/components/widgets/details_page/header.blp:179
+#: src/app/components/widgets/details_page/header.blp:183
 msgid "Copy Link"
 msgstr "リンクをコピー"
 
@@ -64,10 +64,10 @@ msgstr ""
 #. Translators: Tooltip on the cover art in the player bar.
 #. Translators: Tab label for the current track in utility panel.
 #: src/app/components/labels.rs:32
-#: src/app/components/shell/command_palette/widget.rs:472
+#: src/app/components/shell/command_palette/widget.rs:473
 #: src/app/components/pages/shortcuts/shortcuts.blp:84
 #: src/app/components/shell/playback/playback_info.blp:18
-#: src/app/components/shell/playback/playback_widget.blp:71
+#: src/app/components/shell/playback/playback_widget.blp:73
 #: src/app/components/shell/utility_panel/utility_panel.blp:41
 msgid "Now Playing"
 msgstr "再生中"
@@ -151,7 +151,7 @@ msgstr "保存したプレイリストはありません。"
 #: src/app/components/labels.rs:74
 #: src/app/components/shell/playback/playback_controls.rs:71
 #: src/app/components/widgets/details_page/header.rs:249
-#: src/app/components/widgets/details_page/header.blp:140
+#: src/app/components/widgets/details_page/header.blp:144
 msgid "Play"
 msgstr "再生"
 
@@ -159,7 +159,7 @@ msgstr "再生"
 #: src/app/components/labels.rs:77
 #: src/app/components/pages/shortcuts/shortcuts.blp:50
 #: src/app/components/shell/playback/playback_controls.blp:15
-#: src/app/components/widgets/details_page/header.blp:153
+#: src/app/components/widgets/details_page/header.blp:157
 msgid "Shuffle"
 msgstr "ランダム"
 
@@ -195,8 +195,7 @@ msgstr "プレイリストに追加…"
 #. translators: This is the caption shown in the header of an album's detail page when the release is a full album.
 #. translators: An album in the back/forward history menu, while its name is loading.
 #: src/app/components/labels.rs:95 src/app/components/labels.rs:180
-#: src/app/components/pages/lyrics/widget.rs:379
-#: src/app/components/shell/command_palette/widget.rs:673
+#: src/app/components/shell/command_palette/widget.rs:683
 #: src/app/components/pages/settings/settings.blp:254
 #, fuzzy
 msgid "Album"
@@ -226,8 +225,8 @@ msgstr ""
 
 #. translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
 #: src/app/components/labels.rs:110
-#: src/app/components/shell/command_palette/widget.rs:557
-#: src/app/components/shell/playback/playback_widget.blp:456 src/window.blp:279
+#: src/app/components/shell/command_palette/widget.rs:567
+#: src/app/components/shell/playback/playback_widget.blp:475 src/window.blp:279
 msgid "Start Track Radio"
 msgstr ""
 
@@ -288,7 +287,7 @@ msgstr "{} から {}"
 
 #. translators: An artist in the back/forward history menu, while their name is loading.
 #: src/app/components/labels.rs:182
-#: src/app/components/shell/command_palette/widget.rs:674
+#: src/app/components/shell/command_palette/widget.rs:684
 #, fuzzy
 msgid "Artist"
 msgstr "アーティスト"
@@ -296,7 +295,7 @@ msgstr "アーティスト"
 #. translators: A playlist in the back/forward history menu, while its name is loading.
 #: src/app/components/labels.rs:184
 #: src/app/components/pages/details_playlist/model.rs:154
-#: src/app/components/shell/command_palette/widget.rs:675
+#: src/app/components/shell/command_palette/widget.rs:685
 #, fuzzy
 msgid "Playlist"
 msgstr "プレイリスト"
@@ -308,7 +307,7 @@ msgstr ""
 
 #. translators: The search page in the back/forward history menu.
 #: src/app/components/labels.rs:188
-#: src/app/components/shell/command_palette/widget.rs:490
+#: src/app/components/shell/command_palette/widget.rs:491
 #: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:181
 #, fuzzy
 msgid "Search"
@@ -358,115 +357,42 @@ msgstr ""
 msgid "Public Playlists"
 msgstr "プレイリスト"
 
-#. Translators: Tab label switching to song lyrics view
+#. translators: Title of the full-screen lyrics window.
 #. Translators: Tooltip of the player bar button that shows or hides synced lyrics.
 #. Translators: Tab label for lyrics in utility panel.
-#: src/app/components/pages/lyrics/component.rs:73
+#: src/app/components/pages/lyrics/component.rs:67
 #: src/app/components/shell/now_panel/mod.rs:350
-#: src/app/components/pages/lyrics/lyrics_page.blp:28
-#: src/app/components/shell/playback/playback_widget.blp:164
+#: src/app/components/shell/fullscreen_lyrics.rs:77
+#: src/app/components/shell/playback/playback_widget.blp:166
 #: src/app/components/shell/utility_panel/utility_panel.blp:53
 msgid "Lyrics"
 msgstr ""
 
 #. translators: Short text displayed instead of a track title when nothing plays
-#: src/app/components/pages/lyrics/component.rs:465
-#: src/app/components/pages/lyrics/component.rs:703
+#: src/app/components/pages/lyrics/component.rs:289
+#: src/app/components/pages/lyrics/component.rs:523
 #: src/app/components/shell/playback/playback_info.rs:112
+#: src/app/components/shell/fullscreen_lyrics.rs:160
 #, fuzzy
 msgid "No Track Playing"
 msgstr "再生中"
 
 #. Translators: Shown when no lyrics are found.
-#: src/app/components/pages/lyrics/component.rs:609
-#: src/app/components/pages/lyrics/lyrics_page.blp:100
+#: src/app/components/pages/lyrics/component.rs:433
+#: src/app/components/pages/lyrics/lyrics_page.blp:54
 msgid "No Lyrics Available"
 msgstr ""
 
-#: src/app/components/pages/lyrics/component.rs:610
-#: src/app/components/pages/lyrics/lyrics_page.blp:101
+#: src/app/components/pages/lyrics/component.rs:434
+#: src/app/components/pages/lyrics/lyrics_page.blp:55
 msgid "Lyrics couldn't be found for this song."
-msgstr ""
-
-#: src/app/components/pages/lyrics/widget.rs:249
-msgid "Loading credits and liner notes..."
-msgstr ""
-
-#: src/app/components/pages/lyrics/widget.rs:267
-msgid "Credits & Liner Notes"
-msgstr ""
-
-#: src/app/components/pages/lyrics/widget.rs:273
-msgid ""
-"Add a Genius Client Access Token in Preferences -> Integrations to load "
-"producers, writers, samples, and liner notes directly inside Canto."
-msgstr ""
-
-#: src/app/components/pages/lyrics/widget.rs:285
-msgid "Open Preferences"
-msgstr ""
-
-#: src/app/components/pages/lyrics/widget.rs:293
-#: src/app/components/pages/lyrics/widget.rs:322
-#: src/app/components/pages/lyrics/widget.rs:434
-#: src/app/components/shell/now_panel/mod.rs:497
-#: src/app/components/shell/now_panel/mod.rs:767
-#, fuzzy
-msgid "Search on Genius"
-msgstr "検索する。"
-
-#: src/app/components/pages/lyrics/widget.rs:310
-msgid "Couldn't load Genius metadata"
-msgstr ""
-
-#: src/app/components/pages/lyrics/widget.rs:360
-#: src/app/components/shell/now_panel/mod.rs:394
-msgid "Credits"
-msgstr ""
-
-#: src/app/components/pages/lyrics/widget.rs:366
-#: src/app/components/shell/now_panel/mod.rs:469
-msgid "Producer(s)"
-msgstr ""
-
-#: src/app/components/pages/lyrics/widget.rs:369
-#: src/app/components/shell/now_panel/mod.rs:470
-msgid "Writer(s)"
-msgstr ""
-
-#: src/app/components/pages/lyrics/widget.rs:374
-#: src/app/components/shell/now_panel/mod.rs:471
-#, fuzzy
-msgid "Featured Artists"
-msgstr "アーティスト"
-
-#: src/app/components/pages/lyrics/widget.rs:382
-#: src/app/components/shell/now_panel/mod.rs:479
-#, fuzzy
-msgid "Release Date"
-msgstr "作品"
-
-#: src/app/components/pages/lyrics/widget.rs:389
-msgid "Samples & Connections"
-msgstr ""
-
-#: src/app/components/pages/lyrics/widget.rs:404
-msgid "Liner Notes"
-msgstr ""
-
-#: src/app/components/pages/lyrics/widget.rs:421
-msgid "No detailed credits or liner notes were found on Genius for this track."
-msgstr ""
-
-#: src/app/components/pages/lyrics/widget.rs:432
-msgid "Open Verified Genius Page"
 msgstr ""
 
 #. translators: Title of the queue, listing what plays next, when it's shown beside the content.
 #. Translators: Tooltip of the playback bar button that shows or hides the queue.
 #. Translators: Tab label for the queue in utility panel.
 #: src/app/components/pages/queue/component.rs:58
-#: src/app/components/shell/playback/playback_widget.blp:181
+#: src/app/components/shell/playback/playback_widget.blp:200
 #: src/app/components/shell/utility_panel/utility_panel.blp:47
 msgid "Queue"
 msgstr ""
@@ -531,7 +457,7 @@ msgstr "曲数"
 
 #. translators: This is a navigation panel entry to browse to followed artists.
 #: src/app/components/pages/search/search.rs:432
-#: src/app/components/shell/command_palette/widget.rs:508
+#: src/app/components/shell/command_palette/widget.rs:509
 #: src/app/components/shell/navigation/factory.rs:82
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:77
 #: src/app/components/pages/shortcuts/shortcuts.blp:89
@@ -546,7 +472,7 @@ msgstr "アルバム"
 
 #. translators: This is a navigation panel entry that marks that the entries below are playlists.
 #: src/app/components/pages/search/search.rs:452
-#: src/app/components/shell/command_palette/widget.rs:517
+#: src/app/components/shell/command_palette/widget.rs:518
 #: src/app/components/shell/navigation/factory.rs:71
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:75
 #: src/app/components/pages/shortcuts/shortcuts.blp:99
@@ -771,187 +697,197 @@ msgstr ""
 msgid "Try a different keyword or search for an artist, album, or song."
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:465
+#: src/app/components/shell/command_palette/widget.rs:466
 #: src/app/components/pages/shortcuts/shortcuts.blp:61
 msgid "Navigation"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:466
+#: src/app/components/shell/command_palette/widget.rs:467
 msgid "Theme"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:467
+#: src/app/components/shell/command_palette/widget.rs:468
 msgid "Action"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:468
-#: src/app/components/shell/command_palette/widget.rs:588
+#: src/app/components/shell/command_palette/widget.rs:469
+#: src/app/components/shell/command_palette/widget.rs:598
 #: src/app/components/sleep_timer.rs:45 src/app/components/sleep_timer.rs:49
-#: src/app/components/shell/playback/playback_widget.blp:196
-#: src/app/components/shell/playback/playback_widget.blp:236
+#: src/app/components/shell/playback/playback_widget.blp:215
+#: src/app/components/shell/playback/playback_widget.blp:255
 msgid "Sleep Timer"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:469
+#: src/app/components/shell/command_palette/widget.rs:470
 msgid "Device"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:473
+#: src/app/components/shell/command_palette/widget.rs:474
 msgid "Show the current track in the side panel"
 msgstr ""
 
 #. translators: This is a navigation panel entry to browse to saved albums.
-#: src/app/components/shell/command_palette/widget.rs:481
+#: src/app/components/shell/command_palette/widget.rs:482
 #: src/app/components/shell/navigation/factory.rs:55
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:71
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:140
 msgid "Library"
 msgstr "ライブラリ"
 
-#: src/app/components/shell/command_palette/widget.rs:482
+#: src/app/components/shell/command_palette/widget.rs:483
 #, fuzzy
 msgid "Browse saved albums"
 msgstr "保存したアルバムがありません。"
 
-#: src/app/components/shell/command_palette/widget.rs:491
+#: src/app/components/shell/command_palette/widget.rs:492
 #, fuzzy
 msgid "Open search page"
 msgstr "検索ワードを入力してください。"
 
-#: src/app/components/shell/command_palette/widget.rs:499
+#: src/app/components/shell/command_palette/widget.rs:500
 msgid "Liked Songs"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:500
+#: src/app/components/shell/command_palette/widget.rs:501
 #, fuzzy
 msgid "Open your saved tracks"
 msgstr "お気に入り"
 
-#: src/app/components/shell/command_palette/widget.rs:509
+#: src/app/components/shell/command_palette/widget.rs:510
 #, fuzzy
 msgid "Open followed artists"
 msgstr "プレイリストに追加…"
 
-#: src/app/components/shell/command_palette/widget.rs:518
+#: src/app/components/shell/command_palette/widget.rs:519
 #, fuzzy
 msgid "Open saved playlists"
 msgstr "保存したプレイリストはありません。"
 
-#: src/app/components/shell/command_palette/widget.rs:526
+#: src/app/components/shell/command_palette/widget.rs:527
 msgid "Settings"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:527
+#: src/app/components/shell/command_palette/widget.rs:528
 msgid "Open Preferences dialog"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:537
+#: src/app/components/shell/command_palette/widget.rs:538
 msgid "Toggle Queue"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:538
+#: src/app/components/shell/command_palette/widget.rs:539
 msgid "Show or hide the playback queue panel"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:546
+#: src/app/components/shell/command_palette/widget.rs:547
 msgid "Toggle Lyrics"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:547
+#: src/app/components/shell/command_palette/widget.rs:548
 msgid "Show or hide Lyrics and Track Notes"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:569
-msgid "Sleep Timer: Off"
+#. Translators: Tooltip of the player bar button that shows the lyrics full screen.
+#: src/app/components/shell/command_palette/widget.rs:556
+#: src/app/components/shell/playback/playback_widget.blp:183
+msgid "Full-Screen Lyrics"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:570
-msgid "Disable active sleep timer"
-msgstr ""
-
-#: src/app/components/shell/command_palette/widget.rs:578
-msgid "Sleep Timer: End of Current Track"
+#: src/app/components/shell/command_palette/widget.rs:557
+msgid "Show the lyrics big, over the cover"
 msgstr ""
 
 #: src/app/components/shell/command_palette/widget.rs:579
+msgid "Sleep Timer: Off"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:580
+msgid "Disable active sleep timer"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:588
+msgid "Sleep Timer: End of Current Track"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:589
 msgid "Pause playback when this song finishes"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:589
+#: src/app/components/shell/command_palette/widget.rs:599
 msgid "Pause playback after"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:589
+#: src/app/components/shell/command_palette/widget.rs:599
 msgid "minutes"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:600
+#: src/app/components/shell/command_palette/widget.rs:610
 #: src/app/components/pages/settings/settings.blp:37
 msgid "Omarchy Live"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:601
+#: src/app/components/shell/command_palette/widget.rs:611
 msgid "Neutral"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:602
+#: src/app/components/shell/command_palette/widget.rs:612
 #: src/app/components/pages/settings/settings.blp:39
 msgid "Spotify Green"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:603
+#: src/app/components/shell/command_palette/widget.rs:613
 #: src/app/components/pages/settings/settings.blp:40
 msgid "OLED Dark"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:604
+#: src/app/components/shell/command_palette/widget.rs:614
 #: src/app/components/pages/settings/settings.blp:41
 msgid "Warm Vinyl"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:605
+#: src/app/components/shell/command_palette/widget.rs:615
 #: src/app/components/pages/settings/settings.blp:42
 msgid "Purple Night"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:610
+#: src/app/components/shell/command_palette/widget.rs:620
 msgid "Active theme"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:612
+#: src/app/components/shell/command_palette/widget.rs:622
 msgid "Switch theme live"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:629
+#: src/app/components/shell/command_palette/widget.rs:639
 #: src/app/components/shell/device_selector/widget.rs:142
 #: src/app/components/shell/device_selector/device_selector.blp:9
 #: src/app/components/shell/device_selector/device_selector.blp:37
 msgid "This Device"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:631
+#: src/app/components/shell/command_palette/widget.rs:641
 msgid "Active playback device"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:633
+#: src/app/components/shell/command_palette/widget.rs:643
 msgid "Transfer playback locally"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:658
+#: src/app/components/shell/command_palette/widget.rs:668
 msgid "Active Connect device"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:660
+#: src/app/components/shell/command_palette/widget.rs:670
 msgid "Transfer playback to device"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:672
+#: src/app/components/shell/command_palette/widget.rs:682
 #: src/app/components/pages/settings/settings.blp:253
 #, fuzzy
 msgid "Track"
 msgstr "曲数"
 
-#: src/app/components/shell/command_palette/widget.rs:714
+#: src/app/components/shell/command_palette/widget.rs:724
 msgid "Open artist page"
 msgstr ""
 
@@ -1047,10 +983,32 @@ msgstr "再生中"
 msgid "Show Queue"
 msgstr "キューに追加"
 
+#: src/app/components/shell/now_panel/mod.rs:394
+msgid "Credits"
+msgstr ""
+
 #. translators: Credits row in the Now Playing panel: the track's artists.
 #: src/app/components/shell/now_panel/mod.rs:466
 msgid "Performed by"
 msgstr ""
+
+#: src/app/components/shell/now_panel/mod.rs:469
+msgid "Producer(s)"
+msgstr ""
+
+#: src/app/components/shell/now_panel/mod.rs:470
+msgid "Writer(s)"
+msgstr ""
+
+#: src/app/components/shell/now_panel/mod.rs:471
+#, fuzzy
+msgid "Featured Artists"
+msgstr "アーティスト"
+
+#: src/app/components/shell/now_panel/mod.rs:479
+#, fuzzy
+msgid "Release Date"
+msgstr "作品"
 
 #: src/app/components/shell/now_panel/mod.rs:488
 msgid "No detailed credits were found on Genius for this track."
@@ -1059,6 +1017,12 @@ msgstr ""
 #: src/app/components/shell/now_panel/mod.rs:495
 #, fuzzy
 msgid "Open on Genius"
+msgstr "検索する。"
+
+#: src/app/components/shell/now_panel/mod.rs:497
+#: src/app/components/shell/now_panel/mod.rs:767
+#, fuzzy
+msgid "Search on Genius"
 msgstr "検索する。"
 
 #: src/app/components/shell/now_panel/mod.rs:739
@@ -1077,6 +1041,11 @@ msgstr ""
 
 #: src/app/components/shell/now_panel/mod.rs:765
 msgid "Couldn't load the credits from Genius."
+msgstr ""
+
+#. translators: Tooltip of the button leaving full-screen lyrics.
+#: src/app/components/shell/fullscreen_lyrics.rs:113
+msgid "Exit Full Screen (Esc)"
 msgstr ""
 
 #: src/app/components/shell/navigation_panel/model.rs:83
@@ -1141,7 +1110,7 @@ msgid "Remember my choice"
 msgstr ""
 
 #: src/app/components/widgets/details_page/header.rs:406
-#: src/app/components/widgets/details_page/header.blp:166
+#: src/app/components/widgets/details_page/header.blp:170
 #, fuzzy
 msgid "Add to Library"
 msgstr "ライブラリ"
@@ -1340,44 +1309,29 @@ msgstr ""
 msgid "Log in with Spotify…"
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:30
-#, fuzzy
-msgid "Show track lyrics"
-msgstr "再生中"
-
-#. Translators: Tab label switching to credits & liner notes
-#: src/app/components/pages/lyrics/lyrics_page.blp:35
-#, fuzzy
-msgid "About Track"
-msgstr "曲数"
-
-#: src/app/components/pages/lyrics/lyrics_page.blp:37
-msgid "Credits, samples, and liner notes"
-msgstr ""
-
 #. Translators: Shown when fetching song lyrics.
-#: src/app/components/pages/lyrics/lyrics_page.blp:67
+#: src/app/components/pages/lyrics/lyrics_page.blp:21
 msgid "Loading Lyrics…"
 msgstr ""
 
 #. Translators: Button to retry fetching lyrics from LRCLIB.
-#: src/app/components/pages/lyrics/lyrics_page.blp:111
+#: src/app/components/pages/lyrics/lyrics_page.blp:65
 msgid "Reload Lyrics"
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:133
+#: src/app/components/pages/lyrics/lyrics_page.blp:87
 msgid "Delay lyrics (-100 ms)"
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:143
+#: src/app/components/pages/lyrics/lyrics_page.blp:97
 msgid "Reset lyrics sync offset"
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:153
+#: src/app/components/pages/lyrics/lyrics_page.blp:107
 msgid "Advance lyrics (+100 ms)"
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:169
+#: src/app/components/pages/lyrics/lyrics_page.blp:123
 msgid "Reload lyrics"
 msgstr ""
 
@@ -2109,65 +2063,65 @@ msgstr "前"
 msgid "Next"
 msgstr "次"
 
-#: src/app/components/shell/playback/playback_widget.blp:256
+#: src/app/components/shell/playback/playback_widget.blp:275
 msgid "Off"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:270
+#: src/app/components/shell/playback/playback_widget.blp:289
 msgid "End of current track"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:284
+#: src/app/components/shell/playback/playback_widget.blp:303
 msgid "15 min"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:298
+#: src/app/components/shell/playback/playback_widget.blp:317
 msgid "30 min"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:312
+#: src/app/components/shell/playback/playback_widget.blp:331
 msgid "45 min"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:326
+#: src/app/components/shell/playback/playback_widget.blp:345
 msgid "60 min"
 msgstr ""
 
 #. Translators: Tooltip of the player bar equalizer presets menu button.
-#: src/app/components/shell/playback/playback_widget.blp:339
-#: src/app/components/shell/playback/playback_widget.blp:360
+#: src/app/components/shell/playback/playback_widget.blp:358
+#: src/app/components/shell/playback/playback_widget.blp:379
 msgid "Equalizer Presets"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:380
+#: src/app/components/shell/playback/playback_widget.blp:399
 msgid "Flat"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:394
+#: src/app/components/shell/playback/playback_widget.blp:413
 msgid "Bass Boost"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:408
+#: src/app/components/shell/playback/playback_widget.blp:427
 msgid "Vocal"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:422
+#: src/app/components/shell/playback/playback_widget.blp:441
 msgid "Lo-Fi"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:436
+#: src/app/components/shell/playback/playback_widget.blp:455
 msgid "Acoustic"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:471
+#: src/app/components/shell/playback/playback_widget.blp:490
 msgid "Audio Settings…"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:494
+#: src/app/components/shell/playback/playback_widget.blp:513
 msgid "Mute / Unmute"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:529
+#: src/app/components/shell/playback/playback_widget.blp:548
 msgid "Volume"
 msgstr ""
 
@@ -2234,7 +2188,7 @@ msgstr ""
 msgid "Filters"
 msgstr ""
 
-#: src/app/components/widgets/details_page/header.blp:196
+#: src/app/components/widgets/details_page/header.blp:200
 msgid "More Options"
 msgstr ""
 
@@ -2312,6 +2266,14 @@ msgstr ""
 #: src/app/state/app_state.rs:336
 msgid "Queueing isn't available when playing on another device"
 msgstr ""
+
+#, fuzzy
+#~ msgid "Show track lyrics"
+#~ msgstr "再生中"
+
+#, fuzzy
+#~ msgid "About Track"
+#~ msgstr "曲数"
 
 #, fuzzy
 #~ msgid "Select"

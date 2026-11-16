@@ -8,8 +8,8 @@ use gettextrs::gettext;
 use gio::prelude::SettingsExt;
 use glib::clone;
 use gtk::prelude::*;
-use riff_api::{GeniusTrackInfo, Lyrics};
-use riff_config::settings::{GENIUS_ACCESS_TOKEN, LYRICS_OFFSET_MS, SETTINGS};
+use riff_api::Lyrics;
+use riff_config::settings::{LYRICS_OFFSET_MS, SETTINGS};
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
@@ -23,9 +23,6 @@ pub struct LyricsPage {
     offset_ms: Rc<Cell<i32>>,
     settings: gio::Settings,
     clock: Rc<Clock>,
-    genius_info: Rc<RefCell<Option<GeniusTrackInfo>>>,
-    genius_track_id: Rc<RefCell<Option<String>>>,
-    genius_fetching: Rc<Cell<bool>>,
 }
 
 fn adjusted_lyric_position(pos_ms: u64, offset_ms: i32) -> u64 {
@@ -54,9 +51,6 @@ impl LyricsPage {
             offset_ms,
             settings,
             clock,
-            genius_info: Rc::new(RefCell::new(None)),
-            genius_track_id: Rc::new(RefCell::new(None)),
-            genius_fetching: Rc::new(Cell::new(false)),
         };
         page.setup_controls();
         page.setup_visibility_hooks();
@@ -155,59 +149,6 @@ impl LyricsPage {
                 );
             }
         ));
-
-        self.widget.connect_about_tab_activated(clone!(
-            #[weak(rename_to = widget)]
-            self.widget,
-            #[weak(rename_to = app_model)]
-            self.app_model,
-            #[weak(rename_to = settings)]
-            self.settings,
-            #[weak(rename_to = genius_info)]
-            self.genius_info,
-            #[weak(rename_to = genius_track_id)]
-            self.genius_track_id,
-            #[weak(rename_to = genius_fetching)]
-            self.genius_fetching,
-            move || {
-                refresh_genius_for_current_track(
-                    &widget,
-                    &app_model,
-                    &settings,
-                    &genius_info,
-                    &genius_track_id,
-                    &genius_fetching,
-                    false,
-                );
-            }
-        ));
-
-        self.settings.connect_changed(
-            Some(GENIUS_ACCESS_TOKEN),
-            clone!(
-                #[weak(rename_to = widget)]
-                self.widget,
-                #[weak(rename_to = app_model)]
-                self.app_model,
-                #[weak(rename_to = genius_info)]
-                self.genius_info,
-                #[weak(rename_to = genius_track_id)]
-                self.genius_track_id,
-                #[weak(rename_to = genius_fetching)]
-                self.genius_fetching,
-                move |settings, _| {
-                    refresh_genius_for_current_track(
-                        &widget,
-                        &app_model,
-                        settings,
-                        &genius_info,
-                        &genius_track_id,
-                        &genius_fetching,
-                        true,
-                    );
-                }
-            ),
-        );
     }
 
     fn setup_visibility_hooks(&self) {
@@ -236,24 +177,7 @@ impl LyricsPage {
             self.offset_ms,
             #[weak(rename_to = clock)]
             self.clock,
-            #[weak(rename_to = settings)]
-            self.settings,
-            #[weak(rename_to = genius_info)]
-            self.genius_info,
-            #[weak(rename_to = genius_track_id)]
-            self.genius_track_id,
-            #[weak(rename_to = genius_fetching)]
-            self.genius_fetching,
             move |_| {
-                refresh_genius_for_current_track(
-                    &widget,
-                    &app_model,
-                    &settings,
-                    &genius_info,
-                    &genius_track_id,
-                    &genius_fetching,
-                    false,
-                );
                 let maybe_track_id = app_model
                     .get_state()
                     .playback
@@ -331,15 +255,6 @@ impl LyricsPage {
     }
 
     pub fn reload_for_current_track(&self, force_refresh: bool) {
-        refresh_genius_for_current_track(
-            &self.widget,
-            &self.app_model,
-            &self.settings,
-            &self.genius_info,
-            &self.genius_track_id,
-            &self.genius_fetching,
-            force_refresh,
-        );
         fetch_lyrics_for_current_track(
             &self.widget,
             &self.app_model,
@@ -354,97 +269,6 @@ impl LyricsPage {
     }
 }
 
-fn refresh_genius_for_current_track(
-    widget: &LyricsPageWidget,
-    app_model: &Rc<AppModel>,
-    settings: &gio::Settings,
-    genius_info: &Rc<RefCell<Option<GeniusTrackInfo>>>,
-    genius_track_id: &Rc<RefCell<Option<String>>>,
-    genius_fetching: &Rc<Cell<bool>>,
-    force_refresh: bool,
-) {
-    let Some(track) = app_model.get_state().playback.current_song() else {
-        genius_fetching.set(false);
-        *genius_track_id.borrow_mut() = None;
-        *genius_info.borrow_mut() = None;
-        widget.set_has_track(false);
-        return;
-    };
-
-    widget.set_has_track(true);
-    let track_id = track.rri.id.clone();
-    let title = track.title.clone();
-    let artist = track.artists_name();
-    let album = track.album.as_ref().map(|a| a.name.clone());
-    let api = app_model.api();
-    let search_url = api.genius_search_url(&artist, &title);
-    let token = settings.string(GENIUS_ACCESS_TOKEN).trim().to_string();
-
-    if token.is_empty() {
-        genius_fetching.set(false);
-        *genius_track_id.borrow_mut() = Some(track_id);
-        *genius_info.borrow_mut() = None;
-        widget.set_about_prompt(&title, &artist, album.as_deref(), &search_url);
-        return;
-    }
-
-    if !force_refresh
-        && genius_track_id.borrow().as_deref() == Some(track_id.as_str())
-        && (genius_info.borrow().is_some() || genius_fetching.get())
-    {
-        return;
-    }
-
-    if !widget.is_mapped() && !widget.is_about_selected() && !force_refresh {
-        *genius_track_id.borrow_mut() = Some(track_id);
-        *genius_info.borrow_mut() = None;
-        genius_fetching.set(false);
-        return;
-    }
-
-    *genius_track_id.borrow_mut() = Some(track_id.clone());
-    *genius_info.borrow_mut() = None;
-    genius_fetching.set(true);
-    widget.set_about_loading(&title, &artist);
-
-    let weak_widget = widget.downgrade();
-    let weak_info = Rc::downgrade(genius_info);
-    let weak_track_id = Rc::downgrade(genius_track_id);
-    let weak_fetching = Rc::downgrade(genius_fetching);
-
-    glib::spawn_future_local(async move {
-        let result = api
-            .fetch_genius_track_info(&track_id, &artist, &title, &token)
-            .await;
-
-        let (Some(w), Some(info_cell), Some(tid_cell), Some(fetching)) = (
-            weak_widget.upgrade(),
-            weak_info.upgrade(),
-            weak_track_id.upgrade(),
-            weak_fetching.upgrade(),
-        ) else {
-            return;
-        };
-
-        if tid_cell.borrow().as_deref() != Some(track_id.as_str()) {
-            return;
-        }
-
-        fetching.set(false);
-        match result {
-            Ok(info) => {
-                w.set_about_info(&title, &artist, &info);
-                *info_cell.borrow_mut() = Some(info);
-            }
-            Err(err) => {
-                *info_cell.borrow_mut() = None;
-                w.set_about_error(&title, &artist, &err.to_string(), &search_url);
-            }
-        }
-    });
-}
-
-#[allow(clippy::too_many_arguments)]
 fn fetch_lyrics_for_current_track(
     widget: &LyricsPageWidget,
     app_model: &Rc<AppModel>,
@@ -695,10 +519,6 @@ impl EventListener for LyricsPage {
                 self.pending_fetch.set(false);
                 *self.current_track_id.borrow_mut() = None;
                 *self.lyrics.borrow_mut() = None;
-                self.genius_fetching.set(false);
-                *self.genius_track_id.borrow_mut() = None;
-                *self.genius_info.borrow_mut() = None;
-                self.widget.set_has_track(false);
                 self.widget
                     .set_empty(&gettext("No Track Playing"), None, false);
             }
