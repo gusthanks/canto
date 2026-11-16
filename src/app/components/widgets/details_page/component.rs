@@ -51,6 +51,7 @@ impl<M: PinnedPageModel + 'static> DetailsPageComponent<M> {
         let content = page.content().clone();
 
         header.set_title_revealed(false);
+        header.set_floating(true);
         page.connect_title_reveal(clone!(
             #[strong]
             header,

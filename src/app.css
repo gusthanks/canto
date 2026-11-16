@@ -392,3 +392,44 @@ bottom-sheet.bottom-sheet--padded > sheet {
   border-radius: 999px;
   padding: 0 12px;
 }
+
+/* "Your Library": filter pills above the list */
+.library-filters {
+  margin: 0 12px 8px 12px;
+}
+
+.library-filter {
+  min-height: 30px;
+  padding: 0 12px;
+  font-weight: normal;
+}
+
+/* Saved Tracks' own cover in the sidebar */
+.navigation-row__liked {
+  background: linear-gradient(135deg, @accent_bg_color, shade(@accent_bg_color, 0.55));
+  color: white;
+}
+
+/* The collapsed sidebar's "+" (new playlist) */
+.rail-header__add {
+  min-width: 36px;
+  min-height: 36px;
+  background: alpha(currentColor, 0.08);
+}
+
+/* The page's bar over album, playlist and artist pages: see-through until
+   the page is scrolled and its title shows */
+.page-bar--clear headerbar {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* "Your Library": what's playing, and pinned items */
+.navigation-row--playing .navigation-row__playing,
+row.navigation-row--playing label:not(.dim-label) {
+  color: @accent_color;
+}
+
+.navigation-row__pin {
+  color: @accent_color;
+}

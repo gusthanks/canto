@@ -41,6 +41,8 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
         "canto-queue-symbolic",
         "canto-mini-player-symbolic",
         "canto-more-symbolic",
+        "canto-library-symbolic",
+        "canto-translate-symbolic",
     ] {
         assert!(
             icon_theme.has_icon(icon),

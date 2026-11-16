@@ -7,11 +7,11 @@ use std::rc::Rc;
 use super::{
     context_menu::build_context_menu,
     navigation_panel_row::{NavigationPanelRow, COVER_PX},
-    NavigationPanelDestination, NavigationPanelItem, NavigationPanelModel, LIBRARY_SECTION,
-    PINNED_SECTION, SAVED_PLAYLISTS_SECTION,
+    LibraryFilter, NavigationPanelItem, NavigationPanelModel,
+    LIBRARY_SECTION, PINNED_SECTION, SAVED_PLAYLISTS_SECTION,
 };
 use crate::app::components::PlaylistDialog;
-use crate::app::state::{HomePage, Route, Transition};
+use crate::app::state::{HomePage, PlaybackEvent, Route, Transition};
 use crate::app::{AppEvent, BrowserEvent, Component, EventListener};
 
 pub struct NavigationPanel {
@@ -19,26 +19,13 @@ pub struct NavigationPanel {
     list_store: gio::ListStore,
     model: Rc<NavigationPanelModel>,
     _context_menu: gtk::PopoverMenu,
-    num_fixed_entries: u32,
+    /// A refill is already queued for the next idle moment.
+    refill_queued: Rc<Cell<bool>>,
 }
 
 impl NavigationPanel {
     pub fn new(listbox: gtk::ListBox, model: Rc<NavigationPanelModel>) -> Self {
         let list_store = gio::ListStore::new::<NavigationPanelItem>();
-
-        list_store.append(&NavigationPanelItem::from_destination(
-            NavigationPanelDestination::SavedArtists,
-        ));
-        list_store.append(&NavigationPanelItem::from_destination(
-            NavigationPanelDestination::Library,
-        ));
-        list_store.append(&NavigationPanelItem::from_destination(
-            NavigationPanelDestination::SavedPlaylists,
-        ));
-        list_store.append(&NavigationPanelItem::from_destination(
-            NavigationPanelDestination::SavedTracks,
-        ));
-        list_store.append(&NavigationPanelItem::playlists_section());
 
         let rail = Rc::new(Cell::new(false));
         let weak_model = Rc::downgrade(&model);
@@ -204,23 +191,144 @@ impl NavigationPanel {
             }
         ));
 
-        let num_fixed_entries = list_store.n_items();
+        model.apply_navigation_panel_items(&list_store);
+        Self::add_library_controls(&navigation_panel_box, &model, &list_store);
 
-        model.apply_navigation_panel_items(&list_store, num_fixed_entries);
-
-        let panel = Self {
+        Self {
             listbox,
             list_store,
             model,
             _context_menu: context_menu,
-            num_fixed_entries,
-        };
-        panel
+            refill_queued: Default::default(),
+        }
+    }
+
+    /// A "+" that opens the new playlist dialog.
+    fn new_playlist_button(model: &Rc<NavigationPanelModel>) -> gtk::Button {
+        let add = gtk::Button::builder()
+            .icon_name("list-add-symbolic")
+            .tooltip_text(gettext("New Playlist"))
+            .valign(gtk::Align::Center)
+            .focus_on_click(false)
+            .build();
+        add.connect_clicked(clone!(
+            #[weak]
+            model,
+            move |button| {
+                let dialog = PlaylistDialog::new();
+                dialog.connect_save(clone!(
+                    #[weak]
+                    model,
+                    #[upgrade_or_else]
+                    || tokio::sync::oneshot::channel().1,
+                    move |playlist| model.create_new_playlist(playlist)
+                ));
+                dialog.present(Some(button));
+            }
+        ));
+        add
+    }
+
+    /// The "+" (new playlist) in the sidebar's header, and the filter pills
+    /// (Playlists, Albums, Artists) above the list.
+    fn add_library_controls(
+        panel_box: &gtk::Box,
+        model: &Rc<NavigationPanelModel>,
+        list_store: &gio::ListStore,
+    ) {
+        let mut child = panel_box.first_child();
+        let mut header = None;
+        let mut rail_header = None;
+        let mut list = None;
+        while let Some(widget) = child {
+            if widget.has_css_class("rail-header") {
+                rail_header = widget.downcast_ref::<gtk::Box>().cloned();
+            }
+            if let Some(h) = widget.downcast_ref::<libadwaita::HeaderBar>() {
+                header = Some(h.clone());
+            }
+            if widget.is::<gtk::ScrolledWindow>() {
+                list = Some(widget.clone());
+            }
+            child = widget.next_sibling();
+        }
+
+        if let Some(header) = header {
+            header.pack_end(&Self::new_playlist_button(model));
+        }
+        if let Some(rail_header) = rail_header {
+            let add = Self::new_playlist_button(model);
+            add.add_css_class("circular");
+            add.add_css_class("rail-header__add");
+            add.set_halign(gtk::Align::Center);
+            rail_header.append(&add);
+        }
+
+        let filters = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        filters.add_css_class("library-filters");
+        let buttons: Rc<RefCell<Vec<(gtk::ToggleButton, LibraryFilter)>>> = Default::default();
+        for (label, filter) in [
+            (gettext("Playlists"), LibraryFilter::Playlists),
+            (gettext("Albums"), LibraryFilter::Albums),
+            (gettext("Artists"), LibraryFilter::Artists),
+        ] {
+            let button = gtk::ToggleButton::with_label(&label);
+            button.add_css_class("pill");
+            button.add_css_class("library-filter");
+            button.set_focus_on_click(false);
+            button.connect_clicked(clone!(
+                #[weak]
+                model,
+                #[weak]
+                list_store,
+                #[strong]
+                buttons,
+                move |button| {
+                    let chosen = if button.is_active() {
+                        filter
+                    } else {
+                        LibraryFilter::All
+                    };
+                    for (other, other_filter) in buttons.borrow().iter() {
+                        if *other_filter != filter && other.is_active() {
+                            other.set_active(false);
+                        }
+                    }
+                    if model.filter() != chosen {
+                        model.set_filter(chosen);
+                        model.apply_navigation_panel_items(&list_store);
+                    }
+                }
+            ));
+            filters.append(&button);
+            buttons.borrow_mut().push((button, filter));
+        }
+        match list {
+            Some(list) => {
+                panel_box.insert_child_after(&filters, list.prev_sibling().as_ref());
+            }
+            None => panel_box.append(&filters),
+        }
+        // No room for them in the collapsed sidebar
+        if let Some(sidebar) = panel_box.parent() {
+            let sync = clone!(
+                #[weak]
+                filters,
+                move |sidebar: &gtk::Widget| {
+                    filters.set_visible(!sidebar.has_css_class("navigation-panel--rail"));
+                }
+            );
+            sync(&sidebar);
+            sidebar.connect_css_classes_notify(sync);
+        }
     }
 
     fn make_navigatable(item: &NavigationPanelItem, model: Option<&NavigationPanelModel>) -> gtk::Widget {
         let row = NavigationPanelRow::new(item.clone());
         row.set_selectable(false);
+        if let Some(model) = model {
+            row.set_playing(model.is_playing_from(item));
+        }
         if let (Some(model), Some((image, url))) = (model, row.cover_target()) {
             let scale = image.scale_factor().max(2);
             model.load_cover(&image, &url, COVER_PX * scale);
@@ -303,9 +411,33 @@ impl NavigationPanel {
         }
     }
 
+    /// Highlights the item whose album, playlist, artist or Saved Tracks is
+    /// playing (while it plays).
+    fn mark_playing(&self) {
+        let mut child = self.listbox.first_child();
+        while let Some(widget) = child {
+            if let Some(row) = widget.downcast_ref::<NavigationPanelRow>() {
+                row.set_playing(self.model.is_playing_from(&row.item()));
+            }
+            child = widget.next_sibling();
+        }
+    }
+
+    /// Refills the list once the current burst of updates is over: artists
+    /// and albums arrive page after page.
     fn update_playlists_in_navigation_panel(&self) {
-        self.model
-            .apply_navigation_panel_items(&self.list_store, self.num_fixed_entries);
+        if self.refill_queued.replace(true) {
+            return;
+        }
+        let model = Rc::downgrade(&self.model);
+        let list_store = self.list_store.downgrade();
+        let queued = Rc::clone(&self.refill_queued);
+        glib::timeout_add_local_once(std::time::Duration::from_millis(250), move || {
+            queued.set(false);
+            if let (Some(model), Some(list_store)) = (model.upgrade(), list_store.upgrade()) {
+                model.apply_navigation_panel_items(&list_store);
+            }
+        });
     }
 }
 
@@ -319,8 +451,20 @@ impl EventListener for NavigationPanel {
     fn on_event(&mut self, event: &AppEvent) {
         match event {
             AppEvent::BrowserEvent(
-                BrowserEvent::SavedPlaylistsUpdated | BrowserEvent::PinnedPlaylistsUpdated,
+                BrowserEvent::SavedPlaylistsUpdated
+                | BrowserEvent::PinnedPlaylistsUpdated
+                | BrowserEvent::LibraryUpdated
+                | BrowserEvent::SavedArtistsUpdated,
             ) => self.update_playlists_in_navigation_panel(),
+            AppEvent::PlaybackEvent(
+                PlaybackEvent::TrackChanged(_)
+                | PlaybackEvent::SourceChanged
+                | PlaybackEvent::PlaybackPaused
+                | PlaybackEvent::PlaybackResumed
+                | PlaybackEvent::PlaybackStopped
+                | PlaybackEvent::PlayStateSynced(_)
+                | PlaybackEvent::TrackSynced,
+            ) => self.mark_playing(),
             AppEvent::BrowserEvent(BrowserEvent::NavigationChanged(Transition {
                 to: Route::Home(page),
                 ..
@@ -333,30 +477,44 @@ impl EventListener for NavigationPanel {
 /// A sidebar with a few covered playlists, to look at its rendering.
 #[cfg(test)]
 pub(crate) fn sample_for_tests(cover: &gtk::gdk::Paintable, rail: bool) -> gtk::Widget {
+    use super::NavigationPanelDestination;
     use crate::app::models::PlaylistSummary;
 
     let listbox = gtk::ListBox::new();
     listbox.add_css_class("navigation-sidebar");
-    let mut rows = vec![
-        NavigationPanel::make_navigatable(
-            &NavigationPanelItem::from_destination(NavigationPanelDestination::SavedArtists),
-            None,
-        ),
-        NavigationPanel::make_navigatable(
-            &NavigationPanelItem::from_destination(NavigationPanelDestination::SavedTracks),
-            None,
-        ),
-        NavigationPanel::make_section_label(&NavigationPanelItem::playlists_section(), None),
+    let saved = NavigationPanelItem::from_destination(NavigationPanelDestination::SavedTracks);
+    saved.set_subtitle("Playlist".to_string());
+    let mut rows = vec![NavigationPanel::make_navigatable(&saved, None)];
+    let samples = [
+        ("Rap Nacional", "Playlist • gusthx", None),
+        ("XTRANHO", "Album • Niink", Some("album")),
+        ("Matuê", "Artist", Some("artist")),
     ];
-    for (i, title) in ["Rap Nacional", "Treino", "Madrugada"].iter().enumerate() {
-        let item = NavigationPanelItem::from_destination(NavigationPanelDestination::Playlist(
-            PlaylistSummary {
+    for (i, (title, subtitle, kind)) in samples.iter().enumerate() {
+        let destination = match kind {
+            Some("album") => NavigationPanelDestination::Album {
                 id: i.to_string(),
                 title: title.to_string(),
             },
-        ));
+            Some(_) => NavigationPanelDestination::Artist {
+                id: i.to_string(),
+                title: title.to_string(),
+            },
+            None => NavigationPanelDestination::Playlist(PlaylistSummary {
+                id: i.to_string(),
+                title: title.to_string(),
+            }),
+        };
+        let item = NavigationPanelItem::from_destination(destination);
         item.set_image("https://example.com/cover.jpg");
+        item.set_subtitle(subtitle.to_string());
+        item.set_pinned(i == 0);
         let row = NavigationPanel::make_navigatable(&item, None);
+        if i == 1 {
+            if let Some(row) = row.downcast_ref::<NavigationPanelRow>() {
+                row.set_playing(true);
+            }
+        }
         if let Some((image, _)) = row
             .downcast_ref::<NavigationPanelRow>()
             .and_then(|r| r.cover_target())

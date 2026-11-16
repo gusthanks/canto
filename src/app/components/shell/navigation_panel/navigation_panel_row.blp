@@ -14,10 +14,51 @@ template $NavigationPanelRow : ListBoxRow {
       }
     }
 
-    Label title {
+    Box text {
+      orientation: vertical;
+      valign: center;
       hexpand: true;
-      ellipsize: end;
-      xalign: 0;
+
+      Label title {
+        ellipsize: end;
+        xalign: 0;
+      }
+
+      Box {
+        spacing: 4;
+
+        Image pin {
+          visible: false;
+          icon-name: "view-pin-symbolic";
+          pixel-size: 12;
+
+          styles [
+            "navigation-row__pin",
+          ]
+        }
+
+        Label subtitle {
+          visible: false;
+          ellipsize: end;
+          xalign: 0;
+
+          styles [
+            "caption",
+            "dim-label",
+          ]
+        }
+      }
+    }
+
+    // What's playing comes from this item
+    Image playing {
+      visible: false;
+      icon-name: "audio-volume-high-symbolic";
+      valign: center;
+
+      styles [
+        "navigation-row__playing",
+      ]
     }
   }
 }

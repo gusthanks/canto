@@ -354,16 +354,21 @@ impl RiffOauthClient {
             return Err(OAuthError::NoRefreshToken);
         };
 
-        let duration = old_token
+        let refresh_at = old_token
             .token_expiry_time
-            .and_then(|d| d.duration_since(SystemTime::now()).ok())
-            .unwrap_or(Duration::from_secs(120));
+            .unwrap_or_else(|| SystemTime::now() + Duration::from_secs(120))
+            .checked_sub(REFRESH_LEAD_TIME)
+            .unwrap_or_else(SystemTime::now);
 
         info!(
             "Refreshing token in approx {}min",
-            duration.as_secs().div_euclid(60)
+            refresh_at
+                .duration_since(SystemTime::now())
+                .unwrap_or_default()
+                .as_secs()
+                .div_euclid(60)
         );
-        tokio::time::sleep(duration.saturating_sub(REFRESH_LEAD_TIME)).await;
+        wait_until(refresh_at).await;
 
         // Long-poll the refresh: retry transient failures at a generous
         // interval until we succeed. Only a fatal error (rejected refresh
@@ -711,5 +716,21 @@ mod test {
             codes.await.unwrap(),
             Err(OAuthError::AuthCodeNotFound)
         ));
+    }
+}
+
+/// Longest single sleep while waiting for a wall-clock time.
+const WALL_CLOCK_CHECK: Duration = Duration::from_secs(30);
+
+/// Waits until the wall clock reaches `when`. Tokio's timers stop while the
+/// computer is suspended, so one long sleep would wake far past the token's
+/// expiry after a suspend (every request then failing with 401); short sleeps
+/// re-read the wall clock and catch up within `WALL_CLOCK_CHECK` of resuming.
+async fn wait_until(when: SystemTime) {
+    while let Ok(left) = when.duration_since(SystemTime::now()) {
+        if left.is_zero() {
+            break;
+        }
+        tokio::time::sleep(left.min(WALL_CLOCK_CHECK)).await;
     }
 }

@@ -5,7 +5,7 @@ use gtk::CompositeTemplate;
 use super::NavigationPanelItem;
 
 /// Side of a cover in the sidebar.
-pub const COVER_PX: i32 = 32;
+pub const COVER_PX: i32 = 44;
 
 impl NavigationPanelRow {
     pub fn new(item: NavigationPanelItem) -> Self {
@@ -18,10 +18,23 @@ impl NavigationPanelRow {
         (!image.is_empty()).then(|| (self.imp().icon.get(), image))
     }
 
+    /// Marks the row whose album, playlist, artist or Saved Tracks is playing.
+    pub fn set_playing(&self, playing: bool) {
+        let imp = self.imp();
+        imp.playing.set_visible(playing && imp.text.is_visible());
+        if playing {
+            self.add_css_class("navigation-row--playing");
+        } else {
+            self.remove_css_class("navigation-row--playing");
+        }
+    }
+
     /// Icons only, for the collapsed sidebar.
     pub fn set_rail(&self, rail: bool) {
         let imp = self.imp();
-        imp.title.set_visible(!rail);
+        imp.text.set_visible(!rail);
+        imp.playing
+            .set_visible(!rail && self.has_css_class("navigation-row--playing"));
         imp.content.set_halign(if rail {
             gtk::Align::Center
         } else {
@@ -49,7 +62,19 @@ mod imp {
         pub icon: TemplateChild<gtk::Image>,
 
         #[template_child]
+        pub text: TemplateChild<gtk::Box>,
+
+        #[template_child]
         pub title: TemplateChild<gtk::Label>,
+
+        #[template_child]
+        pub subtitle: TemplateChild<gtk::Label>,
+
+        #[template_child]
+        pub pin: TemplateChild<gtk::Image>,
+
+        #[template_child]
+        pub playing: TemplateChild<gtk::Image>,
 
         #[property(get, set = Self::set_item)]
         pub item: RefCell<NavigationPanelItem>,
@@ -58,8 +83,19 @@ mod imp {
     impl NavigationPanelRow {
         fn set_item(&self, item: NavigationPanelItem) {
             self.title.set_text(item.title().as_str());
+            let subtitle = item.subtitle();
+            self.subtitle.set_text(&subtitle);
+            self.subtitle.set_visible(!subtitle.is_empty());
+            self.pin.set_visible(item.pinned());
             self.icon.set_icon_name(item.icon());
-            if !item.image().is_empty() {
+            if item.id() == "saved_tracks" {
+                // A cover of its own: a heart on the accent color
+                self.icon.set_icon_name(Some("canto-heart-filled-symbolic"));
+                self.icon.set_pixel_size(18);
+                self.icon.set_size_request(COVER_PX, COVER_PX);
+                self.icon_clip.add_css_class("navigation-row__cover");
+                self.icon_clip.add_css_class("navigation-row__liked");
+            } else if !item.image().is_empty() {
                 self.icon.set_pixel_size(COVER_PX);
                 self.icon_clip.add_css_class("navigation-row__cover");
                 if item.round_cover() {
@@ -90,7 +126,11 @@ mod imp {
                 content: Default::default(),
                 icon_clip: Default::default(),
                 icon: Default::default(),
+                text: Default::default(),
                 title: Default::default(),
+                subtitle: Default::default(),
+                pin: Default::default(),
+                playing: Default::default(),
                 item: RefCell::new(glib::Object::new()),
             }
         }

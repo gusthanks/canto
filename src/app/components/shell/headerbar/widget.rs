@@ -98,6 +98,8 @@ mod imp {
         pub history_slot: RefCell<Option<gtk::Box>>,
         /// The top bar's search: the search page's own field goes in the slot
         pub top_search: RefCell<Option<(gtk::Stack, libadwaita::Bin)>>,
+        /// The pages under this bar: pushed down below it unless they float
+        pub content: RefCell<Option<gtk::Widget>>,
 
         #[template_child]
         pub selection_header: TemplateChild<libadwaita::HeaderBar>,
@@ -226,6 +228,9 @@ pub struct PageState {
     pub(super) title: String,
     pub(super) subtitle: String,
     pub(super) title_revealed: bool,
+    /// The page runs up under the bar, which stays see-through until the
+    /// title is revealed (album, playlist and artist pages)
+    pub(super) floats: bool,
     pub(super) title_widget: Option<gtk::Widget>,
     pub(super) end: Vec<gtk::Widget>,
 }
@@ -236,6 +241,7 @@ impl Default for PageState {
             title: String::new(),
             subtitle: String::new(),
             title_revealed: true,
+            floats: false,
             title_widget: None,
             end: vec![],
         }
@@ -295,11 +301,41 @@ impl AppHeaderBar {
         self.render();
     }
 
+    pub fn set_content(&self, content: &impl IsA<gtk::Widget>) {
+        self.imp().content.replace(Some(content.clone().upcast()));
+        self.render();
+    }
+
+    /// See-through over floating pages until their title shows; the pages
+    /// that don't float start below the bar.
+    fn apply_floating(&self, floats: bool, revealed: bool) {
+        let see_through = floats && !revealed;
+        if see_through {
+            self.add_css_class("page-bar--clear");
+        } else {
+            self.remove_css_class("page-bar--clear");
+        }
+        if let Some(content) = self.imp().content.borrow().as_ref() {
+            let height = if floats {
+                0
+            } else {
+                self.measure(gtk::Orientation::Vertical, -1).1
+            };
+            if content.margin_top() != height {
+                content.set_margin_top(height);
+            }
+        }
+    }
+
     fn render(&self) {
         let imp = self.imp();
         let active = imp.active.borrow();
         let pages = imp.pages.borrow();
         let page = active.as_deref().and_then(|name| pages.get(name));
+        self.apply_floating(
+            page.is_some_and(|p| p.floats),
+            page.is_none_or(|p| p.title_revealed),
+        );
 
         let top_search = imp.top_search.borrow().clone();
         let title_widget = page.and_then(|page| page.title_widget.as_ref());

@@ -4,7 +4,7 @@ use std::rc::Rc;
 use tokio::sync::oneshot;
 
 use super::{
-    NavigationPanelDestination, NavigationPanelItem, PINNED_SECTION, SAVED_PLAYLISTS_SECTION,
+    NavigationPanelDestination, NavigationPanelItem,
 };
 use crate::app::components::{
     dispatch_api_call, dispatch_api_call_many, dispatch_api_read, dispatch_api_read_many,
@@ -32,9 +32,34 @@ fn start_context(
     start_actions(shuffle, load_context(source, name, load))
 }
 
+/// Which kind of item "Your Library" lists.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum LibraryFilter {
+    #[default]
+    All,
+    Playlists,
+    Albums,
+    Artists,
+}
+
+impl LibraryFilter {
+    fn shows_playlists(self) -> bool {
+        matches!(self, Self::All | Self::Playlists)
+    }
+
+    fn shows_albums(self) -> bool {
+        matches!(self, Self::All | Self::Albums)
+    }
+
+    fn shows_artists(self) -> bool {
+        matches!(self, Self::All | Self::Artists)
+    }
+}
+
 pub struct NavigationPanelModel {
     app_model: Rc<AppModel>,
     dispatcher: Dispatcher,
+    filter: std::cell::Cell<LibraryFilter>,
 }
 
 impl NavigationPanelModel {
@@ -42,7 +67,37 @@ impl NavigationPanelModel {
         Self {
             app_model,
             dispatcher,
+            filter: Default::default(),
         }
+    }
+
+    /// Where the music plays from, while it plays.
+    pub fn app_model_state_source(&self) -> Option<SongsSource> {
+        let state = self.app_model.get_state();
+        state
+            .playback
+            .is_playing()
+            .then(|| state.playback.current_source().cloned())
+            .flatten()
+    }
+
+    /// Whether `item` is what the music plays from.
+    pub fn is_playing_from(&self, item: &NavigationPanelItem) -> bool {
+        match (self.app_model_state_source(), item.destination()) {
+            (Some(SongsSource::Playlist(id)), Some(NavigationPanelDestination::Playlist(p))) => id == p.id,
+            (Some(SongsSource::Album(id)), Some(NavigationPanelDestination::Album { id: a, .. })) => id == a,
+            (Some(SongsSource::Artist(id)), Some(NavigationPanelDestination::Artist { id: a, .. })) => id == a,
+            (Some(SongsSource::SavedTracks), Some(NavigationPanelDestination::SavedTracks)) => true,
+            _ => false,
+        }
+    }
+
+    pub fn filter(&self) -> LibraryFilter {
+        self.filter.get()
+    }
+
+    pub fn set_filter(&self, filter: LibraryFilter) {
+        self.filter.set(filter);
     }
 
     fn get_playlists(&self) -> Vec<NavigationPanelDestination> {
@@ -93,6 +148,44 @@ impl NavigationPanelModel {
                 .get(id)
                 .and_then(|sm| sm.description().art.best_for_width(64).map(str::to_owned)),
         }
+    }
+
+    /// The kind line under a pinned item's title.
+    fn with_kind_subtitle(&self, item: NavigationPanelItem) -> NavigationPanelItem {
+        match item.destination() {
+            Some(NavigationPanelDestination::Playlist(_)) => return self.with_playlist_owner(item),
+            Some(NavigationPanelDestination::Album { .. }) => {
+                let artist = {
+                    let state = self.app_model.get_state();
+                    state.browser.home_state().and_then(|home| {
+                        home.albums
+                            .iter()
+                            .find(|c| c.id() == item.data())
+                            .map(|c| c.subtitle())
+                    })
+                };
+                item.set_subtitle(with_detail(&gettext("Album"), &artist.unwrap_or_default()));
+            }
+            Some(NavigationPanelDestination::Artist { .. }) => item.set_subtitle(gettext("Artist")),
+            Some(NavigationPanelDestination::Track { .. }) => item.set_subtitle(gettext("Song")),
+            _ => {}
+        }
+        item
+    }
+
+    /// "Playlist • owner" under a playlist's title.
+    fn with_playlist_owner(&self, item: NavigationPanelItem) -> NavigationPanelItem {
+        let owner = {
+            let state = self.app_model.get_state();
+            state.browser.home_state().and_then(|home| {
+                home.playlists
+                    .iter()
+                    .find(|c| c.id() == item.data())
+                    .map(|c| c.subtitle())
+            })
+        };
+        item.set_subtitle(with_detail(&gettext("Playlist"), &owner.unwrap_or_default()));
+        item
     }
 
     fn with_cover(&self, item: NavigationPanelItem) -> NavigationPanelItem {
@@ -443,40 +536,84 @@ impl NavigationPanelModel {
             settings::prune_pinned_objects(&user_id, settings::PinnedKind::Playlist, &saved_ids);
     }
 
-    /// Rebuild the pinned and playlist rows of `list_store`.
-    ///
-    /// The store holds, in order: the fixed library entries, the pinned rows,
-    /// the fixed "Playlists" header, then the playlists. `num_fixed_entries`
-    /// counts the fixed rows only. The fixed rows are kept rather than
-    /// rebuilt.
-    pub fn apply_navigation_panel_items(
-        &self,
-        list_store: &gio::ListStore,
-        num_fixed_entries: u32,
-    ) {
+    /// Fills "Your Library": Saved Tracks first, then pinned items, then
+    /// playlists, albums and artists, as the filter allows.
+    pub fn apply_navigation_panel_items(&self, list_store: &gio::ListStore) {
         self.prune_stale_pins();
+        let filter = self.filter.get();
         let (pinned, playlists) = self.build_navigation_panel_items();
-        let position = |id: &str| {
-            (0..list_store.n_items()).find(|&i| {
-                list_store
-                    .item(i)
-                    .and_downcast::<NavigationPanelItem>()
-                    .is_some_and(|item| item.id() == id)
-            })
+        let mut items: Vec<NavigationPanelItem> = Vec::new();
+        if filter.shows_playlists() {
+            let saved = NavigationPanelItem::from_destination(NavigationPanelDestination::SavedTracks);
+            saved.set_subtitle(gettext("Playlist"));
+            items.push(saved);
+        }
+        let pinned_ids: Vec<String> = pinned.iter().map(|item| item.data()).collect();
+        if filter == LibraryFilter::All {
+            items.extend(pinned);
+        }
+        if filter.shows_playlists() {
+            items.extend(playlists);
+        }
+        // Pinned ones are already at the top
+        let not_pinned = |item: &NavigationPanelItem| {
+            filter != LibraryFilter::All || !pinned_ids.contains(&item.data())
         };
-        let Some(header) = position(SAVED_PLAYLISTS_SECTION) else {
-            return;
-        };
-        let pinned_start = position(PINNED_SECTION).unwrap_or(header);
-        let num_header_entries = num_fixed_entries.saturating_sub(pinned_start);
-        list_store.splice(pinned_start, header - pinned_start, pinned.as_slice());
+        if filter.shows_albums() {
+            items.extend(self.album_items().into_iter().filter(not_pinned));
+        }
+        if filter.shows_artists() {
+            items.extend(self.artist_items().into_iter().filter(not_pinned));
+        }
+        list_store.splice(0, list_store.n_items(), items.as_slice());
+    }
 
-        let playlists_start = pinned_start + pinned.len() as u32 + num_header_entries;
-        list_store.splice(
-            playlists_start,
-            list_store.n_items().saturating_sub(playlists_start),
-            playlists.as_slice(),
-        );
+    fn album_items(&self) -> Vec<NavigationPanelItem> {
+        let cards: Vec<CardModel> = {
+            let state = self.app_model.get_state();
+            let Some(home) = state.browser.home_state() else {
+                return vec![];
+            };
+            home.albums.iter().collect()
+        };
+        cards
+            .into_iter()
+            .map(|card| {
+                let item = NavigationPanelItem::from_destination(NavigationPanelDestination::Album {
+                    id: card.id(),
+                    title: card.title(),
+                });
+                item.set_subtitle(with_detail(&gettext("Album"), &card.subtitle()));
+                if let Some(url) = card.image() {
+                    item.set_image(url);
+                }
+                item
+            })
+            .collect()
+    }
+
+    fn artist_items(&self) -> Vec<NavigationPanelItem> {
+        let cards: Vec<CardModel> = {
+            let state = self.app_model.get_state();
+            let Some(home) = state.browser.home_state() else {
+                return vec![];
+            };
+            home.artists.iter().collect()
+        };
+        cards
+            .into_iter()
+            .map(|card| {
+                let item = NavigationPanelItem::from_destination(NavigationPanelDestination::Artist {
+                    id: card.id(),
+                    title: card.title(),
+                });
+                item.set_subtitle(gettext("Artist"));
+                if let Some(url) = card.image() {
+                    item.set_image(url);
+                }
+                item
+            })
+            .collect()
     }
 
     fn pinned_title_for(&self, object: &settings::PinnedObject) -> String {
@@ -559,11 +696,11 @@ impl NavigationPanelModel {
             .collect();
 
         if pinned_enabled {
-            if !pinned.is_empty() {
-                pinned_items.push(NavigationPanelItem::pinned_section());
-                for object in pinned {
-                    pinned_items.push(self.with_cover(self.to_pinned_item(object)));
-                }
+            // First in the list, marked with a pin (no section header)
+            for object in pinned {
+                let item = self.with_cover(self.to_pinned_item(object));
+                item.set_pinned(true);
+                pinned_items.push(self.with_kind_subtitle(item));
             }
 
             let mut unpinned = Vec::new();
@@ -580,17 +717,26 @@ impl NavigationPanelModel {
                 unpinned
                     .into_iter()
                     .map(NavigationPanelItem::from_destination)
-                    .map(|item| self.with_cover(item)),
+                    .map(|item| self.with_playlist_owner(self.with_cover(item))),
             );
         } else {
             items.extend(
                 playlists
                     .into_iter()
                     .map(NavigationPanelItem::from_destination)
-                    .map(|item| self.with_cover(item)),
+                    .map(|item| self.with_playlist_owner(self.with_cover(item))),
             );
         }
 
         (pinned_items, items)
+    }
+}
+
+/// "Kind • detail", or just the kind without a detail.
+fn with_detail(kind: &str, detail: &str) -> String {
+    if detail.trim().is_empty() {
+        kind.to_string()
+    } else {
+        format!("{kind} • {detail}")
     }
 }

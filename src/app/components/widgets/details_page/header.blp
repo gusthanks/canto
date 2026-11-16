@@ -135,6 +135,10 @@ template $DetailsHeaderWidget : Widget {
           spacing: 8;
           hexpand: true;
           margin-top: 12;
+          // Room for the play button's hover growth and shadow: the header
+          // clips whatever goes past its edges
+          margin-start: 4;
+          margin-bottom: 18;
 
           Button play_button {
             icon-name: "media-playback-start-symbolic";

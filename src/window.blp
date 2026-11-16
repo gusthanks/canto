@@ -139,6 +139,17 @@ Adw.ApplicationWindow window {
           "top-bar",
         ]
 
+        // First, before back and forward
+        MenuButton user {
+          margin-end: 2;
+          icon-name: "canto-more-symbolic";
+          tooltip-text: _("Main Menu");
+          // Opens with F10
+          primary: true;
+          focus-on-click: false;
+          can-focus: false;
+        }
+
         Box top_history {
           spacing: 2;
         }
@@ -204,15 +215,6 @@ Adw.ApplicationWindow window {
           };
         };
 
-        [end]
-        MenuButton user {
-          icon-name: "canto-more-symbolic";
-          tooltip-text: _("Main Menu");
-          // Opens with F10
-          primary: true;
-          focus-on-click: false;
-          can-focus: false;
-        }
       }
 
       Adw.ToastOverlay toast_overlay {
@@ -254,14 +256,18 @@ Adw.ApplicationWindow window {
                   Box rail_header {
                     orientation: vertical;
                     visible: false;
-                    spacing: 6;
+                    spacing: 8;
                     margin-top: 8;
                     margin-bottom: 6;
                     halign: center;
 
+                    styles [
+                      "rail-header",
+                    ]
+
                     Button rail_expand {
-                      icon-name: "pan-end-symbolic";
-                      tooltip-text: _("Expand Sidebar");
+                      icon-name: "canto-library-symbolic";
+                      tooltip-text: _("Expand Your Library");
                       action-name: "win.sidebar-rail";
                       focus-on-click: false;
                       can-focus: false;
@@ -327,15 +333,18 @@ Adw.ApplicationWindow window {
               // Content panel. In a ClipBin, so the panels are never squeezed
               // for it while they slide (see shell/layout/clip_bin.rs)
               content: $ClipBin {
-                child: Box content_panel {
-                  orientation: vertical;
-
-                  $AppHeaderBar app_header {}
-
-                  Stack content_stack {
+                // The page's own bar floats over it: album, playlist and artist
+              // pages run up under it, see-through until scrolled
+              child: Overlay content_panel {
+                  child: Stack content_stack {
                     hexpand: true;
                     vexpand: true;
                     transition-type: slide_left_right;
+                  };
+
+                  [overlay]
+                  $AppHeaderBar app_header {
+                    valign: start;
                   }
                 };
               };

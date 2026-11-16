@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 16:29-0300\n"
+"POT-Creation-Date: 2026-11-16 19:27-0300\n"
 "Language: id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -17,7 +17,7 @@ msgstr "Lihat album"
 
 #. translators: This is part of a contextual menu attached to a single track; the intent is to copy the link (public URL) to a specific track.
 #: src/app/components/labels.rs:11
-#: src/app/components/widgets/details_page/header.blp:183
+#: src/app/components/widgets/details_page/header.blp:187
 msgid "Copy Link"
 msgstr "Salin tautan"
 
@@ -153,7 +153,7 @@ msgstr "Anda tidak memiliki daftar putar yang disimpan."
 #: src/app/components/shell/mini_player.rs:168
 #: src/app/components/shell/mini_player.rs:240
 #: src/app/components/widgets/details_page/header.rs:249
-#: src/app/components/widgets/details_page/header.blp:144
+#: src/app/components/widgets/details_page/header.blp:148
 msgid "Play"
 msgstr "Putar"
 
@@ -161,7 +161,7 @@ msgstr "Putar"
 #: src/app/components/labels.rs:77
 #: src/app/components/pages/shortcuts/shortcuts.blp:50
 #: src/app/components/shell/playback/playback_controls.blp:15
-#: src/app/components/widgets/details_page/header.blp:157
+#: src/app/components/widgets/details_page/header.blp:161
 msgid "Shuffle"
 msgstr "Acak"
 
@@ -198,6 +198,7 @@ msgstr "Daftar Putar Baru"
 #. translators: An album in the back/forward history menu, while its name is loading.
 #: src/app/components/labels.rs:95 src/app/components/labels.rs:180
 #: src/app/components/shell/command_palette/widget.rs:693
+#: src/app/components/shell/navigation_panel/model.rs:537
 #: src/app/components/pages/settings/settings.blp:254
 #, fuzzy
 msgid "Album"
@@ -229,7 +230,7 @@ msgstr "Normal"
 #. translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
 #: src/app/components/labels.rs:110
 #: src/app/components/shell/command_palette/widget.rs:577
-#: src/app/components/shell/playback/playback_widget.blp:475 src/window.blp:387
+#: src/app/components/shell/playback/playback_widget.blp:475 src/window.blp:393
 msgid "Start Track Radio"
 msgstr ""
 
@@ -291,6 +292,7 @@ msgstr "{} oleh {}"
 #. translators: An artist in the back/forward history menu, while their name is loading.
 #: src/app/components/labels.rs:182
 #: src/app/components/shell/command_palette/widget.rs:694
+#: src/app/components/shell/navigation_panel/model.rs:561
 #, fuzzy
 msgid "Artist"
 msgstr "Artis"
@@ -299,6 +301,8 @@ msgstr "Artis"
 #: src/app/components/labels.rs:184
 #: src/app/components/pages/details_playlist/model.rs:154
 #: src/app/components/shell/command_palette/widget.rs:695
+#: src/app/components/shell/navigation_panel/model.rs:143
+#: src/app/components/shell/navigation_panel/model.rs:504
 #, fuzzy
 msgid "Playlist"
 msgstr "Daftar putar"
@@ -311,7 +315,7 @@ msgstr ""
 #. translators: The search page in the back/forward history menu.
 #: src/app/components/labels.rs:188
 #: src/app/components/shell/command_palette/widget.rs:492
-#: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:176
+#: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:187
 #, fuzzy
 msgid "Search"
 msgstr "Cari Spotify."
@@ -464,11 +468,13 @@ msgstr "Trek"
 #: src/app/components/shell/command_palette/widget.rs:510
 #: src/app/components/shell/navigation/factory.rs:82
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:77
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:273
 #: src/app/components/pages/shortcuts/shortcuts.blp:89
 msgid "Artists"
 msgstr "Artis"
 
 #: src/app/components/pages/search/search.rs:442
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:272
 #: src/app/models/card_enums.rs:173
 #: src/app/components/pages/shortcuts/shortcuts.blp:94
 msgid "Albums"
@@ -479,6 +485,7 @@ msgstr "Album"
 #: src/app/components/shell/command_palette/widget.rs:519
 #: src/app/components/shell/navigation/factory.rs:71
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:75
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:271
 #: src/app/components/pages/shortcuts/shortcuts.blp:99
 msgid "Playlists"
 msgstr "Daftar putar"
@@ -683,7 +690,7 @@ msgid "Open"
 msgstr ""
 
 #: src/app/components/shell/command_palette/command_palette.blp:5
-#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:382
+#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:388
 msgid "Command Palette"
 msgstr ""
 
@@ -1083,26 +1090,26 @@ msgstr "Selanjutnya"
 msgid "Open Canto"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:133
+#: src/app/components/shell/navigation_panel/model.rs:182
 msgid "Unnamed Playlist"
 msgstr "Daftar putar tanpa nama"
 
-#: src/app/components/shell/navigation_panel/model.rs:484
+#: src/app/components/shell/navigation_panel/model.rs:572
 #, fuzzy
 msgid "Pinned Playlist"
 msgstr "Daftar putar tanpa nama"
 
-#: src/app/components/shell/navigation_panel/model.rs:485
+#: src/app/components/shell/navigation_panel/model.rs:573
 #, fuzzy
 msgid "Pinned Album"
 msgstr "Lihat album"
 
-#: src/app/components/shell/navigation_panel/model.rs:486
+#: src/app/components/shell/navigation_panel/model.rs:574
 #, fuzzy
 msgid "Pinned Artist"
 msgstr "Artis"
 
-#: src/app/components/shell/navigation_panel/model.rs:487
+#: src/app/components/shell/navigation_panel/model.rs:575
 #, fuzzy
 msgid "Pinned Track"
 msgstr "Trek yang disimpan"
@@ -1116,7 +1123,8 @@ msgid "Pinned"
 msgstr ""
 
 #. Translators: title of the dialog that creates a new playlist
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:257
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:210
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:362
 #: src/app/components/widgets/playlist_dialog/playlist_dialog.blp:7
 msgid "New Playlist"
 msgstr "Daftar Putar Baru"
@@ -1137,7 +1145,7 @@ msgstr "Backend Audio"
 
 #: src/app/components/shell/window/close_dialog.rs:17
 #: src/app/components/pages/settings/settings.blp:102
-#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:421
+#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:427
 msgid "Quit"
 msgstr "Keluar"
 
@@ -1146,7 +1154,7 @@ msgid "Remember my choice"
 msgstr ""
 
 #: src/app/components/widgets/details_page/header.rs:406
-#: src/app/components/widgets/details_page/header.blp:170
+#: src/app/components/widgets/details_page/header.blp:174
 #, fuzzy
 msgid "Add to Library"
 msgstr "Simpan ke pustaka"
@@ -2091,15 +2099,15 @@ msgstr ""
 msgid "Toggle Sidebar"
 msgstr ""
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:118 src/window.blp:210
+#: src/app/components/pages/shortcuts/shortcuts.blp:118 src/window.blp:146
 msgid "Main Menu"
 msgstr ""
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:394
+#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:400
 msgid "Preferences"
 msgstr "Preferensi"
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:399
+#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:405
 msgid "Keyboard Shortcuts"
 msgstr ""
 
@@ -2248,7 +2256,7 @@ msgstr ""
 msgid "Filters"
 msgstr ""
 
-#: src/app/components/widgets/details_page/header.blp:200
+#: src/app/components/widgets/details_page/header.blp:204
 msgid "More Options"
 msgstr ""
 
@@ -2257,39 +2265,40 @@ msgid "Remove"
 msgstr "Buang"
 
 #. Translators: Tooltip of the top bar button that opens the home page.
-#: src/window.blp:157
+#: src/window.blp:168
 msgid "Home"
 msgstr ""
 
 #. Translators: Placeholder of the search field in the top bar.
-#: src/window.blp:193
+#: src/window.blp:204
 msgid "What do you want to play?"
 msgstr ""
 
-#: src/window.blp:264
-msgid "Expand Sidebar"
-msgstr ""
+#: src/window.blp:270
+#, fuzzy
+msgid "Expand Your Library"
+msgstr "Pustaka"
 
 #. Translators: Title of the left panel, which lists the user's playlists, albums and artists.
-#: src/window.blp:286
+#: src/window.blp:292
 #, fuzzy
 msgid "Your Library"
 msgstr "Pustaka"
 
-#: src/window.blp:297
+#: src/window.blp:303
 msgid "Collapse Sidebar"
 msgstr ""
 
-#: src/window.blp:404
+#: src/window.blp:410
 msgid "Report Issue"
 msgstr ""
 
-#: src/window.blp:409
+#: src/window.blp:415
 #, fuzzy
 msgid "About Canto"
 msgstr "Tentang"
 
-#: src/window.blp:416
+#: src/window.blp:422
 msgid "Log Out"
 msgstr "Log keluar"
 

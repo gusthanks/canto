@@ -74,6 +74,7 @@ impl WindowLayout {
         let utility_handle: gtk::Widget = utility_widget.resize_handle().clone().upcast();
         let header: AppHeaderBar = builder.object("app_header").unwrap();
         // Back and forward live in the window's top bar
+        header.set_content(&builder.object::<gtk::Widget>("content_stack").unwrap());
         let history_slot: gtk::Box = builder.object("top_history").unwrap();
         header.set_history_slot(&history_slot);
         header.set_top_search(

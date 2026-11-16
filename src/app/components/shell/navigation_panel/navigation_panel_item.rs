@@ -195,6 +195,12 @@ mod imp {
         /// Cover URL of a playlist, album, artist or track; empty for none.
         #[property(get, set)]
         pub image: RefCell<String>,
+        /// The line under the title ("Playlist • owner"); empty for none.
+        #[property(get, set)]
+        pub subtitle: RefCell<String>,
+        /// Pinned to the top of the library: a pin before the subtitle.
+        #[property(get, set)]
+        pub pinned: Cell<bool>,
     }
 
     #[glib::object_subclass]

@@ -43,6 +43,11 @@ impl PageHeader {
             .update_page(&self.name, |page| page.subtitle = subtitle.to_string());
     }
 
+    /// The page runs up under the bar (see `AppHeaderBar::apply_floating`).
+    pub fn set_floating(&self, floats: bool) {
+        self.widget.update_page(&self.name, |page| page.floats = floats);
+    }
+
     pub fn set_title_revealed(&self, revealed: bool) {
         let mut changed = false;
         self.widget.update_page(&self.name, |page| {
