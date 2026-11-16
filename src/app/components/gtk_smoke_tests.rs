@@ -255,4 +255,42 @@ fn dump_now_panel_sample() {
     pump(1500);
     distinct_colors(window.upcast_ref(), "player-bar-sample");
     window.destroy();
+
+    // An album header over its cover tint
+    let css = gtk::CssProvider::new();
+    css.load_from_resource("/dev/diegovsky/Riff/components/details_page/style.css");
+    gtk::style_context_add_provider_for_display(
+        &gtk::gdk::Display::default().unwrap(),
+        &css,
+        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+    );
+    let header_widget: super::DetailsHeaderWidget = glib::Object::new();
+    let header = super::DetailsHeader::for_widget(
+        header_widget.clone(),
+        super::HeaderImageShape::Square,
+    );
+    header.set_caption("Album");
+    header.set_title("ESSÊNCIA DE RISCO");
+    header.set_subtitle("Niink, Supernova Ent · 2026 · 18 songs");
+    header.connect_play(|| {});
+    header.connect_shuffle(|| {});
+    header.set_like_visible(true);
+    let page = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    page.add_css_class("details-page-content");
+    page.add_css_class("details-page--loaded");
+    let clamp = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    clamp.add_css_class("details-header-clamp");
+    clamp.append(&header_widget);
+    page.append(&clamp);
+    let filler = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    filler.set_vexpand(true);
+    page.append(&filler);
+    super::set_tint(&page, Some("#b0281e"));
+    let window = gtk::Window::new();
+    window.set_default_size(900, 600);
+    window.set_child(Some(&page));
+    window.present();
+    pump(1500);
+    distinct_colors(window.upcast_ref(), "album-header-sample");
+    window.destroy();
 }

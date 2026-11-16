@@ -15,6 +15,7 @@ mod header;
 mod model;
 mod section;
 mod subtitle_links;
+mod tint;
 mod traits;
 mod widget;
 
@@ -28,6 +29,9 @@ pub use widget::*;
 
 /// Size (in pixels) used to fetch and display the header artwork.
 pub(super) const HEADER_IMAGE_SIZE: i32 = 200;
+
+#[cfg(test)]
+pub(crate) use tint::set_tint;
 
 /// Register GObject widget types for this module (called at app startup).
 pub fn expose_widgets() {

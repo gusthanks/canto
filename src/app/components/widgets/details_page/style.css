@@ -128,9 +128,33 @@
   color: @accent_fg_color;
 }
 
-/* Header title */
+/* Header title: big and heavy, like Spotify's */
 .details-header__title {
-  font-weight: bold;
+  font-size: 2.6rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+/* Big round play button in the page's accent color */
+.details-page--loaded .details-header .play__button {
+  min-width: 52px;
+  min-height: 52px;
+  -gtk-icon-size: 22px;
+  background-color: @accent_bg_color;
+  color: @accent_fg_color;
+  box-shadow: 0 4px 14px alpha(black, 0.3);
+  transition: transform 150ms ease, filter 150ms ease;
+}
+
+.details-page--loaded .details-header .play__button:hover {
+  filter: brightness(1.08);
+  transform: scale(1.04);
+}
+
+/* The cover's own shadow, over the tint */
+.details-page--loaded .details-header__image-box {
+  box-shadow: 0 10px 30px alpha(black, 0.4);
 }
 
 /* Caption that links somewhere (the album on Now Playing) */

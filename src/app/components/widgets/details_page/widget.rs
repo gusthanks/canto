@@ -133,6 +133,8 @@ impl DetailsPage {
             glib::MainContext::default().spawn_local(async move {
                 let texture = api_service.load_image(&url, size, size, tag).await;
                 if let (Some(scroll_child), Some(ref texture)) = (weak.upgrade(), texture) {
+                    let tint = crate::app::theme::extract_cover_accent_from_texture(texture);
+                    super::tint::set_tint(&scroll_child, tint.as_deref());
                     if let Some(header) = weak_header.upgrade() {
                         let imp = header.imp();
                         imp.image.set_paintable(Some(texture));
