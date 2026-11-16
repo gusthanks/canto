@@ -44,10 +44,11 @@ struct LoggingMiddleware;
 impl Middleware for LoggingMiddleware {
     async fn handle(
         &self,
-        req: Request,
+        mut req: Request,
         extensions: &mut Extensions,
         next: Next<'_>,
     ) -> reqwest_middleware::Result<Response> {
+        give_bodyless_writes_a_length(&mut req);
         let method = req.method().clone();
         let host = req.url().host_str().unwrap_or("unknown-host").to_string();
         let endpoint = endpoint_for_log(req.url());
@@ -69,6 +70,22 @@ impl Middleware for LoggingMiddleware {
         }
 
         result
+    }
+}
+
+/// Spotify answers "411 Length Required" to a PUT or POST sent without a body
+/// (pause, next, previous, seek, repeat, shuffle, volume...), so those get an
+/// explicitly empty one.
+fn give_bodyless_writes_a_length(req: &mut Request) {
+    let writes = matches!(
+        *req.method(),
+        reqwest::Method::PUT | reqwest::Method::POST | reqwest::Method::PATCH
+    );
+    if writes && req.body().is_none() {
+        *req.body_mut() = Some(reqwest::Body::from(Vec::<u8>::new()));
+        req.headers_mut()
+            .entry(reqwest::header::CONTENT_LENGTH)
+            .or_insert(reqwest::header::HeaderValue::from_static("0"));
     }
 }
 
@@ -158,6 +175,25 @@ mod tests {
             builder = builder.header(*name, *value);
         }
         Response::from(builder.body(Vec::<u8>::new()).unwrap())
+    }
+
+    #[test]
+    fn bodyless_writes_get_an_empty_body_and_length() {
+        let url = Url::parse("https://api.spotify.com/v1/me/player/pause").unwrap();
+        let mut put = Request::new(reqwest::Method::PUT, url.clone());
+        give_bodyless_writes_a_length(&mut put);
+        assert_eq!(put.body().and_then(|b| b.as_bytes()), Some(&[][..]));
+        assert_eq!(put.headers()[reqwest::header::CONTENT_LENGTH], "0");
+
+        let mut get = Request::new(reqwest::Method::GET, url.clone());
+        give_bodyless_writes_a_length(&mut get);
+        assert!(get.body().is_none());
+
+        let mut with_body = Request::new(reqwest::Method::PUT, url);
+        *with_body.body_mut() = Some(reqwest::Body::from("{}"));
+        give_bodyless_writes_a_length(&mut with_body);
+        assert_eq!(with_body.body().and_then(|b| b.as_bytes()), Some(&b"{}"[..]));
+        assert!(with_body.headers().get(reqwest::header::CONTENT_LENGTH).is_none());
     }
 
     #[test]
