@@ -128,147 +128,223 @@ Adw.ApplicationWindow window {
       }
     }
 
-    Adw.ToastOverlay toast_overlay {
+    // The window's top bar, across the panels: back and forward, home and
+    // a big search field in the middle, the main menu at the end
+    Box {
+      orientation: vertical;
       vexpand: true;
 
-      // Bottom sheet
-      // The queue, in narrow windows: opened from the player bar's queue
-      // button, with no bar of its own at the bottom
-      Adw.BottomSheet bottom_sheet {
-        reveal-bottom-bar: false;
-        full-width: false;
-
-        // Dropped by the narrow breakpoints (see shell/layout)
+      Adw.HeaderBar top_bar {
         styles [
-          "bottom-sheet--padded",
+          "top-bar",
         ]
 
-        content: Adw.OverlaySplitView utility_split {
-          sidebar-position: end;
-          show-sidebar: false;
-          pin-sidebar: true;
-          sidebar-width-unit: px;
+        Box top_history {
+          spacing: 2;
+        }
 
-          // An OverlaySplitView collapses without reparenting its children,
-          // which would rebuild every page
-          content: Adw.OverlaySplitView navigation_split {
-            vexpand: true;
+        title-widget: Adw.Clamp {
+          maximum-size: 460;
+          tightening-threshold: 300;
+          hexpand: true;
+
+          child: Box top_center {
+            spacing: 8;
+
+            Button home_button {
+              icon-name: "go-home-symbolic";
+              /* Translators: Tooltip of the top bar button that opens the home page. */
+              tooltip-text: _("Home");
+              action-name: "app.nav_albums";
+              valign: center;
+              focus-on-click: false;
+              can-focus: false;
+
+              styles [
+                "circular",
+                "top-bar__home",
+              ]
+            }
+
+            Stack top_search_stack {
+              hexpand: true;
+              hhomogeneous: false;
+
+              Button search_button {
+                hexpand: true;
+                valign: center;
+                tooltip-text: _("Search");
+                focus-on-click: false;
+                can-focus: false;
+
+                styles [
+                  "top-bar__search",
+                ]
+
+                child: Box {
+                  spacing: 8;
+
+                  Image {
+                    icon-name: "system-search-symbolic";
+                  }
+
+                  Label {
+                    /* Translators: Placeholder of the search field in the top bar. */
+                    label: _("What do you want to play?");
+                    ellipsize: end;
+                    xalign: 0;
+                  }
+                };
+              }
+
+              Adw.Bin top_search_slot {
+                hexpand: true;
+              }
+            }
+          };
+        };
+
+        [end]
+        MenuButton user {
+          icon-name: "canto-more-symbolic";
+          tooltip-text: _("Main Menu");
+          // Opens with F10
+          primary: true;
+          focus-on-click: false;
+          can-focus: false;
+        }
+      }
+
+      Adw.ToastOverlay toast_overlay {
+        vexpand: true;
+
+        // Bottom sheet
+        // The queue, in narrow windows: opened from the player bar's queue
+        // button, with no bar of its own at the bottom
+        Adw.BottomSheet bottom_sheet {
+          reveal-bottom-bar: false;
+          full-width: false;
+
+          // Dropped by the narrow breakpoints (see shell/layout)
+          styles [
+            "bottom-sheet--padded",
+          ]
+
+          content: Adw.OverlaySplitView utility_split {
+            sidebar-position: end;
+            show-sidebar: false;
             pin-sidebar: true;
             sidebar-width-unit: px;
 
-            // Navigation panel
-            sidebar: Box navigation_panel {
-              Box {
-                orientation: vertical;
-                hexpand: true;
+            // An OverlaySplitView collapses without reparenting its children,
+            // which would rebuild every page
+            content: Adw.OverlaySplitView navigation_split {
+              vexpand: true;
+              pin-sidebar: true;
+              sidebar-width-unit: px;
 
-                // The header of the collapsed sidebar: its buttons move here
-                // (see shell/layout)
-                Box rail_header {
+              // Navigation panel
+              sidebar: Box navigation_panel {
+                Box {
                   orientation: vertical;
-                  visible: false;
-                  spacing: 6;
-                  margin-top: 8;
-                  margin-bottom: 6;
-                  halign: center;
+                  hexpand: true;
 
-                  Button rail_expand {
-                    icon-name: "pan-end-symbolic";
-                    tooltip-text: _("Expand Sidebar");
-                    action-name: "win.sidebar-rail";
-                    focus-on-click: false;
-                    can-focus: false;
+                  // The header of the collapsed sidebar: its buttons move here
+                  // (see shell/layout)
+                  Box rail_header {
+                    orientation: vertical;
+                    visible: false;
+                    spacing: 6;
+                    margin-top: 8;
+                    margin-bottom: 6;
+                    halign: center;
+
+                    Button rail_expand {
+                      icon-name: "pan-end-symbolic";
+                      tooltip-text: _("Expand Sidebar");
+                      action-name: "win.sidebar-rail";
+                      focus-on-click: false;
+                      can-focus: false;
+
+                      styles [
+                        "flat",
+                      ]
+                    }
+                  }
+
+                  Adw.HeaderBar navigation_panel_header {
+                    show-title: false;
+                    show-start-title-buttons: false;
+                    show-end-title-buttons: false;
 
                     styles [
                       "flat",
                     ]
+
+                    Label library_title {
+                      /* Translators: Title of the left panel, which lists the user's playlists, albums and artists. */
+                      label: _("Your Library");
+                      margin-start: 6;
+
+                      styles [
+                        "heading",
+                      ]
+                    }
+
+                    [end]
+                    Button rail_collapse {
+                      icon-name: "pan-start-symbolic";
+                      tooltip-text: _("Collapse Sidebar");
+                      action-name: "win.sidebar-rail";
+                      focus-on-click: false;
+                      can-focus: false;
+                    }
+                  }
+
+                  ScrolledWindow {
+                    hscrollbar-policy: never;
+
+                    ListBox home_listbox {
+                      vexpand: true;
+
+                      styles [
+                        "navigation-sidebar",
+                      ]
+                    }
                   }
                 }
 
-                Adw.HeaderBar navigation_panel_header {
-                  show-title: false;
+                // The drag itself is on the split view (see shell/layout)
+                Box navigation_resize_handle {
+                  width-request: 6;
 
                   styles [
-                    "flat",
+                    "navigation-panel__resize-handle",
                   ]
-
-                  // Back/Forward move here while the sidebar is beside the
-                  // content (see AppHeaderBar::place_history_buttons)
-                  Box history_slot {
-                    visible: false;
-                    spacing: 2;
-                  }
-
-                  Button search_button {
-                    icon-name: "system-search-symbolic";
-                    tooltip-text: _("Search");
-                    focus-on-click: false;
-                    can-focus: false;
-                  }
-
-                  [end]
-                  MenuButton user {
-                    icon-name: "canto-more-symbolic";
-                    tooltip-text: _("Main Menu");
-                    // Opens with F10
-                    primary: true;
-                    focus-on-click: false;
-                    can-focus: false;
-                  }
-
-                  [end]
-                  Button rail_collapse {
-                    icon-name: "pan-start-symbolic";
-                    tooltip-text: _("Collapse Sidebar");
-                    action-name: "win.sidebar-rail";
-                    focus-on-click: false;
-                    can-focus: false;
-                  }
-                }
-
-                ScrolledWindow {
-                  hscrollbar-policy: never;
-
-                  ListBox home_listbox {
-                    vexpand: true;
-
-                    styles [
-                      "navigation-sidebar",
-                    ]
-                  }
-                }
-              }
-
-              // The drag itself is on the split view (see shell/layout)
-              Box navigation_resize_handle {
-                width-request: 6;
-
-                styles [
-                  "navigation-panel__resize-handle",
-                ]
-              }
-            };
-
-            // Content panel. In a ClipBin, so the panels are never squeezed
-            // for it while they slide (see shell/layout/clip_bin.rs)
-            content: $ClipBin {
-              child: Box content_panel {
-                orientation: vertical;
-
-                $AppHeaderBar app_header {}
-
-                Stack content_stack {
-                  hexpand: true;
-                  vexpand: true;
-                  transition-type: slide_left_right;
                 }
               };
-            };
-          };
 
-          // Utility panel
-          sidebar: $UtilityPanelWidget utility_panel {};
-        };
+              // Content panel. In a ClipBin, so the panels are never squeezed
+              // for it while they slide (see shell/layout/clip_bin.rs)
+              content: $ClipBin {
+                child: Box content_panel {
+                  orientation: vertical;
+
+                  $AppHeaderBar app_header {}
+
+                  Stack content_stack {
+                    hexpand: true;
+                    vexpand: true;
+                    transition-type: slide_left_right;
+                  }
+                };
+              };
+            };
+
+            // Utility panel
+            sidebar: $UtilityPanelWidget utility_panel {};
+          };
+        }
       }
     }
 

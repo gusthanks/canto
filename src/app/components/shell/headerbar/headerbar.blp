@@ -14,7 +14,9 @@ template $AppHeaderBar : Adw.Bin {
       hexpand: true;
 
       Adw.HeaderBar main_header {
-        show-end-title-buttons: true;
+        // The window's buttons are in its top bar
+        show-start-title-buttons: false;
+        show-end-title-buttons: false;
         show-back-button: false;
 
         styles [

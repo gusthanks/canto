@@ -96,6 +96,8 @@ mod imp {
 
         /// Sidebar spot for Back/Forward while the sidebar is beside the content.
         pub history_slot: RefCell<Option<gtk::Box>>,
+        /// The top bar's search: the search page's own field goes in the slot
+        pub top_search: RefCell<Option<(gtk::Stack, libadwaita::Bin)>>,
 
         #[template_child]
         pub selection_header: TemplateChild<libadwaita::HeaderBar>,
@@ -299,14 +301,32 @@ impl AppHeaderBar {
         let pages = imp.pages.borrow();
         let page = active.as_deref().and_then(|name| pages.get(name));
 
-        match page.and_then(|page| page.title_widget.as_ref()) {
-            Some(widget) => {
+        let top_search = imp.top_search.borrow().clone();
+        let title_widget = page.and_then(|page| page.title_widget.as_ref());
+        match (title_widget, top_search) {
+            // A page's own title widget (the search field) goes in the top bar
+            (Some(widget), Some((stack, slot))) => {
+                if slot.child().as_ref() != Some(widget) {
+                    // Off the header's own title spot first: one parent at a time
+                    imp.custom_title.set_child(None::<&gtk::Widget>);
+                    slot.set_child(Some(widget));
+                }
+                stack.set_visible_child(&slot);
+                imp.window_title.set_title("");
+                imp.window_title.set_subtitle("");
+                imp.title_stack.set_visible_child(&*imp.window_title);
+            }
+            (Some(widget), None) => {
                 if imp.custom_title.child().as_ref() != Some(widget) {
                     imp.custom_title.set_child(Some(widget));
                 }
                 imp.title_stack.set_visible_child(&*imp.custom_title);
             }
-            None => {
+            (None, top_search) => {
+                if let Some((stack, slot)) = top_search {
+                    slot.set_child(None::<&gtk::Widget>);
+                    stack.set_visible_child(&stack.first_child().unwrap());
+                }
                 imp.custom_title.set_child(None::<&gtk::Widget>);
                 let (title, subtitle, revealed) = page
                     .map(|page| {
@@ -545,6 +565,13 @@ impl AppHeaderBar {
 
     // --- Fixed control signals ---
 
+    pub fn set_top_search(&self, stack: &gtk::Stack, slot: &libadwaita::Bin) {
+        self.imp()
+            .top_search
+            .replace(Some((stack.clone(), slot.clone())));
+        self.render();
+    }
+
     pub fn set_history_slot(&self, slot: &gtk::Box) {
         self.imp().history_slot.replace(Some(slot.clone()));
     }
@@ -662,11 +689,8 @@ impl AppHeaderBar {
 
     // --- Fixed control state ---
 
-    pub fn set_utility_panel_beside(&self, open_beside: bool) {
-        self.imp()
-            .main_header
-            .set_show_end_title_buttons(!open_beside);
-    }
+    /// The window buttons are in the top bar now, whatever the panels do.
+    pub fn set_utility_panel_beside(&self, _open_beside: bool) {}
 
     pub fn set_can_go_back(&self, can_go_back: bool) {
         self.imp().go_back.set_sensitive(can_go_back);

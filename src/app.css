@@ -358,3 +358,37 @@ bottom-sheet.bottom-sheet--padded > sheet {
 .lyrics--fullscreen .lyric-translation {
   font-size: 0.55em;
 }
+
+/* The window's top bar: home and a big search field in the middle */
+.top-bar {
+  min-height: 52px;
+}
+
+.top-bar__home {
+  min-width: 40px;
+  min-height: 40px;
+  background: alpha(currentColor, 0.08);
+}
+
+.top-bar__search {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: alpha(currentColor, 0.08);
+  font-weight: normal;
+}
+
+.top-bar__search:hover {
+  background: alpha(currentColor, 0.12);
+}
+
+.top-bar__search label {
+  opacity: 0.7;
+}
+
+/* The search page's own field, in the top bar */
+.top-bar entry {
+  min-height: 40px;
+  border-radius: 999px;
+  padding: 0 12px;
+}

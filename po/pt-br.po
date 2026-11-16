@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 15:34-0300\n"
+"POT-Creation-Date: 2026-11-16 16:29-0300\n"
 "Language: pt-br\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -68,7 +68,7 @@ msgstr "A seguir na fila"
 #: src/app/components/pages/shortcuts/shortcuts.blp:84
 #: src/app/components/shell/playback/playback_info.blp:18
 #: src/app/components/shell/playback/playback_widget.blp:73
-#: src/app/components/shell/utility_panel/utility_panel.blp:41
+#: src/app/components/shell/utility_panel/utility_panel.blp:43
 msgid "Now Playing"
 msgstr "Tocando agora"
 
@@ -228,7 +228,7 @@ msgstr "Normal"
 #. translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
 #: src/app/components/labels.rs:110
 #: src/app/components/shell/command_palette/widget.rs:577
-#: src/app/components/shell/playback/playback_widget.blp:475 src/window.blp:311
+#: src/app/components/shell/playback/playback_widget.blp:475 src/window.blp:387
 msgid "Start Track Radio"
 msgstr "Iniciar Rádio da Faixa"
 
@@ -311,7 +311,7 @@ msgstr ""
 #. translators: The search page in the back/forward history menu.
 #: src/app/components/labels.rs:188
 #: src/app/components/shell/command_palette/widget.rs:492
-#: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:204
+#: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:176
 msgid "Search"
 msgstr "Buscar"
 
@@ -367,7 +367,7 @@ msgstr "Todas as listas de reprodução"
 #: src/app/components/shell/now_panel/mod.rs:350
 #: src/app/components/shell/fullscreen_lyrics.rs:78
 #: src/app/components/shell/playback/playback_widget.blp:166
-#: src/app/components/shell/utility_panel/utility_panel.blp:53
+#: src/app/components/shell/utility_panel/utility_panel.blp:55
 msgid "Lyrics"
 msgstr "Letra"
 
@@ -395,7 +395,7 @@ msgstr "Não foi possível encontrar a letra desta música."
 #. Translators: Tab label for the queue in utility panel.
 #: src/app/components/pages/queue/component.rs:58
 #: src/app/components/shell/playback/playback_widget.blp:200
-#: src/app/components/shell/utility_panel/utility_panel.blp:47
+#: src/app/components/shell/utility_panel/utility_panel.blp:49
 msgid "Queue"
 msgstr "Fila"
 
@@ -688,8 +688,8 @@ msgstr ""
 #: src/app/components/shell/clipboard_import/mod.rs:116
 #: src/app/components/widgets/queue_list/model.rs:261
 #: src/app/components/pages/queue/queue_page.blp:19
-#: src/app/components/shell/headerbar/headerbar.blp:116
-#: src/app/components/shell/utility_panel/utility_panel.blp:77
+#: src/app/components/shell/headerbar/headerbar.blp:118
+#: src/app/components/shell/utility_panel/utility_panel.blp:79
 #: src/app/components/utils.rs:226
 msgid "Cancel"
 msgstr "Cancelar"
@@ -699,7 +699,7 @@ msgid "Open"
 msgstr ""
 
 #: src/app/components/shell/command_palette/command_palette.blp:5
-#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:306
+#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:382
 msgid "Command Palette"
 msgstr "Paleta de Comandos"
 
@@ -1133,7 +1133,7 @@ msgstr "Backend de áudio"
 
 #: src/app/components/shell/window/close_dialog.rs:17
 #: src/app/components/pages/settings/settings.blp:102
-#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:345
+#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:421
 msgid "Quit"
 msgstr "Fechar"
 
@@ -1380,10 +1380,10 @@ msgstr "Traduzir letra"
 #. Translators: Button label. Selects all visible songs.
 #. translators: Button label. Selects all visible songs.
 #: src/app/components/pages/queue/queue_page.blp:34
-#: src/app/components/shell/headerbar/headerbar.blp:129
+#: src/app/components/shell/headerbar/headerbar.blp:131
 #: src/app/components/pages/queue/widget.rs:113
-#: src/app/components/shell/headerbar/widget.rs:706
-#: src/app/components/shell/utility_panel/utility_panel.blp:85
+#: src/app/components/shell/headerbar/widget.rs:730
+#: src/app/components/shell/utility_panel/utility_panel.blp:87
 #: src/app/components/shell/utility_panel/widget.rs:153
 msgid "Select All"
 msgstr "Selecionar todas"
@@ -1923,7 +1923,9 @@ msgstr "Genius (Créditos e Notas)"
 msgid ""
 "Optional Client Access Token to show producers, writers and featured artists "
 "in the Now Playing panel."
-msgstr "Token opcional para mostrar produtores, compositores e participações no painel Tocando agora."
+msgstr ""
+"Token opcional para mostrar produtores, compositores e participações no "
+"painel Tocando agora."
 
 #: src/app/components/pages/settings/settings.blp:456
 msgid "How to get token"
@@ -1943,7 +1945,11 @@ msgid ""
 "free route isn't official and may stop working; a Google Cloud API key "
 "(500,000 characters a month free, a billing account required) makes it "
 "reliable."
-msgstr "A letra é traduzida pelo Google Tradutor de graça, sem chave. Esse caminho grátis não é oficial e pode parar de funcionar; uma chave da API do Google Cloud (500 mil caracteres por mês grátis, exige conta de faturamento) deixa a tradução garantida."
+msgstr ""
+"A letra é traduzida pelo Google Tradutor de graça, sem chave. Esse caminho "
+"grátis não é oficial e pode parar de funcionar; uma chave da API do Google "
+"Cloud (500 mil caracteres por mês grátis, exige conta de faturamento) deixa "
+"a tradução garantida."
 
 #: src/app/components/pages/settings/settings.blp:474
 msgid "Google Cloud API Key (optional)"
@@ -2089,19 +2095,19 @@ msgstr ""
 
 #. Translators: Tooltip for the button that shows/hides the navigation panel.
 #: src/app/components/pages/shortcuts/shortcuts.blp:109
-#: src/app/components/shell/headerbar/headerbar.blp:34
+#: src/app/components/shell/headerbar/headerbar.blp:36
 msgid "Toggle Sidebar"
 msgstr ""
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:118 src/window.blp:212
+#: src/app/components/pages/shortcuts/shortcuts.blp:118 src/window.blp:210
 msgid "Main Menu"
 msgstr "Menu principal"
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:318
+#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:394
 msgid "Preferences"
 msgstr "Preferências"
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:323
+#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:399
 msgid "Keyboard Shortcuts"
 msgstr "Atalhos de teclado"
 
@@ -2114,12 +2120,12 @@ msgid "Refresh Devices"
 msgstr "Atualizar dispositivos"
 
 #. Translators: Tooltip for the header bar button that navigates back.
-#: src/app/components/shell/headerbar/headerbar.blp:52
+#: src/app/components/shell/headerbar/headerbar.blp:54
 msgid "Back"
 msgstr ""
 
 #. Translators: Tooltip for the header bar button that navigates forward.
-#: src/app/components/shell/headerbar/headerbar.blp:72
+#: src/app/components/shell/headerbar/headerbar.blp:74
 msgid "Forward"
 msgstr ""
 
@@ -2258,23 +2264,38 @@ msgstr ""
 msgid "Remove"
 msgstr "Remover"
 
-#: src/window.blp:177
+#. Translators: Tooltip of the top bar button that opens the home page.
+#: src/window.blp:157
+msgid "Home"
+msgstr "Início"
+
+#. Translators: Placeholder of the search field in the top bar.
+#: src/window.blp:193
+msgid "What do you want to play?"
+msgstr "O que você quer ouvir?"
+
+#: src/window.blp:264
 msgid "Expand Sidebar"
 msgstr "Expandir barra lateral"
 
-#: src/window.blp:222
+#. Translators: Title of the left panel, which lists the user's playlists, albums and artists.
+#: src/window.blp:286
+msgid "Your Library"
+msgstr "Sua Biblioteca"
+
+#: src/window.blp:297
 msgid "Collapse Sidebar"
 msgstr "Recolher barra lateral"
 
-#: src/window.blp:328
+#: src/window.blp:404
 msgid "Report Issue"
 msgstr ""
 
-#: src/window.blp:333
+#: src/window.blp:409
 msgid "About Canto"
 msgstr "Sobre o Canto"
 
-#: src/window.blp:340
+#: src/window.blp:416
 msgid "Log Out"
 msgstr "Sair"
 
@@ -2284,7 +2305,7 @@ msgstr ""
 
 #. translators: Button label. Deselects all songs, once they are all selected.
 #: src/app/components/pages/queue/widget.rs:110
-#: src/app/components/shell/headerbar/widget.rs:703
+#: src/app/components/shell/headerbar/widget.rs:727
 #: src/app/components/shell/utility_panel/widget.rs:150
 msgid "Deselect All"
 msgstr "Desmarcar todas"
@@ -2382,9 +2403,6 @@ msgstr "Não é possível enfileirar ao tocar em outro dispositivo"
 
 #~ msgid "Credits, samples, and liner notes"
 #~ msgstr "Créditos, samples e notas da faixa"
-
-#~ msgid "Home"
-#~ msgstr "Início"
 
 #~ msgid "Go to Now Playing overview"
 #~ msgstr "Ir para a visão geral de Tocando Agora"

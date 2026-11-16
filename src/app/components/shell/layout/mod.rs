@@ -60,9 +60,6 @@ struct RailWidgets {
     handle: gtk::Widget,
     header: libadwaita::HeaderBar,
     rail_header: gtk::Box,
-    search: gtk::Widget,
-    menu: gtk::Widget,
-    collapse: gtk::Widget,
 }
 
 impl WindowLayout {
@@ -76,8 +73,13 @@ impl WindowLayout {
         let utility_widget: UtilityPanelWidget = builder.object("utility_panel").unwrap();
         let utility_handle: gtk::Widget = utility_widget.resize_handle().clone().upcast();
         let header: AppHeaderBar = builder.object("app_header").unwrap();
-        let history_slot: gtk::Box = builder.object("history_slot").unwrap();
+        // Back and forward live in the window's top bar
+        let history_slot: gtk::Box = builder.object("top_history").unwrap();
         header.set_history_slot(&history_slot);
+        header.set_top_search(
+            &builder.object("top_search_stack").unwrap(),
+            &builder.object("top_search_slot").unwrap(),
+        );
         let window: libadwaita::ApplicationWindow = builder.object("window").unwrap();
 
         let rail = RailWidgets {
@@ -85,9 +87,6 @@ impl WindowLayout {
             handle: navigation_handle.clone(),
             header: builder.object("navigation_panel_header").unwrap(),
             rail_header: builder.object("rail_header").unwrap(),
-            search: builder.object("search_button").unwrap(),
-            menu: builder.object("user").unwrap(),
-            collapse: builder.object("rail_collapse").unwrap(),
         };
 
         let navigation = Panel::new(NAVIGATION_PANEL, navigation_split.clone(), Edge::Start);
@@ -385,8 +384,8 @@ impl WindowLayout {
         self.apply();
     }
 
-    /// Moves the sidebar's buttons between its header and the rail's, and
-    /// marks the sidebar so its rows show covers and icons only.
+    /// Swaps the sidebar's header for the rail's, and marks the sidebar so its
+    /// rows show covers and icons only.
     fn apply_rail(&self) {
         let rail = self.navigation.is_rail();
         let w = &self.rail;
@@ -395,22 +394,8 @@ impl WindowLayout {
         }
         if rail {
             w.sidebar.add_css_class(RAIL_CLASS);
-            w.header.remove(&w.search);
-            w.header.remove(&w.menu);
-            w.rail_header.append(&w.search);
-            w.rail_header.append(&w.menu);
-            w.search.add_css_class("flat");
-            w.menu.add_css_class("flat");
         } else {
             w.sidebar.remove_css_class(RAIL_CLASS);
-            w.rail_header.remove(&w.search);
-            w.rail_header.remove(&w.menu);
-            w.search.remove_css_class("flat");
-            w.menu.remove_css_class("flat");
-            w.header.remove(&w.collapse);
-            w.header.pack_start(&w.search);
-            w.header.pack_end(&w.menu);
-            w.header.pack_end(&w.collapse);
         }
         w.header.set_visible(!rail);
         w.rail_header.set_visible(rail);
@@ -424,10 +409,7 @@ impl WindowLayout {
         self.navigation
             .set_content_min_width(self.content_min_width());
         let navigation = &self.navigation.split;
-        self.header
-            .place_history_buttons(
-                navigation.shows_sidebar() && !navigation.is_collapsed() && !self.navigation.is_rail(),
-            );
+        self.header.place_history_buttons(true);
         self.header.set_compact_allowed(
             (navigation.is_collapsed() || !navigation.shows_sidebar())
                 && !self.collapsing_navigation.get(),

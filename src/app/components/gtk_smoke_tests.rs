@@ -248,6 +248,44 @@ fn dump_now_panel_sample() {
     distinct_colors(window.upcast_ref(), "now-panel-sample");
     window.destroy();
 
+    // The main window's frame: top bar over the sidebar and content
+    let builder = gtk::Builder::from_resource("/dev/diegovsky/Riff/window.ui");
+    let main: libadwaita::ApplicationWindow = builder.object("window").unwrap();
+    for id in ["top_bar", "top_history", "home_button", "search_button", "top_search_slot", "user"] {
+        assert!(builder.object::<glib::Object>(id).is_some(), "{id} must exist");
+    }
+    let header: super::AppHeaderBar = builder.object("app_header").unwrap();
+    header.set_history_slot(&builder.object("top_history").unwrap());
+    header.place_history_buttons(true);
+    main.set_default_size(1180, 640);
+    main.present();
+    pump(1500);
+    distinct_colors(main.upcast_ref(), "main-window-sample");
+
+    // The search page's field takes the pill's place in the top bar
+    header.set_top_search(
+        &builder.object("top_search_stack").unwrap(),
+        &builder.object("top_search_slot").unwrap(),
+    );
+    let field = gtk::SearchEntry::new();
+    let registrar = super::HeaderRegistrar::new(header.clone(), Default::default());
+    let search_header = registrar.page("search");
+    search_header.set_title_widget(&field);
+    header.set_active("search");
+    let slot: libadwaita::Bin = builder.object("top_search_slot").unwrap();
+    assert_eq!(
+        libadwaita::prelude::BinExt::child(&slot).as_ref(),
+        Some(field.upcast_ref::<gtk::Widget>())
+    );
+    let stack: gtk::Stack = builder.object("top_search_stack").unwrap();
+    assert_eq!(stack.visible_child().as_ref(), Some(slot.upcast_ref::<gtk::Widget>()));
+    field.set_placeholder_text(Some("Search field"));
+    pump(1500);
+    distinct_colors(main.upcast_ref(), "main-window-search-sample");
+    header.set_active("other");
+    assert!(libadwaita::prelude::BinExt::child(&slot).is_none());
+    main.destroy();
+
     // Lyrics with a translation under each line
     let lyrics: LyricsPageWidget = glib::Object::new();
     let lines = ["Eu vim do nada", "", "Hoje eu tô aqui"];
