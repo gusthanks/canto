@@ -39,6 +39,10 @@ mod imp {
 
         pub line_widgets: RefCell<Vec<gtk::Widget>>,
         pub active_index: RefCell<Option<usize>>,
+        /// The synced lines' text, for the word-by-word highlight.
+        pub line_texts: RefCell<Vec<String>>,
+        /// How many words of the active line are lit.
+        pub words_lit: Cell<usize>,
         pub scroll_anim: RefCell<Option<libadwaita::TimedAnimation>>,
         pub manual_scroll_until: Cell<Option<Instant>>,
     }
@@ -176,6 +180,8 @@ impl LyricsPageWidget {
             imp.lyrics_container.remove(&child);
         }
         imp.line_widgets.borrow_mut().clear();
+        imp.line_texts.borrow_mut().clear();
+        imp.words_lit.set(0);
         imp.active_index.replace(None);
 
         let is_synced = match lyrics {
@@ -203,6 +209,7 @@ impl LyricsPageWidget {
                     widgets.push(btn.upcast());
                 }
                 *imp.line_widgets.borrow_mut() = widgets;
+                *imp.line_texts.borrow_mut() = lines.iter().map(|l| l.text.clone()).collect();
                 true
             }
             Lyrics::Plain(lines) => {
@@ -232,12 +239,52 @@ impl LyricsPageWidget {
         imp.lyrics_scroller.vadjustment().set_value(0.0);
     }
 
+    /// The active line and how far into it the song is (0 to 1), lighting
+    /// its words one by one (an estimate: LRC lyrics time lines, not words).
+    pub fn set_position(&self, active: Option<(usize, f64)>) {
+        let index = active.map(|(index, _)| index);
+        self.set_active_line(index);
+        let Some((index, progress)) = active else {
+            return;
+        };
+        let imp = self.imp();
+        let texts = imp.line_texts.borrow();
+        let Some(text) = texts.get(index) else {
+            return;
+        };
+        let lit = riff_api::lyrics::model::words_reached(text, progress);
+        if lit == imp.words_lit.replace(lit) {
+            return;
+        }
+        if let Some(label) = self.line_label(index) {
+            label.set_markup(&karaoke_markup(text, lit));
+        }
+    }
+
+    fn line_label(&self, index: usize) -> Option<gtk::Label> {
+        self.imp()
+            .line_widgets
+            .borrow()
+            .get(index)
+            .and_then(|w| w.downcast_ref::<gtk::Button>().and_then(|b| b.child()))
+            .and_downcast::<gtk::Label>()
+    }
+
     pub fn set_active_line(&self, new_index: Option<usize>) {
         let imp = self.imp();
         let mut active_cell = imp.active_index.borrow_mut();
         if *active_cell == new_index {
             return;
         }
+        // The line left behind shows plain again
+        if let Some(previous) = *active_cell {
+            if let (Some(label), Some(text)) =
+                (self.line_label(previous), imp.line_texts.borrow().get(previous))
+            {
+                label.set_text(text);
+            }
+        }
+        imp.words_lit.set(0);
 
         let widgets = imp.line_widgets.borrow();
 
@@ -310,6 +357,19 @@ impl LyricsPageWidget {
             *imp.scroll_anim.borrow_mut() = Some(anim);
         }
     }
+}
+
+/// The line with its first `lit` words bright and the rest dim.
+pub fn karaoke_markup(text: &str, lit: usize) -> String {
+    let mut words = text.split_whitespace();
+    let sung: Vec<&str> = words.by_ref().take(lit).collect();
+    let rest: Vec<&str> = words.collect();
+    let sung = glib::markup_escape_text(&sung.join(" "));
+    if rest.is_empty() {
+        return sung.to_string();
+    }
+    let rest = glib::markup_escape_text(&rest.join(" "));
+    format!("{sung} <span alpha=\"45%\">{rest}</span>")
 }
 
 pub fn expose_widgets() {

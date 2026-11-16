@@ -40,7 +40,8 @@ impl LyricsPage {
         let settings = gio::Settings::new(SETTINGS);
         let offset_ms = Rc::new(Cell::new(settings.int(LYRICS_OFFSET_MS)));
         widget.set_offset_ms(offset_ms.get());
-        let clock = Rc::new(Clock::new(250));
+        // Often enough for the word-by-word highlight
+        let clock = Rc::new(Clock::new(150));
         let page = Self {
             widget,
             app_model,
@@ -111,7 +112,7 @@ impl LyricsPage {
                         let pos = app_model.get_state().playback.seek_position();
                         let adjusted = adjusted_lyric_position(pos, val);
                         if let Some(l) = lyrics.borrow().as_ref() {
-                            widget.set_active_line(l.active_line_index(adjusted));
+                            widget.set_position(l.line_progress(adjusted));
                         }
                     }
                 }
@@ -206,7 +207,7 @@ impl LyricsPage {
                 };
                 let adjusted = adjusted_lyric_position(pos, offset_ms.get());
                 let is_synced = if let Some(l) = lyrics.borrow().as_ref() {
-                    widget.set_active_line(l.active_line_index(adjusted));
+                    widget.set_position(l.line_progress(adjusted));
                     l.is_synced()
                 } else {
                     false
@@ -249,8 +250,7 @@ impl LyricsPage {
         }
         let adjusted = adjusted_lyric_position(pos, self.offset_ms.get());
         if let Some(l) = self.lyrics.borrow().as_ref() {
-            let active = l.active_line_index(adjusted);
-            self.widget.set_active_line(active);
+            self.widget.set_position(l.line_progress(adjusted));
         }
     }
 
@@ -299,7 +299,7 @@ fn fetch_lyrics_for_current_track(
             let pos = app_model.get_state().playback.seek_position();
             let adjusted = adjusted_lyric_position(pos, offset_ms.get());
             if let Some(l) = lyrics_cell.borrow().as_ref() {
-                widget.set_active_line(l.active_line_index(adjusted));
+                widget.set_position(l.line_progress(adjusted));
             }
         }
         return;
@@ -420,7 +420,7 @@ fn apply_lyrics_to_widget(
         });
         let pos = app_model.get_state().playback.seek_position();
         let adjusted = adjusted_lyric_position(pos, offset_ms.get());
-        widget.set_active_line(l.active_line_index(adjusted));
+        widget.set_position(l.line_progress(adjusted));
 
         if is_synced && widget.is_mapped() && app_model.get_state().playback.is_playing() {
             start_clock_loop(clock, widget, app_model, lyrics_cell, offset_ms);
@@ -470,7 +470,7 @@ fn start_clock_loop(
         }
         let adjusted = adjusted_lyric_position(pos, off.get());
         if let Some(l) = l_cell.borrow().as_ref() {
-            w.set_active_line(l.active_line_index(adjusted));
+            w.set_position(l.line_progress(adjusted));
         };
     });
 }

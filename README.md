@@ -23,7 +23,7 @@
 - **Omarchy Live Theme Integration:** Automatically watches the active Omarchy desktop theme palette and applies changes live without restarting. Also includes curated built-in themes: Neutral (Adwaita), Spotify Green, OLED Dark, Warm Vinyl, and Purple Night.
 - **Built-in DSP Engine:** Gapless playback with a 10-band equalizer (plus quick presets), stereo balance/pan, mono fold-down, and pitch shift.
 - **Now Playing Side Panel:** Big cover, title linking to the album, artists linking to their pages, a like button, a live lyrics preview tinted with the cover color, the next track in the queue, and **Genius** credits (producers, writers, featured artists).
-- **Synced Lyrics:** Real-time synced lyrics via LRCLIB with clickable line seeking and `-100 ms` / `+100 ms` live offset adjustment, in the side panel or full screen over the blurred cover.
+- **Synced Lyrics:** Real-time synced lyrics via LRCLIB with clickable line seeking and `-100 ms` / `+100 ms` live offset adjustment, in the side panel or full screen over the blurred cover. The active line lights up word by word (an estimate: LRCLIB times lines, not words).
 - **Library Sidebar:** Playlist, album and artist covers, and a collapsed mode that keeps only the covers.
 - **`Ctrl+K` Command Palette:** Keyboard-first quick launcher for navigation, theme switching, Spotify Connect device transfer, Sleep Timer presets, Track Radio, and debounced catalog search.
 - **Resilient Track Radio & Smart Queue Continuation:** Launches queues of similar tracks from any track menu, the playback bar, or `Ctrl+K`, with automatic top-tracks and catalog search fallback if `/v1/recommendations` is restricted for newer Spotify apps.
