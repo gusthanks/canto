@@ -264,6 +264,24 @@
       <default>0</default>
       <summary>Manual synced lyrics timing offset in milliseconds</summary>
     </key>
+    <key name="lyrics-highlight" type="s">
+      <choices>
+        <choice value="word"/>
+        <choice value="line"/>
+      </choices>
+      <default>"word"</default>
+      <summary>How the lyric line being sung lights up</summary>
+      <description>"word" lights the words as they are sung; "line" lights the whole line at once.</description>
+    </key>
+    <key name="lyrics-scroll" type="s">
+      <choices>
+        <choice value="follow"/>
+        <choice value="free"/>
+      </choices>
+      <default>"follow"</default>
+      <summary>What the lyrics do after scrolling them by hand</summary>
+      <description>"follow" goes back to the line being sung a few seconds later; "free" stays where you left it until you press Back to Current Line.</description>
+    </key>
     <key name="player-bar-lyrics" type="b">
       <default>true</default>
       <summary>Show the Lyrics button in the player bar</summary>

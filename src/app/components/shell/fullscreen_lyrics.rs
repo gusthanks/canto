@@ -277,12 +277,13 @@ pub(crate) fn sample_for_tests(cover: &gtk::gdk::Texture) -> gtk::Window {
             .map(|(i, text)| LyricLine {
                 start_time_ms: i as u64 * 4000,
                 text: text.to_string(),
+                ..Default::default()
             })
             .collect(),
     );
     lyrics_widget.set_lyrics(&lyrics, |_| {});
     // Halfway through the active line
-    lyrics_widget.set_position(Some((2, 0.5)));
+    lyrics_widget.set_position(Some((2, 5)));
     let view = build_view(None, lyrics_widget.upcast_ref());
     view.title.set_text("TODOS ESSES MANOS");
     view.artist.set_text("Niink, Jotapê, Supernova Ent");

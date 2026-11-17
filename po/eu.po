@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-17 15:20-0300\n"
+"POT-Creation-Date: 2026-11-17 16:20-0300\n"
 "Language: eu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -374,7 +374,7 @@ msgstr "Erreprodukzio-zerrendak"
 #. translators: Title of the full-screen lyrics window.
 #. Translators: Tooltip of the player bar button that shows or hides synced lyrics.
 #. Translators: Tab label for lyrics in utility panel.
-#: src/app/components/pages/lyrics/component.rs:71
+#: src/app/components/pages/lyrics/component.rs:72
 #: src/app/components/shell/now_panel/mod.rs:372
 #: src/app/components/shell/fullscreen_lyrics.rs:101
 #: src/app/components/shell/playback/playback_widget.blp:168
@@ -384,8 +384,8 @@ msgid "Lyrics"
 msgstr ""
 
 #. translators: Short text displayed instead of a track title when nothing plays
-#: src/app/components/pages/lyrics/component.rs:350
-#: src/app/components/pages/lyrics/component.rs:679
+#: src/app/components/pages/lyrics/component.rs:387
+#: src/app/components/pages/lyrics/component.rs:716
 #: src/app/components/shell/playback/playback_info.rs:114
 #: src/app/components/shell/fullscreen_lyrics.rs:212
 #, fuzzy
@@ -393,36 +393,34 @@ msgid "No Track Playing"
 msgstr "Orain erreproduzitzen"
 
 #. Translators: Shown when no lyrics are found.
-#: src/app/components/pages/lyrics/component.rs:498
-#: src/app/components/pages/lyrics/lyrics_page.blp:54
+#: src/app/components/pages/lyrics/component.rs:535
+#: src/app/components/pages/lyrics/lyrics_page.blp:76
 msgid "No Lyrics Available"
 msgstr ""
 
-#: src/app/components/pages/lyrics/component.rs:499
-#: src/app/components/pages/lyrics/lyrics_page.blp:55
+#: src/app/components/pages/lyrics/component.rs:536
+#: src/app/components/pages/lyrics/lyrics_page.blp:77
 msgid "Lyrics couldn't be found for this song."
 msgstr ""
 
-#. Translators: Tooltip of the lyrics button that opens the timing adjustment (make lyrics come earlier or later).
-#. Translators: Heading of the lyrics timing popover.
-#: src/app/components/pages/lyrics/widget.rs:162
-#: src/app/components/pages/lyrics/lyrics_page.blp:98
-#: src/app/components/pages/lyrics/lyrics_page.blp:117
+#. Translators: Heading of the lyrics timing part of the lyrics options popover.
+#: src/app/components/pages/lyrics/widget.rs:200
+#: src/app/components/pages/lyrics/lyrics_page.blp:192
 msgid "Lyrics Timing"
 msgstr ""
 
-#: src/app/components/pages/lyrics/widget.rs:167
+#: src/app/components/pages/lyrics/widget.rs:205
 #, rust-format
 msgid "Lyrics Timing ({})"
 msgstr ""
 
 #. translators: Tooltip of the mark on a lyric line that Genius explains.
-#: src/app/components/pages/lyrics/widget.rs:361
+#: src/app/components/pages/lyrics/widget.rs:407
 msgid "What This Line Means"
 msgstr ""
 
 #. translators: First entry of the lyrics translation languages: the app's own language.
-#: src/app/components/pages/lyrics/widget.rs:390
+#: src/app/components/pages/lyrics/widget.rs:436
 msgid "App Language"
 msgstr ""
 
@@ -886,7 +884,7 @@ msgstr ""
 
 #. Translators: Tooltip of the button in the lyrics that shows them full screen.
 #: src/app/components/shell/command_palette/widget.rs:652
-#: src/app/components/pages/lyrics/lyrics_page.blp:210
+#: src/app/components/pages/lyrics/lyrics_page.blp:286
 msgid "Full-Screen Lyrics"
 msgstr ""
 
@@ -1165,7 +1163,7 @@ msgid "Select a track to play"
 msgstr "Gordetako pistak"
 
 #: src/app/components/shell/now_panel/mod.rs:36
-#: src/app/components/shell/now_panel/mod.rs:1178
+#: src/app/components/shell/now_panel/mod.rs:1179
 #, fuzzy
 msgid "Go to Album"
 msgstr "Albumak"
@@ -1631,39 +1629,80 @@ msgstr ""
 msgid "Loading Lyrics…"
 msgstr ""
 
+#. Translators: Floating button that scrolls the lyrics back to the line being sung.
+#: src/app/components/pages/lyrics/lyrics_page.blp:58
+msgid "Back to Current Line"
+msgstr ""
+
 #. Translators: Button to retry fetching lyrics from LRCLIB.
-#: src/app/components/pages/lyrics/lyrics_page.blp:65
+#: src/app/components/pages/lyrics/lyrics_page.blp:87
 msgid "Reload Lyrics"
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:87
+#: src/app/components/pages/lyrics/lyrics_page.blp:109
 msgid "Reload lyrics"
 msgstr ""
 
+#. Translators: Tooltip of the lyrics button that opens how lyrics light up, scroll and are timed.
+#: src/app/components/pages/lyrics/lyrics_page.blp:120
+msgid "Lyrics Options"
+msgstr ""
+
+#. Translators: Heading in the lyrics options popover: how the line being sung lights up.
+#: src/app/components/pages/lyrics/lyrics_page.blp:139
+msgid "Highlight"
+msgstr ""
+
+#. Translators: Lyrics highlight choice: the words light up one by one as they are sung.
+#: src/app/components/pages/lyrics/lyrics_page.blp:153
+msgid "Word by Word"
+msgstr ""
+
+#. Translators: Lyrics highlight choice: the whole line lights up at once.
+#: src/app/components/pages/lyrics/lyrics_page.blp:159
+msgid "Whole Line"
+msgstr ""
+
+#. Translators: Heading in the lyrics options popover: what the lyrics do after you scroll them by hand.
+#: src/app/components/pages/lyrics/lyrics_page.blp:165
+msgid "After You Scroll"
+msgstr ""
+
+#. Translators: Lyrics scroll choice: a few seconds after scrolling by hand, the lyrics go back to the line being sung.
+#: src/app/components/pages/lyrics/lyrics_page.blp:180
+#, fuzzy
+msgid "Follow the Song"
+msgstr "Erreprodukzio-zerrendara gehitu..."
+
+#. Translators: Lyrics scroll choice: after scrolling by hand, the lyrics stay where you left them until you press Back to Current Line.
+#: src/app/components/pages/lyrics/lyrics_page.blp:186
+msgid "Stay Put"
+msgstr ""
+
 #. Translators: Explanation in the lyrics timing popover.
-#: src/app/components/pages/lyrics/lyrics_page.blp:127
+#: src/app/components/pages/lyrics/lyrics_page.blp:203
 msgid "If the lyrics run ahead of or behind the song, nudge them here."
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:148
+#: src/app/components/pages/lyrics/lyrics_page.blp:224
 msgid "Delay lyrics (-100 ms)"
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:157
+#: src/app/components/pages/lyrics/lyrics_page.blp:233
 msgid "Reset lyrics sync offset"
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:167
+#: src/app/components/pages/lyrics/lyrics_page.blp:243
 msgid "Advance lyrics (+100 ms)"
 msgstr ""
 
 #. Translators: Tooltip of the lyrics button that shows a translation under each line.
-#: src/app/components/pages/lyrics/lyrics_page.blp:188
+#: src/app/components/pages/lyrics/lyrics_page.blp:264
 msgid "Translate Lyrics"
 msgstr ""
 
 #. Translators: Tooltip of the button that picks the language lyrics are translated into.
-#: src/app/components/pages/lyrics/lyrics_page.blp:198
+#: src/app/components/pages/lyrics/lyrics_page.blp:274
 msgid "Translation Language"
 msgstr ""
 

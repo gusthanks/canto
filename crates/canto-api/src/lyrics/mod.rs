@@ -1,4 +1,5 @@
 pub mod cache;
+pub mod lyricsfile;
 pub mod model;
 pub mod parser;
 pub mod service;

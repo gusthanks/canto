@@ -77,7 +77,7 @@ pub fn parse_lrc(input: &str) -> Vec<LyricLine> {
             }
         }
 
-        let text = rest.trim().to_string();
+        let text = strip_word_tags(rest).trim().to_string();
         if text.is_empty() {
             continue;
         }
@@ -86,6 +86,7 @@ pub fn parse_lrc(input: &str) -> Vec<LyricLine> {
             lines.push(LyricLine {
                 start_time_ms: ts,
                 text: text.clone(),
+                ..Default::default()
             });
         }
     }
@@ -101,6 +102,25 @@ pub fn parse_lrc(input: &str) -> Vec<LyricLine> {
 
     lines.sort_by_key(|l| l.start_time_ms);
     lines
+}
+
+/// Drops enhanced-LRC word times (`<00:27.20>`), which would show as text.
+fn strip_word_tags(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(open) = rest.find('<') {
+        let Some(close) = rest[open..].find('>') else {
+            break;
+        };
+        out.push_str(&rest[..open]);
+        let tag = &rest[open + 1..open + close];
+        if parse_timestamp(tag).is_none() {
+            out.push_str(&rest[open..=open + close]);
+        }
+        rest = &rest[open + close + 1..];
+    }
+    out.push_str(rest);
+    out
 }
 
 fn parse_offset_tag(tag: &str) -> Option<i64> {
@@ -356,5 +376,11 @@ mod tests {
         let lines = parse_lrc(lrc_clamp);
         assert_eq!(lines.len(), 1);
         assert_eq!(lines[0].start_time_ms, 0);
+    }
+
+    #[test]
+    fn enhanced_lrc_word_tags_do_not_show() {
+        let lines = parse_lrc("[00:27.17]<00:27.20>I've <00:27.59>been <3");
+        assert_eq!(lines[0].text, "I've been <3");
     }
 }

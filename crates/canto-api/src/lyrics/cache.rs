@@ -4,6 +4,10 @@ use std::path::PathBuf;
 
 use super::model::Lyrics;
 
+/// Bumped when saved lyrics lack something new (v2: word timings), so
+/// they are fetched again.
+const CACHE_VERSION: &str = "v2";
+
 #[derive(Clone, Debug)]
 pub struct LyricsCache {
     root: PathBuf,
@@ -51,11 +55,25 @@ impl LyricsCache {
             })
             .collect();
         let filename = if safe_key.is_empty() {
-            "default.json".to_string()
+            format!("default.{CACHE_VERSION}.json")
         } else {
-            format!("{safe_key}.json")
+            format!("{safe_key}.{CACHE_VERSION}.json")
         };
         self.root.join(filename)
+    }
+
+    /// Lyrics saved by an older Canto (before word timings), for when
+    /// nothing can be fetched.
+    pub fn get_previous(&self, key: &str) -> Option<Lyrics> {
+        let canonical = Self::normalize_key(key);
+        if canonical.is_empty() {
+            return None;
+        }
+        let old = self
+            .cache_path(canonical)
+            .with_extension("")
+            .with_extension("json");
+        serde_json::from_str(&fs::read_to_string(old).ok()?).ok()
     }
 
     pub fn get(&self, key: &str) -> Option<Lyrics> {
@@ -74,7 +92,11 @@ impl LyricsCache {
                 })
                 .collect();
             if !legacy_safe.is_empty() && legacy_safe != canonical {
-                fs::read_to_string(self.root.join(format!("{legacy_safe}.json"))).ok()
+                fs::read_to_string(
+                    self.root
+                        .join(format!("{legacy_safe}.{CACHE_VERSION}.json")),
+                )
+                .ok()
             } else {
                 None
             }
@@ -117,10 +139,12 @@ mod tests {
             LyricLine {
                 start_time_ms: 1000,
                 text: "Hello world".into(),
+                ..Default::default()
             },
             LyricLine {
                 start_time_ms: 5000,
                 text: "Second line".into(),
+                ..Default::default()
             },
         ];
         let lyrics = Lyrics::Synced(lines);
@@ -134,6 +158,23 @@ mod tests {
         assert_eq!(cached, lyrics);
 
         // Clean up
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn lyrics_saved_before_word_timings_are_fetched_again() {
+        let temp_dir = unique_temp_dir("canto_test_cache_v1");
+        let cache = LyricsCache::with_dir(temp_dir.clone());
+        let _ = fs::create_dir_all(&temp_dir);
+        let lyrics = Lyrics::Plain(vec!["old".into()]);
+        fs::write(
+            temp_dir.join("abc.json"),
+            serde_json::to_string(&lyrics).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(cache.get("abc"), None);
+        assert_eq!(cache.get_previous("abc"), Some(lyrics));
+        assert!(cache.cache_path("abc").ends_with("abc.v2.json"));
         let _ = fs::remove_dir_all(&temp_dir);
     }
 

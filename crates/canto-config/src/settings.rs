@@ -52,6 +52,10 @@ pub const APP_LANGUAGE: &str = "app-language";
 pub const APP_THEME: &str = "app-theme";
 pub const ADAPTIVE_COVER_COLORS: &str = "adaptive-cover-colors";
 pub const LYRICS_OFFSET_MS: &str = "lyrics-offset-ms";
+/// "word" lights the words as they are sung, "line" the whole line at once.
+pub const LYRICS_HIGHLIGHT: &str = "lyrics-highlight";
+/// "follow" goes back to the sung line after a scroll by hand, "free" stays.
+pub const LYRICS_SCROLL: &str = "lyrics-scroll";
 pub const NAVIGATION_RAIL: &str = "navigation-rail";
 /// Player bar buttons the user can hide: (settings key, button)
 pub const PLAYER_BAR_LYRICS: &str = "player-bar-lyrics";

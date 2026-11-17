@@ -1137,6 +1137,7 @@ mod tests {
                 .map(|(t, text)| LyricLine {
                     start_time_ms: *t,
                     text: text.to_string(),
+                    ..Default::default()
                 })
                 .collect(),
         )

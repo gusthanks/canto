@@ -4,7 +4,7 @@ use gtk::{gio, glib, CompositeTemplate};
 use libadwaita::prelude::*;
 use libadwaita::subclass::prelude::*;
 use std::cell::{Cell, RefCell};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use canto_api::Lyrics;
 
@@ -44,15 +44,31 @@ mod imp {
         pub translate_button: TemplateChild<gtk::ToggleButton>,
         #[template_child]
         pub translate_language_button: TemplateChild<gtk::MenuButton>,
+        #[template_child]
+        pub highlight_toggle: TemplateChild<libadwaita::ToggleGroup>,
+        #[template_child]
+        pub scroll_toggle: TemplateChild<libadwaita::ToggleGroup>,
+        #[template_child]
+        pub back_to_line_revealer: TemplateChild<gtk::Revealer>,
+        #[template_child]
+        pub back_to_line_button: TemplateChild<gtk::Button>,
 
         pub line_widgets: RefCell<Vec<gtk::Widget>>,
         pub active_index: RefCell<Option<usize>>,
         /// The synced lines' text, for the word-by-word highlight.
         pub line_texts: RefCell<Vec<String>>,
-        /// How many words of the active line are lit.
+        /// How much of the active line is lit, in bytes (`usize::MAX`: not
+        /// drawn yet).
         pub words_lit: Cell<usize>,
         pub scroll_anim: RefCell<Option<libadwaita::TimedAnimation>>,
-        pub manual_scroll_until: Cell<Option<Instant>>,
+        /// The whole line lights at once instead of word by word.
+        pub whole_line: Cell<bool>,
+        /// After a scroll by hand the lyrics stay until asked back.
+        pub stay_put: Cell<bool>,
+        /// Scrolled by hand: the lyrics don't follow the song for now.
+        pub detached: Cell<bool>,
+        /// Brings the lyrics back a moment after the last scroll by hand.
+        pub reattach_source: RefCell<Option<glib::SourceId>>,
     }
 
     #[glib::object_subclass]
@@ -99,21 +115,43 @@ impl Default for LyricsPageWidget {
             }
         });
 
+        // Any scroll by hand: wheel or touchpad, dragging the scrollbar,
+        // dragging the lyrics on a touch screen
         let scroll_controller =
             gtk::EventControllerScroll::new(gtk::EventControllerScrollFlags::VERTICAL);
         let weak_widget = widget.downgrade();
-        scroll_controller.connect_scroll(move |_, _, _| {
-            if let Some(w) = weak_widget.upgrade() {
-                w.imp()
-                    .manual_scroll_until
-                    .set(Some(Instant::now() + Duration::from_secs(3)));
-                if let Some(anim) = w.imp().scroll_anim.borrow_mut().take() {
-                    anim.pause();
-                }
+        scroll_controller.connect_scroll(move |_, _, dy| {
+            if let Some(w) = weak_widget.upgrade().filter(|_| dy != 0.0) {
+                w.detach();
             }
             glib::Propagation::Proceed
         });
         imp.lyrics_scroller.add_controller(scroll_controller);
+        let bar_drag = gtk::GestureDrag::new();
+        bar_drag.set_propagation_phase(gtk::PropagationPhase::Capture);
+        let weak_widget = widget.downgrade();
+        bar_drag.connect_drag_begin(move |_, _, _| {
+            if let Some(w) = weak_widget.upgrade() {
+                w.detach();
+            }
+        });
+        imp.lyrics_scroller.vscrollbar().add_controller(bar_drag);
+        let touch_drag = gtk::GestureDrag::new();
+        touch_drag.set_touch_only(true);
+        touch_drag.set_propagation_phase(gtk::PropagationPhase::Capture);
+        let weak_widget = widget.downgrade();
+        touch_drag.connect_drag_update(move |_, _, dy| {
+            if let Some(w) = weak_widget.upgrade().filter(|_| dy.abs() > 8.0) {
+                w.detach();
+            }
+        });
+        imp.lyrics_scroller.add_controller(touch_drag);
+        let weak_widget = widget.downgrade();
+        imp.back_to_line_button.connect_clicked(move |_| {
+            if let Some(w) = weak_widget.upgrade() {
+                w.reattach();
+            }
+        });
 
         widget
     }
@@ -197,13 +235,13 @@ impl LyricsPageWidget {
         if let Some(anim) = imp.scroll_anim.borrow_mut().take() {
             anim.pause();
         }
-        imp.manual_scroll_until.set(None);
+        self.forget_detach();
         while let Some(child) = imp.lyrics_container.first_child() {
             imp.lyrics_container.remove(&child);
         }
         imp.line_widgets.borrow_mut().clear();
         imp.line_texts.borrow_mut().clear();
-        imp.words_lit.set(0);
+        imp.words_lit.set(usize::MAX);
         imp.active_index.replace(None);
 
         let is_synced = match lyrics {
@@ -223,7 +261,12 @@ impl LyricsPageWidget {
 
                     let seek_ms = line.start_time_ms.min(u64::from(u32::MAX)) as u32;
                     let on_seek_clone = on_seek.clone();
+                    let weak_self = self.downgrade();
                     btn.connect_clicked(move |_| {
+                        // Jumping to a line means following the song again
+                        if let Some(w) = weak_self.upgrade() {
+                            w.forget_detach();
+                        }
                         on_seek_clone(seek_ms);
                     });
 
@@ -260,20 +303,23 @@ impl LyricsPageWidget {
         imp.lyrics_scroller.vadjustment().set_value(0.0);
     }
 
-    /// The active line and how far into it the song is (0 to 1), lighting
-    /// its words one by one (an estimate: LRC lyrics time lines, not words).
-    pub fn set_position(&self, active: Option<(usize, f64)>) {
+    /// The active line and how much of it is sung, in bytes, lighting its
+    /// words one by one (unless the whole line lights at once).
+    pub fn set_position(&self, active: Option<(usize, usize)>) {
         let index = active.map(|(index, _)| index);
         self.set_active_line(index);
-        let Some((index, progress)) = active else {
+        let Some((index, lit)) = active else {
             return;
         };
         let imp = self.imp();
+        if imp.whole_line.get() {
+            return;
+        }
         let texts = imp.line_texts.borrow();
         let Some(text) = texts.get(index) else {
             return;
         };
-        let lit = canto_api::lyrics::model::words_reached(text, progress);
+        let lit = lit.min(text.len());
         if lit == imp.words_lit.replace(lit) {
             return;
         }
@@ -453,7 +499,7 @@ impl LyricsPageWidget {
                 label.set_text(text);
             }
         }
-        imp.words_lit.set(0);
+        imp.words_lit.set(usize::MAX);
 
         let widgets = imp.line_widgets.borrow();
 
@@ -481,14 +527,119 @@ impl LyricsPageWidget {
         }
     }
 
+    /// Word by word (the default) or the whole line at once.
+    pub fn set_word_by_word(&self, on: bool) {
+        let imp = self.imp();
+        imp.whole_line.set(!on);
+        let name = if on { "word" } else { "line" };
+        if imp.highlight_toggle.active_name().as_deref() != Some(name) {
+            imp.highlight_toggle.set_active_name(Some(name));
+        }
+        // Redraw the active line from scratch on the next tick
+        if let Some(index) = *imp.active_index.borrow() {
+            if let (Some(label), Some(text)) =
+                (self.line_label(index), imp.line_texts.borrow().get(index))
+            {
+                label.set_text(text);
+            }
+        }
+        imp.words_lit.set(usize::MAX);
+    }
+
+    pub fn connect_word_by_word_picked<F: Fn(bool) + 'static>(&self, f: F) {
+        self.imp()
+            .highlight_toggle
+            .connect_active_name_notify(move |group| {
+                f(group.active_name().as_deref() != Some("line"))
+            });
+    }
+
+    /// Whether lyrics scrolled by hand stay there until asked back.
+    pub fn set_stay_put(&self, on: bool) {
+        let imp = self.imp();
+        imp.stay_put.set(on);
+        let name = if on { "free" } else { "follow" };
+        if imp.scroll_toggle.active_name().as_deref() != Some(name) {
+            imp.scroll_toggle.set_active_name(Some(name));
+        }
+        if imp.detached.get() {
+            // Re-arm (or drop) the way back for the new choice
+            self.detach();
+        }
+    }
+
+    pub fn connect_stay_put_picked<F: Fn(bool) + 'static>(&self, f: F) {
+        self.imp()
+            .scroll_toggle
+            .connect_active_name_notify(move |group| {
+                f(group.active_name().as_deref() == Some("free"))
+            });
+    }
+
+    /// Scrolled by hand: stop following the song and offer the way back;
+    /// unless it stays put, come back by itself a moment later.
+    pub(crate) fn detach(&self) {
+        let imp = self.imp();
+        if imp.line_texts.borrow().is_empty() {
+            return;
+        }
+        imp.detached.set(true);
+        if let Some(anim) = imp.scroll_anim.borrow_mut().take() {
+            anim.pause();
+        }
+        imp.back_to_line_revealer.set_reveal_child(true);
+        if let Some(source) = imp.reattach_source.take() {
+            source.remove();
+        }
+        if !imp.stay_put.get() {
+            let weak = self.downgrade();
+            let source = glib::timeout_add_local_once(Duration::from_secs(3), move || {
+                if let Some(w) = weak.upgrade() {
+                    // This source is done; forget it without removing it
+                    drop(w.imp().reattach_source.take());
+                    w.reattach();
+                }
+            });
+            imp.reattach_source.replace(Some(source));
+        }
+    }
+
+    /// Follow the song again, scrolling back to the line being sung.
+    pub fn reattach(&self) {
+        self.forget_detach();
+        let imp = self.imp();
+        let active = *imp.active_index.borrow();
+        if let Some(widget) = active.and_then(|i| imp.line_widgets.borrow().get(i).cloned()) {
+            self.scroll_to_line(&widget, true);
+        }
+    }
+
+    fn forget_detach(&self) {
+        let imp = self.imp();
+        imp.detached.set(false);
+        imp.back_to_line_revealer.set_reveal_child(false);
+        if let Some(source) = imp.reattach_source.take() {
+            source.remove();
+        }
+    }
+
+    /// Whether the lyrics stopped following the song (for tests).
+    #[cfg(test)]
+    pub fn is_detached(&self) -> bool {
+        self.imp().detached.get()
+    }
+
+    /// What line `index` shows, with its markup (for tests).
+    #[cfg(test)]
+    pub fn line_markup(&self, index: usize) -> Option<String> {
+        self.line_label(index)
+            .map(|label| label.label().to_string())
+    }
+
     #[allow(deprecated)]
     fn scroll_to_line(&self, widget: &gtk::Widget, animate: bool) {
         let imp = self.imp();
-        if imp
-            .manual_scroll_until
-            .get()
-            .is_some_and(|until| Instant::now() < until)
-        {
+        if imp.detached.get() {
             return;
         }
         let vadjust = imp.lyrics_scroller.vadjustment();
@@ -533,17 +684,22 @@ impl LyricsPageWidget {
     }
 }
 
-/// The line with its first `lit` words bright and the rest dim.
+/// The line with its first `lit` bytes bright and the rest dim.
 pub fn karaoke_markup(text: &str, lit: usize) -> String {
-    let mut words = text.split_whitespace();
-    let sung: Vec<&str> = words.by_ref().take(lit).collect();
-    let rest: Vec<&str> = words.collect();
-    let sung = glib::markup_escape_text(&sung.join(" "));
-    if rest.is_empty() {
-        return sung.to_string();
+    let lit = if text.is_char_boundary(lit) {
+        lit
+    } else {
+        text.len()
+    };
+    let (sung, rest) = text.split_at(lit);
+    if rest.trim().is_empty() {
+        return glib::markup_escape_text(text).to_string();
     }
-    let rest = glib::markup_escape_text(&rest.join(" "));
-    format!("{sung} <span alpha=\"45%\">{rest}</span>")
+    format!(
+        "{}<span alpha=\"45%\">{}</span>",
+        glib::markup_escape_text(sung),
+        glib::markup_escape_text(rest)
+    )
 }
 
 /// Languages lyrics can be translated into, by their own names.

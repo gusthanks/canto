@@ -6,8 +6,8 @@ use crate::app::state::{PlaybackAction, PlaybackEvent};
 use crate::app::{AppEvent, AppModel, Dispatcher};
 use canto_api::Lyrics;
 use canto_config::settings::{
-    APP_LANGUAGE, GOOGLE_TRANSLATE_API_KEY, LYRICS_OFFSET_MS, LYRICS_TRANSLATION,
-    LYRICS_TRANSLATION_LANGUAGE, SETTINGS,
+    APP_LANGUAGE, GOOGLE_TRANSLATE_API_KEY, LYRICS_HIGHLIGHT, LYRICS_OFFSET_MS, LYRICS_SCROLL,
+    LYRICS_TRANSLATION, LYRICS_TRANSLATION_LANGUAGE, SETTINGS,
 };
 use gettextrs::gettext;
 use gio::prelude::SettingsExt;
@@ -43,8 +43,9 @@ impl LyricsPage {
         let settings = gio::Settings::new(SETTINGS);
         let offset_ms = Rc::new(Cell::new(settings.int(LYRICS_OFFSET_MS)));
         widget.set_offset_ms(offset_ms.get());
-        // Often enough for the word-by-word highlight
-        let clock = Rc::new(Clock::new(150));
+        // Often enough for real word timings (each tick only redraws the
+        // line when a word lights)
+        let clock = Rc::new(Clock::new(60));
         let page = Self {
             widget,
             app_model,
@@ -79,6 +80,42 @@ impl LyricsPage {
     }
 
     fn setup_controls(&self) {
+        self.widget
+            .set_word_by_word(self.settings.string(LYRICS_HIGHLIGHT) != "line");
+        self.widget
+            .set_stay_put(self.settings.string(LYRICS_SCROLL) == "free");
+        let settings = self.settings.clone();
+        self.widget.connect_word_by_word_picked(move |on| {
+            let value = if on { "word" } else { "line" };
+            if settings.string(LYRICS_HIGHLIGHT) != value {
+                let _ = settings.set_string(LYRICS_HIGHLIGHT, value);
+            }
+        });
+        let settings = self.settings.clone();
+        self.widget.connect_stay_put_picked(move |on| {
+            let value = if on { "free" } else { "follow" };
+            if settings.string(LYRICS_SCROLL) != value {
+                let _ = settings.set_string(LYRICS_SCROLL, value);
+            }
+        });
+        // The side panel and full screen follow each other's choice
+        self.settings.connect_changed(
+            Some(LYRICS_HIGHLIGHT),
+            clone!(
+                #[weak(rename_to = widget)]
+                self.widget,
+                move |settings, _| widget
+                    .set_word_by_word(settings.string(LYRICS_HIGHLIGHT) != "line")
+            ),
+        );
+        self.settings.connect_changed(
+            Some(LYRICS_SCROLL),
+            clone!(
+                #[weak(rename_to = widget)]
+                self.widget,
+                move |settings, _| widget.set_stay_put(settings.string(LYRICS_SCROLL) == "free")
+            ),
+        );
         self.widget
             .set_translate_active(self.settings.boolean(LYRICS_TRANSLATION));
         let settings_translate = self.settings.clone();
@@ -173,7 +210,7 @@ impl LyricsPage {
                         let pos = app_model.get_state().playback.seek_position();
                         let adjusted = adjusted_lyric_position(pos, val);
                         if let Some(l) = lyrics.borrow().as_ref() {
-                            widget.set_position(l.line_progress(adjusted));
+                            widget.set_position(l.karaoke(adjusted));
                         }
                     }
                 }
@@ -268,7 +305,7 @@ impl LyricsPage {
                 };
                 let adjusted = adjusted_lyric_position(pos, offset_ms.get());
                 let is_synced = if let Some(l) = lyrics.borrow().as_ref() {
-                    widget.set_position(l.line_progress(adjusted));
+                    widget.set_position(l.karaoke(adjusted));
                     l.is_synced()
                 } else {
                     false
@@ -311,7 +348,7 @@ impl LyricsPage {
         }
         let adjusted = adjusted_lyric_position(pos, self.offset_ms.get());
         if let Some(l) = self.lyrics.borrow().as_ref() {
-            self.widget.set_position(l.line_progress(adjusted));
+            self.widget.set_position(l.karaoke(adjusted));
         }
     }
 
@@ -360,7 +397,7 @@ fn fetch_lyrics_for_current_track(
             let pos = app_model.get_state().playback.seek_position();
             let adjusted = adjusted_lyric_position(pos, offset_ms.get());
             if let Some(l) = lyrics_cell.borrow().as_ref() {
-                widget.set_position(l.line_progress(adjusted));
+                widget.set_position(l.karaoke(adjusted));
             }
         }
         return;
@@ -481,7 +518,7 @@ fn apply_lyrics_to_widget(
         });
         let pos = app_model.get_state().playback.seek_position();
         let adjusted = adjusted_lyric_position(pos, offset_ms.get());
-        widget.set_position(l.line_progress(adjusted));
+        widget.set_position(l.karaoke(adjusted));
         if gio::Settings::new(SETTINGS).boolean(LYRICS_TRANSLATION) {
             translate_lyrics(widget, app_model, track_id);
         }
@@ -626,7 +663,7 @@ fn start_clock_loop(
         }
         let adjusted = adjusted_lyric_position(pos, off.get());
         if let Some(l) = l_cell.borrow().as_ref() {
-            w.set_position(l.line_progress(adjusted));
+            w.set_position(l.karaoke(adjusted));
         };
     });
 }

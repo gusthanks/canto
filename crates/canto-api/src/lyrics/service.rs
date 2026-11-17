@@ -1,6 +1,8 @@
+use log::debug;
 use serde::Deserialize;
 
 use super::cache::LyricsCache;
+use super::lyricsfile;
 use super::model::Lyrics;
 use super::parser::parse_lyrics;
 
@@ -22,6 +24,39 @@ struct LrclibItem {
     pub synced_lyrics: Option<String>,
     pub instrumental: Option<bool>,
     pub duration: Option<f64>,
+    /// Whether `lyricsfile` has the time of each word.
+    pub has_word_sync: Option<bool>,
+    /// The lyrics as a Lyricsfile (YAML), with word timings when synced.
+    pub lyricsfile: Option<String>,
+}
+
+impl LrclibItem {
+    /// The item's lyrics, with real word timings when it has them.
+    fn lyrics(&self) -> Option<Lyrics> {
+        let parsed = parse_lyrics(self.synced_lyrics.as_deref(), self.plain_lyrics.as_deref())?;
+        if self.has_word_sync != Some(true) {
+            return Some(parsed);
+        }
+        let Lyrics::Synced(lrc) = &parsed else {
+            return Some(parsed);
+        };
+        let words = self
+            .lyricsfile
+            .as_deref()
+            .and_then(lyricsfile::parse)
+            .and_then(|file| lyricsfile::to_lines(&file, lrc));
+        match words {
+            Some(lines) => Some(Lyrics::Synced(lines)),
+            None => {
+                debug!("this Lyricsfile could not be read; using its LRC lines");
+                Some(parsed)
+            }
+        }
+    }
+
+    fn has_words(&self) -> bool {
+        self.has_word_sync == Some(true) && self.synced_lyrics.is_some()
+    }
 }
 
 fn clean_track_title(title: &str) -> Option<String> {
@@ -281,7 +316,8 @@ impl LyricsService {
             }
         }
 
-        None
+        // Nothing online: lyrics saved before word timings are still lyrics
+        self.cache.get_previous(key)
     }
 
     async fn query_get(
@@ -319,7 +355,7 @@ impl LyricsService {
         }
 
         let item: LrclibItem = resp.json().await.ok()?;
-        parse_lyrics(item.synced_lyrics.as_deref(), item.plain_lyrics.as_deref())
+        item.lyrics()
     }
 
     async fn query_search(
@@ -358,18 +394,27 @@ impl LyricsService {
             });
         }
 
-        // Prefer synced lyrics if available
+        // Prefer word timings for the right length, then any synced lyrics
+        let fits = |item: &LrclibItem| match (duration_secs, item.duration) {
+            (Some(target), Some(d)) => (d - f64::from(target)).abs() <= 2.0,
+            _ => true,
+        };
+        if let Some(lyrics) = items
+            .iter()
+            .filter(|item| item.has_words() && fits(item))
+            .find_map(LrclibItem::lyrics)
+        {
+            return Some(lyrics);
+        }
         for item in &items {
-            if let Some(synced) = &item.synced_lyrics {
-                if let Some(lyrics) = parse_lyrics(Some(synced), None) {
+            if item.synced_lyrics.is_some() {
+                if let Some(lyrics @ Lyrics::Synced(_)) = item.lyrics() {
                     return Some(lyrics);
                 }
             }
         }
         for item in &items {
-            if let Some(lyrics) =
-                parse_lyrics(item.synced_lyrics.as_deref(), item.plain_lyrics.as_deref())
-            {
+            if let Some(lyrics) = item.lyrics() {
                 return Some(lyrics);
             }
         }
@@ -381,6 +426,33 @@ impl LyricsService {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_item_with_word_timings_lights_real_words() {
+        let json = r#"{"trackName":"Blinding Lights","duration":200.0,"instrumental":false,
+            "plainLyrics":"Yeah","syncedLyrics":"[00:13.12] Yeah\n[00:20.00] ♪\n",
+            "hasWordSync":true,
+            "lyricsfile":"lines:\n- text: Yeah\n  start_ms: 13120\n  end_ms: 14551\n  words:\n  - text: Yeah\n    start_ms: 13159\n"}"#;
+        let item: LrclibItem = serde_json::from_str(json).unwrap();
+        let Some(Lyrics::Synced(lines)) = item.lyrics() else {
+            panic!("synced lyrics expected");
+        };
+        assert_eq!(lines.len(), 2);
+        assert_eq!(lines[0].words.len(), 1);
+        assert_eq!(lines[0].end_time_ms, Some(14551));
+        assert_eq!(lines[1].text, "♪");
+    }
+
+    #[test]
+    fn an_old_style_item_still_reads() {
+        let json = r#"{"plainLyrics":"a","syncedLyrics":"[00:01.00] a\n","duration":10}"#;
+        let item: LrclibItem = serde_json::from_str(json).unwrap();
+        assert!(matches!(item.lyrics(), Some(Lyrics::Synced(l)) if l[0].words.is_empty()));
+        // Word sync promised but the file is unreadable: the LRC lines stay
+        let json = r#"{"syncedLyrics":"[00:01.00] a\n","hasWordSync":true,"lyricsfile":"lines:\n- text: |\n"}"#;
+        let item: LrclibItem = serde_json::from_str(json).unwrap();
+        assert!(matches!(item.lyrics(), Some(Lyrics::Synced(l)) if l[0].text == "a"));
+    }
 
     #[test]
     fn clean_track_title_handles_remasters_features_and_live_editions() {

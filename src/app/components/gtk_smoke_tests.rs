@@ -115,6 +115,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
 
     assert_card_playing_badge_shows_bars();
     assert_scrollbar_stays_put();
+    assert_lyrics_options();
 
     // Space plays/pauses unless it's typed into a text field
     let entry = gtk::SearchEntry::new();
@@ -227,6 +228,54 @@ fn assert_scrollbar_stays_put() {
     window.destroy();
 }
 
+/// Word by word or whole line, and the lyrics coming back after a scroll
+/// by hand (or staying put).
+fn assert_lyrics_options() {
+    use super::pages::lyrics::LyricsPageWidget;
+    let lyrics: LyricsPageWidget = glib::Object::new();
+    let lines: Vec<canto_api::lyrics::LyricLine> = (0..40)
+        .map(|i| canto_api::lyrics::LyricLine::new(i * 4000, format!("linha {i} da letra")))
+        .collect();
+    lyrics.set_lyrics(&canto_api::Lyrics::Synced(lines), |_| {});
+    let window = gtk::Window::new();
+    window.set_default_size(500, 400);
+    window.set_child(Some(&lyrics));
+    window.present();
+    pump(600);
+
+    // "linha" lit, the rest dim
+    lyrics.set_position(Some((3, 5)));
+    let markup = lyrics.line_markup(3).unwrap();
+    assert!(
+        markup.starts_with("linha<span alpha"),
+        "word by word: {}",
+        markup
+    );
+    lyrics.set_word_by_word(false);
+    lyrics.set_position(Some((3, 8)));
+    let markup = lyrics.line_markup(3).unwrap();
+    assert!(!markup.contains("<span"), "whole line: {}", markup);
+    lyrics.set_word_by_word(true);
+    lyrics.set_position(Some((3, 8)));
+    assert!(lyrics.line_markup(3).unwrap().contains("<span"));
+
+    // Follow the song: back by itself a moment after scrolling by hand
+    lyrics.set_stay_put(false);
+    lyrics.detach();
+    assert!(lyrics.is_detached());
+    pump(3400);
+    assert!(!lyrics.is_detached(), "the lyrics did not come back");
+    // Stay put: only the button brings them back
+    lyrics.set_stay_put(true);
+    lyrics.detach();
+    pump(3400);
+    assert!(lyrics.is_detached(), "the lyrics came back by themselves");
+    lyrics.reattach();
+    assert!(!lyrics.is_detached());
+    eprintln!("lyrics options ok");
+    window.destroy();
+}
+
 /// Number of distinct opaque-ish colors `widget` renders (rough content check).
 fn distinct_colors(widget: &gtk::Widget, tag: &str) -> usize {
     let (w, h) = (widget.width(), widget.height());
@@ -317,7 +366,8 @@ fn dump_now_panel_sample() {
     ] {
         assert!(
             builder.object::<glib::Object>(id).is_some(),
-            "{id} must exist"
+            "{} must exist",
+            id
         );
     }
     let header: super::AppHeaderBar = builder.object("app_header").unwrap();
@@ -377,6 +427,7 @@ fn dump_now_panel_sample() {
                 .map(|(i, t)| canto_api::lyrics::LyricLine {
                     start_time_ms: i as u64 * 4000,
                     text: t.to_string(),
+                    ..Default::default()
                 })
                 .collect(),
         ),
@@ -390,7 +441,7 @@ fn dump_now_panel_sample() {
         Some("Today I'm here".to_string()),
     ]));
     lyrics.set_annotations(Some(&[Some("What the line means".to_string()), None, None]));
-    lyrics.set_position(Some((1, 0.5)));
+    lyrics.set_position(Some((1, 4)));
     let window = gtk::Window::new();
     window.set_default_size(700, 600);
     window.set_child(Some(&lyrics));

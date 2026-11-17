@@ -29,18 +29,40 @@ template $LyricsPageWidget : Adw.Bin {
       StackPage {
         name: "list";
 
-        child: ScrolledWindow lyrics_scroller {
-          hscrollbar-policy: never;
-          vexpand: true;
+        child: Overlay {
+          child: ScrolledWindow lyrics_scroller {
+            hscrollbar-policy: never;
+            vexpand: true;
 
-          Box lyrics_container {
-            orientation: vertical;
-            valign: start;
-            margin-top: 24;
-            margin-bottom: 48;
-            margin-start: 16;
-            margin-end: 16;
-            spacing: 8;
+            Box lyrics_container {
+              orientation: vertical;
+              valign: start;
+              margin-top: 24;
+              margin-bottom: 48;
+              margin-start: 16;
+              margin-end: 16;
+              spacing: 8;
+            }
+          };
+
+          [overlay]
+          Revealer back_to_line_revealer {
+            valign: end;
+            halign: center;
+            margin-bottom: 12;
+            transition-type: crossfade;
+            reveal-child: false;
+
+            Button back_to_line_button {
+              /* Translators: Floating button that scrolls the lyrics back to the line being sung. */
+              label: _("Back to Current Line");
+
+              styles [
+                "pill",
+                "osd",
+                "lyrics-back-to-line",
+              ]
+            }
           }
         };
       }
@@ -94,8 +116,8 @@ template $LyricsPageWidget : Adw.Bin {
 
       MenuButton sync_button {
         icon-name: "canto-lyrics-sync-symbolic";
-        /* Translators: Tooltip of the lyrics button that opens the timing adjustment (make lyrics come earlier or later). */
-        tooltip-text: _("Lyrics Timing");
+        /* Translators: Tooltip of the lyrics button that opens how lyrics light up, scroll and are timed. */
+        tooltip-text: _("Lyrics Options");
 
         styles [
           "flat",
@@ -113,8 +135,62 @@ template $LyricsPageWidget : Adw.Bin {
             margin-end: 6;
 
             Label {
-              /* Translators: Heading of the lyrics timing popover. */
+              /* Translators: Heading in the lyrics options popover: how the line being sung lights up. */
+              label: _("Highlight");
+              xalign: 0.0;
+
+              styles [
+                "heading",
+              ]
+            }
+
+            Adw.ToggleGroup highlight_toggle {
+              active-name: "word";
+
+              Adw.Toggle {
+                name: "word";
+                /* Translators: Lyrics highlight choice: the words light up one by one as they are sung. */
+                label: _("Word by Word");
+              }
+
+              Adw.Toggle {
+                name: "line";
+                /* Translators: Lyrics highlight choice: the whole line lights up at once. */
+                label: _("Whole Line");
+              }
+            }
+
+            Label {
+              /* Translators: Heading in the lyrics options popover: what the lyrics do after you scroll them by hand. */
+              label: _("After You Scroll");
+              xalign: 0.0;
+              margin-top: 6;
+
+              styles [
+                "heading",
+              ]
+            }
+
+            Adw.ToggleGroup scroll_toggle {
+              active-name: "follow";
+
+              Adw.Toggle {
+                name: "follow";
+                /* Translators: Lyrics scroll choice: a few seconds after scrolling by hand, the lyrics go back to the line being sung. */
+                label: _("Follow the Song");
+              }
+
+              Adw.Toggle {
+                name: "free";
+                /* Translators: Lyrics scroll choice: after scrolling by hand, the lyrics stay where you left them until you press Back to Current Line. */
+                label: _("Stay Put");
+              }
+            }
+
+            Label {
+              /* Translators: Heading of the lyrics timing part of the lyrics options popover. */
               label: _("Lyrics Timing");
+              margin-top: 6;
               xalign: 0.0;
 
               styles [

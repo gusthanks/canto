@@ -461,8 +461,17 @@ impl PlaybackState {
         let new_playing = remote.is_playing && self.queue.current().is_some();
         self.is_playing = new_playing;
         self.repeat = remote.repeat;
-        self.seek_position
-            .set(remote.position_ms as u64, new_playing);
+        // The remote position arrives late by a network trip: a few ms off
+        // the local clock is that delay, not a seek. Taking it would step
+        // the clock back and forth (and a lit word off and on again).
+        let remote_position = remote.position_ms as u64;
+        let jitter = prev_track == new_track
+            && prev_playing
+            && new_playing
+            && remote_position.abs_diff(prev_position) <= POSITION_JITTER_MS;
+        if !jitter {
+            self.seek_position.set(remote_position, new_playing);
+        }
 
         if queue_changed || prev_repeat != remote.repeat {
             self.refresh_view();
@@ -497,7 +506,7 @@ impl PlaybackState {
         }
 
         if (prev_track != new_track && new_track.is_some())
-            || remote.position_ms as u64 != prev_position
+            || (remote_position != prev_position && !jitter)
             || prev_playing != new_playing
         {
             events.push(PlaybackEvent::SeekSynced(remote.position_ms));
@@ -909,6 +918,10 @@ struct PositionMillis {
     // Playback rate (1)
     rate: f32,
 }
+
+/// How far the remote position may be from the local clock and still be
+/// just the network delay.
+const POSITION_JITTER_MS: u64 = 250;
 
 impl PositionMillis {
     fn new(rate: f32) -> Self {
@@ -2011,6 +2024,41 @@ mod tests {
             },
         )));
         assert!(jitter.is_empty());
+    }
+
+    #[test]
+    fn a_remote_position_a_few_ms_off_keeps_the_local_clock() {
+        let mut state = PlaybackState::default();
+        state.act(PlaybackAction::SwitchDevice(connect_device("alexa")));
+        let remote = |position_ms: u32, is_playing: bool| {
+            PlaybackAction::SyncRemoteState(Box::new(RemotePlaybackState {
+                tracks: Some(vec![song("a")]),
+                track_id: Some("a".to_string()),
+                is_playing,
+                position_ms,
+                repeat: RepeatMode::Off,
+                shuffle: false,
+                volume: None,
+            }))
+        };
+        state.act(remote(60_000, true));
+        let clock = state.seek_position.current();
+        // 120 ms behind the local clock: network delay, ignored
+        let events = state.act(remote(clock.saturating_sub(120) as u32, true));
+        assert!(state.seek_position.current() >= clock);
+        assert!(!events
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::SeekSynced(_))));
+        // 5 s away: a real seek, taken
+        let events = state.act(remote(90_000, true));
+        let now = state.seek_position.current();
+        assert!((90_000..90_200).contains(&now), "{}", now);
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::SeekSynced(90_000))));
+        // Paused: always taken, to the ms
+        state.act(remote(90_010, false));
+        assert_eq!(state.seek_position.current(), 90_010);
     }
 
     #[test]
