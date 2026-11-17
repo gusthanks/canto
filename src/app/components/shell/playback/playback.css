@@ -74,3 +74,8 @@
   border-radius: 8px;
 }
 
+
+/* The device button turns accent when the sound plays somewhere else */
+.device-selector.device-selector--away {
+  color: @accent_color;
+}

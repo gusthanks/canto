@@ -12,6 +12,9 @@ template $DetailsHeaderWidget : Widget {
     width-request: 1;
     height-request: 1;
     hexpand: true;
+    // A BreakpointBin clips by default, which cut the cover's shadow into a
+    // hard box
+    overflow: visible;
 
     // Narrow: stack artwork above the text/buttons instead of beside them.
     Adw.Breakpoint {
@@ -31,8 +34,9 @@ template $DetailsHeaderWidget : Widget {
     child: Box header_box {
       orientation: horizontal;
 
+      // Not clipped itself: a clip here cut its own shadow into a hard box.
+      // The rounding is on the Overlay inside.
       Box image_box {
-        overflow: hidden;
         valign: center;
         margin-end: 12;
         width-request: 200;
@@ -44,7 +48,12 @@ template $DetailsHeaderWidget : Widget {
           "card",
         ]
 
-        Overlay {
+        Overlay image_clip {
+          overflow: hidden;
+
+          styles [
+            "details-header__image-clip",
+          ]
 
           Image image {
             pixel-size: 200;

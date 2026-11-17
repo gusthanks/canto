@@ -106,8 +106,14 @@
 
 
 /* Circular variant for artist avatars */
-.details-header__image--circular {
+.details-header__image--circular,
+.details-header__image--circular .details-header__image-clip {
   border-radius: 9999px;
+}
+
+/* Rounds the cover inside its (unclipped, shadowed) box */
+.details-header__image-clip {
+  border-radius: 12px;
 }
 
 /* Skeleton placeholder background for missing images */
@@ -154,7 +160,7 @@
 
 /* The cover's own shadow, over the tint */
 .details-page--loaded .details-header__image-box {
-  box-shadow: 0 10px 30px alpha(black, 0.4);
+  box-shadow: 0 8px 24px alpha(black, 0.35);
 }
 
 /* Caption that links somewhere (the album on Now Playing) */

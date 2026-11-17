@@ -19,7 +19,6 @@ template $PlaybackWidget : Box {
         volume_box.visible: false;
         volume_button.visible: true;
         device_selector_box.visible: false;
-        eq_button.visible: false;
         mini_player_button.visible: false;
         playback_center.homogeneous: false;
       }
@@ -175,23 +174,6 @@ template $PlaybackWidget : Box {
           ]
         }
 
-        Button mini_player_button {
-          width-request: 36;
-          height-request: 36;
-          icon-name: "canto-mini-player-symbolic";
-          /* Translators: Tooltip of the player bar button that opens the small player window. */
-          tooltip-text: _("Mini Player");
-          action-name: "win.mini-player";
-          valign: center;
-          focus-on-click: false;
-          can-focus: false;
-
-          styles [
-            "flat",
-            "circular",
-          ]
-        }
-
         Button queue_button {
           width-request: 36;
           height-request: 36;
@@ -210,6 +192,8 @@ template $PlaybackWidget : Box {
         }
 
         MenuButton sleep_timer_button {
+          // Only shows while a timer runs (the countdown); set from More Options
+          visible: false;
           width-request: 36;
           height-request: 36;
           tooltip-text: _("Sleep Timer");
@@ -350,12 +334,101 @@ template $PlaybackWidget : Box {
           };
         }
 
+        Box device_selector_box {
+          valign: center;
+
+          $DeviceSelectorWidget device_selector {}
+        }
+
+        Box volume_box {
+          width-request: 132;
+          spacing: 2;
+          valign: center;
+
+          Button mute_button {
+            width-request: 34;
+            height-request: 34;
+            icon-name: "audio-volume-high-symbolic";
+            tooltip-text: _("Mute / Unmute");
+            focus-on-click: false;
+            can-focus: false;
+
+            styles [
+              "flat",
+              "circular",
+            ]
+          }
+
+          Scale volume_slider {
+            hexpand: true;
+            show-fill-level: true;
+            restrict-to-fill-level: false;
+            value-pos: left;
+
+            styles [
+              "volume-slider",
+            ]
+
+            adjustment: Adjustment {
+              lower: 0.0;
+              value: 0.7;
+              upper: 1.0;
+              step-increment: 0.01;
+              page-increment: 0.05;
+            };
+          }
+        }
+
+        MenuButton volume_button {
+          visible: false;
+          width-request: 36;
+          height-request: 36;
+          icon-name: "audio-volume-high-symbolic";
+          tooltip-text: _("Volume");
+          halign: end;
+          valign: center;
+          direction: up;
+          focus-on-click: false;
+          can-focus: false;
+
+          styles [
+            "flat",
+            "circular",
+          ]
+
+          popover: Popover {
+            child: Scale {
+              inverted: true;
+              orientation: vertical;
+              height-request: 160;
+              adjustment: bind volume_slider.adjustment;
+            };
+          };
+        }
+
+        Button mini_player_button {
+          width-request: 36;
+          height-request: 36;
+          icon-name: "canto-mini-player-symbolic";
+          /* Translators: Tooltip of the player bar button that opens the small player window. */
+          tooltip-text: _("Mini Player");
+          action-name: "win.mini-player";
+          valign: center;
+          focus-on-click: false;
+          can-focus: false;
+
+          styles [
+            "flat",
+            "circular",
+          ]
+        }
+
         MenuButton eq_button {
           width-request: 36;
           height-request: 36;
-          icon-name: "canto-equalizer-symbolic";
-          /* Translators: Tooltip of the player bar equalizer presets menu button. */
-          tooltip-text: _("Equalizer Presets");
+          icon-name: "canto-more-symbolic";
+          /* Translators: Tooltip of the player bar button that opens the sleep timer, equalizer and audio options. */
+          tooltip-text: _("More Options");
           valign: center;
           direction: up;
           focus-on-click: false;
@@ -374,6 +447,38 @@ template $PlaybackWidget : Box {
               margin-bottom: 6;
               margin-start: 6;
               margin-end: 6;
+
+              Button more_sleep_timer {
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Box {
+                  spacing: 10;
+
+                  Image {
+                    icon-name: "alarm-symbolic";
+                  }
+
+                  Label {
+                    label: _("Sleep Timer");
+                    xalign: 0.0;
+                    hexpand: true;
+                  }
+
+                  Image {
+                    icon-name: "pan-end-symbolic";
+                  }
+                };
+              }
+
+              Separator {
+                margin-top: 2;
+                margin-bottom: 4;
+              }
 
               Label {
                 label: _("Equalizer Presets");
@@ -491,78 +596,6 @@ template $PlaybackWidget : Box {
                   xalign: 0.0;
                 };
               }
-            };
-          };
-        }
-
-        Box device_selector_box {
-          valign: center;
-
-          $DeviceSelectorWidget device_selector {}
-        }
-
-        Box volume_box {
-          width-request: 132;
-          spacing: 2;
-          valign: center;
-
-          Button mute_button {
-            width-request: 34;
-            height-request: 34;
-            icon-name: "audio-volume-high-symbolic";
-            tooltip-text: _("Mute / Unmute");
-            focus-on-click: false;
-            can-focus: false;
-
-            styles [
-              "flat",
-              "circular",
-            ]
-          }
-
-          Scale volume_slider {
-            hexpand: true;
-            show-fill-level: true;
-            restrict-to-fill-level: false;
-            value-pos: left;
-
-            styles [
-              "volume-slider",
-            ]
-
-            adjustment: Adjustment {
-              lower: 0.0;
-              value: 0.7;
-              upper: 1.0;
-              step-increment: 0.01;
-              page-increment: 0.05;
-            };
-          }
-        }
-
-        MenuButton volume_button {
-          visible: false;
-          width-request: 36;
-          height-request: 36;
-          icon-name: "audio-volume-high-symbolic";
-          tooltip-text: _("Volume");
-          halign: end;
-          valign: center;
-          direction: up;
-          focus-on-click: false;
-          can-focus: false;
-
-          styles [
-            "flat",
-            "circular",
-          ]
-
-          popover: Popover {
-            child: Scale {
-              inverted: true;
-              orientation: vertical;
-              height-request: 160;
-              adjustment: bind volume_slider.adjustment;
             };
           };
         }

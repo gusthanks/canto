@@ -56,6 +56,20 @@ template $UtilityPanelWidget : Adw.Bin {
             group: now_tab;
           }
         };
+
+        [end]
+        Button close_panel {
+          icon-name: "pan-end-symbolic";
+          /* Translators: Tooltip of the button that hides the right side panel (Now Playing, Queue, Lyrics). */
+          tooltip-text: _("Hide Side Panel");
+          action-name: "win.utility-panel";
+          valign: center;
+          focus-on-click: false;
+
+          styles [
+            "flat",
+          ]
+        }
       }
 
       Adw.HeaderBar selection_header {

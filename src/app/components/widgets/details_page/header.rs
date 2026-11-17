@@ -95,7 +95,8 @@ mod imp {
     impl ObjectImpl for DetailsHeaderWidget {
         fn constructed(&self) {
             self.parent_constructed();
-            self.obj().set_overflow(gtk::Overflow::Hidden);
+            // Visible: hidden cut the cover's shadow into a hard box
+            self.obj().set_overflow(gtk::Overflow::Visible);
         }
 
         fn dispose(&self) {

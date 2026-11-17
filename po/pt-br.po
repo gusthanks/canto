@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 23:53-0300\n"
+"POT-Creation-Date: 2026-11-17 07:10-0300\n"
 "Language: pt-br\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -17,7 +17,7 @@ msgstr "Ver álbum"
 
 #. translators: This is part of a contextual menu attached to a single track; the intent is to copy the link (public URL) to a specific track.
 #: src/app/components/labels.rs:11
-#: src/app/components/widgets/details_page/header.blp:187
+#: src/app/components/widgets/details_page/header.blp:196
 msgid "Copy Link"
 msgstr "Copiar link"
 
@@ -65,7 +65,7 @@ msgstr "A seguir na fila"
 #: src/app/components/shell/command_palette/widget.rs:537
 #: src/app/components/pages/shortcuts/shortcuts.blp:84
 #: src/app/components/shell/playback/playback_info.blp:18
-#: src/app/components/shell/playback/playback_widget.blp:73
+#: src/app/components/shell/playback/playback_widget.blp:72
 #: src/app/components/shell/utility_panel/utility_panel.blp:43
 msgid "Now Playing"
 msgstr "Tocando agora"
@@ -150,8 +150,8 @@ msgstr "Você não tem listas de reprodução salvas."
 #: src/app/components/shell/playback/playback_controls.rs:71
 #: src/app/components/shell/mini_player.rs:168
 #: src/app/components/shell/mini_player.rs:240
-#: src/app/components/widgets/details_page/header.rs:249
-#: src/app/components/widgets/details_page/header.blp:148
+#: src/app/components/widgets/details_page/header.rs:250
+#: src/app/components/widgets/details_page/header.blp:157
 msgid "Play"
 msgstr "Tocar"
 
@@ -159,7 +159,7 @@ msgstr "Tocar"
 #: src/app/components/labels.rs:77
 #: src/app/components/pages/shortcuts/shortcuts.blp:50
 #: src/app/components/shell/playback/playback_controls.blp:15
-#: src/app/components/widgets/details_page/header.blp:161
+#: src/app/components/widgets/details_page/header.blp:170
 msgid "Shuffle"
 msgstr "Ativar a ordem aleatória"
 
@@ -228,7 +228,7 @@ msgstr "Normal"
 #. translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
 #: src/app/components/labels.rs:110
 #: src/app/components/shell/command_palette/widget.rs:673
-#: src/app/components/shell/playback/playback_widget.blp:475 src/window.blp:428
+#: src/app/components/shell/playback/playback_widget.blp:580 src/window.blp:446
 msgid "Start Track Radio"
 msgstr "Iniciar Rádio da Faixa"
 
@@ -374,7 +374,7 @@ msgstr "Todas as listas de reprodução"
 #: src/app/components/pages/lyrics/component.rs:71
 #: src/app/components/shell/now_panel/mod.rs:352
 #: src/app/components/shell/fullscreen_lyrics.rs:78
-#: src/app/components/shell/playback/playback_widget.blp:166
+#: src/app/components/shell/playback/playback_widget.blp:165
 #: src/app/components/shell/utility_panel/utility_panel.blp:55
 msgid "Lyrics"
 msgstr "Letra"
@@ -412,7 +412,7 @@ msgstr "Idioma do app"
 #. Translators: Tooltip of the playback bar button that shows or hides the queue.
 #. Translators: Tab label for the queue in utility panel.
 #: src/app/components/pages/queue/component.rs:58
-#: src/app/components/shell/playback/playback_widget.blp:200
+#: src/app/components/shell/playback/playback_widget.blp:182
 #: src/app/components/shell/utility_panel/utility_panel.blp:49
 msgid "Queue"
 msgstr "Fila"
@@ -713,7 +713,7 @@ msgstr ""
 #: src/app/components/widgets/queue_list/model.rs:261
 #: src/app/components/pages/queue/queue_page.blp:19
 #: src/app/components/shell/headerbar/headerbar.blp:118
-#: src/app/components/shell/utility_panel/utility_panel.blp:79
+#: src/app/components/shell/utility_panel/utility_panel.blp:93
 #: src/app/components/utils.rs:226
 msgid "Cancel"
 msgstr "Cancelar"
@@ -723,7 +723,7 @@ msgid "Open"
 msgstr ""
 
 #: src/app/components/shell/command_palette/command_palette.blp:5
-#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:423
+#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:441
 msgid "Command Palette"
 msgstr "Paleta de Comandos"
 
@@ -757,10 +757,11 @@ msgstr "Ação"
 #: src/app/components/shell/command_palette/widget.rs:533
 #: src/app/components/shell/command_palette/widget.rs:710
 #: src/app/components/sleep_timer.rs:45 src/app/components/sleep_timer.rs:49
-#: src/app/components/shell/playback/playback_widget.blp:215
-#: src/app/components/shell/playback/playback_widget.blp:255
+#: src/app/components/shell/playback/playback_widget.blp:199
+#: src/app/components/shell/playback/playback_widget.blp:239
+#: src/app/components/shell/playback/playback_widget.blp:467
 msgid "Sleep Timer"
-msgstr "Temporizador"
+msgstr "Timer para dormir"
 
 #: src/app/components/shell/command_palette/widget.rs:534
 msgid "Device"
@@ -834,7 +835,7 @@ msgstr "Mostrar a letra grande, sobre a capa"
 
 #. Translators: Tooltip of the player bar button that opens the small player window.
 #: src/app/components/shell/command_palette/widget.rs:649
-#: src/app/components/shell/playback/playback_widget.blp:183
+#: src/app/components/shell/playback/playback_widget.blp:414
 msgid "Mini Player"
 msgstr "Mini player"
 
@@ -844,7 +845,7 @@ msgstr "Deixar os controles numa janela pequena"
 
 #. translators: Title of the window with the user's Last.fm listening stats.
 #: src/app/components/shell/command_palette/widget.rs:660
-#: src/app/components/shell/stats_dialog.rs:45 src/window.blp:433
+#: src/app/components/shell/stats_dialog.rs:45 src/window.blp:451
 msgid "Your Stats"
 msgstr "Suas estatísticas"
 
@@ -915,8 +916,7 @@ msgstr "Trocar tema ao vivo"
 
 #: src/app/components/shell/command_palette/widget.rs:755
 #: src/app/components/shell/device_selector/widget.rs:142
-#: src/app/components/shell/device_selector/device_selector.blp:9
-#: src/app/components/shell/device_selector/device_selector.blp:37
+#: src/app/components/shell/device_selector/device_selector.blp:48
 msgid "This Device"
 msgstr "Este dispositivo"
 
@@ -1050,7 +1050,13 @@ msgstr "Não foi possível iniciar a Rádio da faixa agora"
 msgid "Playing similar tracks"
 msgstr "Tocando faixas semelhantes"
 
-#: src/app/components/shell/device_selector/widget.rs:189
+#. translators: Tooltip of the player bar's device button. {} is where the sound plays, e.g. "This Computer".
+#: src/app/components/shell/device_selector/widget.rs:159
+#, rust-format
+msgid "Playing on {}"
+msgstr "Tocando em {}"
+
+#: src/app/components/shell/device_selector/widget.rs:197
 msgid "This Computer"
 msgstr "Este computador"
 
@@ -1075,7 +1081,7 @@ msgstr ""
 
 #: src/app/components/shell/playback/playback_controls.rs:69
 #: src/app/components/shell/mini_player.rs:240
-#: src/app/components/widgets/details_page/header.rs:247
+#: src/app/components/widgets/details_page/header.rs:248
 msgid "Pause"
 msgstr "Pausar"
 
@@ -1304,7 +1310,7 @@ msgstr "Backend de áudio"
 
 #: src/app/components/shell/window/close_dialog.rs:17
 #: src/app/components/pages/settings/settings.blp:102
-#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:467
+#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:485
 msgid "Quit"
 msgstr "Fechar"
 
@@ -1312,8 +1318,8 @@ msgstr "Fechar"
 msgid "Remember my choice"
 msgstr ""
 
-#: src/app/components/widgets/details_page/header.rs:406
-#: src/app/components/widgets/details_page/header.blp:174
+#: src/app/components/widgets/details_page/header.rs:407
+#: src/app/components/widgets/details_page/header.blp:183
 #, fuzzy
 msgid "Add to Library"
 msgstr "Adicionar à biblioteca"
@@ -1546,7 +1552,7 @@ msgstr "Idioma da tradução"
 #: src/app/components/shell/headerbar/headerbar.blp:131
 #: src/app/components/pages/queue/widget.rs:113
 #: src/app/components/shell/headerbar/widget.rs:780
-#: src/app/components/shell/utility_panel/utility_panel.blp:87
+#: src/app/components/shell/utility_panel/utility_panel.blp:101
 #: src/app/components/shell/utility_panel/widget.rs:153
 msgid "Select All"
 msgstr "Selecionar todas"
@@ -2266,19 +2272,24 @@ msgstr ""
 msgid "Main Menu"
 msgstr "Menu principal"
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:440
+#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:458
 msgid "Preferences"
 msgstr "Preferências"
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:445
+#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:463
 msgid "Keyboard Shortcuts"
 msgstr "Atalhos de teclado"
 
+#. Translators: Tooltip of the player bar's device button before it knows where the sound plays.
 #: src/app/components/shell/device_selector/device_selector.blp:15
+msgid "Choose Where to Play"
+msgstr "Escolher onde tocar"
+
+#: src/app/components/shell/device_selector/device_selector.blp:26
 msgid "Playing On"
 msgstr "Tocando em"
 
-#: src/app/components/shell/device_selector/device_selector.blp:24
+#: src/app/components/shell/device_selector/device_selector.blp:35
 msgid "Refresh Devices"
 msgstr "Atualizar dispositivos"
 
@@ -2292,67 +2303,71 @@ msgstr ""
 msgid "Forward"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:275
+#: src/app/components/shell/playback/playback_widget.blp:259
 msgid "Off"
 msgstr "Desativado"
 
-#: src/app/components/shell/playback/playback_widget.blp:289
+#: src/app/components/shell/playback/playback_widget.blp:273
 msgid "End of current track"
 msgstr "Fim da faixa atual"
 
-#: src/app/components/shell/playback/playback_widget.blp:303
+#: src/app/components/shell/playback/playback_widget.blp:287
 msgid "15 min"
 msgstr "15 min"
 
-#: src/app/components/shell/playback/playback_widget.blp:317
+#: src/app/components/shell/playback/playback_widget.blp:301
 msgid "30 min"
 msgstr "30 min"
 
-#: src/app/components/shell/playback/playback_widget.blp:331
+#: src/app/components/shell/playback/playback_widget.blp:315
 msgid "45 min"
 msgstr "45 min"
 
-#: src/app/components/shell/playback/playback_widget.blp:345
+#: src/app/components/shell/playback/playback_widget.blp:329
 msgid "60 min"
 msgstr "60 min"
 
-#. Translators: Tooltip of the player bar equalizer presets menu button.
-#: src/app/components/shell/playback/playback_widget.blp:358
-#: src/app/components/shell/playback/playback_widget.blp:379
-msgid "Equalizer Presets"
-msgstr "Predefinições do equalizador"
-
-#: src/app/components/shell/playback/playback_widget.blp:399
-msgid "Flat"
-msgstr "Plano"
-
-#: src/app/components/shell/playback/playback_widget.blp:413
-msgid "Bass Boost"
-msgstr "Reforço de graves"
-
-#: src/app/components/shell/playback/playback_widget.blp:427
-msgid "Vocal"
-msgstr "Vocal"
-
-#: src/app/components/shell/playback/playback_widget.blp:441
-msgid "Lo-Fi"
-msgstr "Lo-Fi"
-
-#: src/app/components/shell/playback/playback_widget.blp:455
-msgid "Acoustic"
-msgstr "Acústico"
-
-#: src/app/components/shell/playback/playback_widget.blp:490
-msgid "Audio Settings…"
-msgstr "Configurações de áudio…"
-
-#: src/app/components/shell/playback/playback_widget.blp:513
+#: src/app/components/shell/playback/playback_widget.blp:352
 msgid "Mute / Unmute"
 msgstr "Silenciar / reativar som"
 
-#: src/app/components/shell/playback/playback_widget.blp:548
+#: src/app/components/shell/playback/playback_widget.blp:387
 msgid "Volume"
 msgstr "Volume"
+
+#. Translators: Tooltip of the player bar button that opens the sleep timer, equalizer and audio options.
+#: src/app/components/shell/playback/playback_widget.blp:431
+#: src/app/components/widgets/details_page/header.blp:213
+msgid "More Options"
+msgstr "Mais opções"
+
+#: src/app/components/shell/playback/playback_widget.blp:484
+msgid "Equalizer Presets"
+msgstr "Predefinições do equalizador"
+
+#: src/app/components/shell/playback/playback_widget.blp:504
+msgid "Flat"
+msgstr "Plano"
+
+#: src/app/components/shell/playback/playback_widget.blp:518
+msgid "Bass Boost"
+msgstr "Reforço de graves"
+
+#: src/app/components/shell/playback/playback_widget.blp:532
+msgid "Vocal"
+msgstr "Vocal"
+
+#: src/app/components/shell/playback/playback_widget.blp:546
+msgid "Lo-Fi"
+msgstr "Lo-Fi"
+
+#: src/app/components/shell/playback/playback_widget.blp:560
+msgid "Acoustic"
+msgstr "Acústico"
+
+#: src/app/components/shell/playback/playback_widget.blp:595
+msgid "Audio Settings…"
+msgstr "Configurações de áudio…"
 
 #. Translators: tooltip of the button picking the cover image of a new playlist
 #. translators: Title of the dialog picking a playlist's cover.
@@ -2415,10 +2430,6 @@ msgstr ""
 msgid "Filters"
 msgstr ""
 
-#: src/app/components/widgets/details_page/header.blp:204
-msgid "More Options"
-msgstr ""
-
 #: src/app/components/widgets/selection/selection_toolbar.blp:61
 msgid "Remove"
 msgstr "Remover"
@@ -2446,22 +2457,29 @@ msgstr "Sua Biblioteca"
 msgid "Collapse Sidebar"
 msgstr "Recolher barra lateral"
 
+#. Translators: Tooltip of the small tab on the right edge that shows the side panel (Now Playing, Queue, Lyrics).
+#: src/window.blp:388
+msgid "Show Side Panel"
+msgstr "Mostrar painel lateral"
+
 #. Translators: One line under the app name in the About window.
-#: src/window.blp:414
+#: src/window.blp:432
 msgid ""
 "Your music services in one calm player, with synced lyrics, translations and "
 "listening stats."
-msgstr "Seus serviços de música num player tranquilo, com letra sincronizada, tradução e estatísticas do que você ouve."
+msgstr ""
+"Seus serviços de música num player tranquilo, com letra sincronizada, "
+"tradução e estatísticas do que você ouve."
 
-#: src/window.blp:450
+#: src/window.blp:468
 msgid "Report Issue"
 msgstr ""
 
-#: src/window.blp:455
+#: src/window.blp:473
 msgid "About Canto"
 msgstr "Sobre o Canto"
 
-#: src/window.blp:462
+#: src/window.blp:480
 msgid "Log Out"
 msgstr "Sair"
 
@@ -2480,6 +2498,11 @@ msgstr "Desmarcar todas"
 #: src/app/components/pages/settings/settings_model.rs:50
 msgid "Cache cleared"
 msgstr ""
+
+#. Translators: Tooltip of the button that hides the right side panel (Now Playing, Queue, Lyrics).
+#: src/app/components/shell/utility_panel/utility_panel.blp:64
+msgid "Hide Side Panel"
+msgstr "Ocultar painel lateral"
 
 #. translators: Title of the dialog asking to confirm deleting a playlist.
 #: src/app/components/utils.rs:253

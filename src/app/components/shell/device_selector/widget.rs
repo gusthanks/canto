@@ -152,8 +152,16 @@ impl DeviceSelectorWidget {
                 DeviceKind::Other => "audio-x-generic-symbolic",
             },
         };
-        self.imp().button_content.set_label(&label);
+        // Icon only in the player bar; the name is in the tooltip and the menu
+        self.imp().button_content.set_label("");
         self.imp().button_content.set_icon_name(icon);
+        // translators: Tooltip of the player bar's device button. {} is where the sound plays, e.g. "This Computer".
+        self.set_tooltip_text(Some(&gettext("Playing on {}").replace("{}", &label)));
+        if matches!(device, Device::Connect(connect) if !crate::connect::is_this_computer(&connect.label)) {
+            self.add_css_class("device-selector--away");
+        } else {
+            self.remove_css_class("device-selector--away");
+        }
     }
 
     pub fn update_devices_list(&self, devices: &[ConnectDevice]) {

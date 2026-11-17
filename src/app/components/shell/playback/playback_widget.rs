@@ -75,6 +75,8 @@ mod imp {
 
         #[template_child]
         pub eq_popover: TemplateChild<gtk::Popover>,
+        #[template_child]
+        pub more_sleep_timer: TemplateChild<gtk::Button>,
 
         #[template_child]
         pub eq_preset_flat: TemplateChild<gtk::Button>,
@@ -148,6 +150,7 @@ mod imp {
                 volume_slider: Default::default(),
                 mute_button: Default::default(),
                 eq_popover: Default::default(),
+                more_sleep_timer: Default::default(),
                 eq_preset_flat: Default::default(),
                 eq_preset_bass: Default::default(),
                 eq_preset_vocal: Default::default(),
@@ -194,6 +197,23 @@ mod imp {
             self.now_playing.set_info_visible(true);
             self.now_playing.reset_info();
             display_add_css_provider(resource!("/components/playback.css"));
+
+            // The sleep timer lives in More Options; its own button only shows
+            // while a timer runs, or while its menu is open from there
+            let more = self.eq_popover.clone();
+            let sleep_button = self.sleep_timer_button.clone();
+            self.more_sleep_timer.connect_clicked(move |_| {
+                more.popdown();
+                sleep_button.set_visible(true);
+                sleep_button.popup();
+            });
+            let sleep_button = self.sleep_timer_button.clone();
+            let sleep_label = self.sleep_timer_label.clone();
+            self.sleep_popover.connect_closed(move |_| {
+                if !sleep_label.is_visible() {
+                    sleep_button.set_visible(false);
+                }
+            });
 
             let popover = self.eq_popover.clone();
             let preset_buttons = [
@@ -447,6 +467,7 @@ impl PlaybackWidget {
             imp.sleep_timer_label.set_label(&text);
             imp.sleep_timer_label.set_visible(true);
             imp.sleep_timer_button.set_width_request(-1);
+            imp.sleep_timer_button.set_visible(true);
             imp.sleep_timer_button.remove_css_class("circular");
             imp.sleep_timer_button.add_css_class("pill");
         } else {
@@ -454,6 +475,9 @@ impl PlaybackWidget {
             imp.sleep_timer_button.remove_css_class("pill");
             imp.sleep_timer_button.add_css_class("circular");
             imp.sleep_timer_button.set_width_request(36);
+            if !imp.sleep_popover.is_visible() {
+                imp.sleep_timer_button.set_visible(false);
+            }
         }
 
         let active_btn: Option<&gtk::Button> = match snap.mode {
