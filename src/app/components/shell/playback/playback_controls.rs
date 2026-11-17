@@ -12,7 +12,7 @@ mod imp {
     use super::*;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/playback_controls.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/playback_controls.ui")]
     pub struct PlaybackControlsWidget {
         #[template_child]
         pub play_pause: TemplateChild<gtk::Button>,

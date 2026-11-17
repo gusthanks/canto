@@ -104,7 +104,7 @@ mod imp {
     pub const UNPLAYABLE_CLASS: &str = "song--unplayable";
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/track_row.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/track_row.ui")]
     pub struct TrackRow {
         #[template_child]
         pub card: TemplateChild<libadwaita::BreakpointBin>,

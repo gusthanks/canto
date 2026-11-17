@@ -39,7 +39,7 @@ mod imp {
     use std::cell::{Cell, RefCell};
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/playlist_dialog.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/playlist_dialog.ui")]
     pub struct PlaylistDialog {
         #[template_child]
         pub details: TemplateChild<gtk::Box>,

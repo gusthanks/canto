@@ -6,7 +6,7 @@ mod imp {
     use super::*;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/details_section.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/details_section.ui")]
     pub struct DetailsSectionWidget {
         #[template_child]
         pub header_row: TemplateChild<gtk::Box>,

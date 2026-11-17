@@ -40,7 +40,7 @@ impl AppPlaybackStateListener {
         let song = self.app_model.get_state().playback.current_song()?;
         let id = &song.rri.id;
         Some(TrackMetadata {
-            id: format!("/dev/diegovsky/Riff/Track/{id}"),
+            id: format!("/io/github/gusthanks/Canto/Track/{id}"),
             length: 1000 * song.duration_ms as u64,
             title: song.title.clone(),
             album: song

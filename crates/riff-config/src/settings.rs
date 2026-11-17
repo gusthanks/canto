@@ -2,7 +2,51 @@ use gio::prelude::SettingsExt;
 use log::error;
 use std::collections::HashMap;
 
-pub const SETTINGS: &str = "dev.diegovsky.Riff";
+pub const SETTINGS: &str = "io.github.gusthanks.Canto";
+
+/// Canto's app id before it had its own (inherited from Riff).
+pub const OLD_SETTINGS: &str = "dev.diegovsky.Riff";
+pub const MIGRATED_FROM_RIFF: &str = "migrated-from-riff";
+
+/// Copies what the user changed under the old app id to the new one, once.
+/// The old schema is only there on machines that ran the old build; without
+/// it there is nothing to copy. Returns how many keys came over.
+pub fn migrate_from_old_app_id() -> usize {
+    use gio::prelude::*;
+    let Some(source) = gio::SettingsSchemaSource::default() else {
+        return 0;
+    };
+    let Some(new_schema) = source.lookup(SETTINGS, true) else {
+        return 0;
+    };
+    let settings = gio::Settings::new(SETTINGS);
+    if settings.boolean(MIGRATED_FROM_RIFF) {
+        return 0;
+    }
+    let mut copied = 0;
+    if let Some(old_schema) = source.lookup(OLD_SETTINGS, true) {
+        let old = gio::Settings::new_full(&old_schema, None::<&gio::SettingsBackend>, None);
+        settings.delay();
+        for key in old_schema.list_keys() {
+            if !new_schema.has_key(&key) || key.as_str() == MIGRATED_FROM_RIFF {
+                continue;
+            }
+            if let Some(value) = old.user_value(&key) {
+                if settings.set_value(&key, &value).is_ok() {
+                    copied += 1;
+                }
+            }
+        }
+        // The flag goes in the same batch: once delay() is on, writes made
+        // after apply() stay pending and are never saved.
+        let _ = settings.set_boolean(MIGRATED_FROM_RIFF, true);
+        settings.apply();
+    } else {
+        let _ = settings.set_boolean(MIGRATED_FROM_RIFF, true);
+    }
+    gio::Settings::sync();
+    copied
+}
 pub const QUEUE_SIDE_PANEL: &str = "queue-side-panel";
 pub const APP_LANGUAGE: &str = "app-language";
 pub const APP_THEME: &str = "app-theme";

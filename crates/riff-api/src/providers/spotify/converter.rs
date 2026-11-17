@@ -567,7 +567,7 @@ mod tests {
         assert!(album.art.is_resource());
         assert_eq!(
             album.art.largest(),
-            Some("resource:///dev/diegovsky/Riff/defaults/album-default.svg")
+            Some("resource:///io/github/gusthanks/Canto/defaults/album-default.svg")
         );
         assert_eq!(album.artists.len(), 1);
         assert_eq!(album.artists[0].name, "Unknown Artist");

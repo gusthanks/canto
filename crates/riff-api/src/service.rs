@@ -1624,7 +1624,7 @@ mod tests {
         }
     }
 
-    const PLACEHOLDER: &str = "resource:///dev/diegovsky/Riff/defaults/track-default.svg";
+    const PLACEHOLDER: &str = "resource:///io/github/gusthanks/Canto/defaults/track-default.svg";
     const REAL: &str = "https://i.scdn.co/image/album";
 
     #[test]

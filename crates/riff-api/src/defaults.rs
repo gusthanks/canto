@@ -19,11 +19,11 @@ pub enum EntityKind {
 impl EntityKind {
     fn resource_url(self) -> &'static str {
         match self {
-            EntityKind::Album => "resource:///dev/diegovsky/Riff/defaults/album-default.svg",
-            EntityKind::Artist => "resource:///dev/diegovsky/Riff/defaults/artist-default.svg",
-            EntityKind::Playlist => "resource:///dev/diegovsky/Riff/defaults/playlist-default.svg",
-            EntityKind::Track => "resource:///dev/diegovsky/Riff/defaults/track-default.svg",
-            EntityKind::User => "resource:///dev/diegovsky/Riff/defaults/user-default.svg",
+            EntityKind::Album => "resource:///io/github/gusthanks/Canto/defaults/album-default.svg",
+            EntityKind::Artist => "resource:///io/github/gusthanks/Canto/defaults/artist-default.svg",
+            EntityKind::Playlist => "resource:///io/github/gusthanks/Canto/defaults/playlist-default.svg",
+            EntityKind::Track => "resource:///io/github/gusthanks/Canto/defaults/track-default.svg",
+            EntityKind::User => "resource:///io/github/gusthanks/Canto/defaults/user-default.svg",
         }
     }
 }

@@ -19,7 +19,7 @@ mod imp {
     use super::*;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/details_page.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/details_page.ui")]
     pub struct DetailsPageWidget {
         #[template_child]
         pub scrolled_window: TemplateChild<gtk::ScrolledWindow>,

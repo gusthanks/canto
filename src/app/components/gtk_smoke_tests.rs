@@ -21,7 +21,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
 
     let display = gtk::gdk::Display::default().expect("default GDK display must exist");
     let css = gtk::CssProvider::new();
-    css.load_from_resource("/dev/diegovsky/Riff/app.css");
+    css.load_from_resource("/io/github/gusthanks/Canto/app.css");
     gtk::style_context_add_provider_for_display(
         &display,
         &css,
@@ -29,7 +29,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     );
 
     let icon_theme = gtk::IconTheme::for_display(&display);
-    icon_theme.add_resource_path("/dev/diegovsky/Riff/icons");
+    icon_theme.add_resource_path("/io/github/gusthanks/Canto/icons");
     assert!(
         icon_theme.has_icon("canto-genius-symbolic"),
         "canto-genius-symbolic icon must resolve via resource icon path"
@@ -54,13 +54,13 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     }
 
     for res_path in [
-        "/dev/diegovsky/Riff/window.ui",
-        "/dev/diegovsky/Riff/components/shortcuts.ui",
-        "/dev/diegovsky/Riff/components/playback_widget.ui",
-        "/dev/diegovsky/Riff/components/lyrics_page.ui",
-        "/dev/diegovsky/Riff/components/settings.ui",
-        "/dev/diegovsky/Riff/components/command_palette.ui",
-        "/dev/diegovsky/Riff/components/command_palette.css",
+        "/io/github/gusthanks/Canto/window.ui",
+        "/io/github/gusthanks/Canto/components/shortcuts.ui",
+        "/io/github/gusthanks/Canto/components/playback_widget.ui",
+        "/io/github/gusthanks/Canto/components/lyrics_page.ui",
+        "/io/github/gusthanks/Canto/components/settings.ui",
+        "/io/github/gusthanks/Canto/components/command_palette.ui",
+        "/io/github/gusthanks/Canto/components/command_palette.css",
     ] {
         gio::resources_lookup_data(res_path, gio::ResourceLookupFlags::NONE)
             .unwrap_or_else(|e| panic!("missing resource {}: {}", res_path, e));
@@ -140,7 +140,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
 /// its background, not just a plain dark disc.
 fn assert_card_playing_badge_shows_bars() {
     let css = gtk::CssProvider::new();
-    css.load_from_resource("/dev/diegovsky/Riff/components/card.css");
+    css.load_from_resource("/io/github/gusthanks/Canto/components/card.css");
     gtk::style_context_add_provider_for_display(
         &gtk::gdk::Display::default().unwrap(),
         &css,
@@ -253,7 +253,7 @@ fn dump_now_panel_sample() {
     window.destroy();
 
     // The main window's frame: top bar over the sidebar and content
-    let builder = gtk::Builder::from_resource("/dev/diegovsky/Riff/window.ui");
+    let builder = gtk::Builder::from_resource("/io/github/gusthanks/Canto/window.ui");
     let main: libadwaita::ApplicationWindow = builder.object("window").unwrap();
     for id in ["top_bar", "top_history", "home_button", "search_button", "top_search_slot", "user"] {
         assert!(builder.object::<glib::Object>(id).is_some(), "{id} must exist");
@@ -351,7 +351,7 @@ fn dump_now_panel_sample() {
 
     // An album header over its cover tint
     let css = gtk::CssProvider::new();
-    css.load_from_resource("/dev/diegovsky/Riff/components/details_page/style.css");
+    css.load_from_resource("/io/github/gusthanks/Canto/components/details_page/style.css");
     gtk::style_context_add_provider_for_display(
         &gtk::gdk::Display::default().unwrap(),
         &css,

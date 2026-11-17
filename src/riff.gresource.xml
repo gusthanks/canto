@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-  <gresource prefix="/dev/diegovsky/Riff">
+  <gresource prefix="/io/github/gusthanks/Canto">
     <file>window.ui</file>
     <file alias="dev_tools.ui">app/dev_tools/dev_tools.ui</file>
     <file>app.css</file>
@@ -77,7 +77,7 @@
     <!-- navigation panel -->
     <file alias="navigation_panel/navigation_panel_row.ui">app/components/shell/navigation_panel/navigation_panel_row.ui</file>
   </gresource>
-  <gresource prefix="/dev/diegovsky/Riff/icons/scalable/actions/">
+  <gresource prefix="/io/github/gusthanks/Canto/icons/scalable/actions/">
     <file compressed="true" preprocess="xml-stripblanks" alias="now-playing-symbolic.svg">../data/hicolor/symbolic/actions/now-playing-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="queue-symbolic.svg">../data/hicolor/symbolic/actions/queue-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="drawer-handle-symbolic.svg">../data/hicolor/symbolic/actions/drawer-handle-symbolic.svg</file>
@@ -94,6 +94,14 @@
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-queue-symbolic.svg">../data/hicolor/symbolic/actions/canto-queue-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-mini-player-symbolic.svg">../data/hicolor/symbolic/actions/canto-mini-player-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-more-symbolic.svg">../data/hicolor/symbolic/actions/canto-more-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="go-previous-symbolic.svg">../data/hicolor/symbolic/actions/go-previous-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="go-next-symbolic.svg">../data/hicolor/symbolic/actions/go-next-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="pan-start-symbolic.svg">../data/hicolor/symbolic/actions/pan-start-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="pan-end-symbolic.svg">../data/hicolor/symbolic/actions/pan-end-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="pan-down-symbolic.svg">../data/hicolor/symbolic/actions/pan-down-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="pan-up-symbolic.svg">../data/hicolor/symbolic/actions/pan-up-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="go-down-symbolic.svg">../data/hicolor/symbolic/actions/go-down-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="go-up-symbolic.svg">../data/hicolor/symbolic/actions/go-up-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-back-symbolic.svg">../data/hicolor/symbolic/actions/canto-back-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-forward-symbolic.svg">../data/hicolor/symbolic/actions/canto-forward-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-library-symbolic.svg">../data/hicolor/symbolic/actions/canto-library-symbolic.svg</file>

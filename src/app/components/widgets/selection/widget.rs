@@ -10,7 +10,7 @@ mod imp {
     use super::*;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/selection_toolbar.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/selection_toolbar.ui")]
     pub struct SelectionToolbarWidget {
         #[template_child]
         pub action_bar: TemplateChild<gtk::ActionBar>,

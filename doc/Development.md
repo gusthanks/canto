@@ -106,7 +106,7 @@ Adding a flag takes two coordinated changes: the Rust enum and the GSettings sch
    // in title(): FeatureFlag::MyFeature => "My Feature",
    ```
 
-2. In `data/dev.diegovsky.Riff.gschema.xml`, add a matching boolean key (the name must equal `key()`):
+2. In `data/io.github.gusthanks.Canto.gschema.xml`, add a matching boolean key (the name must equal `key()`):
 
    ```xml
    <key name="feature-my-feature" type="b">
@@ -132,8 +132,8 @@ if is_enabled(FeatureFlag::DeviceSelector) {
 Use `gsettings` to toggle flags without opening the Settings dialog:
 
 ```sh
-gsettings set dev.diegovsky.Riff feature-device-selector true
-gsettings set dev.diegovsky.Riff feature-pinned-objects false
+gsettings set io.github.gusthanks.Canto feature-device-selector true
+gsettings set io.github.gusthanks.Canto feature-pinned-objects false
 ```
 
 ## Testing and Debugging
@@ -255,7 +255,7 @@ just install
 just run       # install + run with debug logging
 ```
 
-GNOME Builder: open the project, make `flatpak/dev.diegovsky.Riff.snapshots.json` active, and build. Requires `org.freedesktop.Sdk.Extension.rust-stable` matching the Freedesktop SDK GNOME uses.
+GNOME Builder: open the project, make `flatpak/io.github.gusthanks.Canto.snapshots.json` active, and build. Requires `org.freedesktop.Sdk.Extension.rust-stable` matching the Freedesktop SDK GNOME uses.
 
 ## UI Development (Blueprint)
 
@@ -274,7 +274,7 @@ The dev menu's "Reload CSS" reloads stylesheets from disk without a restart, but
 
 ## Adding a GSetting
 
-Persistent settings are GSettings keys defined in `data/dev.diegovsky.Riff.gschema.xml`. To add one:
+Persistent settings are GSettings keys defined in `data/io.github.gusthanks.Canto.gschema.xml`. To add one:
 
 1. Add a `<key>` (and an `<enum>` above the schema if it is an enumerated value) to the gschema. Boolean example:
 
@@ -286,7 +286,7 @@ Persistent settings are GSettings keys defined in `data/dev.diegovsky.Riff.gsche
    ```
 
 2. Rebuild and install so the schema is recompiled (`./scripts/build.sh dev --install`; meson's post-install runs `glib-compile-schemas`). Reading a key that is not yet in the compiled schema aborts the app, so the schema must be installed before the code that uses it runs.
-3. Read or write it via `gio::Settings::new("dev.diegovsky.Riff")`.
+3. Read or write it via `gio::Settings::new("io.github.gusthanks.Canto")`.
 
 See [Creating a New Feature Flag](#creating-a-new-feature-flag) for the flag-specific variant of this workflow.
 

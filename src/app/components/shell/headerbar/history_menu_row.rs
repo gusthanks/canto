@@ -23,7 +23,7 @@ mod imp {
     use std::cell::Cell;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/history_menu_row.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/history_menu_row.ui")]
     pub struct HistoryMenuRow {
         #[template_child]
         pub icon: TemplateChild<gtk::Image>,

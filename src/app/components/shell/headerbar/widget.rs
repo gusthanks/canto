@@ -16,7 +16,7 @@ mod imp {
     use std::collections::HashMap;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/headerbar.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/headerbar.ui")]
     pub struct AppHeaderBar {
         #[template_child]
         pub breakpoint_bin: TemplateChild<libadwaita::BreakpointBin>,

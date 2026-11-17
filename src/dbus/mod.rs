@@ -33,7 +33,7 @@ async fn dbus_server(
         .request_name("org.mpris.MediaPlayer2.canto")
         .await;
     connection
-        .request_name("org.mpris.MediaPlayer2.dev.diegovsky.Riff")
+        .request_name("org.mpris.MediaPlayer2.io.github.gusthanks.Canto")
         .await?;
 
     receiver

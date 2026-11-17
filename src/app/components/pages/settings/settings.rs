@@ -30,7 +30,7 @@ mod imp {
     use libadwaita::subclass::prelude::*;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/settings.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/settings.ui")]
     pub struct SettingsDialog {
         #[template_child]
         pub general_page: TemplateChild<libadwaita::PreferencesPage>,

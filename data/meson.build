@@ -1,4 +1,4 @@
-install_data('canto.desktop',
+install_data('io.github.gusthanks.Canto.desktop',
   install_dir: get_option('datadir') / 'applications'
 )
 
@@ -9,11 +9,11 @@ install_subdir('hicolor',
   exclude_directories: ['symbolic/actions']
 )
 
-install_data('dev.diegovsky.Riff.metainfo.xml',
+install_data('io.github.gusthanks.Canto.metainfo.xml',
   install_dir: get_option('datadir') / 'metainfo'
 )
 
-install_data('dev.diegovsky.Riff.gschema.xml',
+install_data('io.github.gusthanks.Canto.gschema.xml',
   install_dir: get_option('datadir') / 'glib-2.0/schemas'
 )
 
@@ -31,6 +31,6 @@ if appstreamcli.found()
     appstreamcli,
     # --no-net keeps CLI from phoning home; --pedantic catches style issues
     args: ['validate', '--no-net', '--pedantic',
-          meson.current_source_dir() / 'dev.diegovsky.Riff.metainfo.xml']
+          meson.current_source_dir() / 'io.github.gusthanks.Canto.metainfo.xml']
   )
 endif

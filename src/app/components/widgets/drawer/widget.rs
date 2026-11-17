@@ -16,7 +16,7 @@ mod imp {
     use super::*;
 
     #[derive(Default, CompositeTemplate, glib::Properties)]
-    #[template(resource = "/dev/diegovsky/Riff/components/drawer.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/drawer.ui")]
     #[properties(wrapper_type = super::Drawer)]
     pub struct Drawer {
         #[property(get, set = Self::set_content)]

@@ -35,7 +35,7 @@ mod imp {
     /// One widget tree serves both layouts; a breakpoint flips `header_box`
     /// between horizontal (artwork beside text) and vertical (above it).
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/details_header.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/details_header.ui")]
     pub struct DetailsHeaderWidget {
         #[template_child]
         pub breakpoint_bin: TemplateChild<libadwaita::BreakpointBin>,

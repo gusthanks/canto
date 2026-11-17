@@ -136,7 +136,7 @@ def main():
                         help="which dimension to change (default: both)")
     parser.add_argument("--page", choices=("artist", "current"), default="artist",
                         help="page to resize on: the first saved artist, or whatever is showing (default: artist)")
-    parser.add_argument("--app-id", default="dev.diegovsky.Riff", help="application id (default: dev.diegovsky.Riff)")
+    parser.add_argument("--app-id", default="io.github.gusthanks.Canto", help="application id (default: io.github.gusthanks.Canto)")
     args = parser.parse_args()
 
     riff = Riff(args.app_id)

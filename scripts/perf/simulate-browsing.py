@@ -225,7 +225,7 @@ def main():
     parser.add_argument("-n", "--count", type=int, default=20, help="results to open per search (default: 20)")
     parser.add_argument("-p", "--pause", type=float, default=1, help="seconds to wait on each page before scrolling (default: 1)")
     parser.add_argument("-r", "--rounds", type=int, default=1, help="times to repeat the whole run (default: 1)")
-    parser.add_argument("--app-id", default="dev.diegovsky.Riff", help="application id (default: dev.diegovsky.Riff)")
+    parser.add_argument("--app-id", default="io.github.gusthanks.Canto", help="application id (default: io.github.gusthanks.Canto)")
     args = parser.parse_args()
 
     riff = Riff(args.app_id, args.pause)

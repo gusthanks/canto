@@ -2,9 +2,9 @@
 Version=1.5
 Name=Canto
 Exec=canto %u
-GenericName=Spotify Music Player & Synced Lyrics
+GenericName=Music Player
 Comment=Spotify Music Player & Synced Lyrics
-Icon=canto
+Icon=io.github.gusthanks.Canto
 Terminal=false
 Type=Application
 Categories=GTK;GNOME;Music;AudioVideo;Audio;Player;

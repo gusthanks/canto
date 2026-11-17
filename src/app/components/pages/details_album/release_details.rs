@@ -13,7 +13,7 @@ mod imp {
 
     /// GObject subclass backed by the `release_details.blp` template.
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/release_details.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/release_details.ui")]
     pub struct ReleaseDetailsDialog {
         #[template_child]
         pub album_artist: TemplateChild<libadwaita::WindowTitle>,

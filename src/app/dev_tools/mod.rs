@@ -28,7 +28,7 @@ pub fn wire_dev_tools(
     // The dev menu lives in its own blueprint (src/app/dev_tools.blp) so the
     // dev-only markup stays out of window.blp. Load it here and pack it into
     // the navigation panel header, right after the search button.
-    let dev_builder = gtk::Builder::from_resource("/dev/diegovsky/Riff/dev_tools.ui");
+    let dev_builder = gtk::Builder::from_resource("/io/github/gusthanks/Canto/dev_tools.ui");
     let dev_menu: gtk::MenuButton = dev_builder.object("dev_menu").unwrap();
     let navigation_panel_header: libadwaita::HeaderBar =
         builder.object("navigation_panel_header").unwrap();
@@ -64,7 +64,7 @@ pub fn wire_dev_tools(
     // be registered up front and the switch just toggles the class. No
     // restart required.
     let skeleton_provider = gtk::CssProvider::new();
-    skeleton_provider.load_from_resource("/dev/diegovsky/Riff/skeleton_override.css");
+    skeleton_provider.load_from_resource("/io/github/gusthanks/Canto/skeleton_override.css");
     gtk::style_context_add_provider_for_display(
         &display,
         &skeleton_provider,
@@ -86,7 +86,7 @@ pub fn wire_dev_tools(
     // styles globally, so it is added and removed on demand rather than
     // gated behind a class. No restart required.
     let debug_css_provider = gtk::CssProvider::new();
-    debug_css_provider.load_from_resource("/dev/diegovsky/Riff/debug.css");
+    debug_css_provider.load_from_resource("/io/github/gusthanks/Canto/debug.css");
     let dev_debug_css_switch: gtk::Switch = dev_builder.object("dev_debug_css_switch").unwrap();
     let display_for_debug = display.clone();
     dev_debug_css_switch.connect_state_set(move |_, active| {

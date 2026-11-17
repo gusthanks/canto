@@ -40,6 +40,11 @@ fn main() {
         libc::mallopt(libc::M_ARENA_MAX, MALLOC_ARENAS);
     }
 
+    let migrated = riff_config::settings::migrate_from_old_app_id();
+    if migrated > 0 {
+        // Before the logger starts
+        eprintln!("canto: copied {migrated} settings from the old app id");
+    }
     let settings = settings::RiffSettings::new_from_gsettings().unwrap_or_default();
     setup_gtk(&settings);
 
@@ -48,14 +53,14 @@ fn main() {
     expose_custom_widgets();
 
     let gtk_app = gtk::Application::new(Some(config::APPID), ApplicationFlags::HANDLES_OPEN);
-    let builder = gtk::Builder::from_resource("/dev/diegovsky/Riff/window.ui");
+    let builder = gtk::Builder::from_resource("/io/github/gusthanks/Canto/window.ui");
     let window: libadwaita::ApplicationWindow = builder.object("window").unwrap();
 
     // In debug mode, the app id is different (see meson config) so we fix the resource path (and add a distinctive style)
     // Having a different app id allows running both the stable and development version at the same time
     if cfg!(debug_assertions) {
         window.add_css_class("devel");
-        gtk_app.set_resource_base_path(Some("/dev/diegovsky/Riff"));
+        gtk_app.set_resource_base_path(Some("/io/github/gusthanks/Canto"));
     }
 
     let context = glib::MainContext::default();
@@ -317,7 +322,7 @@ fn setup_gtk(settings: &settings::RiffSettings) {
     gio::resources_register(&res);
 
     let provider = gtk::CssProvider::new();
-    provider.load_from_resource("/dev/diegovsky/Riff/app.css");
+    provider.load_from_resource("/io/github/gusthanks/Canto/app.css");
 
     gtk::style_context_add_provider_for_display(
         &gdk::Display::default().unwrap(),

@@ -1,39 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="riff">
-  <enum id="dev.diegovsky.Riff.AudioBackend">
+  <enum id="io.github.gusthanks.Canto.AudioBackend">
     <value value="0" nick="pulseaudio" />
     <value value="1" nick="alsa" />
   </enum>
-  <enum id="dev.diegovsky.Riff.Bitrate">
+  <enum id="io.github.gusthanks.Canto.Bitrate">
     <value value="0" nick="96" />
     <value value="1" nick="160" />
     <value value="2" nick="320" />
   </enum>
-  <enum id="dev.diegovsky.Riff.ThemePref">
+  <enum id="io.github.gusthanks.Canto.ThemePref">
     <value value="0" nick="light" />
     <value value="1" nick="dark" />
     <value value="2" nick="system" />
   </enum>
-  <enum id="dev.diegovsky.Riff.CloseWindowBehavior">
+  <enum id="io.github.gusthanks.Canto.CloseWindowBehavior">
     <value value="0" nick="ask" />
     <value value="1" nick="minimize-to-background" />
     <value value="2" nick="stop-and-quit" />
   </enum>
-  <enum id="dev.diegovsky.Riff.VolumeCurve">
+  <enum id="io.github.gusthanks.Canto.VolumeCurve">
     <value value="0" nick="log" />
     <value value="1" nick="linear" />
     <value value="2" nick="cubic" />
   </enum>
-  <enum id="dev.diegovsky.Riff.NormalisationType">
+  <enum id="io.github.gusthanks.Canto.NormalisationType">
     <value value="0" nick="auto" />
     <value value="1" nick="track" />
     <value value="2" nick="album" />
   </enum>
-  <enum id="dev.diegovsky.Riff.NormalisationMethod">
+  <enum id="io.github.gusthanks.Canto.NormalisationMethod">
     <value value="0" nick="dynamic" />
     <value value="1" nick="basic" />
   </enum>
-  <enum id="dev.diegovsky.Riff.AudioFormat">
+  <enum id="io.github.gusthanks.Canto.AudioFormat">
     <value value="0" nick="s16" />
     <value value="1" nick="s24" />
     <value value="2" nick="s24_3" />
@@ -41,8 +41,8 @@
     <value value="4" nick="f32" />
     <value value="5" nick="f64" />
   </enum>
-  <schema id="dev.diegovsky.Riff" path="/dev/diegovsky/Riff/">
-    <key name='theme-preference' enum='dev.diegovsky.Riff.ThemePref'>
+  <schema id="io.github.gusthanks.Canto" path="/io/github/gusthanks/Canto/">
+    <key name='theme-preference' enum='io.github.gusthanks.Canto.ThemePref'>
       <default>'system'</default>
       <summary>The theme preference</summary>
     </key>
@@ -58,7 +58,7 @@
       <default>false</default>
       <summary>A flag to enable maximized mode</summary>
     </key>
-    <key name='close-window-behavior' enum='dev.diegovsky.Riff.CloseWindowBehavior'>
+    <key name='close-window-behavior' enum='io.github.gusthanks.Canto.CloseWindowBehavior'>
       <default>'ask'</default>
       <summary>Behavior when the window close button is pressed while playing</summary>
     </key>
@@ -66,11 +66,11 @@
       <default>true</default>
       <summary>Inhibit automatic system suspend while audio is playing</summary>
     </key>
-    <key name='player-bitrate' enum='dev.diegovsky.Riff.Bitrate'>
+    <key name='player-bitrate' enum='io.github.gusthanks.Canto.Bitrate'>
       <default>'160'</default>
       <summary>Songs bitrate (96, 160, 320kbps)</summary>
     </key>
-    <key name='audio-backend' enum='dev.diegovsky.Riff.AudioBackend'>
+    <key name='audio-backend' enum='io.github.gusthanks.Canto.AudioBackend'>
       <default>'pulseaudio'</default>
       <summary>Audio backend</summary>
     </key>
@@ -96,7 +96,7 @@
       <default>0</default>
       <summary>Port to communicate with Spotify's server (access point). Setting to 0 (default) allows Canto to use servers running on any port.</summary>
     </key>
-    <key name='volume-curve' enum='dev.diegovsky.Riff.VolumeCurve'>
+    <key name='volume-curve' enum='io.github.gusthanks.Canto.VolumeCurve'>
       <default>'log'</default>
       <summary>Volume slider curvature (log, linear, or cubic)</summary>
     </key>
@@ -104,11 +104,11 @@
       <default>false</default>
       <summary>Enable volume normalisation between tracks</summary>
     </key>
-    <key name='normalisation-type' enum='dev.diegovsky.Riff.NormalisationType'>
+    <key name='normalisation-type' enum='io.github.gusthanks.Canto.NormalisationType'>
       <default>'auto'</default>
       <summary>Normalisation type (auto, track, or album)</summary>
     </key>
-    <key name='normalisation-method' enum='dev.diegovsky.Riff.NormalisationMethod'>
+    <key name='normalisation-method' enum='io.github.gusthanks.Canto.NormalisationMethod'>
       <default>'dynamic'</default>
       <summary>Normalisation method (dynamic or basic)</summary>
     </key>
@@ -132,7 +132,7 @@
       <default>5.0</default>
       <summary>Normalisation knee width in dB</summary>
     </key>
-    <key name='audio-format' enum='dev.diegovsky.Riff.AudioFormat'>
+    <key name='audio-format' enum='io.github.gusthanks.Canto.AudioFormat'>
       <default>'s16'</default>
       <summary>Audio sample format (bit depth)</summary>
     </key>
@@ -409,6 +409,11 @@
       <default>false</default>
       <summary>Enable visual bridge</summary>
       <description>Opt-in runtime JSON state and lock-free audio energy output for external visualizers such as Chaosphere.</description>
+    </key>
+    <key name="migrated-from-riff" type="b">
+      <default>false</default>
+      <summary>Settings copied from the old app id</summary>
+      <description>Set once the settings saved under dev.diegovsky.Riff (Canto's name before) have been copied over.</description>
     </key>
   </schema>
 </schemalist>

@@ -37,7 +37,7 @@ mod imp {
     use super::*;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/search.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/search.ui")]
     pub struct SearchResultsWidget {
         #[template_child]
         pub search_bar: TemplateChild<libadwaita::Clamp>,

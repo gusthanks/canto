@@ -56,7 +56,7 @@ If you want Canto running silently at login as a ready Spotify Connect receiver 
 
 ```conf
 # ~/.config/hypr/hyprland.conf
-windowrule = workspace special:canto silent, match:class ^(dev\.diegovsky\.Riff(\.Devel)?)$
+windowrule = workspace special:canto silent, match:class ^(io\.github\.gusthanks\.Canto(\.Devel)?)$
 exec-once = [workspace special:canto silent] canto
 ```
 

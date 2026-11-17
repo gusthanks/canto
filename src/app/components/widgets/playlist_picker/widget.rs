@@ -43,7 +43,7 @@ mod imp {
     use super::*;
 
     #[derive(Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/playlist_picker.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/playlist_picker.ui")]
     pub struct PlaylistPicker {
         #[template_child]
         pub entry: TemplateChild<gtk::SearchEntry>,

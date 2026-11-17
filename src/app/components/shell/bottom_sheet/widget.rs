@@ -10,7 +10,7 @@ mod imp {
     use super::*;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/bottom_sheet.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/bottom_sheet.ui")]
     pub struct BottomSheetContent;
 
     #[glib::object_subclass]

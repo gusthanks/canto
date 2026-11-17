@@ -44,7 +44,7 @@ mod imp {
     use super::*;
 
     #[derive(Debug, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/playback_widget.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/playback_widget.ui")]
     pub struct PlaybackWidget {
         #[template_child]
         pub controls: TemplateChild<PlaybackControlsWidget>,

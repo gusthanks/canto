@@ -35,7 +35,7 @@ mod imp {
     use super::*;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/segmented_button.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/segmented_button.ui")]
     pub struct SegmentedButtonWidget {
         #[template_child]
         pub revealer: TemplateChild<gtk::Revealer>,

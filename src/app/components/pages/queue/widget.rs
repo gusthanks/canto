@@ -11,7 +11,7 @@ mod imp {
     use super::*;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/queue_page.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/queue_page.ui")]
     pub struct QueuePageWidget {
         #[template_child]
         pub selection_bar: TemplateChild<gtk::CenterBox>,

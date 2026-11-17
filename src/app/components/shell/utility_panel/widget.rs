@@ -11,7 +11,7 @@ mod imp {
     use super::*;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/utility_panel.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/utility_panel.ui")]
     pub struct UtilityPanelWidget {
         #[template_child]
         pub resize_handle: TemplateChild<gtk::Box>,

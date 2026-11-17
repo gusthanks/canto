@@ -12,7 +12,7 @@ mod imp {
     use super::*;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/lyrics_page.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/lyrics_page.ui")]
     pub struct LyricsPageWidget {
         #[template_child]
         pub lyrics_stack: TemplateChild<gtk::Stack>,

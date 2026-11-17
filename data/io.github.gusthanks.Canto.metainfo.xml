@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>dev.diegovsky.Riff</id>
+  <id>io.github.gusthanks.Canto</id>
   <url type="homepage">https://github.com/gusthanks/canto</url>
   <url type="bugtracker">https://github.com/gusthanks/canto/issues</url>
   <url type="vcs-browser">https://github.com/gusthanks/canto/</url>
 
   <name>Canto</name>
-  <developer id="diegovsky@fosstodon.org">
-     <name>Diego Augusto</name>
+  <developer id="io.github.gusthanks">
+     <name>Gustavo Costa</name>
   </developer>
   <summary>Stream Spotify without distraction</summary>
 
@@ -16,7 +16,7 @@
     <color type="primary" scheme_preference="dark">#354762</color>
   </branding>
 
-  <launchable type="desktop-id">canto.desktop</launchable>
+  <launchable type="desktop-id">io.github.gusthanks.Canto.desktop</launchable>
 
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>

@@ -82,3 +82,4 @@ src/app/components/utils.rs
 src/app/components/widgets/playlist_dialog/widget.rs
 src/app/state/app_state.rs
 src/settings.rs
+src/app/components/pages/about/about.rs

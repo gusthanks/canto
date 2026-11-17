@@ -12,7 +12,7 @@ mod imp {
     use libadwaita::subclass::prelude::*;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/pan.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/pan.ui")]
     pub struct PanWidget {
         #[template_child]
         pub pan_lock: TemplateChild<gtk::ToggleButton>,

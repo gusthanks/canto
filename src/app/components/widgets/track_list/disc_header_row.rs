@@ -13,7 +13,7 @@ mod imp {
     use super::*;
 
     #[derive(Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/disc_header_row.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/disc_header_row.ui")]
     pub struct DiscHeaderRow {
         #[template_child]
         pub disc_header_label: TemplateChild<gtk::Label>,

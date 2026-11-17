@@ -26,7 +26,7 @@ mod imp {
     use libadwaita::subclass::prelude::*;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/equalizer.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/equalizer.ui")]
     pub struct EqualizerWidget {
         #[template_child]
         pub eq_lock: TemplateChild<gtk::ToggleButton>,

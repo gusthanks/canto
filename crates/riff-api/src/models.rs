@@ -383,17 +383,17 @@ mod tests {
     #[test]
     fn resource_image_set_is_flagged_and_readable() {
         let set =
-            ImageSet::from_resource("resource:///dev/diegovsky/Riff/defaults/album-default.svg");
+            ImageSet::from_resource("resource:///io/github/gusthanks/Canto/defaults/album-default.svg");
         assert!(set.is_resource());
         // A resource set has a single, width-less image, so the size helpers
         // still return its URL.
         assert_eq!(
             set.largest(),
-            Some("resource:///dev/diegovsky/Riff/defaults/album-default.svg")
+            Some("resource:///io/github/gusthanks/Canto/defaults/album-default.svg")
         );
         assert_eq!(
             set.best_for_width(180),
-            Some("resource:///dev/diegovsky/Riff/defaults/album-default.svg")
+            Some("resource:///io/github/gusthanks/Canto/defaults/album-default.svg")
         );
     }
 

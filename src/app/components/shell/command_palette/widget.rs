@@ -60,7 +60,7 @@ mod imp {
     use super::*;
 
     #[derive(Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/command_palette.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/command_palette.ui")]
     pub struct CommandPaletteDialog {
         #[template_child]
         pub search_entry: TemplateChild<gtk::SearchEntry>,

@@ -49,7 +49,7 @@ mod imp {
     use std::cell::RefCell;
 
     #[derive(Debug, CompositeTemplate, Properties)]
-    #[template(resource = "/dev/diegovsky/Riff/navigation_panel/navigation_panel_row.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/navigation_panel/navigation_panel_row.ui")]
     #[properties(wrapper_type = super::NavigationPanelRow)]
     pub struct NavigationPanelRow {
         #[template_child]

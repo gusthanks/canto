@@ -12,7 +12,7 @@ mod imp {
     use libadwaita::subclass::prelude::*;
 
     #[derive(Debug, Default, CompositeTemplate)]
-    #[template(resource = "/dev/diegovsky/Riff/components/pitch.ui")]
+    #[template(resource = "/io/github/gusthanks/Canto/components/pitch.ui")]
     pub struct PitchWidget {
         #[template_child]
         pub pitch_lock: TemplateChild<gtk::ToggleButton>,

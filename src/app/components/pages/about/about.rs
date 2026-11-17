@@ -1,3 +1,4 @@
+use gettextrs::gettext;
 use crate::config;
 
 pub fn setup_about(about: libadwaita::AboutDialog) {
@@ -17,9 +18,25 @@ fn setup_credits(about: &libadwaita::AboutDialog) {
         .split('\n')
         .collect();
     about.set_version(config::VERSION);
-    about.set_developers(&authors);
+    about.set_developers(&["Gustavo Costa https://github.com/gusthanks"]);
+    about.set_designers(&["Gustavo Costa https://github.com/gusthanks"]);
     about.set_translator_credits(translators);
-    about.set_artists(&artists);
+    // Canto grew out of Riff (and Riff out of Spot): their people come along
+    // translators: Heading in the About window's credits, followed by the project Canto is based on.
+    about.add_acknowledgement_section(
+        Some(&gettext("Based On")),
+        &["Riff, by Diego Augusto https://github.com/Diegovsky/riff"],
+    );
+    // translators: Heading in the About window's credits: the people who made Riff and Spot.
+    about.add_credit_section(Some(&gettext("Riff and Spot Developers")), &authors);
+    // translators: Heading in the About window's credits: the artists who drew for Riff and Spot.
+    about.add_credit_section(Some(&gettext("Riff and Spot Artists")), &artists);
+    about.add_legal_section(
+        "Riff",
+        Some("© 2020 Alexandre Trendel and the Riff contributors"),
+        gtk::License::MitX11,
+        None,
+    );
 }
 
 fn setup_issue_link(about: &libadwaita::AboutDialog) {
