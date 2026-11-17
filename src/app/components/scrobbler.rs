@@ -14,8 +14,8 @@ use canto_api::scrobbler::{
 };
 use canto_api::DomainError;
 use canto_config::settings::{
-    LASTFM_API_KEY, LASTFM_API_SECRET, LASTFM_SESSION_KEY, LISTENBRAINZ_TOKEN, SCROBBLE_ENABLED,
-    SCROBBLE_RESPECT_REMOTE, SETTINGS,
+    LASTFM_API_KEY, LASTFM_API_SECRET, LASTFM_SESSION_KEY, LASTFM_SESSION_REJECTED,
+    LISTENBRAINZ_TOKEN, SCROBBLE_ENABLED, SCROBBLE_RESPECT_REMOTE, SETTINGS,
 };
 use gio::prelude::*;
 
@@ -253,9 +253,10 @@ impl Inner {
                     let mut flushed_ok = false;
                     if creds.has_lastfm() {
                         let res = send_lastfm(&client, &creds, &track).await;
+                        note_lastfm_answer(&res);
                         match res {
                             Ok(()) => flushed_ok = true,
-                            Err(e) if e.is_transient() => {
+                            Err(e) if e.is_transient() || is_refused(&e) => {
                                 queue
                                     .lock()
                                     .await
@@ -329,6 +330,31 @@ impl Inner {
     }
 }
 
+/// Last.fm refused the connection itself (revoked, or a new API key), not
+/// just this scrobble.
+fn is_refused(e: &DomainError) -> bool {
+    matches!(e, DomainError::AuthExpired)
+}
+
+/// Remembers whether Last.fm refuses the saved connection, so Settings can
+/// ask to connect again.
+fn note_lastfm_answer(res: &Result<(), DomainError>) {
+    let refused = match res {
+        Ok(()) => false,
+        Err(e) if is_refused(e) => true,
+        Err(_) => return,
+    };
+    let settings = gio::Settings::new(SETTINGS);
+    if settings.boolean(LASTFM_SESSION_REJECTED) != refused {
+        if refused {
+            warn!(
+                "scrobbler: Last.fm refused the saved connection; keeping plays until reconnected"
+            );
+        }
+        let _ = settings.set_boolean(LASTFM_SESSION_REJECTED, refused);
+    }
+}
+
 async fn send_lastfm(
     client: &canto_api::HttpClient,
     creds: &Credentials,
@@ -385,7 +411,9 @@ async fn flush_pending_items(
                     keep.push(item);
                     continue;
                 }
-                send_lastfm(client, creds, &item.track).await
+                let res = send_lastfm(client, creds, &item.track).await;
+                note_lastfm_answer(&res);
+                res
             }
             ScrobbleTarget::ListenBrainz => {
                 if !creds.has_listenbrainz() {
@@ -401,6 +429,12 @@ async fn flush_pending_items(
             Ok(()) => {}
             Err(e) if e.is_transient() => {
                 item.attempts = item.attempts.saturating_add(1);
+                blocked.mark(item.target);
+                keep.push(item);
+            }
+            // The connection was refused: keep the plays for when it's
+            // connected again, without asking again for each one
+            Err(e) if is_refused(&e) => {
                 blocked.mark(item.target);
                 keep.push(item);
             }

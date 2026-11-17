@@ -441,6 +441,11 @@
       <summary>Last.fm session key</summary>
       <description>Session key obtained after authorizing Canto with Last.fm.</description>
     </key>
+    <key name="lastfm-session-rejected" type="b">
+      <default>false</default>
+      <summary>Last.fm refused the saved connection</summary>
+      <description>Set when Last.fm rejects the session (access revoked on its site, or a new API key). Scrobbles wait in the queue until Canto is connected again.</description>
+    </key>
     <key name="lastfm-username" type="s">
       <default>""</default>
       <summary>Last.fm username</summary>

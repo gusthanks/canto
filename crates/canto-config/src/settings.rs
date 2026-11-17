@@ -164,6 +164,9 @@ pub const LASTFM_API_KEY: &str = "lastfm-api-key";
 pub const SOLOIST_ENABLED: &str = "soloist-enabled";
 pub const LASTFM_API_SECRET: &str = "lastfm-api-secret";
 pub const LASTFM_SESSION_KEY: &str = "lastfm-session-key";
+/// Last.fm refused the saved connection (revoked in its settings, or the
+/// API key changed); cleared when it accepts a scrobble or on reconnecting.
+pub const LASTFM_SESSION_REJECTED: &str = "lastfm-session-rejected";
 pub const LASTFM_USERNAME: &str = "lastfm-username";
 pub const LISTENBRAINZ_TOKEN: &str = "listenbrainz-token";
 pub const SMART_QUEUE_CONTINUATION: &str = "smart-queue-continuation";

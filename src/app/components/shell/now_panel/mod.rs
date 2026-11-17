@@ -901,6 +901,15 @@ fn load_extras(
         }
         match result {
             Ok(info) => w.show_credits(&track, &info),
+            Err(canto_api::DomainError::AuthExpired) => {
+                // A revoked or mistyped token: say so, and lead to the fix
+                w.credits_text(&gettext(
+                    "Genius didn't accept your token. Paste a new one in Settings to see the credits again.",
+                ));
+                w.credits_button(&gettext("Set Up Genius"), |button| {
+                    let _ = button.activate_action("win.preferences-integrations", None);
+                });
+            }
             Err(_) => {
                 w.credits_text(&gettext("Couldn't load the credits from Genius."));
                 let url = api.genius_search_url(&artist, &title);

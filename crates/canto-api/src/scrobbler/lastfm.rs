@@ -545,20 +545,7 @@ async fn parse_lastfm_response(response: reqwest::Response) -> Result<Value, Dom
             .and_then(Value::as_str)
             .unwrap_or("Last.fm API error")
             .to_string();
-        return Err(match code {
-            9 => DomainError::AuthExpired,
-            8 | 11 | 16 => DomainError::ServerError {
-                status: 503,
-                message,
-            },
-            29 => DomainError::RateLimited {
-                retry_after_ms: None,
-            },
-            _ => DomainError::ClientError {
-                status: status.as_u16().max(400),
-                message,
-            },
-        });
+        return Err(lastfm_error(code, message, status.as_u16()));
     }
 
     if !status.is_success() {
@@ -571,9 +558,46 @@ async fn parse_lastfm_response(response: reqwest::Response) -> Result<Value, Dom
     Ok(val)
 }
 
+/// The error for a Last.fm error code (its API answers 200 with `error`).
+fn lastfm_error(code: u64, message: String, http_status: u16) -> DomainError {
+    match code {
+        // Invalid session, invalid or suspended API key: the connection
+        // itself is refused, not this one call
+        9 | 10 | 26 => DomainError::AuthExpired,
+        8 | 11 | 16 => DomainError::ServerError {
+            status: 503,
+            message,
+        },
+        29 => DomainError::RateLimited {
+            retry_after_ms: None,
+        },
+        _ => DomainError::ClientError {
+            status: http_status.max(400),
+            message,
+        },
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_refused_connection_is_told_apart_from_a_bad_scrobble() {
+        for code in [9, 10, 26] {
+            assert!(matches!(
+                lastfm_error(code, String::new(), 200),
+                DomainError::AuthExpired
+            ));
+        }
+        // Bad parameters: this scrobble only
+        assert!(matches!(
+            lastfm_error(6, "Invalid parameters".into(), 200),
+            DomainError::ClientError { status: 400, .. }
+        ));
+        assert!(lastfm_error(11, String::new(), 200).is_transient());
+        assert!(lastfm_error(29, String::new(), 200).is_transient());
+    }
 
     #[test]
     fn api_sig_sorts_alphabetically_excludes_format_and_callback_and_matches_md5() {

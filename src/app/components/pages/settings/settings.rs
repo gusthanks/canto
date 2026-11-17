@@ -19,9 +19,10 @@ use super::PitchWidget;
 use super::SettingsModel;
 
 use canto_config::settings::{
-    GENIUS_ACCESS_TOKEN, LASTFM_API_KEY, LASTFM_API_SECRET, LASTFM_SESSION_KEY, LASTFM_USERNAME,
-    LISTENBRAINZ_TOKEN, RESTART_REQUIRED_KEYS, SCROBBLE_ENABLED, SCROBBLE_RESPECT_REMOTE, SETTINGS,
-    SMART_QUEUE_CONTINUATION, VISUAL_BRIDGE_ENABLED,
+    GENIUS_ACCESS_TOKEN, LASTFM_API_KEY, LASTFM_API_SECRET, LASTFM_SESSION_KEY,
+    LASTFM_SESSION_REJECTED, LASTFM_USERNAME, LISTENBRAINZ_TOKEN, RESTART_REQUIRED_KEYS,
+    SCROBBLE_ENABLED, SCROBBLE_RESPECT_REMOTE, SETTINGS, SMART_QUEUE_CONTINUATION,
+    VISUAL_BRIDGE_ENABLED,
 };
 
 mod imp {
@@ -1120,6 +1121,7 @@ impl SettingsDialog {
         imp.lastfm_disconnect_btn.connect_clicked(move |_| {
             let _ = disconnect_settings.set_string(LASTFM_SESSION_KEY, "");
             let _ = disconnect_settings.set_string(LASTFM_USERNAME, "");
+            let _ = disconnect_settings.set_boolean(LASTFM_SESSION_REJECTED, false);
             if let Some(dialog) = weak_self.upgrade() {
                 *dialog.imp().lastfm_pending_token.borrow_mut() = None;
                 dialog.refresh_lastfm_auth_row(&disconnect_settings);
@@ -1130,6 +1132,7 @@ impl SettingsDialog {
             LASTFM_API_KEY,
             LASTFM_API_SECRET,
             LASTFM_SESSION_KEY,
+            LASTFM_SESSION_REJECTED,
             LASTFM_USERNAME,
         ] {
             let weak_self = self.downgrade();
@@ -1157,7 +1160,17 @@ impl SettingsDialog {
         let has_session = !session_key.trim().is_empty();
         let has_pending = imp.lastfm_pending_token.borrow().is_some();
 
-        if has_session {
+        if has_session && settings.boolean(LASTFM_SESSION_REJECTED) {
+            // Last.fm refused the saved connection: lead through connecting again
+            imp.lastfm_auth_row.set_subtitle(&if has_pending {
+                gettext("Step 1 opened in browser. Approve access, then click 2. Complete.")
+            } else {
+                gettext("Last.fm no longer accepts this connection. Your plays are kept: click 1. Open Auth to connect again")
+            });
+            imp.lastfm_step1_btn.set_sensitive(has_creds);
+            imp.lastfm_step2_btn.set_sensitive(has_creds && has_pending);
+            imp.lastfm_disconnect_btn.set_visible(true);
+        } else if has_session {
             let status = if username.trim().is_empty() {
                 gettext("Connected to Last.fm")
             } else {
@@ -1259,6 +1272,7 @@ impl SettingsDialog {
                     Ok(session) => {
                         let _ = s.set_string(LASTFM_SESSION_KEY, &session.key);
                         let _ = s.set_string(LASTFM_USERNAME, &session.username);
+                        let _ = s.set_boolean(LASTFM_SESSION_REJECTED, false);
                         *dialog.imp().lastfm_pending_token.borrow_mut() = None;
                         dialog.refresh_lastfm_auth_row(&s);
                         let msg = if session.username.is_empty() {
