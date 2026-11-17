@@ -1611,7 +1611,9 @@ fn present_scrobbling_guide_dialog(parent: &SettingsDialog) {
 
 /// One line on how Soloist stands, for the settings window.
 fn soloist_status_text(report: &crate::connect::soloist::Report, key_saved: bool) -> String {
-    let mut text = if !report.installed {
+    let mut text = if !report.installed && key_saved {
+        gettext("Not installed yet: Canto gets it from Spotify when you press play")
+    } else if !report.installed {
         gettext("Not installed. Canto plays through the Spotify app hidden in the background.")
     } else if !key_saved {
         gettext("Installed, waiting for a key")
@@ -1628,7 +1630,7 @@ fn soloist_status_text(report: &crate::connect::soloist::Report, key_saved: bool
         Some(days) if days < 0 => {
             text.push_str(" · ");
             text.push_str(&gettext(
-                "This Soloist build has expired; download the new one",
+                "This Soloist build has expired; Canto gets the new one when you press play",
             ));
         }
         Some(days) if days <= 14 => {

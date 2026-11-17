@@ -26,6 +26,12 @@ pub const DEVICE_NAME: &str = "Canto";
 /// A Soloist build stops working this long after it was built.
 pub const BUILD_LIFETIME_DAYS: i64 = 90;
 const CTL_TIMEOUT: Duration = Duration::from_secs(3);
+/// Where Spotify publishes the current Soloist build.
+const DOWNLOAD_URL: &str = "https://soloist-builds.spotifycdn.com/soloist_release_x86_64.tar.gz";
+/// A new build is fetched once this few days are left.
+pub const UPDATE_WITHIN_DAYS: i64 = 30;
+/// How often the CDN is asked again when it had nothing newer.
+const RECHECK_AFTER_SECS: i64 = 20 * 3600;
 
 /// The pid of the Soloist Canto started, to stop it along with Canto.
 static SPAWNED: Mutex<Option<u32>> = Mutex::new(None);
@@ -400,6 +406,132 @@ pub fn days_left() -> Option<i64> {
     Some(built + BUILD_LIFETIME_DAYS - today)
 }
 
+/// What looking for a new Soloist build did.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum UpdateOutcome {
+    /// The installed build has more than `UPDATE_WITHIN_DAYS` left.
+    UpToDate,
+    /// Asked a moment ago; not asking the CDN again yet.
+    CheckedRecently,
+    /// The CDN has the same build (or an older one).
+    NothingNewer,
+    /// A newer build is in place; it runs the next time Soloist starts.
+    Updated { days_left: i64 },
+}
+
+/// Whether to ask the CDN for a new build: when none is installed, or few
+/// days are left and the last ask was a while ago (always once expired).
+pub fn should_check(days_left: Option<i64>, secs_since_last_check: Option<i64>) -> bool {
+    match days_left {
+        None => true,
+        Some(days) if days <= 0 => true,
+        Some(days) if days > UPDATE_WITHIN_DAYS => false,
+        Some(_) => secs_since_last_check.is_none_or(|secs| secs >= RECHECK_AFTER_SECS),
+    }
+}
+
+fn last_check_path() -> PathBuf {
+    managed_dir().join("last-update-check")
+}
+
+fn secs_since_last_check(now_secs: i64) -> Option<i64> {
+    let text = std::fs::read_to_string(last_check_path()).ok()?;
+    let then: i64 = text.trim().parse().ok()?;
+    Some(now_secs - then)
+}
+
+fn run_checked(command: &mut Command, what: &str) -> Result<(), String> {
+    let output = command
+        .stdin(Stdio::null())
+        .output()
+        .map_err(|e| format!("{what}: {e}"))?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        let err = String::from_utf8_lossy(&output.stderr);
+        Err(format!("{what}: {}", err.trim()))
+    }
+}
+
+/// Fetches Spotify's current Soloist build when the installed one is
+/// missing or near its end, and puts it where `binary()` looks first. The
+/// running Soloist keeps going; the new one is used from its next start.
+/// Blocks for the download: call it off the main thread.
+pub fn update() -> Result<UpdateOutcome, String> {
+    if !cfg!(target_arch = "x86_64") || std::env::var_os("CANTO_SOLOIST_CMD").is_some() {
+        return Ok(UpdateOutcome::UpToDate);
+    }
+    let installed_day = version().as_deref().and_then(parse_build_day);
+    let now_secs = (now_ms().ok_or("no clock")? / 1000) as i64;
+    let days = installed_day.map(|day| day + BUILD_LIFETIME_DAYS - now_secs / 86_400);
+    if !should_check(days, secs_since_last_check(now_secs)) {
+        return Ok(if days.is_some_and(|d| d > UPDATE_WITHIN_DAYS) {
+            UpdateOutcome::UpToDate
+        } else {
+            UpdateOutcome::CheckedRecently
+        });
+    }
+
+    let dir = managed_dir();
+    let work = dir.join("download");
+    if work.exists() {
+        // Leftovers of an earlier download Canto made itself
+        std::fs::remove_dir_all(&work).map_err(|e| format!("cleaning {work:?}: {e}"))?;
+    }
+    std::fs::create_dir_all(&work).map_err(|e| format!("creating {work:?}: {e}"))?;
+    let archive = work.join("soloist.tar.gz");
+    info!("downloading the current Soloist build");
+    run_checked(
+        Command::new("curl")
+            .args(["--fail", "--silent", "--show-error", "--location"])
+            .args(["--proto", "=https", "--max-time", "600", "--output"])
+            .arg(&archive)
+            .arg(DOWNLOAD_URL),
+        "downloading Soloist",
+    )?;
+    run_checked(
+        Command::new("tar")
+            .arg("-xzf")
+            .arg(&archive)
+            .arg("-C")
+            .arg(&work)
+            .args(["soloist", "THIRD_PARTY_LICENSES.txt", "CHANGELOG.md"]),
+        "unpacking Soloist",
+    )?;
+    let candidate = work.join("soloist");
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&candidate, std::fs::Permissions::from_mode(0o755))
+            .map_err(|e| format!("making Soloist runnable: {e}"))?;
+    }
+    let output = Command::new(&candidate)
+        .arg("--version")
+        .stdin(Stdio::null())
+        .stderr(Stdio::null())
+        .output()
+        .map_err(|e| format!("the downloaded Soloist does not run: {e}"))?;
+    let new_version = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let new_day = parse_build_day(&new_version)
+        .ok_or_else(|| format!("the downloaded Soloist has no build date: {new_version:?}"))?;
+    let _ = std::fs::write(last_check_path(), now_secs.to_string());
+    if installed_day.is_some_and(|day| new_day <= day) {
+        let _ = std::fs::remove_dir_all(&work);
+        info!("no newer Soloist build yet ({new_version})");
+        return Ok(UpdateOutcome::NothingNewer);
+    }
+    for name in ["THIRD_PARTY_LICENSES.txt", "CHANGELOG.md"] {
+        let _ = std::fs::rename(work.join(name), dir.join(name));
+    }
+    // Same folder, so the switch is atomic; a running Soloist keeps the
+    // file it opened
+    std::fs::rename(&candidate, dir.join("soloist"))
+        .map_err(|e| format!("putting the new Soloist in place: {e}"))?;
+    let _ = std::fs::remove_dir_all(&work);
+    let days_left = new_day + BUILD_LIFETIME_DAYS - now_secs / 86_400;
+    info!("Soloist updated to {new_version} ({days_left} days left)");
+    Ok(UpdateOutcome::Updated { days_left })
+}
+
 /// How Soloist stands, for the settings window.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Report {
@@ -460,6 +592,43 @@ mod tests {
                 .position_ms,
             169000
         );
+    }
+
+    #[test]
+    fn asks_for_a_new_build_only_when_needed() {
+        let day = 24 * 3600;
+        // Nothing installed, or expired: always
+        assert!(should_check(None, Some(60)));
+        assert!(should_check(Some(0), Some(60)));
+        assert!(should_check(Some(-3), Some(60)));
+        // Plenty of time left: never
+        assert!(!should_check(Some(UPDATE_WITHIN_DAYS + 1), None));
+        assert!(!should_check(Some(80), Some(30 * day)));
+        // Near the end: unless asked a moment ago
+        assert!(should_check(Some(UPDATE_WITHIN_DAYS), None));
+        assert!(should_check(Some(10), Some(day)));
+        assert!(!should_check(Some(10), Some(3600)));
+    }
+
+    /// The real download, into an empty folder:
+    /// `XDG_DATA_HOME=<empty> HOME=<empty> PATH=/usr/bin <test bin>
+    /// connect::soloist::tests::downloads_the_current_build --ignored --exact`
+    #[test]
+    #[ignore = "downloads about 14 MB from Spotify's CDN"]
+    fn downloads_the_current_build() {
+        assert!(
+            binary().is_none(),
+            "point XDG_DATA_HOME and HOME at an empty folder and PATH at /usr/bin"
+        );
+        let outcome = update().expect("the update fails");
+        eprintln!("first: {outcome:?}");
+        assert!(matches!(outcome, UpdateOutcome::Updated { days_left } if days_left > 0));
+        assert_eq!(binary(), Some(managed_dir().join("soloist")));
+        assert!(days_left().is_some_and(|d| d > UPDATE_WITHIN_DAYS));
+        assert!(!managed_dir().join("download").exists());
+        let again = update().expect("the second update fails");
+        eprintln!("again: {again:?}");
+        assert_eq!(again, UpdateOutcome::UpToDate);
     }
 
     #[test]

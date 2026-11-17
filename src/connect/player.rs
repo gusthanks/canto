@@ -684,7 +684,7 @@ impl ConnectPlayer {
     /// installed and has a key, starting it if needed. Returns whether it
     /// took over; if not, the hidden Spotify app is the fallback.
     async fn use_soloist(&self) -> bool {
-        if !soloist::is_enabled() || soloist::binary().is_none() {
+        if !soloist::is_enabled() {
             return false;
         }
         if !soloist::is_running() {
@@ -692,6 +692,16 @@ impl ConnectPlayer {
                 info!("no Soloist key saved; playing through the Spotify app instead");
                 return false;
             };
+            // Missing or expired: get the current build before playing
+            if soloist::binary().is_none() || soloist::days_left().is_some_and(|d| d <= 0) {
+                self.send_actions([AppAction::ShowNotification(gettext(
+                    "Getting the current Spotify Soloist…",
+                ))]);
+                Self::log_update(tokio::task::spawn_blocking(soloist::update).await);
+                if soloist::binary().is_none() || soloist::days_left().is_some_and(|d| d <= 0) {
+                    return false;
+                }
+            }
             let started =
                 tokio::task::spawn_blocking(move || soloist::spawn(&key, SOLOIST_INITIAL_VOLUME))
                     .await;
@@ -707,6 +717,10 @@ impl ConnectPlayer {
                 }
             }
         }
+        // Near its end: fetch the next build quietly, used from the next start
+        tokio::task::spawn(async {
+            Self::log_update(tokio::task::spawn_blocking(soloist::update).await);
+        });
         match self.wait_for_soloist_device().await {
             Some(device) => {
                 self.switch_to_soloist(device).await;
@@ -716,6 +730,14 @@ impl ConnectPlayer {
                 warn!("Soloist didn't show up as a device; using the Spotify app instead");
                 false
             }
+        }
+    }
+
+    fn log_update(result: Result<Result<soloist::UpdateOutcome, String>, tokio::task::JoinError>) {
+        match result {
+            Ok(Ok(outcome)) => debug!("Soloist update check: {outcome:?}"),
+            Ok(Err(e)) => warn!("could not update Soloist: {e}"),
+            Err(e) => warn!("updating Soloist panicked: {e}"),
         }
     }
 
