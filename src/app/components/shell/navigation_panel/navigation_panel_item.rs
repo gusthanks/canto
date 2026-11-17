@@ -167,6 +167,18 @@ impl NavigationPanelItem {
         }
     }
 
+    /// The key of this row in the "recently played" list.
+    pub fn library_key(&self) -> Option<String> {
+        let data = self.property::<String>("data");
+        match self.id().as_str() {
+            SAVED_TRACKS => Some("liked".to_string()),
+            PLAYLIST => Some(format!("playlist:{data}")),
+            ALBUM => Some(format!("album:{data}")),
+            ARTIST => Some(format!("artist:{data}")),
+            _ => None,
+        }
+    }
+
     /// Whether the cover is round (artists).
     pub fn round_cover(&self) -> bool {
         self.id() == ARTIST

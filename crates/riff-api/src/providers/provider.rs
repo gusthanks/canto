@@ -208,6 +208,12 @@ pub trait MusicProvider: Send + Sync + 'static {
     async fn get_player_queue(&self) -> Result<Queue, DomainError>;
     async fn get_player_state(&self) -> Result<PlayerState, DomainError>;
     async fn player_resume(&self, device_id: &str) -> Result<(), DomainError>;
+    /// What the user played lately, newest first, as library keys
+    /// ("playlist:ID", "album:ID", "artist:ID", "liked").
+    async fn get_recent_contexts(&self) -> Result<Vec<String>, DomainError> {
+        Ok(vec![])
+    }
+
     /// Moves playback to `device_id`; `play` keeps it playing there.
     async fn player_transfer(&self, device_id: &str, play: bool) -> Result<(), DomainError> {
         let _ = (device_id, play);

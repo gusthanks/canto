@@ -10,6 +10,35 @@ pub mod spotify;
 
 use crate::models::{AlbumType, ContentRating, Image, ImageSet, ReleaseDate};
 
+/// The library key ("playlist:ID", "album:ID", "artist:ID", "liked") of a
+/// context URI like `spotify:playlist:ID` or `spotify:user:NAME:collection`.
+pub fn recent_context_key(uri: &str) -> Option<String> {
+    let parts: Vec<&str> = uri.split(':').collect();
+    if parts.last() == Some(&"collection") || parts.contains(&"collection") {
+        return Some("liked".to_string());
+    }
+    let kind_at = parts
+        .iter()
+        .rposition(|p| matches!(*p, "playlist" | "album" | "artist"))?;
+    let id = parts.get(kind_at + 1).filter(|id| !id.is_empty())?;
+    Some(format!("{}:{}", parts[kind_at], id))
+}
+
+#[cfg(test)]
+mod recent_tests {
+    use super::recent_context_key;
+
+    #[test]
+    fn context_uris_become_library_keys() {
+        assert_eq!(recent_context_key("spotify:playlist:abc").as_deref(), Some("playlist:abc"));
+        assert_eq!(recent_context_key("spotify:user:gus:playlist:xyz").as_deref(), Some("playlist:xyz"));
+        assert_eq!(recent_context_key("spotify:album:1").as_deref(), Some("album:1"));
+        assert_eq!(recent_context_key("spotify:artist:2").as_deref(), Some("artist:2"));
+        assert_eq!(recent_context_key("spotify:user:gus:collection").as_deref(), Some("liked"));
+        assert_eq!(recent_context_key("spotify:show:3"), None);
+    }
+}
+
 /// Build an [`ImageSet`] from `(url, width, height)` tuples.
 pub(crate) fn images_to_set<I>(images: I) -> Option<ImageSet>
 where

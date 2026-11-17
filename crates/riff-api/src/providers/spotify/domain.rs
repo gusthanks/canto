@@ -817,6 +817,30 @@ impl MusicProvider for SpotifyDomain {
         Ok(resp.devices.iter().filter_map(device_from_object).collect())
     }
 
+    async fn get_recent_contexts(&self) -> Result<Vec<String>, DomainError> {
+        let config = self.config_or_err()?;
+        let history = apis::player_api::get_recently_played(&config, Some(50), None, None).await?;
+        let mut keys: Vec<String> = Vec::new();
+        for item in history.items.unwrap_or_default() {
+            let from_context = item
+                .context
+                .as_ref()
+                .and_then(|c| c.uri.as_deref())
+                .and_then(crate::providers::recent_context_key);
+            // Without a context (a single track), its album
+            let key = from_context.or_else(|| {
+                let album = item.track.as_ref()?.album.as_ref()?;
+                Some(format!("album:{}", album.id.as_ref()?))
+            });
+            if let Some(key) = key {
+                if !keys.contains(&key) {
+                    keys.push(key);
+                }
+            }
+        }
+        Ok(keys)
+    }
+
     async fn get_player_queue(&self) -> Result<Queue, DomainError> {
         let config = self.config_or_err()?;
         Ok(queue_from_object(

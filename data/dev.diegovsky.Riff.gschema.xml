@@ -345,6 +345,11 @@
       <default>false</default>
       <summary>Show a translation under each lyric line</summary>
     </key>
+    <key name="library-sort" type="s">
+      <default>"recents"</default>
+      <summary>How Your Library is ordered</summary>
+      <description>"recents", "recently-added", "alphabetical" or "creator".</description>
+    </key>
     <key name="lyrics-translation-language" type="s">
       <default>"auto"</default>
       <summary>Language lyrics are translated into</summary>

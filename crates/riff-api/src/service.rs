@@ -158,6 +158,11 @@ impl ApiService {
         .await
     }
 
+    /// What the user played lately, newest first, as library keys.
+    pub async fn get_recent_contexts(&self) -> Result<Vec<String>, DomainError> {
+        self.provider.get_recent_contexts().await
+    }
+
     /// Genius' explanations for lines of the track, matched to `lines`.
     pub async fn fetch_genius_line_annotations(
         &self,

@@ -50,6 +50,9 @@ struct PaletteEntry {
     shortcut_hint: Option<&'static str>,
     keywords: String,
     action: PaletteAction,
+    /// Cover of a search result; the icon shows until it loads
+    cover_url: Option<String>,
+    round_cover: bool,
 }
 
 mod imp {
@@ -153,10 +156,45 @@ impl CommandPaletteDialog {
         });
 
         dialog.setup_signals(&runtime);
+        dialog.close_on_click_outside(window);
         dialog.refresh_devices_async(&runtime);
         dialog.rebuild_list("", false);
         dialog.present(Some(window));
         dialog.imp().search_entry.grab_focus();
+    }
+
+    /// A click anywhere outside the box closes it.
+    fn close_on_click_outside(&self, window: &libadwaita::ApplicationWindow) {
+        let click = gtk::GestureClick::new();
+        click.set_button(0);
+        click.set_propagation_phase(gtk::PropagationPhase::Capture);
+        let weak = self.downgrade();
+        click.connect_pressed(move |gesture, _, x, y| {
+            let Some(dialog) = weak.upgrade() else {
+                return;
+            };
+            let Some(window) = gesture.widget() else {
+                return;
+            };
+            // The box itself is the dialog's child; the dim backdrop is not
+            let Some(content) = dialog.child() else {
+                return;
+            };
+            let inside = window
+                .compute_point(&content, &gtk::graphene::Point::new(x as f32, y as f32))
+                .is_some_and(|p| content.contains(f64::from(p.x()), f64::from(p.y())));
+            if !inside {
+                gesture.set_state(gtk::EventSequenceState::Claimed);
+                dialog.close();
+            }
+        });
+        window.add_controller(click.clone());
+        let weak_window = window.downgrade();
+        self.connect_closed(move |_| {
+            if let Some(window) = weak_window.upgrade() {
+                window.remove_controller(&click);
+            }
+        });
     }
 
     fn setup_signals(&self, runtime: &Rc<PaletteRuntime>) {
@@ -371,7 +409,7 @@ impl CommandPaletteDialog {
 
         let mut actions = Vec::with_capacity(items.len());
         for entry in items {
-            let row = build_row(&entry);
+            let row = build_row(&entry, &runtime.app_model);
             imp.results_list.append(&row);
             actions.push(entry.action);
         }
@@ -418,12 +456,36 @@ fn scroll_row_into_view(scroller: &gtk::ScrolledWindow, row: &gtk::ListBoxRow) {
     }
 }
 
-fn build_row(entry: &PaletteEntry) -> gtk::ListBoxRow {
+/// Size of a search result's cover.
+const COVER_PX: i32 = 40;
+
+fn build_row(entry: &PaletteEntry, app_model: &Rc<AppModel>) -> gtk::ListBoxRow {
     let row = gtk::ListBoxRow::new();
     let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 10);
 
     let icon = gtk::Image::from_icon_name(entry.icon_name);
     icon.set_pixel_size(16);
+    if let Some(url) = entry.cover_url.as_deref() {
+        // The result's cover in place of the icon
+        icon.set_size_request(COVER_PX, COVER_PX);
+        icon.add_css_class("command-palette__cover");
+        if entry.round_cover {
+            icon.add_css_class("command-palette__cover--round");
+        }
+        icon.set_overflow(gtk::Overflow::Hidden);
+        let api = app_model.api();
+        let url = url.to_owned();
+        let weak = icon.downgrade();
+        let px = COVER_PX * icon.scale_factor().max(2);
+        let tag = riff_api::Load::new(riff_api::LoadPriority::Visible, riff_api::BACKGROUND_EPOCH);
+        glib::MainContext::default().spawn_local(async move {
+            let texture = api.load_image(&url, px, px, tag).await;
+            if let (Some(icon), Some(texture)) = (weak.upgrade(), texture) {
+                icon.set_pixel_size(COVER_PX);
+                icon.set_paintable(Some(&texture));
+            }
+        });
+    }
     hbox.append(&icon);
 
     let vbox = gtk::Box::new(gtk::Orientation::Vertical, 1);
@@ -477,6 +539,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         icon_name: "now-playing-symbolic",
         shortcut_hint: Some("Alt+1"),
         keywords: "home now playing current track cover credits".into(),
+        cover_url: None,
+        round_cover: false,
         action: PaletteAction::ShowNowPlaying,
     });
     entries.push(PaletteEntry {
@@ -486,6 +550,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         icon_name: "library-music-symbolic",
         shortcut_hint: Some("Alt+3"),
         keywords: "library albums collection".into(),
+        cover_url: None,
+        round_cover: false,
         action: PaletteAction::Navigate(Route::Home(HomePage::Library)),
     });
     entries.push(PaletteEntry {
@@ -495,6 +561,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         icon_name: "system-search-symbolic",
         shortcut_hint: Some("Ctrl+F"),
         keywords: "search find catalog".into(),
+        cover_url: None,
+        round_cover: false,
         action: PaletteAction::Navigate(Route::Search),
     });
     entries.push(PaletteEntry {
@@ -504,6 +572,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         icon_name: "emote-love-symbolic",
         shortcut_hint: Some("Alt+5"),
         keywords: "liked saved tracks favorites".into(),
+        cover_url: None,
+        round_cover: false,
         action: PaletteAction::Navigate(Route::Home(HomePage::SavedTracks)),
     });
     entries.push(PaletteEntry {
@@ -513,6 +583,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         icon_name: "avatar-default-symbolic",
         shortcut_hint: Some("Alt+2"),
         keywords: "artists followed".into(),
+        cover_url: None,
+        round_cover: false,
         action: PaletteAction::Navigate(Route::Home(HomePage::SavedArtists)),
     });
     entries.push(PaletteEntry {
@@ -522,6 +594,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         icon_name: "playlist2-symbolic",
         shortcut_hint: Some("Alt+4"),
         keywords: "playlists".into(),
+        cover_url: None,
+        round_cover: false,
         action: PaletteAction::Navigate(Route::Home(HomePage::SavedPlaylists)),
     });
     entries.push(PaletteEntry {
@@ -531,6 +605,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         icon_name: "preferences-other-symbolic",
         shortcut_hint: Some("Ctrl+,"),
         keywords: "settings preferences integrations scrobble genius theme".into(),
+        cover_url: None,
+        round_cover: false,
         action: PaletteAction::OpenPreferences,
     });
 
@@ -542,6 +618,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         icon_name: "canto-queue-symbolic",
         shortcut_hint: None,
         keywords: "toggle queue panel".into(),
+        cover_url: None,
+        round_cover: false,
         action: PaletteAction::ToggleQueue,
     });
     entries.push(PaletteEntry {
@@ -551,6 +629,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         icon_name: "canto-lyrics-symbolic",
         shortcut_hint: None,
         keywords: "toggle lyrics about track genius notes".into(),
+        cover_url: None,
+        round_cover: false,
         action: PaletteAction::ToggleLyrics,
     });
     entries.push(PaletteEntry {
@@ -560,6 +640,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         icon_name: "view-fullscreen-symbolic",
         shortcut_hint: None,
         keywords: "fullscreen full screen lyrics karaoke big".into(),
+        cover_url: None,
+        round_cover: false,
         action: PaletteAction::FullscreenLyrics,
     });
     entries.push(PaletteEntry {
@@ -569,6 +651,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         icon_name: "canto-mini-player-symbolic",
         shortcut_hint: None,
         keywords: "mini player small window compact pip".into(),
+        cover_url: None,
+        round_cover: false,
         action: PaletteAction::MiniPlayer,
     });
 
@@ -580,6 +664,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
             icon_name: "media-optical-cd-audio-symbolic",
             shortcut_hint: None,
             keywords: format!("track radio similar {}", current.title),
+            cover_url: None,
+            round_cover: false,
             action: PaletteAction::StartTrackRadio(current),
         });
     }
@@ -592,6 +678,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         icon_name: "alarm-symbolic",
         shortcut_hint: None,
         keywords: "sleep timer off cancel disable".into(),
+        cover_url: None,
+        round_cover: false,
         action: PaletteAction::SetSleepTimerOff,
     });
     entries.push(PaletteEntry {
@@ -601,6 +689,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         icon_name: "alarm-symbolic",
         shortcut_hint: None,
         keywords: "sleep timer end track song finish".into(),
+        cover_url: None,
+        round_cover: false,
         action: PaletteAction::SetSleepTimerEndOfTrack,
     });
     for mins in [15_u32, 30, 45, 60] {
@@ -611,6 +701,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
             icon_name: "alarm-symbolic",
             shortcut_hint: None,
             keywords: format!("sleep timer {mins} min minutes"),
+            cover_url: None,
+            round_cover: false,
             action: PaletteAction::SetSleepTimerMinutes(mins),
         });
     }
@@ -638,6 +730,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
             icon_name: "preferences-other-symbolic",
             shortcut_hint: None,
             keywords: format!("theme {label} {key}"),
+            cover_url: None,
+            round_cover: false,
             action: PaletteAction::SetTheme(key),
         });
     }
@@ -656,6 +750,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         icon_name: "audio-speakers-symbolic",
         shortcut_hint: None,
         keywords: "device this local speaker".into(),
+        cover_url: None,
+        round_cover: false,
         action: PaletteAction::SwitchDevice(Device::Local),
     });
     for dev in state.playback.available_devices() {
@@ -683,6 +779,8 @@ fn device_entry(dev: &ConnectDevice, category: &str) -> PaletteEntry {
         icon_name: icon,
         shortcut_hint: None,
         keywords: format!("device connect {}", dev.label),
+        cover_url: None,
+        round_cover: false,
         action: PaletteAction::SwitchDevice(Device::Connect(dev.clone())),
     }
 }
@@ -708,6 +806,8 @@ fn build_remote_entries(results: &riff_api::models::SearchResults) -> Vec<Palett
             icon_name: "audio-x-generic-symbolic",
             shortcut_hint: None,
             keywords: String::new(),
+            cover_url: track.art.best_for_width(64).map(str::to_owned),
+            round_cover: false,
             action: PaletteAction::PlayTrack(track.clone()),
         });
     }
@@ -725,6 +825,8 @@ fn build_remote_entries(results: &riff_api::models::SearchResults) -> Vec<Palett
             icon_name: "media-optical-cd-audio-symbolic",
             shortcut_hint: None,
             keywords: String::new(),
+            cover_url: album.art.best_for_width(64).map(str::to_owned),
+            round_cover: false,
             action: PaletteAction::ViewAlbum(album.rri.id.clone()),
         });
     }
@@ -736,6 +838,8 @@ fn build_remote_entries(results: &riff_api::models::SearchResults) -> Vec<Palett
             icon_name: "avatar-default-symbolic",
             shortcut_hint: None,
             keywords: String::new(),
+            cover_url: artist.art.best_for_width(64).map(str::to_owned),
+            round_cover: true,
             action: PaletteAction::ViewArtist(artist.rri.id.clone()),
         });
     }
@@ -751,6 +855,8 @@ fn build_remote_entries(results: &riff_api::models::SearchResults) -> Vec<Palett
             icon_name: "playlist2-symbolic",
             shortcut_hint: None,
             keywords: String::new(),
+            cover_url: playlist.art.best_for_width(64).map(str::to_owned),
+            round_cover: false,
             action: PaletteAction::ViewPlaylist(playlist.rri.id.clone()),
         });
     }
@@ -869,6 +975,8 @@ mod tests {
                 icon_name: "preferences-other-symbolic",
                 shortcut_hint: None,
                 keywords: "theme oled dark".into(),
+                cover_url: None,
+                round_cover: false,
                 action: PaletteAction::SetTheme("oled-dark"),
             },
             PaletteEntry {
@@ -878,6 +986,8 @@ mod tests {
                 icon_name: "emote-love-symbolic",
                 shortcut_hint: None,
                 keywords: "saved tracks".into(),
+                cover_url: None,
+                round_cover: false,
                 action: PaletteAction::Navigate(Route::Home(HomePage::SavedTracks)),
             },
         ];

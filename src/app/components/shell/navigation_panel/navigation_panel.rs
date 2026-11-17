@@ -7,7 +7,7 @@ use std::rc::Rc;
 use super::{
     context_menu::build_context_menu,
     navigation_panel_row::{NavigationPanelRow, COVER_PX},
-    LibraryFilter, NavigationPanelItem, NavigationPanelModel,
+    LibraryFilter, LibrarySort, NavigationPanelItem, NavigationPanelModel,
     LIBRARY_SECTION, PINNED_SECTION, SAVED_PLAYLISTS_SECTION,
 };
 use crate::app::components::PlaylistDialog;
@@ -220,6 +220,7 @@ impl NavigationPanel {
 
         model.apply_navigation_panel_items(&list_store);
         Self::add_library_controls(&navigation_panel_box, &model, &list_store);
+        model.refresh_recents(&list_store);
 
         Self {
             listbox,
@@ -330,24 +331,154 @@ impl NavigationPanel {
             filters.append(&button);
             buttons.borrow_mut().push((button, filter));
         }
+        let tools = Self::library_tools(model, list_store);
         match list {
             Some(list) => {
                 panel_box.insert_child_after(&filters, list.prev_sibling().as_ref());
+                panel_box.insert_child_after(&tools, Some(&filters));
             }
-            None => panel_box.append(&filters),
+            None => {
+                panel_box.append(&filters);
+                panel_box.append(&tools);
+            }
         }
         // No room for them in the collapsed sidebar
         if let Some(sidebar) = panel_box.parent() {
             let sync = clone!(
                 #[weak]
                 filters,
+                #[weak]
+                tools,
                 move |sidebar: &gtk::Widget| {
-                    filters.set_visible(!sidebar.has_css_class("navigation-panel--rail"));
+                    let full = !sidebar.has_css_class("navigation-panel--rail");
+                    filters.set_visible(full);
+                    tools.set_visible(full);
                 }
             );
             sync(&sidebar);
             sidebar.connect_css_classes_notify(sync);
         }
+    }
+
+    /// A search in the library on the left, the sort order on the right.
+    fn library_tools(model: &Rc<NavigationPanelModel>, list_store: &gio::ListStore) -> gtk::Box {
+        let tools = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        tools.add_css_class("library-tools");
+
+        // translators: Tooltip and placeholder of the search inside Your Library.
+        let search_label = gettext("Search in Your Library");
+        let search_toggle = gtk::ToggleButton::builder()
+            .icon_name("system-search-symbolic")
+            .tooltip_text(&search_label)
+            .valign(gtk::Align::Center)
+            .build();
+        search_toggle.add_css_class("flat");
+        search_toggle.add_css_class("circular");
+        let entry = gtk::SearchEntry::new();
+        entry.set_placeholder_text(Some(&search_label));
+        entry.set_hexpand(true);
+        entry.set_visible(false);
+        let spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        spacer.set_hexpand(true);
+
+        search_toggle.connect_toggled(clone!(
+            #[weak]
+            entry,
+            #[weak]
+            spacer,
+            move |toggle| {
+                let on = toggle.is_active();
+                entry.set_visible(on);
+                spacer.set_visible(!on);
+                if on {
+                    entry.grab_focus();
+                } else {
+                    entry.set_text("");
+                }
+            }
+        ));
+        entry.connect_search_changed(clone!(
+            #[weak]
+            model,
+            #[weak]
+            list_store,
+            move |entry| {
+                model.set_query(&entry.text());
+                model.apply_navigation_panel_items(&list_store);
+            }
+        ));
+        entry.connect_stop_search(clone!(
+            #[weak]
+            search_toggle,
+            move |_| search_toggle.set_active(false)
+        ));
+
+        let sort_label = gtk::Label::new(Some(&model.sort().label()));
+        let sort_content = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        sort_content.append(&sort_label);
+        sort_content.append(&gtk::Image::from_icon_name("view-list-symbolic"));
+        let sort_button = gtk::MenuButton::builder()
+            .child(&sort_content)
+            .valign(gtk::Align::Center)
+            // translators: Tooltip of the button that picks how Your Library is ordered.
+            .tooltip_text(gettext("Sort By"))
+            .build();
+        sort_button.add_css_class("flat");
+        sort_button.add_css_class("library-sort");
+
+        let options = gtk::Box::new(gtk::Orientation::Vertical, 2);
+        let heading = gtk::Label::new(Some(&gettext("Sort By")));
+        heading.set_xalign(0.0);
+        heading.add_css_class("dim-label");
+        heading.add_css_class("caption-heading");
+        heading.set_margin_start(8);
+        heading.set_margin_bottom(4);
+        options.append(&heading);
+        let checks: Rc<RefCell<Vec<(gtk::Image, LibrarySort)>>> = Default::default();
+        let popover = gtk::Popover::new();
+        for sort in LibrarySort::ALL {
+            let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+            let label = gtk::Label::new(Some(&sort.label()));
+            label.set_xalign(0.0);
+            label.set_hexpand(true);
+            let check = gtk::Image::from_icon_name("object-select-symbolic");
+            check.set_opacity(if model.sort() == sort { 1.0 } else { 0.0 });
+            row.append(&label);
+            row.append(&check);
+            checks.borrow_mut().push((check, sort));
+            let button = gtk::Button::builder().child(&row).build();
+            button.add_css_class("flat");
+            button.connect_clicked(clone!(
+                #[weak]
+                model,
+                #[weak]
+                list_store,
+                #[weak]
+                sort_label,
+                #[weak]
+                popover,
+                #[strong]
+                checks,
+                move |_| {
+                    model.set_sort(sort);
+                    sort_label.set_text(&sort.label());
+                    for (check, which) in checks.borrow().iter() {
+                        check.set_opacity(if *which == sort { 1.0 } else { 0.0 });
+                    }
+                    model.apply_navigation_panel_items(&list_store);
+                    popover.popdown();
+                }
+            ));
+            options.append(&button);
+        }
+        popover.set_child(Some(&options));
+        sort_button.set_popover(Some(&popover));
+
+        tools.append(&search_toggle);
+        tools.append(&entry);
+        tools.append(&spacer);
+        tools.append(&sort_button);
+        tools
     }
 
     fn make_navigatable(item: &NavigationPanelItem, model: Option<&NavigationPanelModel>) -> gtk::Widget {
@@ -440,6 +571,15 @@ impl NavigationPanel {
 
     /// Highlights the item whose album, playlist, artist or Saved Tracks is
     /// playing (while it plays).
+    /// What plays now goes to the top of "Recents".
+    fn note_recent_play(&self) {
+        let moved = self.model.bump_playing_to_recents();
+        if moved && self.model.sort() == LibrarySort::Recents {
+            self.model.apply_navigation_panel_items(&self.list_store);
+        }
+        self.model.refresh_recents(&self.list_store);
+    }
+
     fn mark_playing(&self) {
         let mut child = self.listbox.first_child();
         while let Some(widget) = child {
@@ -491,7 +631,15 @@ impl EventListener for NavigationPanel {
                 | PlaybackEvent::PlaybackStopped
                 | PlaybackEvent::PlayStateSynced(_)
                 | PlaybackEvent::TrackSynced,
-            ) => self.mark_playing(),
+            ) => {
+                self.mark_playing();
+                if matches!(
+                    event,
+                    AppEvent::PlaybackEvent(PlaybackEvent::TrackChanged(_) | PlaybackEvent::SourceChanged)
+                ) {
+                    self.note_recent_play();
+                }
+            }
             AppEvent::BrowserEvent(BrowserEvent::NavigationChanged(Transition {
                 to: Route::Home(page),
                 ..

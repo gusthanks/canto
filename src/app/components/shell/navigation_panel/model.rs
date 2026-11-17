@@ -32,6 +32,55 @@ fn start_context(
     start_actions(shuffle, load_context(source, name, load))
 }
 
+/// How "Your Library" is ordered.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum LibrarySort {
+    #[default]
+    Recents,
+    RecentlyAdded,
+    Alphabetical,
+    Creator,
+}
+
+impl LibrarySort {
+    pub const ALL: [LibrarySort; 4] = [
+        LibrarySort::Recents,
+        LibrarySort::RecentlyAdded,
+        LibrarySort::Alphabetical,
+        LibrarySort::Creator,
+    ];
+
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Recents => "recents",
+            Self::RecentlyAdded => "recently-added",
+            Self::Alphabetical => "alphabetical",
+            Self::Creator => "creator",
+        }
+    }
+
+    pub fn from_key(key: &str) -> Self {
+        Self::ALL
+            .iter()
+            .copied()
+            .find(|s| s.key() == key)
+            .unwrap_or_default()
+    }
+
+    pub fn label(self) -> String {
+        match self {
+            // translators: Library order: what was played most recently first.
+            Self::Recents => gettext("Recents"),
+            // translators: Library order: what was saved most recently first.
+            Self::RecentlyAdded => gettext("Recently Added"),
+            // translators: Library order: by name.
+            Self::Alphabetical => gettext("Alphabetical"),
+            // translators: Library order: by who made it (playlist owner, album artist).
+            Self::Creator => gettext("Creator"),
+        }
+    }
+}
+
 /// Which kind of item "Your Library" lists.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum LibraryFilter {
@@ -60,15 +109,136 @@ pub struct NavigationPanelModel {
     app_model: Rc<AppModel>,
     dispatcher: Dispatcher,
     filter: std::cell::Cell<LibraryFilter>,
+    sort: std::cell::Cell<LibrarySort>,
+    query: std::cell::RefCell<String>,
+    /// Library keys of what was played lately, newest first
+    recents: std::cell::RefCell<Vec<String>>,
+    recents_fetched: std::cell::Cell<Option<std::time::Instant>>,
 }
 
 impl NavigationPanelModel {
     pub fn new(app_model: Rc<AppModel>, dispatcher: Dispatcher) -> Self {
+        let sort = LibrarySort::from_key(
+            &gtk::gio::Settings::new(riff_config::settings::SETTINGS)
+                .string(riff_config::settings::LIBRARY_SORT),
+        );
         Self {
             app_model,
             dispatcher,
             filter: Default::default(),
+            sort: std::cell::Cell::new(sort),
+            query: Default::default(),
+            recents: Default::default(),
+            recents_fetched: Default::default(),
         }
+    }
+
+    pub fn sort(&self) -> LibrarySort {
+        self.sort.get()
+    }
+
+    pub fn set_sort(&self, sort: LibrarySort) {
+        self.sort.set(sort);
+        let _ = gtk::gio::Settings::new(riff_config::settings::SETTINGS)
+            .set_string(riff_config::settings::LIBRARY_SORT, sort.key());
+    }
+
+    pub fn set_query(&self, query: &str) {
+        *self.query.borrow_mut() = query.trim().to_lowercase();
+    }
+
+    /// Puts what plays now at the top of the recents. Whether it moved.
+    pub fn bump_playing_to_recents(&self) -> bool {
+        let key = match self.app_model_state_source() {
+            Some(SongsSource::Playlist(id)) => format!("playlist:{id}"),
+            Some(SongsSource::Album(id)) => format!("album:{id}"),
+            Some(SongsSource::Artist(id)) => format!("artist:{id}"),
+            Some(SongsSource::SavedTracks) => "liked".to_string(),
+            _ => return false,
+        };
+        let mut recents = self.recents.borrow_mut();
+        if recents.first() == Some(&key) {
+            return false;
+        }
+        recents.retain(|k| k != &key);
+        recents.insert(0, key);
+        true
+    }
+
+    /// Asks Spotify what was played lately (at most every few minutes) and
+    /// re-sorts the library when it answers.
+    pub fn refresh_recents(self: &Rc<Self>, list_store: &gtk::gio::ListStore) {
+        let stale = self
+            .recents_fetched
+            .get()
+            .is_none_or(|at| at.elapsed() > std::time::Duration::from_secs(180));
+        if !stale {
+            return;
+        }
+        self.recents_fetched.set(Some(std::time::Instant::now()));
+        let api = self.app_model.api();
+        let weak_model = Rc::downgrade(self);
+        let weak_store = list_store.downgrade();
+        glib::spawn_future_local(async move {
+            let Ok(fetched) = api.get_recent_contexts().await else {
+                return;
+            };
+            let (Some(model), Some(store)) = (weak_model.upgrade(), weak_store.upgrade()) else {
+                return;
+            };
+            {
+                // What Canto saw play first, then Spotify's history
+                let mut recents = model.recents.borrow_mut();
+                let mut merged: Vec<String> = Vec::new();
+                if let Some(first) = recents.first() {
+                    merged.push(first.clone());
+                }
+                for key in fetched.into_iter().chain(recents.iter().cloned()) {
+                    if !merged.contains(&key) {
+                        merged.push(key);
+                    }
+                }
+                *recents = merged;
+            }
+            if model.sort() == LibrarySort::Recents {
+                model.apply_navigation_panel_items(&store);
+            }
+        });
+    }
+
+    /// Sorts and searches the library rows (the pinned ones stay on top).
+    fn arrange(&self, items: Vec<NavigationPanelItem>) -> Vec<NavigationPanelItem> {
+        let query = self.query.borrow().clone();
+        let mut items: Vec<NavigationPanelItem> = if query.is_empty() {
+            items
+        } else {
+            items
+                .into_iter()
+                .filter(|item| {
+                    item.title().to_lowercase().contains(&query)
+                        || item.property::<String>("subtitle").to_lowercase().contains(&query)
+                })
+                .collect()
+        };
+        let recents = self.recents.borrow();
+        let creator = |item: &NavigationPanelItem| {
+            let subtitle = item.property::<String>("subtitle");
+            subtitle
+                .split_once(" • ")
+                .map(|(_, who)| who.to_lowercase())
+                .unwrap_or_else(|| item.title().to_lowercase())
+        };
+        match self.sort.get() {
+            LibrarySort::Recents => items.sort_by_key(|item| {
+                item.library_key()
+                    .and_then(|key| recents.iter().position(|k| *k == key))
+                    .unwrap_or(usize::MAX)
+            }),
+            LibrarySort::RecentlyAdded => {}
+            LibrarySort::Alphabetical => items.sort_by_key(|item| item.title().to_lowercase()),
+            LibrarySort::Creator => items.sort_by_key(|item| (creator(item), item.title().to_lowercase())),
+        }
+        items
     }
 
     /// Where the music plays from, while it plays.
@@ -589,7 +759,25 @@ impl NavigationPanelModel {
         if filter.shows_artists() {
             items.extend(self.artist_items().into_iter().filter(not_pinned));
         }
+        let items = self.arrange_keeping_pins(items, &pinned_ids);
         list_store.splice(0, list_store.n_items(), items.as_slice());
+    }
+
+    /// The pinned rows first as they are, then the rest sorted and searched.
+    fn arrange_keeping_pins(
+        &self,
+        items: Vec<NavigationPanelItem>,
+        pinned_ids: &[String],
+    ) -> Vec<NavigationPanelItem> {
+        let searching = !self.query.borrow().is_empty();
+        let (top, rest): (Vec<_>, Vec<_>) = items.into_iter().partition(|item| {
+            !searching
+                && self.filter.get() == LibraryFilter::All
+                && pinned_ids.contains(&item.data())
+        });
+        let mut out = top;
+        out.extend(self.arrange(rest));
+        out
     }
 
     fn album_items(&self) -> Vec<NavigationPanelItem> {

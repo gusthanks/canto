@@ -485,3 +485,17 @@ row.navigation-row--playing label:not(.dim-label) {
 .lyrics--fullscreen .lyric-annotation__text {
   font-size: 0.45em;
 }
+
+/* Search and sort row under the library filters */
+.library-tools {
+  margin: 2px 8px 4px 8px;
+}
+
+.library-tools searchentry {
+  min-height: 32px;
+}
+
+.library-sort {
+  font-size: 0.9em;
+  font-weight: 600;
+}

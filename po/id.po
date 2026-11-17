@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 21:30-0300\n"
+"POT-Creation-Date: 2026-11-16 22:20-0300\n"
 "Language: id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -196,8 +196,8 @@ msgstr "Daftar Putar Baru"
 #. translators: An album in the back/forward history menu, while its name is loading.
 #: src/app/components/labels.rs:95 src/app/components/labels.rs:180
 #: src/app/components/shell/command_palette/widget.rs:693
-#: src/app/components/shell/navigation_panel/model.rs:167
-#: src/app/components/shell/navigation_panel/model.rs:586
+#: src/app/components/shell/navigation_panel/model.rs:337
+#: src/app/components/shell/navigation_panel/model.rs:798
 #: src/app/components/pages/settings/settings.blp:254
 #, fuzzy
 msgid "Album"
@@ -291,8 +291,8 @@ msgstr "{} oleh {}"
 #. translators: An artist in the back/forward history menu, while their name is loading.
 #: src/app/components/labels.rs:182
 #: src/app/components/shell/command_palette/widget.rs:694
-#: src/app/components/shell/navigation_panel/model.rs:169
-#: src/app/components/shell/navigation_panel/model.rs:610
+#: src/app/components/shell/navigation_panel/model.rs:339
+#: src/app/components/shell/navigation_panel/model.rs:822
 #, fuzzy
 msgid "Artist"
 msgstr "Artis"
@@ -302,8 +302,8 @@ msgstr "Artis"
 #: src/app/components/pages/details_playlist/model.rs:154
 #: src/app/components/pages/saved_tracks/model.rs:63
 #: src/app/components/shell/command_palette/widget.rs:695
-#: src/app/components/shell/navigation_panel/model.rs:187
-#: src/app/components/shell/navigation_panel/model.rs:548
+#: src/app/components/shell/navigation_panel/model.rs:357
+#: src/app/components/shell/navigation_panel/model.rs:742
 #, fuzzy
 msgid "Playlist"
 msgstr "Daftar putar"
@@ -328,7 +328,7 @@ msgid "The playlist's cover could not be uploaded."
 msgstr ""
 
 #. translators: This notification is shown when Spotify throttles requests.
-#: src/app/components/mod.rs:245 src/connect/player.rs:775
+#: src/app/components/mod.rs:245 src/connect/player.rs:810
 msgid "Rate limited by Spotify. Please wait a moment and try again."
 msgstr ""
 
@@ -397,13 +397,13 @@ msgstr ""
 msgid "Lyrics couldn't be found for this song."
 msgstr ""
 
-#. translators: Tooltip of the button on a lyric line that Genius explains.
-#: src/app/components/pages/lyrics/widget.rs:339
+#. translators: Tooltip of the mark on a lyric line that Genius explains.
+#: src/app/components/pages/lyrics/widget.rs:346
 msgid "What This Line Means"
 msgstr ""
 
 #. translators: First entry of the lyrics translation languages: the app's own language.
-#: src/app/components/pages/lyrics/widget.rs:371
+#: src/app/components/pages/lyrics/widget.rs:375
 msgid "App Language"
 msgstr ""
 
@@ -462,6 +462,7 @@ msgstr "Daftar putar Anda akan ditampilkan di sini."
 #. translators: This is a navigation panel entry to browse to the songs the user liked (the heart).
 #: src/app/components/pages/saved_tracks/model.rs:59
 #: src/app/components/shell/command_palette/widget.rs:501
+#: src/app/components/shell/navigation_panel/model.rs:469
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:73
 msgid "Liked Songs"
 msgstr ""
@@ -482,13 +483,13 @@ msgstr "Trek"
 #: src/app/components/shell/command_palette/widget.rs:510
 #: src/app/components/shell/navigation/factory.rs:82
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:77
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:277
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:301
 #: src/app/components/pages/shortcuts/shortcuts.blp:89
 msgid "Artists"
 msgstr "Artis"
 
 #: src/app/components/pages/search/search.rs:442
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:276
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:300
 #: src/app/models/card_enums.rs:173
 #: src/app/components/pages/shortcuts/shortcuts.blp:94
 msgid "Albums"
@@ -499,7 +500,7 @@ msgstr "Album"
 #: src/app/components/shell/command_palette/widget.rs:519
 #: src/app/components/shell/navigation/factory.rs:71
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:75
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:275
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:299
 #: src/app/components/pages/shortcuts/shortcuts.blp:99
 msgid "Playlists"
 msgstr "Daftar putar"
@@ -1122,30 +1123,57 @@ msgstr "Selanjutnya"
 msgid "Open Canto"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:170
+#. translators: Library order: what was played most recently first.
+#: src/app/components/shell/navigation_panel/model.rs:73
+msgid "Recents"
+msgstr ""
+
+#. translators: Library order: what was saved most recently first.
+#. Translators: Sort option. Shows items in the order they were saved,
+#. with the most recently added items appearing first.
+#: src/app/components/shell/navigation_panel/model.rs:75
+#: src/app/models/card_enums.rs:51
+msgid "Recently Added"
+msgstr ""
+
+#. translators: Library order: by name.
+#: src/app/components/shell/navigation_panel/model.rs:77
+msgid "Alphabetical"
+msgstr ""
+
+#. translators: Library order: by who made it (playlist owner, album artist).
+#. Translators: Sort option. Groups items by their artist or creator name,
+#. sorted alphabetically.
+#: src/app/components/shell/navigation_panel/model.rs:79
+#: src/app/models/card_enums.rs:57
+#, fuzzy
+msgid "Creator"
+msgstr "Mencipta"
+
+#: src/app/components/shell/navigation_panel/model.rs:340
 msgid "Song"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:226
+#: src/app/components/shell/navigation_panel/model.rs:396
 msgid "Unnamed Playlist"
 msgstr "Daftar putar tanpa nama"
 
-#: src/app/components/shell/navigation_panel/model.rs:621
+#: src/app/components/shell/navigation_panel/model.rs:833
 #, fuzzy
 msgid "Pinned Playlist"
 msgstr "Daftar putar tanpa nama"
 
-#: src/app/components/shell/navigation_panel/model.rs:622
+#: src/app/components/shell/navigation_panel/model.rs:834
 #, fuzzy
 msgid "Pinned Album"
 msgstr "Lihat album"
 
-#: src/app/components/shell/navigation_panel/model.rs:623
+#: src/app/components/shell/navigation_panel/model.rs:835
 #, fuzzy
 msgid "Pinned Artist"
 msgstr "Artis"
 
-#: src/app/components/shell/navigation_panel/model.rs:624
+#: src/app/components/shell/navigation_panel/model.rs:836
 #, fuzzy
 msgid "Pinned Track"
 msgstr "Trek yang disimpan"
@@ -1159,11 +1187,24 @@ msgid "Pinned"
 msgstr ""
 
 #. Translators: title of the dialog that creates a new playlist
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:214
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:369
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:238
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:523
 #: src/app/components/widgets/playlist_dialog/playlist_dialog.blp:7
 msgid "New Playlist"
 msgstr "Daftar Putar Baru"
+
+#. translators: Tooltip and placeholder of the search inside Your Library.
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:369
+#, fuzzy
+msgid "Search in Your Library"
+msgstr "Pustaka"
+
+#. translators: Tooltip of the button that picks how Your Library is ordered.
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:424
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:430
+#: src/app/components/widgets/card_list/card_view_menu.blp:57
+msgid "Sort By"
+msgstr ""
 
 #: src/app/components/shell/window/close_dialog.rs:12
 msgid "Canto is Still Playing"
@@ -1235,24 +1276,11 @@ msgstr ""
 msgid "Disc {}"
 msgstr ""
 
-#. Translators: Sort option. Shows items in the order they were saved,
-#. with the most recently added items appearing first.
-#: src/app/models/card_enums.rs:51
-msgid "Recently Added"
-msgstr ""
-
 #. Translators: Sort option. Orders items alphabetically by their title
 #. (A-Z, case-insensitive).
 #: src/app/models/card_enums.rs:54
 msgid "Alphabetic"
 msgstr ""
-
-#. Translators: Sort option. Groups items by their artist or creator name,
-#. sorted alphabetically.
-#: src/app/models/card_enums.rs:57
-#, fuzzy
-msgid "Creator"
-msgstr "Mencipta"
 
 #. Translators: Sort option. Orders items by their release date, with the
 #. newest releases appearing first.
@@ -1288,20 +1316,20 @@ msgstr "Sedang memutar"
 msgid "Connection to device lost!"
 msgstr ""
 
-#: src/connect/player.rs:524 src/connect/player.rs:687
+#: src/connect/player.rs:548 src/connect/player.rs:711
 msgid "Starting Spotify in the background…"
 msgstr ""
 
-#: src/connect/player.rs:531
+#: src/connect/player.rs:555
 msgid "Could not start the Spotify app. Is it installed?"
 msgstr ""
 
-#: src/connect/player.rs:543
+#: src/connect/player.rs:567
 msgid "The Spotify app did not show up as a device. Try again in a moment."
 msgstr ""
 
 #. translators: Shown when a Spotify Connect speaker is asleep or unreachable.
-#: src/connect/player.rs:780
+#: src/connect/player.rs:815
 msgid ""
 "Spotify Connect device is asleep or inactive. Start playback on the device "
 "first."
@@ -2287,10 +2315,6 @@ msgstr ""
 
 #: src/app/components/widgets/card_list/card_view_menu.blp:38
 msgid "Increase Icon Size"
-msgstr ""
-
-#: src/app/components/widgets/card_list/card_view_menu.blp:57
-msgid "Sort By"
 msgstr ""
 
 #: src/app/components/widgets/card_list/card_view_menu.blp:83
