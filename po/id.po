@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 20:27-0300\n"
+"POT-Creation-Date: 2026-11-16 21:14-0300\n"
 "Language: id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -229,7 +229,7 @@ msgstr "Normal"
 #. translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
 #: src/app/components/labels.rs:110
 #: src/app/components/shell/command_palette/widget.rs:577
-#: src/app/components/shell/playback/playback_widget.blp:475 src/window.blp:416
+#: src/app/components/shell/playback/playback_widget.blp:475 src/window.blp:420
 msgid "Start Track Radio"
 msgstr ""
 
@@ -316,8 +316,8 @@ msgstr ""
 #. translators: The search page in the back/forward history menu.
 #: src/app/components/labels.rs:188
 #: src/app/components/shell/command_palette/widget.rs:492
-#: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:190
-#: src/window.blp:218
+#: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:194
+#: src/window.blp:222
 #, fuzzy
 msgid "Search"
 msgstr "Cari Spotify."
@@ -328,7 +328,7 @@ msgid "The playlist's cover could not be uploaded."
 msgstr ""
 
 #. translators: This notification is shown when Spotify throttles requests.
-#: src/app/components/mod.rs:245 src/connect/player.rs:765
+#: src/app/components/mod.rs:245 src/connect/player.rs:775
 msgid "Rate limited by Spotify. Please wait a moment and try again."
 msgstr ""
 
@@ -472,13 +472,13 @@ msgstr "Trek"
 #: src/app/components/shell/command_palette/widget.rs:510
 #: src/app/components/shell/navigation/factory.rs:82
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:77
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:273
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:277
 #: src/app/components/pages/shortcuts/shortcuts.blp:89
 msgid "Artists"
 msgstr "Artis"
 
 #: src/app/components/pages/search/search.rs:442
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:272
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:276
 #: src/app/models/card_enums.rs:173
 #: src/app/components/pages/shortcuts/shortcuts.blp:94
 msgid "Albums"
@@ -489,7 +489,7 @@ msgstr "Album"
 #: src/app/components/shell/command_palette/widget.rs:519
 #: src/app/components/shell/navigation/factory.rs:71
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:75
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:271
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:275
 #: src/app/components/pages/shortcuts/shortcuts.blp:99
 msgid "Playlists"
 msgstr "Daftar putar"
@@ -694,7 +694,7 @@ msgid "Open"
 msgstr ""
 
 #: src/app/components/shell/command_palette/command_palette.blp:5
-#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:411
+#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:415
 msgid "Command Palette"
 msgstr ""
 
@@ -950,6 +950,10 @@ msgstr ""
 msgid "Playing similar tracks"
 msgstr ""
 
+#: src/app/components/shell/device_selector/widget.rs:189
+msgid "This Computer"
+msgstr ""
+
 #. translators: Shown in a toast after closing settings when a changed setting needs an app restart.
 #: src/app/components/shell/notification/mod.rs:93
 msgid "Please restart the app to apply the changes"
@@ -1127,8 +1131,8 @@ msgid "Pinned"
 msgstr ""
 
 #. Translators: title of the dialog that creates a new playlist
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:210
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:365
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:214
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:369
 #: src/app/components/widgets/playlist_dialog/playlist_dialog.blp:7
 msgid "New Playlist"
 msgstr "Daftar Putar Baru"
@@ -1149,7 +1153,7 @@ msgstr "Backend Audio"
 
 #: src/app/components/shell/window/close_dialog.rs:17
 #: src/app/components/pages/settings/settings.blp:102
-#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:450
+#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:454
 msgid "Quit"
 msgstr "Keluar"
 
@@ -1256,20 +1260,20 @@ msgstr "Sedang memutar"
 msgid "Connection to device lost!"
 msgstr ""
 
-#: src/connect/player.rs:517 src/connect/player.rs:680
+#: src/connect/player.rs:524 src/connect/player.rs:687
 msgid "Starting Spotify in the background…"
 msgstr ""
 
-#: src/connect/player.rs:524
+#: src/connect/player.rs:531
 msgid "Could not start the Spotify app. Is it installed?"
 msgstr ""
 
-#: src/connect/player.rs:536
+#: src/connect/player.rs:543
 msgid "The Spotify app did not show up as a device. Try again in a moment."
 msgstr ""
 
 #. translators: Shown when a Spotify Connect speaker is asleep or unreachable.
-#: src/connect/player.rs:770
+#: src/connect/player.rs:780
 msgid ""
 "Spotify Connect device is asleep or inactive. Start playback on the device "
 "first."
@@ -2103,15 +2107,15 @@ msgstr ""
 msgid "Toggle Sidebar"
 msgstr ""
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:118 src/window.blp:146
+#: src/app/components/pages/shortcuts/shortcuts.blp:118 src/window.blp:150
 msgid "Main Menu"
 msgstr ""
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:423
+#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:427
 msgid "Preferences"
 msgstr "Preferensi"
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:428
+#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:432
 msgid "Keyboard Shortcuts"
 msgstr ""
 
@@ -2269,40 +2273,40 @@ msgid "Remove"
 msgstr "Buang"
 
 #. Translators: Tooltip of the top bar button that opens the home page.
-#: src/window.blp:168
+#: src/window.blp:172
 msgid "Home"
 msgstr ""
 
 #. Translators: Placeholder of the search field in the top bar.
-#: src/window.blp:207
+#: src/window.blp:211
 msgid "What do you want to play?"
 msgstr ""
 
-#: src/window.blp:290
+#: src/window.blp:294
 #, fuzzy
 msgid "Expand Your Library"
 msgstr "Pustaka"
 
 #. Translators: Title of the left panel, which lists the user's playlists, albums and artists.
-#: src/window.blp:312
+#: src/window.blp:316
 #, fuzzy
 msgid "Your Library"
 msgstr "Pustaka"
 
-#: src/window.blp:323
+#: src/window.blp:327
 msgid "Collapse Sidebar"
 msgstr ""
 
-#: src/window.blp:433
+#: src/window.blp:437
 msgid "Report Issue"
 msgstr ""
 
-#: src/window.blp:438
+#: src/window.blp:442
 #, fuzzy
 msgid "About Canto"
 msgstr "Tentang"
 
-#: src/window.blp:445
+#: src/window.blp:449
 msgid "Log Out"
 msgstr "Log keluar"
 

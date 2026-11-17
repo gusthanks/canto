@@ -140,7 +140,7 @@ impl DeviceSelectorWidget {
         }
         let label = match device {
             Device::Local => gettext("This Device"),
-            Device::Connect(connect) => connect.label.clone(),
+            Device::Connect(connect) => device_label(connect),
         };
         let icon = match device {
             Device::Local => "audio-x-generic-symbolic",
@@ -159,6 +159,12 @@ impl DeviceSelectorWidget {
     pub fn update_devices_list(&self, devices: &[ConnectDevice]) {
         let widget = self.imp();
         widget.this_device_button.set_sensitive(true);
+        // Accounts that play through the Spotify app here can't play in
+        // Canto itself: that app is "this computer", so the built-in entry
+        // would only be a dead end
+        widget
+            .this_device_button
+            .set_visible(!crate::connect::account_needs_official_client());
 
         while let Some(child) = widget.devices.upcast_ref::<gtk::Widget>().first_child() {
             widget.devices.remove(&child);
@@ -169,9 +175,19 @@ impl DeviceSelectorWidget {
                 .action_name(format!("{}.{}", ACTIONS, CONNECT_ACTION))
                 .action_target(&Some(&device.id).to_variant())
                 .group(&*widget.this_device_button)
-                .label(&device.label)
+                .label(device_label(device))
                 .build();
             widget.devices.append(&check);
         }
+    }
+}
+
+/// The Spotify app on this computer is shown as "This Computer", not by the
+/// computer's name.
+fn device_label(device: &ConnectDevice) -> String {
+    if crate::connect::is_this_computer(&device.label) {
+        gettext("This Computer")
+    } else {
+        device.label.clone()
     }
 }

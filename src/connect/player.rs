@@ -694,7 +694,7 @@ impl ConnectPlayer {
             return false;
         };
         official::keep_hidden_workspace_closed(Duration::from_secs(20));
-        let _ = self.api.player_transfer(&device.id).await;
+        let _ = self.api.player_transfer(&device.id, false).await;
         tokio::time::sleep(Duration::from_millis(500)).await;
         if let Ok(mut id) = self.device_id.write() {
             *id = Some(device.id.clone());
@@ -716,6 +716,9 @@ impl ConnectPlayer {
     pub async fn handle_command(&self, command: ConnectCommand) -> Option<()> {
         let device_lost = match command {
             ConnectCommand::SetDevice(new_device_id) => {
+                // Moving to another device keeps the music playing there
+                let was_playing = self.remote_playing.load(Ordering::Relaxed)
+                    || self.last_state.read().is_ok_and(|s| s.is_playing);
                 self.remote_playing.store(false, Ordering::Relaxed);
                 if let Ok(mut q) = self.last_queue.write() {
                     *q = 0;
@@ -727,7 +730,7 @@ impl ConnectPlayer {
                 if self.is_local_official(&new_device_id).await {
                     official::keep_hidden_workspace_closed(Duration::from_secs(20));
                 }
-                let _ = self.api.player_transfer(&new_device_id).await;
+                let _ = self.api.player_transfer(&new_device_id, was_playing).await;
                 self.device_id.write().ok()?.replace(new_device_id);
                 tokio::time::sleep(Duration::from_millis(250)).await;
                 self.sync_state().await;
@@ -754,7 +757,7 @@ impl ConnectPlayer {
                         .await;
                     if matches!(result, Err(DomainError::NotFound { .. })) {
                         // Wake a sleeping Connect device (e.g. Alexa) by transferring and retrying once.
-                        if self.api.player_transfer(&device_id).await.is_ok() {
+                        if self.api.player_transfer(&device_id, false).await.is_ok() {
                             tokio::time::sleep(Duration::from_millis(350)).await;
                             result = self
                                 .handle_other_command(device_id.clone(), command.clone())

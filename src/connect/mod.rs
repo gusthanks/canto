@@ -11,7 +11,7 @@ use riff_api::ApiService;
 mod official;
 mod player;
 mod spotify_mpris;
-pub use official::{account_needs_official_client, remember_account_needs_official_client};
+pub use official::{account_needs_official_client, is_this_computer, remember_account_needs_official_client};
 pub use player::ConnectCommand;
 
 /// Quits the Spotify app Canto plays through (accounts that need it), so it

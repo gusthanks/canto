@@ -840,11 +840,13 @@ impl MusicProvider for SpotifyDomain {
         Ok(apis::player_api::start_a_users_playback(&config, Some(device_id), Some(body)).await?)
     }
 
-    async fn player_transfer(&self, device_id: &str) -> Result<(), DomainError> {
+    async fn player_transfer(&self, device_id: &str, play: bool) -> Result<(), DomainError> {
         let config = self.config_or_err()?;
+        // `play: false` paused the music on the new device (an Alexa) even
+        // when it was playing
         let body = sp::TransferAUsersPlaybackRequest {
             device_ids: vec![device_id.to_string()],
-            play: Some(false),
+            play: Some(play),
         };
         Ok(apis::player_api::transfer_a_users_playback(&config, Some(body)).await?)
     }
