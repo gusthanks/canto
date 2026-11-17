@@ -212,6 +212,30 @@ impl ConnectPlayer {
     /// When nothing is being controlled yet but the Spotify app here is
     /// playing (Canto was reopened, or playback started in the app), take
     /// over: show what it plays and control it.
+    /// With no device chosen yet, follow the one Spotify says is active (an
+    /// Alexa, a phone), without moving its music anywhere.
+    pub async fn attach_to_active_device(&self) {
+        if self.has_device() {
+            return;
+        }
+        let Ok(devices) = self.api.get_devices(load::transport()).await else {
+            return;
+        };
+        let Some(active) = devices.iter().find(|d| d.is_active).cloned() else {
+            return;
+        };
+        if official::is_this_computer(&active.label) {
+            // The Spotify app here: only when it really plays
+            self.attach_to_playing_official().await;
+            return;
+        }
+        info!("following what plays on '{}'", active.label);
+        self.send_actions([
+            PlaybackAction::SetAvailableDevices(devices).into(),
+            PlaybackAction::SwitchDevice(Device::Connect(active)).into(),
+        ]);
+    }
+
     pub async fn attach_to_playing_official(&self) {
         if self.has_device()
             || !official::account_needs_official_client()
@@ -730,7 +754,18 @@ impl ConnectPlayer {
                 if self.is_local_official(&new_device_id).await {
                     official::keep_hidden_workspace_closed(Duration::from_secs(20));
                 }
-                let _ = self.api.player_transfer(&new_device_id, was_playing).await;
+                // Already the active device: only follow it. Transferring to
+                // it anyway (with nothing known playing here) paused it.
+                let already_active = self
+                    .api
+                    .get_devices(load::transport())
+                    .await
+                    .is_ok_and(|devices| {
+                        devices.iter().any(|d| d.id == new_device_id && d.is_active)
+                    });
+                if !already_active {
+                    let _ = self.api.player_transfer(&new_device_id, was_playing).await;
+                }
                 self.device_id.write().ok()?.replace(new_device_id);
                 tokio::time::sleep(Duration::from_millis(250)).await;
                 self.sync_state().await;

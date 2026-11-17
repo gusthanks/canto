@@ -38,15 +38,15 @@ async fn connect_server(
 
     let player_clone = Arc::clone(&player);
     task::spawn(async move {
-        // Soon after start, so a reopened Canto picks up what the Spotify
-        // app is already playing
+        // Soon after start, so a reopened Canto picks up what is already
+        // playing (the Spotify app here, an Alexa, a phone)
         let mut delay = Duration::from_secs(4);
         loop {
             time::sleep(delay).await;
             if player_clone.has_device() {
                 player_clone.sync_state().await;
             } else {
-                player_clone.attach_to_playing_official().await;
+                player_clone.attach_to_active_device().await;
             }
             delay = if player_clone.has_device() && player_clone.is_remote_playing() {
                 Duration::from_secs(3)
