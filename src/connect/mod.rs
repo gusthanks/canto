@@ -6,7 +6,7 @@ use futures::StreamExt;
 use tokio::{task, time};
 
 use crate::app::AppAction;
-use riff_api::ApiService;
+use canto_api::ApiService;
 
 mod official;
 mod player;

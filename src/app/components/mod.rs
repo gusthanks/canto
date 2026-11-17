@@ -15,7 +15,7 @@ use crate::app::models::Track;
 use crate::app::{
     load, playlist_actions, AppAction, AppEvent, AppModel, BrowserAction, Dispatcher,
 };
-use riff_api::{ApiService, DomainError, Load, LoadPriority};
+use canto_api::{ApiService, DomainError, Load, LoadPriority};
 
 mod pages;
 pub use pages::*;
@@ -251,7 +251,7 @@ where
             // "Simulate Offline" surfaces as a network error in debug builds;
             // the connection-lost banner already covers it, so skip the toast.
             #[cfg(debug_assertions)]
-            if riff_api::is_simulate_offline() {
+            if canto_api::is_simulate_offline() {
                 return (vec![], false);
             }
             error!("Spotify API error: {}", err);

@@ -1,9 +1,9 @@
 use crate::app::components::{labels, EventListener};
 use crate::app::AppEvent;
-use crate::settings::RiffSettings;
+use crate::settings::CantoSettings;
 use gettextrs::gettext;
-use riff_api::scrobbler::{build_auth_url, LastFmClient};
-use riff_config::feature_flags::FeatureFlag;
+use canto_api::scrobbler::{build_auth_url, LastFmClient};
+use canto_config::feature_flags::FeatureFlag;
 use std::cell::RefCell;
 
 use std::rc::Rc;
@@ -18,7 +18,7 @@ use super::PanWidget;
 use super::PitchWidget;
 use super::SettingsModel;
 
-use riff_config::settings::{
+use canto_config::settings::{
     GENIUS_ACCESS_TOKEN, LASTFM_API_KEY, LASTFM_API_SECRET, LASTFM_SESSION_KEY, LASTFM_USERNAME,
     LISTENBRAINZ_TOKEN, RESTART_REQUIRED_KEYS, SCROBBLE_ENABLED, SCROBBLE_RESPECT_REMOTE, SETTINGS,
     SMART_QUEUE_CONTINUATION, VISUAL_BRIDGE_ENABLED,
@@ -615,7 +615,7 @@ impl SettingsDialog {
 
         let language = widget.language.downcast_ref::<libadwaita::ComboRow>().unwrap();
         settings
-            .bind(riff_config::settings::APP_LANGUAGE, language, "selected")
+            .bind(canto_config::settings::APP_LANGUAGE, language, "selected")
             .mapping(|variant, _| {
                 variant.str().map(|s| {
                     match s {
@@ -645,7 +645,7 @@ impl SettingsDialog {
             .downcast_ref::<libadwaita::ComboRow>()
             .unwrap();
         settings
-            .bind(riff_config::settings::APP_THEME, app_theme, "selected")
+            .bind(canto_config::settings::APP_THEME, app_theme, "selected")
             .mapping(|variant, _| {
                 variant.str().map(|s| {
                     match s {
@@ -705,7 +705,7 @@ impl SettingsDialog {
 
         settings
             .bind(
-                riff_config::settings::ADAPTIVE_COVER_COLORS,
+                canto_config::settings::ADAPTIVE_COVER_COLORS,
                 &*widget.adaptive_cover_colors,
                 "active",
             )
@@ -725,7 +725,7 @@ impl SettingsDialog {
             .unwrap();
         settings
             .bind(
-                riff_config::settings::LYRICS_OFFSET_MS,
+                canto_config::settings::LYRICS_OFFSET_MS,
                 &lyrics_offset.adjustment(),
                 "value",
             )
@@ -863,7 +863,7 @@ impl SettingsDialog {
             .build();
         settings
             .bind(
-                riff_config::settings::GOOGLE_TRANSLATE_API_KEY,
+                canto_config::settings::GOOGLE_TRANSLATE_API_KEY,
                 &*widget.google_translate_key_entry,
                 "text",
             )
@@ -925,7 +925,7 @@ impl SettingsDialog {
         let theme = widget.theme.downcast_ref::<libadwaita::ComboRow>().unwrap();
         let settings = gio::Settings::new(SETTINGS);
         settings
-            .bind(riff_config::settings::APP_THEME, theme, "sensitive")
+            .bind(canto_config::settings::APP_THEME, theme, "sensitive")
             .flags(gio::SettingsBindFlags::GET)
             .mapping(|variant, _| {
                 let is_neutral = variant.get::<String>().is_some_and(|s| s == "neutral");
@@ -935,7 +935,7 @@ impl SettingsDialog {
         theme.connect_selected_notify(|theme| {
             debug!("Theme switched! --> value: {}", theme.selected());
             let settings = gio::Settings::new(SETTINGS);
-            if settings.string(riff_config::settings::APP_THEME) != "neutral" {
+            if settings.string(canto_config::settings::APP_THEME) != "neutral" {
                 return;
             }
             let manager = libadwaita::StyleManager::default();
@@ -1063,7 +1063,7 @@ impl SettingsDialog {
         }
     }
 
-    fn connect_lastfm_auth(&self, client: riff_api::HttpClient, notify: Rc<dyn Fn(String)>) {
+    fn connect_lastfm_auth(&self, client: canto_api::HttpClient, notify: Rc<dyn Fn(String)>) {
         let imp = self.imp();
 
         let weak_self = self.downgrade();
@@ -1202,7 +1202,7 @@ impl Settings {
 
         let close_model = model.clone();
         settings_dialog.connect_close(move || {
-            let new_settings = RiffSettings::new_from_gsettings().unwrap_or_default();
+            let new_settings = CantoSettings::new_from_gsettings().unwrap_or_default();
             // Only stop the player for changes that require a full reload.
             // Equalizer changes are applied live and must not interrupt playback.
             if close_model

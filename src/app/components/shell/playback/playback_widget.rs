@@ -9,9 +9,9 @@ use crate::app::components::{
 };
 use crate::app::models::RepeatMode;
 
-use riff_api::models::is_resource_url;
-use riff_api::ApiService;
-use riff_config::settings::SETTINGS;
+use canto_api::models::is_resource_url;
+use canto_api::ApiService;
+use canto_config::settings::SETTINGS;
 
 use crate::app::load;
 use std::cell::{Cell, RefCell};
@@ -329,7 +329,7 @@ mod imp {
         /// player-bar-* setting. The narrow-window breakpoints hide the
         /// buttons inside, so the two never fight over the same property.
         fn setup_customizable_bar(&self) {
-            use riff_config::settings::{
+            use canto_config::settings::{
                 PLAYER_BAR_DEVICE, PLAYER_BAR_LYRICS, PLAYER_BAR_MINI_PLAYER, PLAYER_BAR_QUEUE,
                 PLAYER_BAR_SIDE_PANEL, PLAYER_BAR_VOLUME,
             };

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """spotify-cli: Authenticated Spotify Web API client for the terminal.
 
-Shares credentials with the Riff desktop app via the system keyring.
+Shares credentials with the Canto desktop app via the system keyring.
 Supports OAuth2 PKCE authentication, token refresh, interactive pagination,
 and colorized JSON output.
 
@@ -59,7 +59,7 @@ from rich.json import JSON as RichJSON
 HAS_RICH = True
 console = Console(stderr=True)
 
-# --- Constants (shared with Riff) ---
+# --- Constants (shared with Canto) ---
 
 CLIENT_ID = "782ae96ea60f4cdf986a766049607005"
 REDIRECT_URI = "http://127.0.0.1:8898/login"
@@ -81,7 +81,7 @@ SCOPES = (
     "user-modify-playback-state"
 )
 
-# Keyring attributes matching Riff's token_store.rs: ATTRS = [("spot_credentials", "yes")]
+# Keyring attributes matching Canto's token_store.rs: ATTRS = [("spot_credentials", "yes")]
 KEYRING_ATTRS = {"spot_credentials": "yes"}
 
 # Default page size for paginated requests
@@ -792,7 +792,7 @@ def build_url(args: argparse.Namespace) -> str:
     return urlunsplit(url._replace(query=query)).removesuffix("/")
 
 
-# --- Keyring (Secret Service / D-Bus) — shared with Riff ---
+# --- Keyring (Secret Service / D-Bus) — shared with Canto ---
 
 
 def _get_keyring_collection():
@@ -827,7 +827,7 @@ def get_credentials():
 
 
 def save_credentials(creds):
-    """Save credentials to the system keyring with Riff-compatible attributes."""
+    """Save credentials to the system keyring with Canto-compatible attributes."""
     try:
         collection = _get_keyring_collection()
         for item in collection.search_items(KEYRING_ATTRS):
@@ -976,7 +976,7 @@ def do_oauth_pkce_flow(verbose=False):
     creds = {
         "access_token": token_json["access_token"],
         "refresh_token": token_json["refresh_token"],
-        # Store as epoch timestamp (seconds) for cross-language compat with Riff's SystemTime
+        # Store as epoch timestamp (seconds) for cross-language compat with Canto's SystemTime
         "token_expiry_time": _system_time_from_now(expires_in),
     }
 
@@ -992,9 +992,9 @@ def do_oauth_pkce_flow(verbose=False):
 
 
 def _system_time_from_now(seconds_from_now):
-    """Create a token_expiry_time compatible with Riff's SystemTime serialization.
+    """Create a token_expiry_time compatible with Canto's SystemTime serialization.
 
-    Riff serializes SystemTime as {"secs_since_epoch": N, "nanos_since_epoch": N}.
+    Canto serializes SystemTime as {"secs_since_epoch": N, "nanos_since_epoch": N}.
     """
     now = time.time()
     expiry = now + seconds_from_now
@@ -1007,7 +1007,7 @@ def _is_token_expired(creds):
     if expiry is None:
         return True
 
-    # Handle Riff's SystemTime format: {"secs_since_epoch": N, "nanos_since_epoch": N}
+    # Handle Canto's SystemTime format: {"secs_since_epoch": N, "nanos_since_epoch": N}
     if isinstance(expiry, dict):
         expiry_secs = expiry.get("secs_since_epoch", 0)
     elif isinstance(expiry, (int, float)):

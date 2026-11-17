@@ -2,14 +2,14 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-use riff_api::models::{Page, Track};
-use riff_api::{ApiService, DomainError, Load};
+use canto_api::models::{Page, Track};
+use canto_api::{ApiService, DomainError, Load};
 
 use crate::app::components::{dispatch_api_read, EventListener};
 use crate::app::models::{PageRequest, SongsSource};
 use crate::app::state::{PlaybackAction, PlaybackEvent};
 use crate::app::{AppAction, AppEvent, AppModel, Dispatcher};
-use riff_core::play_queue::CONTEXT_PAGE_SIZE;
+use canto_core::play_queue::CONTEXT_PAGE_SIZE;
 
 // An unanswered request is retried after this
 const RETRY_AFTER: Duration = Duration::from_secs(10);

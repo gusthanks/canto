@@ -11,7 +11,7 @@ use crate::app::components::{EventListener, LyricsPage};
 use crate::app::models::TrackExt;
 use crate::app::state::PlaybackEvent;
 use crate::app::{load, AppEvent, AppModel, Dispatcher};
-use riff_api::models::is_resource_url;
+use canto_api::models::is_resource_url;
 
 pub const SHOW_FULLSCREEN_LYRICS_ACTION: &str = "fullscreen-lyrics";
 
@@ -254,7 +254,7 @@ impl EventListener for FullscreenLyrics {
 #[cfg(test)]
 pub(crate) fn sample_for_tests(cover: &gtk::gdk::Texture) -> gtk::Window {
     use crate::app::components::LyricsPageWidget;
-    use riff_api::{LyricLine, Lyrics};
+    use canto_api::{LyricLine, Lyrics};
 
     let lyrics_widget = LyricsPageWidget::default();
     lyrics_widget.add_css_class("lyrics--fullscreen");

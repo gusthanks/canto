@@ -359,7 +359,7 @@ impl TrackListModel for QueueListModel {
 }
 
 impl crate::app::ProvidesApi for QueueListModel {
-    fn api_service(&self) -> std::sync::Arc<riff_api::ApiService> {
+    fn api_service(&self) -> std::sync::Arc<canto_api::ApiService> {
         self.base.app_model.api()
     }
 }
@@ -373,9 +373,9 @@ mod tests {
     use std::cell::Cell;
     use std::sync::Arc;
 
-    fn test_api_service() -> Arc<riff_api::ApiService> {
-        let token_provider: Arc<dyn riff_api::TokenProvider> = Arc::new(|| None::<String>);
-        Arc::new(riff_api::spotify_service(
+    fn test_api_service() -> Arc<canto_api::ApiService> {
+        let token_provider: Arc<dyn canto_api::TokenProvider> = Arc::new(|| None::<String>);
+        Arc::new(canto_api::spotify_service(
             Arc::clone(&token_provider),
             token_provider,
             1024 * 1024,

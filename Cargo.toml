@@ -1,19 +1,19 @@
 [workspace]
-members = ["crates/riff-auth", "crates/riff-api", "crates/riff-audio-engine", "crates/riff-config", "crates/riff-core", "generated/spotify-api"]
+members = ["crates/canto-auth", "crates/canto-api", "crates/canto-audio-engine", "crates/canto-config", "crates/canto-core", "generated/spotify-api"]
 resolver = "2"
 
 [package]
-name = "riff"
+name = "canto"
 version = "26.10.0"
 edition = "2018"
 license = "MIT"
 
 [dependencies]
-riff-api = { path = "crates/riff-api" }
-riff-audio-engine = { path = "crates/riff-audio-engine" }
-riff-auth = { path = "crates/riff-auth" }
-riff-config = { path = "crates/riff-config" }
-riff-core = { path = "crates/riff-core" }
+canto-api = { path = "crates/canto-api" }
+canto-audio-engine = { path = "crates/canto-audio-engine" }
+canto-auth = { path = "crates/canto-auth" }
+canto-config = { path = "crates/canto-config" }
+canto-core = { path = "crates/canto-core" }
 gio = "0.22"
 glib = "0.22.10"
 futures = "0.3.18"

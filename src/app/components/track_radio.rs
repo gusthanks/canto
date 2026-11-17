@@ -5,8 +5,8 @@ use std::collections::HashSet;
 use std::rc::Rc;
 
 use gettextrs::gettext;
-use riff_api::DEFAULT_RADIO_TARGET_COUNT;
-use riff_config::settings::{SETTINGS, SMART_QUEUE_CONTINUATION};
+use canto_api::DEFAULT_RADIO_TARGET_COUNT;
+use canto_config::settings::{SETTINGS, SMART_QUEUE_CONTINUATION};
 
 use crate::app::components::sleep_timer::SleepTimerController;
 use crate::app::components::EventListener;
@@ -168,7 +168,7 @@ impl EventListener for SmartQueueController {
                 let seed = {
                     let state = self.app_model.get_state();
                     if !matches!(state.playback.current_device(), Device::Local)
-                        || state.playback.repeat_mode() != riff_api::RepeatMode::Off
+                        || state.playback.repeat_mode() != canto_api::RepeatMode::Off
                     {
                         None
                     } else {

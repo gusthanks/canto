@@ -1,13 +1,13 @@
 use std::collections::HashSet;
 
-use riff_api::models::{is_resource_url, ImageSet};
-use riff_api::{ApiService, DomainError, Load};
+use canto_api::models::{is_resource_url, ImageSet};
+use canto_api::{ApiService, DomainError, Load};
 
 use crate::app::models::Track;
 use crate::app::state::AppState;
 use crate::app::AppAction;
 use crate::settings;
-use riff_config::feature_flags::{is_enabled, FeatureFlag};
+use canto_config::feature_flags::{is_enabled, FeatureFlag};
 
 pub struct TracksAdded {
     pub tracks: Vec<Track>,

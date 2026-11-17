@@ -16,8 +16,8 @@ use listener::*;
 
 #[tokio::main]
 async fn dbus_server(
-    mpris: RiffMpris,
-    player: RiffMprisPlayer,
+    mpris: CantoMpris,
+    player: CantoMprisPlayer,
     receiver: UnboundedReceiver<MprisStateUpdate>,
 ) -> zbus::Result<()> {
     let connection = Connection::session().await?;
@@ -40,7 +40,7 @@ async fn dbus_server(
         .for_each(|update| async {
             if let Ok(player_ref) = connection
                 .object_server()
-                .interface::<_, RiffMprisPlayer>("/org/mpris/MediaPlayer2")
+                .interface::<_, CantoMprisPlayer>("/org/mpris/MediaPlayer2")
                 .await
             {
                 let mut player = player_ref.get_mut().await;
@@ -62,7 +62,7 @@ async fn dbus_server(
                     }
                     MprisStateUpdate::SetPositionMs(position) => {
                         player.state_mut().set_position(position);
-                        RiffMprisPlayer::seeked(ctxt, position as i64).await
+                        CantoMprisPlayer::seeked(ctxt, position as i64).await
                     }
                     MprisStateUpdate::SetLoopStatus {
                         has_prev,
@@ -95,8 +95,8 @@ pub fn start_dbus_server(
     app_model: Rc<AppModel>,
     sender: UnboundedSender<AppAction>,
 ) -> AppPlaybackStateListener {
-    let mpris = RiffMpris::new(sender.clone());
-    let player = RiffMprisPlayer::new(sender);
+    let mpris = CantoMpris::new(sender.clone());
+    let player = CantoMprisPlayer::new(sender);
 
     let (sender, receiver) = unbounded();
 

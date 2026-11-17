@@ -17,18 +17,18 @@ use crate::app::state::PlaybackAction;
 use crate::app::AppAction;
 
 #[derive(Clone)]
-pub struct RiffMpris {
+pub struct CantoMpris {
     sender: UnboundedSender<AppAction>,
 }
 
-impl RiffMpris {
+impl CantoMpris {
     pub fn new(sender: UnboundedSender<AppAction>) -> Self {
         Self { sender }
     }
 }
 
 #[interface(interface = "org.mpris.MediaPlayer2")]
-impl RiffMpris {
+impl CantoMpris {
     fn quit(&self) -> Result<()> {
         Err(Error::NotSupported("Not implemented".to_string()))
     }
@@ -75,12 +75,12 @@ impl RiffMpris {
     }
 }
 
-pub struct RiffMprisPlayer {
+pub struct CantoMprisPlayer {
     state: MprisState,
     sender: UnboundedSender<AppAction>,
 }
 
-impl RiffMprisPlayer {
+impl CantoMprisPlayer {
     pub fn new(sender: UnboundedSender<AppAction>) -> Self {
         Self {
             state: MprisState::new(),
@@ -130,7 +130,7 @@ impl RiffMprisPlayer {
 }
 
 #[interface(interface = "org.mpris.MediaPlayer2.Player")]
-impl RiffMprisPlayer {
+impl CantoMprisPlayer {
     pub fn next(&self) -> Result<()> {
         self.sender
             .unbounded_send(PlaybackAction::Next.into())

@@ -1,11 +1,11 @@
 #[cfg(debug_assertions)]
 use crate::player::Command;
-use crate::settings::{RiffSettings, StateTracker};
+use crate::settings::{CantoSettings, StateTracker};
 use futures::channel::mpsc::UnboundedSender;
 use gio::prelude::*;
 use glib::object::Cast;
-use riff_auth::{SessionTokens, TokenStore};
-use riff_config::feature_flags::FeatureFlag;
+use canto_auth::{SessionTokens, TokenStore};
+use canto_config::feature_flags::FeatureFlag;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -39,7 +39,7 @@ mod dev_tools;
 
 // Where all the app logic happens
 pub struct App {
-    settings: RiffSettings,
+    settings: CantoSettings,
     // The builder instance used to properly configure all the widgets created at startup
     builder: gtk::Builder,
     // All the "components" that will be notified of things happening throughout the app
@@ -59,7 +59,7 @@ pub struct App {
 
 impl App {
     pub fn new(
-        settings: RiffSettings,
+        settings: CantoSettings,
         builder: gtk::Builder,
         sender: UnboundedSender<AppAction>,
     ) -> Self {
@@ -68,21 +68,21 @@ impl App {
 
         // Token
         let token_store = TokenStore::new();
-        let token_provider: Arc<dyn riff_api::TokenProvider> = Arc::new(token_store.clone());
+        let token_provider: Arc<dyn canto_api::TokenProvider> = Arc::new(token_store.clone());
         let session_tokens = SessionTokens::new();
-        let session_token_provider: Arc<dyn riff_api::TokenProvider> =
+        let session_token_provider: Arc<dyn canto_api::TokenProvider> =
             Arc::new(session_tokens.clone());
 
         // Setting
         let gsettings = gio::Settings::new(crate::settings::SETTINGS);
-        let level_meter = riff_audio_engine::LevelMeterController::new(
-            gsettings.boolean(riff_config::settings::VISUAL_BRIDGE_ENABLED),
+        let level_meter = canto_audio_engine::LevelMeterController::new(
+            gsettings.boolean(canto_config::settings::VISUAL_BRIDGE_ENABLED),
         );
 
         // API
         let memory_cache_mb = gsettings.uint("memory-cache-size-mb").max(1) as usize;
         let disk_cache_mb = gsettings.uint("disk-cache-size-mb").max(1) as usize;
-        let api_service = Arc::new(riff_api::spotify_service(
+        let api_service = Arc::new(canto_api::spotify_service(
             token_provider,
             session_token_provider,
             memory_cache_mb * 1024 * 1024,
@@ -151,7 +151,7 @@ impl App {
 
     fn watch_live_settings(
         settings: gio::Settings,
-        api: Arc<riff_api::ApiService>,
+        api: Arc<canto_api::ApiService>,
         sender: UnboundedSender<AppAction>,
     ) -> gio::Settings {
         let dispatcher = Dispatcher::new(sender);
@@ -293,7 +293,7 @@ impl App {
     }
 
     fn make_window(
-        settings: &RiffSettings,
+        settings: &CantoSettings,
         builder: &gtk::Builder,
         app_model: Rc<AppModel>,
     ) -> Box<impl EventListener> {

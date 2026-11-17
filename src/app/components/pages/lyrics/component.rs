@@ -8,8 +8,8 @@ use gettextrs::gettext;
 use gio::prelude::SettingsExt;
 use glib::clone;
 use gtk::prelude::*;
-use riff_api::Lyrics;
-use riff_config::settings::{
+use canto_api::Lyrics;
+use canto_config::settings::{
     APP_LANGUAGE, GOOGLE_TRANSLATE_API_KEY, LYRICS_OFFSET_MS, LYRICS_TRANSLATION,
     LYRICS_TRANSLATION_LANGUAGE, SETTINGS,
 };
@@ -503,7 +503,7 @@ fn apply_lyrics_to_widget(
 /// Marks the lines Genius explains (with a Genius token).
 fn annotate_lyrics(widget: &LyricsPageWidget, app_model: &Rc<AppModel>, track_id: &str) {
     let token = gio::Settings::new(SETTINGS)
-        .string(riff_config::settings::GENIUS_ACCESS_TOKEN)
+        .string(canto_config::settings::GENIUS_ACCESS_TOKEN)
         .trim()
         .to_string();
     let Some(track) = app_model.get_state().playback.current_song() else {
@@ -552,7 +552,7 @@ fn translation_target() -> String {
     } else {
         chosen
     };
-    riff_api::lyrics::target_for_locale(&locale)
+    canto_api::lyrics::target_for_locale(&locale)
 }
 
 /// Fetches (or reads from the cache) a translation of the shown lyrics and

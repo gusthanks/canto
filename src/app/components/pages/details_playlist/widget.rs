@@ -17,7 +17,7 @@ use crate::app::components::{
 use crate::app::load;
 use crate::app::state::{BrowserEvent, SelectionEvent};
 use crate::app::{AppEvent, ProvidesApi};
-use riff_api::models::is_resource_url;
+use canto_api::models::is_resource_url;
 
 const EDIT_DETAILS_ENTRY: &str = "edit_details";
 

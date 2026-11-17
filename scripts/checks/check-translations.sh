@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Checks that po/POTFILES, po/riff.pot and the .po files are up to date.
+# Checks that po/POTFILES, po/canto.pot and the .po files are up to date.
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO_ROOT"
@@ -33,16 +33,16 @@ fi
 echo "PASS"
 
 echo ""
-echo "=== riff.pot ==="
-xgettext --package-name=riff --from-code=UTF-8 --add-comments \
+echo "=== canto.pot ==="
+xgettext --package-name=canto --from-code=UTF-8 --add-comments \
     --keyword=_ --keyword=N_ --keyword=C_:1c,2 --keyword=NC_:1c,2 \
     --keyword=g_dcgettext:2 --keyword=g_dngettext:2,3 --keyword=g_dpgettext2:2c,3 \
-    --files-from="$TMP_DIR/listed" --output="$TMP_DIR/riff.pot" 2>/dev/null
-if msgcmp --use-untranslated "$TMP_DIR/riff.pot" po/riff.pot \
-    && msgcmp --use-untranslated po/riff.pot "$TMP_DIR/riff.pot"; then
+    --files-from="$TMP_DIR/listed" --output="$TMP_DIR/canto.pot" 2>/dev/null
+if msgcmp --use-untranslated "$TMP_DIR/canto.pot" po/canto.pot \
+    && msgcmp --use-untranslated po/canto.pot "$TMP_DIR/canto.pot"; then
     echo "PASS"
 else
-    echo "FAIL — po/riff.pot is out of date."
+    echo "FAIL — po/canto.pot is out of date."
     FAILED=1
 fi
 
@@ -50,8 +50,8 @@ echo ""
 echo "=== .po files ==="
 PO_FAILED=0
 while read -r lang; do
-    if ! msgcmp --use-untranslated --use-fuzzy "po/$lang.po" po/riff.pot 2>/dev/null; then
-        echo "po/$lang.po is missing strings from po/riff.pot"
+    if ! msgcmp --use-untranslated --use-fuzzy "po/$lang.po" po/canto.pot 2>/dev/null; then
+        echo "po/$lang.po is missing strings from po/canto.pot"
         PO_FAILED=1
     fi
 done < <(grep -vE '^(#|\s*$)' po/LINGUAS | tr ' ' '\n' | grep -v '^$')

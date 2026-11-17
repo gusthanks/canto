@@ -880,7 +880,7 @@ mod tests {
         state.update_with(Cow::Owned(BrowserAction::SetPlaylistDetails(
             Box::new(crate::app::models::Playlist {
                 rri: crate::app::models::ResourceId::new(
-                    riff_api::models::Provider::Spotify,
+                    canto_api::models::Provider::Spotify,
                     id.to_string(),
                 ),
                 total_tracks: Some(count as u32),
@@ -950,7 +950,7 @@ mod tests {
     #[test]
     fn test_loading_a_playlist_brings_its_new_cover_to_its_card() {
         let art = |url: &str| ImageSet {
-            images: vec![riff_api::models::Image {
+            images: vec![canto_api::models::Image {
                 url: url.to_string(),
                 width: Some(640),
                 height: Some(640),
@@ -959,7 +959,7 @@ mod tests {
         };
         let playlist = |url: &str| crate::app::models::Playlist {
             rri: crate::app::models::ResourceId::new(
-                riff_api::models::Provider::Spotify,
+                canto_api::models::Provider::Spotify,
                 "p".to_string(),
             ),
             art: art(url),
@@ -1017,7 +1017,7 @@ mod tests {
         state.update_with(Cow::Owned(BrowserAction::SetPlaylistDetails(
             Box::new(crate::app::models::Playlist {
                 rri: crate::app::models::ResourceId::new(
-                    riff_api::models::Provider::Spotify,
+                    canto_api::models::Provider::Spotify,
                     id.clone(),
                 ),
                 total_tracks: Some(3),
@@ -1054,7 +1054,7 @@ mod tests {
         state.update_with(Cow::Owned(BrowserAction::SetPlaylistDetails(
             Box::new(crate::app::models::Playlist {
                 rri: crate::app::models::ResourceId::new(
-                    riff_api::models::Provider::Spotify,
+                    canto_api::models::Provider::Spotify,
                     id.clone(),
                 ),
                 ..Default::default()

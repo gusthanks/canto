@@ -9,8 +9,8 @@ use std::rc::Rc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use gio::prelude::*;
-use riff_audio_engine::LevelMeterController;
-use riff_config::settings::{SETTINGS, VISUAL_BRIDGE_ENABLED};
+use canto_audio_engine::LevelMeterController;
+use canto_config::settings::{SETTINGS, VISUAL_BRIDGE_ENABLED};
 
 use crate::app::components::EventListener;
 use crate::app::state::PlaybackEvent;

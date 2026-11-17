@@ -11,7 +11,7 @@ use gio::prelude::SettingsExt;
 use libadwaita::ColorScheme;
 use librespot::playback::config::{AudioFormat, Bitrate, NormalisationMethod, NormalisationType};
 
-pub use riff_config::settings::*;
+pub use canto_config::settings::*;
 
 // Player (librespot) settings
 impl SpotifyPlayerSettings {
@@ -159,14 +159,14 @@ impl SpotifyPlayerSettings {
 }
 
 #[derive(Debug, Clone)]
-pub struct RiffSettings {
+pub struct CantoSettings {
     pub theme_preference: ColorScheme,
     pub player_settings: SpotifyPlayerSettings,
     pub window: WindowGeometry,
 }
 
 // Application settings
-impl RiffSettings {
+impl CantoSettings {
     pub fn new_from_gsettings() -> Option<Self> {
         let settings = gio::Settings::new(SETTINGS);
         let theme_preference = match settings.enum_("theme-preference") {
@@ -183,7 +183,7 @@ impl RiffSettings {
     }
 }
 
-impl Default for RiffSettings {
+impl Default for CantoSettings {
     fn default() -> Self {
         Self {
             theme_preference: ColorScheme::PreferDark,

@@ -2,12 +2,12 @@
 set -euo pipefail
 
 # Check that every symbolic icon referenced in the source tree is bundled in
-# riff.gresource.xml
+# canto.gresource.xml
 
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 SRC_DIR="${1:-$ROOT_DIR/src}"
 DATA_DIR="$(dirname "$SRC_DIR")/data"
-GRESOURCE="$SRC_DIR/riff.gresource.xml"
+GRESOURCE="$SRC_DIR/canto.gresource.xml"
 ACTIONS_DIR="$DATA_DIR/hicolor/symbolic/actions"
 FAILED=0
 
@@ -95,13 +95,13 @@ done < <(grep -rnoE "[\"'][^\"']*symbolic[^\"']*[\"']" "$SRC_DIR" "${SOURCES[@]}
 echo "--- Bundled icons that GTK or libadwaita already ship ---"
 while read -r icon; do
     [[ -z "$icon" ]] && continue
-    fail "$icon is built into GTK or libadwaita, remove it from riff.gresource.xml"
+    fail "$icon is built into GTK or libadwaita, remove it from canto.gresource.xml"
 done < <(comm -12 <(echo "$bundled") <(echo "$builtin"))
 
 echo "--- Bundled icons that are never referenced ---"
 while read -r icon; do
     [[ -z "$icon" ]] && continue
-    fail "$icon is in riff.gresource.xml but not used"
+    fail "$icon is in canto.gresource.xml but not used"
 done < <(comm -13 <(echo "$used") <(echo "$bundled"))
 
 echo "--- Bundled icon files ---"
@@ -118,7 +118,7 @@ done < <(grep -E '<file [^>]*alias="[^"]+-symbolic\.svg"' "$GRESOURCE" \
 if [[ -d "$ACTIONS_DIR" ]]; then
     while read -r file; do
         [[ -z "$file" ]] && continue
-        fail "$file is in ${ACTIONS_DIR#"$ROOT_DIR"/} but not in riff.gresource.xml"
+        fail "$file is in ${ACTIONS_DIR#"$ROOT_DIR"/} but not in canto.gresource.xml"
     done < <(comm -23 \
         <(find "$ACTIONS_DIR" -name '*-symbolic.svg' -exec basename {} .svg \; | sort -u) \
         <(echo "$bundled"))
@@ -131,5 +131,5 @@ if [[ "$FAILED" -eq 1 ]]; then
 fi
 
 echo "All $(echo "$all_used" | wc -l) referenced icons are available:" \
-    "$(echo "$needed" | wc -l) bundled with Riff," \
+    "$(echo "$needed" | wc -l) bundled with Canto," \
     "$(comm -12 <(echo "$all_used") <(echo "$builtin") | wc -l) built into GTK or libadwaita."

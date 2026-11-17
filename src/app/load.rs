@@ -10,7 +10,7 @@
 
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use riff_api::{Load, LoadPriority, BACKGROUND_EPOCH};
+use canto_api::{Load, LoadPriority, BACKGROUND_EPOCH};
 
 /// Starts above `BACKGROUND_EPOCH` so the first view already outranks background work.
 static NAV_EPOCH: AtomicU64 = AtomicU64::new(BACKGROUND_EPOCH + 1);

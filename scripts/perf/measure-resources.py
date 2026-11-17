@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure RAM and CPU usage of Riff and a reference app, and print a markdown report.
+"""Measure RAM and CPU usage of Canto and a reference app, and print a markdown report.
 
 Both apps must already be running. For a fair comparison put them in the same
 state first (e.g. both idle, or both playing a track).
@@ -302,7 +302,7 @@ def main():
     parser.add_argument("-d", "--duration", type=float, default=60, help="seconds to measure (default: 60)")
     parser.add_argument("-i", "--interval", type=float, default=1, help="seconds between samples (default: 1)")
     parser.add_argument("-o", "--output", help="write the markdown report to this file instead of stdout")
-    parser.add_argument("--app", default="riff", help="process name to measure (default: riff)")
+    parser.add_argument("--app", default="canto", help="process name to measure (default: canto)")
     parser.add_argument(
         "--compare", default="spotify", help="process name to compare against, or 'none' (default: spotify)"
     )

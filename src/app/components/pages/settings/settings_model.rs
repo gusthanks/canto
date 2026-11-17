@@ -1,6 +1,6 @@
 use crate::app::state::{PlaybackAction, SettingsAction};
 use crate::app::{AppAction, AppModel, Dispatcher};
-use crate::settings::RiffSettings;
+use crate::settings::CantoSettings;
 use gettextrs::gettext;
 use std::rc::Rc;
 
@@ -34,7 +34,7 @@ impl SettingsModel {
         self.dispatcher.dispatch(AppAction::ShowNotification(message));
     }
 
-    pub fn http_client(&self) -> riff_api::HttpClient {
+    pub fn http_client(&self) -> canto_api::HttpClient {
         self.app_model.api().http_client().clone()
     }
 
@@ -51,14 +51,14 @@ impl SettingsModel {
         });
     }
 
-    pub fn settings(&self) -> RiffSettings {
+    pub fn settings(&self) -> CantoSettings {
         let state = self.app_model.get_state();
         state.settings.settings.clone()
     }
 
     /// Whether the logged-in Spotify account has locked its explicit content
     /// filter (e.g. via a family plan parental control). When locked, the user
-    /// cannot disable explicit-track skipping in Riff.
+    /// cannot disable explicit-track skipping in Canto.
     pub fn explicit_filter_locked(&self) -> bool {
         self.app_model.get_state().playback.explicit_filter_locked()
     }

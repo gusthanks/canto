@@ -19,7 +19,7 @@ use crate::app::state::{
 };
 use crate::app::{AppAction, AppModel, AppState, SongsSource};
 use crate::settings;
-use riff_config::feature_flags::{self, FeatureFlag};
+use canto_config::feature_flags::{self, FeatureFlag};
 
 /// Generates the boilerplate TrackListModel methods that delegate to `self.base`.
 /// Use inside an `impl TrackListModel for X { ... }` block.
@@ -601,12 +601,12 @@ mod tests {
     /// An `ApiService` that is never called; `AppModel` just needs one to exist.
     /// No request is issued and no disk is touched, since cache directories are
     /// created on first write. Shared, to avoid an HTTP client per test.
-    fn test_api_service() -> Arc<riff_api::ApiService> {
+    fn test_api_service() -> Arc<canto_api::ApiService> {
         thread_local! {
-            static API: Arc<riff_api::ApiService> = {
-                let token_provider: Arc<dyn riff_api::TokenProvider> =
+            static API: Arc<canto_api::ApiService> = {
+                let token_provider: Arc<dyn canto_api::TokenProvider> =
                     Arc::new(|| None::<String>);
-                Arc::new(riff_api::spotify_service(
+                Arc::new(canto_api::spotify_service(
                     Arc::clone(&token_provider),
                     token_provider,
                     1024 * 1024,

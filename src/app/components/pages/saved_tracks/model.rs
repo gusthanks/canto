@@ -163,7 +163,7 @@ impl TrackListModel for SavedTracksModel {
 crate::impl_track_list_header_bar!(SavedTracksModel);
 
 impl crate::app::ProvidesApi for SavedTracksModel {
-    fn api_service(&self) -> std::sync::Arc<riff_api::ApiService> {
+    fn api_service(&self) -> std::sync::Arc<canto_api::ApiService> {
         self.app_model.api()
     }
 }

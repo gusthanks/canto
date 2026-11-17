@@ -5,7 +5,7 @@ use super::{
 use crate::app::components::{CardLayout, CardSize, SortOrder};
 use crate::app::load;
 use crate::app::models::*;
-use riff_core::navigation::{EntryId, Navigator, Route, Transition};
+use canto_core::navigation::{EntryId, Navigator, Route, Transition};
 use std::borrow::Cow;
 use std::iter::Iterator;
 
@@ -391,7 +391,7 @@ impl UpdatableState for BrowserState {
 pub mod tests {
 
     use super::*;
-    use riff_core::navigation::{Direction, HomePage};
+    use canto_core::navigation::{Direction, HomePage};
 
     const LIBRARY: Route = Route::Home(HomePage::Library);
 

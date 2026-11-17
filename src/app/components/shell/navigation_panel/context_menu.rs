@@ -7,7 +7,7 @@ use crate::app::components::labels;
 use crate::app::components::utils::confirm_delete_playlist;
 use crate::app::models::PlaylistSummary;
 use crate::settings;
-use riff_config::feature_flags::{is_enabled, FeatureFlag};
+use canto_config::feature_flags::{is_enabled, FeatureFlag};
 
 fn make_play_action(id: &str, model: &Rc<NavigationPanelModel>) -> gio::SimpleAction {
     let action = gio::SimpleAction::new("play", None);

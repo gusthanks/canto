@@ -119,7 +119,7 @@ pub fn wire_dev_tools(
         // offline, and clears itself once a request succeeds again (see
         // dispatch_api_call), mirroring how a real outage is
         // detected rather than the switch poking the toast directly.
-        riff_api::set_simulate_offline(active);
+        canto_api::set_simulate_offline(active);
         if active {
             let _ = player_sender.unbounded_send(Command::DevKillSession);
         }
@@ -160,7 +160,7 @@ pub fn wire_dev_tools(
         let idx = index as u8;
         button.connect_toggled(move |btn| {
             if btn.is_active() {
-                riff_api::set_injected_error(idx);
+                canto_api::set_injected_error(idx);
             }
         });
     }

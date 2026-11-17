@@ -1,15 +1,15 @@
 //! Parsing of Spotify links into a small, typed representation.
 //!
-//! Riff needs to understand two flavours of Spotify link:
+//! Canto needs to understand two flavours of Spotify link:
 //!  - `spotify:` URIs, e.g. `spotify:album:6akEvsycLGftJxYudPjmqK`, used for
 //!    deep links / the desktop file's `HANDLES_OPEN`.
 //!  - `https://open.spotify.com/...` URLs, which is what people copy out of the
-//!    Spotify apps and web player (and what Riff itself copies via "Copy link").
+//!    Spotify apps and web player (and what Canto itself copies via "Copy link").
 //!
 //! Real-world web URLs often carry a locale prefix (`/intl-de/track/...`) and a
 //! tracking query (`?si=...`); both are normalised away here.
 
-/// A resolved reference to something on Spotify that Riff knows how to open.
+/// A resolved reference to something on Spotify that Canto knows how to open.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SpotifyLink {
     Album(String),
@@ -23,7 +23,7 @@ impl SpotifyLink {
     /// Parse a `spotify:` URI or an `open.spotify.com` URL into a [`SpotifyLink`].
     ///
     /// Returns `None` if the input is not a Spotify link or references a type
-    /// Riff does not know how to open.
+    /// Canto does not know how to open.
     pub fn parse(input: &str) -> Option<Self> {
         let input = input.trim();
         if input.is_empty() {

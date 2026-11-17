@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Drive a running Riff through searches and page visits, to exercise it under load.
+"""Drive a running Canto through searches and page visits, to exercise it under load.
 
 For each genre it runs a search scoped to playlists and then one scoped to
 artists. In each it scrolls the results, then opens the first 20 of them,
@@ -97,11 +97,11 @@ def do_action(node, name):
     return False
 
 
-class Riff:
+class Canto:
     def __init__(self, app_id, pause):
-        self.app = find_app("riff")
+        self.app = find_app("canto")
         if not self.app:
-            sys.exit("Riff is not running (or accessibility is disabled).")
+            sys.exit("Canto is not running (or accessibility is disabled).")
         self.bus = Gio.bus_get_sync(Gio.BusType.SESSION)
         self.actions = Gio.DBusActionGroup.get(self.bus, app_id, "/" + app_id.replace(".", "/"))
         self.pause = pause
@@ -199,25 +199,25 @@ class Riff:
                 return name
             # The grid may have been rebuilt under us; look again
             time.sleep(1)
-        sys.exit(f"Card '{name}' has no '{CARD_ACTION}' action; this Riff build is too old.")
+        sys.exit(f"Card '{name}' has no '{CARD_ACTION}' action; this Canto build is too old.")
 
     def back(self):
         self.app_action("nav_pop")
 
 
-def browse(riff, genre, count):
+def browse(canto, genre, count):
     for scope in (PLAYLISTS, ARTISTS):
         print(f"Searching {scope.lower()} for '{genre}'")
-        if not riff.search(genre, scope):
+        if not canto.search(genre, scope):
             print("  no results, skipping")
             continue
-        riff.scroll_down()
+        canto.scroll_down()
         for i in range(count):
-            name = riff.open_card(i)
+            name = canto.open_card(i)
             if name is None:
                 break
             print(f"  {name}")
-            riff.back()
+            canto.back()
 
 
 def main():
@@ -228,18 +228,18 @@ def main():
     parser.add_argument("--app-id", default="io.github.gusthanks.Canto", help="application id (default: io.github.gusthanks.Canto)")
     args = parser.parse_args()
 
-    riff = Riff(args.app_id, args.pause)
+    canto = Canto(args.app_id, args.pause)
     start = time.monotonic()
     try:
         for round_number in range(args.rounds):
             if args.rounds > 1:
                 print(f"Round {round_number + 1} of {args.rounds}")
             for genre in GENRES:
-                browse(riff, genre, args.count)
-        riff.app_action("nav_albums")
+                browse(canto, genre, args.count)
+        canto.app_action("nav_albums")
     except KeyboardInterrupt:
         pass
-    print(f"Opened {riff.pages_opened} pages in {time.monotonic() - start:.0f}s.")
+    print(f"Opened {canto.pages_opened} pages in {time.monotonic() - start:.0f}s.")
 
 
 if __name__ == "__main__":

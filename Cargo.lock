@@ -311,6 +311,108 @@ dependencies = [
 ]
 
 [[package]]
+name = "canto"
+version = "26.10.0"
+dependencies = [
+ "canto-api",
+ "canto-audio-engine",
+ "canto-auth",
+ "canto-config",
+ "canto-core",
+ "env_logger",
+ "futures",
+ "gdk4",
+ "gettext-rs",
+ "gio",
+ "glib",
+ "gtk4",
+ "int-enum",
+ "lazy_static",
+ "libadwaita",
+ "libc",
+ "librespot",
+ "log",
+ "open",
+ "percent-encoding",
+ "ref_filter_map",
+ "serde_json",
+ "tokio",
+ "url",
+ "zbus",
+]
+
+[[package]]
+name = "canto-api"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "canto-auth",
+ "canto-config",
+ "futures",
+ "gdk-pixbuf",
+ "gdk4",
+ "gettext-rs",
+ "glib",
+ "hex",
+ "http",
+ "httpdate",
+ "log",
+ "md-5",
+ "prost",
+ "reqwest",
+ "reqwest-middleware",
+ "serde",
+ "serde_json",
+ "spotify-api",
+ "thiserror 2.0.21",
+ "tokio",
+ "url",
+ "uuid",
+]
+
+[[package]]
+name = "canto-audio-engine"
+version = "1.0.0"
+dependencies = [
+ "librespot-playback",
+ "log",
+]
+
+[[package]]
+name = "canto-auth"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "log",
+ "oauth2",
+ "oo7",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tokio",
+ "url",
+]
+
+[[package]]
+name = "canto-config"
+version = "0.1.0"
+dependencies = [
+ "gio",
+ "log",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "canto-core"
+version = "0.1.0"
+dependencies = [
+ "canto-api",
+ "rand 0.10.3",
+]
+
+[[package]]
 name = "cbc"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3170,108 +3272,6 @@ dependencies = [
  "serde",
  "thiserror 1.0.69",
  "tower-service",
-]
-
-[[package]]
-name = "riff"
-version = "26.10.0"
-dependencies = [
- "env_logger",
- "futures",
- "gdk4",
- "gettext-rs",
- "gio",
- "glib",
- "gtk4",
- "int-enum",
- "lazy_static",
- "libadwaita",
- "libc",
- "librespot",
- "log",
- "open",
- "percent-encoding",
- "ref_filter_map",
- "riff-api",
- "riff-audio-engine",
- "riff-auth",
- "riff-config",
- "riff-core",
- "serde_json",
- "tokio",
- "url",
- "zbus",
-]
-
-[[package]]
-name = "riff-api"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "futures",
- "gdk-pixbuf",
- "gdk4",
- "gettext-rs",
- "glib",
- "hex",
- "http",
- "httpdate",
- "log",
- "md-5",
- "prost",
- "reqwest",
- "reqwest-middleware",
- "riff-auth",
- "riff-config",
- "serde",
- "serde_json",
- "spotify-api",
- "thiserror 2.0.21",
- "tokio",
- "url",
- "uuid",
-]
-
-[[package]]
-name = "riff-audio-engine"
-version = "1.0.0"
-dependencies = [
- "librespot-playback",
- "log",
-]
-
-[[package]]
-name = "riff-auth"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "log",
- "oauth2",
- "oo7",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "tokio",
- "url",
-]
-
-[[package]]
-name = "riff-config"
-version = "0.1.0"
-dependencies = [
- "gio",
- "log",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "riff-core"
-version = "0.1.0"
-dependencies = [
- "rand 0.10.3",
- "riff-api",
 ]
 
 [[package]]

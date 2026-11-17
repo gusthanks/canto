@@ -10,8 +10,8 @@ use crate::app::components::{
 use crate::app::models::*;
 use crate::app::state::{PlaybackAction, PlaybackEvent, SelectionEvent};
 use crate::app::{AppEvent, AppModel, AppState, BrowserEvent, Dispatcher};
-use riff_config::feature_flags::FeatureFlag;
-use riff_config::settings::SETTINGS;
+use canto_config::feature_flags::FeatureFlag;
+use canto_config::settings::SETTINGS;
 
 use super::playback_widget::PlaybackWidget;
 use crate::app::components::now_panel::{
@@ -35,7 +35,7 @@ impl PlaybackModel {
         self.app_model.get_state()
     }
 
-    fn api_service(&self) -> std::sync::Arc<riff_api::ApiService> {
+    fn api_service(&self) -> std::sync::Arc<canto_api::ApiService> {
         self.app_model.api()
     }
 

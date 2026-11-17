@@ -23,7 +23,7 @@ If applicable, add screenshots to help explain your problem.
 **General information:**
  - Distribution:
  - Installation method [e.g. Flatpak, built from source]:
- - Riff Version:
+ - Canto Version:
  - Arch [e.g. x86_64, aarch64]:
  - Desktop [e.g. GNOME, KDE]:
  - Display server [e.g. wayland, x11]:
@@ -32,7 +32,7 @@ If applicable, add screenshots to help explain your problem.
 **Logs:**
 Please paste relevant log output below. You can retrieve logs with:
 ```sh
-journalctl --user _COMM=riff --since="1 hour ago" --no-pager
+journalctl --user _COMM=canto --since="1 hour ago" --no-pager
 ```
 <details><summary>Log output</summary>
 

@@ -11,7 +11,7 @@ use crate::app::components::display_add_css_provider;
 use crate::app::components::utils::{decode_px, set_missing_art};
 use crate::app::load;
 use crate::app::models::ImageSet;
-use riff_api::models::is_resource_url;
+use canto_api::models::is_resource_url;
 
 use super::{DetailsHeader, DetailsHeaderWidget, HeaderImageShape, HEADER_IMAGE_SIZE};
 
@@ -110,7 +110,7 @@ impl DetailsPage {
     pub fn load_artwork_or_finish(
         &self,
         art: Option<&ImageSet>,
-        api_service: Arc<riff_api::ApiService>,
+        api_service: Arc<canto_api::ApiService>,
     ) {
         let url = art.and_then(|s| s.best_for_width(HEADER_IMAGE_SIZE as u32));
         if url.is_some_and(is_resource_url) {

@@ -11,8 +11,8 @@ use crate::app::load;
 use crate::app::models::{queue_songs, PlayerState, RepeatMode, Track};
 use crate::app::state::{Device, PlaybackAction, RemotePlaybackState};
 use crate::app::{AppAction, SongsSource};
-use riff_api::ApiService;
-use riff_api::DomainError;
+use canto_api::ApiService;
+use canto_api::DomainError;
 
 use super::official::{self, OfficialClient};
 use super::spotify_mpris;
@@ -194,7 +194,7 @@ impl ConnectPlayer {
             is_playing: snapshot.playing,
             current_track_id: snapshot
                 .track_id
-                .map(|id| riff_api::models::ResourceId::new(riff_api::models::Provider::Spotify, id)),
+                .map(|id| canto_api::models::ResourceId::new(canto_api::models::Provider::Spotify, id)),
             progress_ms: snapshot.position_ms,
             // Read just now: nothing to compensate for
             timestamp_ms: None,

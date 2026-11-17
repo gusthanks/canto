@@ -15,9 +15,9 @@ use crate::app::components::{dispatch_api_call, labels, EventListener};
 use crate::app::models::{Track, TrackExt};
 use crate::app::state::PlaybackEvent;
 use crate::app::{load, AppAction, AppEvent, AppModel, BrowserAction, BrowserEvent, Dispatcher};
-use riff_api::models::is_resource_url;
-use riff_api::{GeniusTrackInfo, Lyrics};
-use riff_config::settings::{GENIUS_ACCESS_TOKEN, LYRICS_OFFSET_MS, SETTINGS};
+use canto_api::models::is_resource_url;
+use canto_api::{GeniusTrackInfo, Lyrics};
+use canto_config::settings::{GENIUS_ACCESS_TOKEN, LYRICS_OFFSET_MS, SETTINGS};
 
 /// Lines shown in the lyrics preview card.
 const PREVIEW_LINES: usize = 4;
@@ -447,7 +447,7 @@ impl Widgets {
     }
 
     /// The play counts, as three columns: song, album, artist.
-    fn show_playcounts(&self, counts: &riff_api::scrobbler::Playcounts) {
+    fn show_playcounts(&self, counts: &canto_api::scrobbler::Playcounts) {
         while let Some(child) = self.stats_body.first_child() {
             self.stats_body.remove(&child);
         }
@@ -853,8 +853,8 @@ fn load_playcounts(
     loaded_for: &Rc<RefCell<Option<String>>>,
 ) {
     w.stats_card.set_visible(false);
-    let api_key = settings.string(riff_config::settings::LASTFM_API_KEY).to_string();
-    let username = settings.string(riff_config::settings::LASTFM_USERNAME).to_string();
+    let api_key = settings.string(canto_config::settings::LASTFM_API_KEY).to_string();
+    let username = settings.string(canto_config::settings::LASTFM_USERNAME).to_string();
     if api_key.trim().is_empty() || username.trim().is_empty() {
         return;
     }
@@ -869,7 +869,7 @@ fn load_playcounts(
     let weak_w = Rc::downgrade(w);
     let weak_loaded = Rc::downgrade(loaded_for);
     glib::spawn_future_local(async move {
-        let result = riff_api::scrobbler::LastFmClient::user_playcounts(
+        let result = canto_api::scrobbler::LastFmClient::user_playcounts(
             &api_key,
             &username,
             &artist,
@@ -1032,7 +1032,7 @@ pub(crate) fn sample_for_tests(cover: &gtk::gdk::Texture) -> gtk::Widget {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use riff_api::LyricLine;
+    use canto_api::LyricLine;
 
     fn synced(lines: &[(u64, &str)]) -> Lyrics {
         Lyrics::Synced(

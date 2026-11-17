@@ -23,9 +23,9 @@ use crate::app::state::{BrowserAction, BrowserEvent, SelectionState};
 use crate::app::{AppAction, AppEvent, AppModel, Dispatcher, PaginationTarget, SongsSource};
 use crate::settings;
 use crate::{impl_source_page, impl_source_track_list, impl_track_list_model_base};
-use riff_api::models::is_resource_url;
-use riff_api::DomainError;
-use riff_config::feature_flags::{is_enabled, FeatureFlag};
+use canto_api::models::is_resource_url;
+use canto_api::DomainError;
+use canto_config::feature_flags::{is_enabled, FeatureFlag};
 
 const TRACKS_PAGE: usize = 50;
 
@@ -371,7 +371,7 @@ impl TrackListModel for PlaylistDetailsModel {
 crate::impl_track_list_header_bar!(PlaylistDetailsModel);
 
 impl crate::app::ProvidesApi for PlaylistDetailsModel {
-    fn api_service(&self) -> std::sync::Arc<riff_api::ApiService> {
+    fn api_service(&self) -> std::sync::Arc<canto_api::ApiService> {
         self.app_model.api()
     }
 }

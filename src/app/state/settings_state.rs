@@ -1,6 +1,6 @@
 use crate::{
     app::state::{AppAction, AppEvent, UpdatableState},
-    settings::RiffSettings,
+    settings::CantoSettings,
 };
 
 #[derive(Clone, Debug)]
@@ -28,7 +28,7 @@ impl From<SettingsEvent> for AppEvent {
 #[derive(Default)]
 pub struct SettingsState {
     // Probably shouldn't be stored, the source of truth is GSettings anyway
-    pub settings: RiffSettings,
+    pub settings: CantoSettings,
 }
 
 impl UpdatableState for SettingsState {
@@ -38,7 +38,7 @@ impl UpdatableState for SettingsState {
     fn update_with(&mut self, action: std::borrow::Cow<Self::Action>) -> Vec<Self::Event> {
         match action.into_owned() {
             SettingsAction::ChangeSettings => {
-                let new_settings = RiffSettings::new_from_gsettings().unwrap_or_default();
+                let new_settings = CantoSettings::new_from_gsettings().unwrap_or_default();
                 // Only emit a reload event for changes that require recreating
                 // the librespot player. EQ, mono, pan, and pitch changes are
                 // pushed live via the GSettings watcher in PlayerNotifier and

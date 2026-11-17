@@ -11,7 +11,7 @@ use crate::app::components::EventListener;
 use crate::app::models::TrackExt;
 use crate::app::state::{PlaybackAction, PlaybackEvent};
 use crate::app::{load, AppEvent, AppModel, BrowserEvent, Dispatcher};
-use riff_api::models::is_resource_url;
+use canto_api::models::is_resource_url;
 
 pub const SHOW_MINI_PLAYER_ACTION: &str = "mini-player";
 

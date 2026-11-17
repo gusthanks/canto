@@ -5,7 +5,7 @@ use gtk::CompositeTemplate;
 
 use super::lock_button;
 
-use riff_config::settings::SETTINGS;
+use canto_config::settings::SETTINGS;
 
 mod imp {
     use super::*;

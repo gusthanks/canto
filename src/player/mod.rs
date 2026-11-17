@@ -7,7 +7,7 @@ use gettextrs::gettext;
 
 use crate::app::state::{LoginAction, PlaybackAction};
 use crate::app::AppAction;
-use riff_auth::{SessionTokens, TokenStore};
+use canto_auth::{SessionTokens, TokenStore};
 #[allow(clippy::module_inception)]
 mod player;
 pub use player::*;
@@ -57,7 +57,7 @@ pub enum Command {
     // First successful playback since login; persist the account as known-good.
     MarkPlaybackVerified,
     // Re-query the account's explicit content filter (e.g. after a track was
-    // rejected with ExplicitContentFiltered) and sync Riff's filter state.
+    // rejected with ExplicitContentFiltered) and sync Canto's filter state.
     RecheckExplicitFilter,
     // Carries the result of an asynchronous explicit-filter re-check back into
     // the command loop so the player can update its cached state.
@@ -165,7 +165,7 @@ async fn player_main(
     appaction_sender: UnboundedSender<AppAction>,
     token_store: TokenStore,
     session_tokens: SessionTokens,
-    level_meter: riff_audio_engine::LevelMeterController,
+    level_meter: canto_audio_engine::LevelMeterController,
     sender: UnboundedSender<Command>,
     receiver: UnboundedReceiver<Command>,
 ) {
@@ -190,7 +190,7 @@ pub fn start_player_service(
     appaction_sender: UnboundedSender<AppAction>,
     token_store: TokenStore,
     session_tokens: SessionTokens,
-    level_meter: riff_audio_engine::LevelMeterController,
+    level_meter: canto_audio_engine::LevelMeterController,
 ) -> UnboundedSender<Command> {
     let (sender, receiver) = unbounded::<Command>();
     let sender_clone = sender.clone();

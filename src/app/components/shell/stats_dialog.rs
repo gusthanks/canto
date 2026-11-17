@@ -8,7 +8,7 @@ use gettextrs::gettext;
 use gtk::prelude::*;
 use gtk::{gio, glib};
 use libadwaita::prelude::*;
-use riff_api::scrobbler::{LastFmClient, ListeningStats, StatsPeriod, TopItem};
+use canto_api::scrobbler::{LastFmClient, ListeningStats, StatsPeriod, TopItem};
 
 use crate::app::models::Track;
 use crate::app::state::{load_context, start_actions, BrowserAction, PlaybackAction, Route};
@@ -158,9 +158,9 @@ fn period_label(period: StatsPeriod) -> String {
 
 impl Stats {
     fn load(self: &Rc<Self>) {
-        let settings = gio::Settings::new(riff_config::settings::SETTINGS);
-        let api_key = settings.string(riff_config::settings::LASTFM_API_KEY).to_string();
-        let username = settings.string(riff_config::settings::LASTFM_USERNAME).to_string();
+        let settings = gio::Settings::new(canto_config::settings::SETTINGS);
+        let api_key = settings.string(canto_config::settings::LASTFM_API_KEY).to_string();
+        let username = settings.string(canto_config::settings::LASTFM_USERNAME).to_string();
         if api_key.trim().is_empty() || username.trim().is_empty() {
             self.status.set_title(&gettext("Link Last.fm to See Your Stats"));
             self.status.set_description(Some(&gettext(
@@ -350,7 +350,7 @@ impl Stats {
         let api = self.app_model.api();
         let weak = cover.downgrade();
         let px = COVER_PX * cover.scale_factor().max(2);
-        let tag = riff_api::Load::new(riff_api::LoadPriority::Visible, riff_api::BACKGROUND_EPOCH);
+        let tag = canto_api::Load::new(canto_api::LoadPriority::Visible, canto_api::BACKGROUND_EPOCH);
         glib::spawn_future_local(async move {
             let texture = api.load_image(&url, px, px, tag).await;
             if let (Some(cover), Some(texture)) = (weak.upgrade(), texture) {
@@ -374,7 +374,7 @@ impl Stats {
         let weak_self = Rc::downgrade(self);
         let weak_cover = cover.downgrade();
         let found = Rc::clone(found);
-        let tag = riff_api::Load::new(riff_api::LoadPriority::Visible, riff_api::BACKGROUND_EPOCH);
+        let tag = canto_api::Load::new(canto_api::LoadPriority::Visible, canto_api::BACKGROUND_EPOCH);
         glib::spawn_future_local(async move {
             let Ok(results) = api.search(&query, 0, 5, tag).await else {
                 return;

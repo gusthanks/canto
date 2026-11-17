@@ -9,8 +9,8 @@ use crate::app::components::{dispatch_api_read, is_app_copied_link, EventListene
 use crate::app::state::SpotifyLink;
 use crate::app::{AppAction, AppModel, Dispatcher};
 
-/// Watches the system clipboard and, when the Riff window is focused, offers to
-/// open a Spotify link the user copied from somewhere other than Riff.
+/// Watches the system clipboard and, when the Canto window is focused, offers to
+/// open a Spotify link the user copied from somewhere other than Canto.
 pub struct ClipboardImport {
     // Kept alive for the lifetime of the component; the window signal holds a
     // weak reference to it.
@@ -156,7 +156,7 @@ impl ClipboardWatcher {
 }
 
 /// Pure decision logic: given the clipboard text, whether it matches a link
-/// Riff itself copied, and the last dismissed link, return the link to prompt
+/// Canto itself copied, and the last dismissed link, return the link to prompt
 /// for (if any).
 fn decide(text: &str, is_app_copied: bool, dismissed: Option<&str>) -> Option<SpotifyLink> {
     let link = SpotifyLink::parse(text)?;

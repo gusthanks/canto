@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<schemalist gettext-domain="riff">
+<schemalist gettext-domain="canto">
   <enum id="io.github.gusthanks.Canto.AudioBackend">
     <value value="0" nick="pulseaudio" />
     <value value="1" nick="alsa" />

@@ -1,19 +1,19 @@
 // The app consumes the provider-neutral data-layer models directly. The leaf
 // catalog entities (`Track`, `Album`, `Playlist`, `Artist`, ...) are
-// re-exported from `riff_api::models` so the rest of the app can refer to them
+// re-exported from `canto_api::models` so the rest of the app can refer to them
 // as `crate::app::models::*`.
-pub use riff_api::models::{
+pub use canto_api::models::{
     Album, AlbumType, Artist, ArtistRef, ContentRating, Device, DeviceKind, ImageSet, Page,
     PlayerState, Playlist, RepeatMode, ResourceId, SearchResults, Track, User,
 };
 #[allow(unused_imports)]
-pub use riff_api::{LyricLine, Lyrics};
-pub use riff_core::play_queue::{PageRequest, SongsSource};
+pub use canto_api::{LyricLine, Lyrics};
+pub use canto_core::play_queue::{PageRequest, SongsSource};
 
 // Only the `#[cfg(test)]` fixtures below name `Provider`; keep its import
 // test-scoped so non-test builds don't see an unused re-export.
 #[cfg(test)]
-use riff_api::models::Provider;
+use canto_api::models::Provider;
 
 /// UI helper methods for [`Track`].
 pub trait TrackExt {
@@ -88,7 +88,7 @@ pub enum SearchType {
     Tracks,
 }
 
-impl From<SearchType> for riff_api::models::SearchType {
+impl From<SearchType> for canto_api::models::SearchType {
     fn from(kind: SearchType) -> Self {
         match kind {
             SearchType::Artists => Self::Artist,

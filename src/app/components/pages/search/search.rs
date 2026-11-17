@@ -221,11 +221,11 @@ struct SearchSectionModel {
     store: ListStore<CardModel>,
     shape: ImageShape,
     on_activated: Box<dyn Fn(String)>,
-    api_service: std::sync::Arc<riff_api::ApiService>,
+    api_service: std::sync::Arc<canto_api::ApiService>,
 }
 
 impl crate::app::ProvidesApi for SearchSectionModel {
-    fn api_service(&self) -> std::sync::Arc<riff_api::ApiService> {
+    fn api_service(&self) -> std::sync::Arc<canto_api::ApiService> {
         self.api_service.clone()
     }
 }

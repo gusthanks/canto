@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Build script for Riff.
+# Build script for Canto.
 # Usage:
 #   ./scripts/build.sh [command] [options]
 #
@@ -140,20 +140,20 @@ do_install() {
 
 case "$COMMAND" in
     dev)
-        export RUST_LOG="${RUST_LOG:-riff=debug,librespot=error}"
+        export RUST_LOG="${RUST_LOG:-canto=debug,librespot=error}"
         setup_build "debug"
         do_build
         if [[ "$INSTALL" -eq 1 ]]; then
             do_install
             echo ""
             echo "Installed. Run with:"
-            echo "  RUST_LOG='$RUST_LOG' $PREFIX/bin/riff"
+            echo "  RUST_LOG='$RUST_LOG' $PREFIX/bin/canto"
         else
             echo ""
             echo "Debug build complete. Install with:"
             echo "  $0 dev --install"
             echo "Or run directly:"
-            echo "  ninja install -C $BUILD_DIR && RUST_LOG='$RUST_LOG' $PREFIX/bin/riff"
+            echo "  ninja install -C $BUILD_DIR && RUST_LOG='$RUST_LOG' $PREFIX/bin/canto"
         fi
         ;;
     release)
@@ -162,7 +162,7 @@ case "$COMMAND" in
         if [[ "$INSTALL" -eq 1 ]]; then
             do_install
             echo ""
-            echo "Installed. Run with: $PREFIX/bin/riff"
+            echo "Installed. Run with: $PREFIX/bin/canto"
         else
             echo ""
             echo "Release build complete. Install with:"
@@ -181,14 +181,14 @@ case "$COMMAND" in
             die "No build directory found. Run '$0 dev' first."
         fi
         echo "==> Regenerating pot files..."
-        ninja riff-pot -C "$BUILD_PATH"
+        ninja canto-pot -C "$BUILD_PATH"
         ;;
     update-po)
         if [[ ! -d "$BUILD_PATH" ]]; then
             die "No build directory found. Run '$0 dev' first."
         fi
         echo "==> Updating .po files..."
-        ninja riff-update-po -C "$BUILD_PATH"
+        ninja canto-update-po -C "$BUILD_PATH"
         ;;
     cargo-src)
         if [[ ! -d "$BUILD_PATH" ]]; then

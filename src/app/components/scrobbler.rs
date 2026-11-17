@@ -9,12 +9,12 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use gio::prelude::*;
-use riff_api::scrobbler::{
+use canto_api::scrobbler::{
     LastFmClient, ListenBrainzClient, PendingScrobble, RetryQueue, ScrobbleAction,
     ScrobbleTarget, ScrobbleTrack, ScrobbleTrackMetadata, ScrobbleTracker,
 };
-use riff_api::DomainError;
-use riff_config::settings::{
+use canto_api::DomainError;
+use canto_config::settings::{
     LASTFM_API_KEY, LASTFM_API_SECRET, LASTFM_SESSION_KEY, LISTENBRAINZ_TOKEN, SCROBBLE_ENABLED,
     SCROBBLE_RESPECT_REMOTE, SETTINGS,
 };
@@ -327,7 +327,7 @@ impl Inner {
 }
 
 async fn send_lastfm(
-    client: &riff_api::HttpClient,
+    client: &canto_api::HttpClient,
     creds: &Credentials,
     track: &ScrobbleTrack,
 ) -> Result<(), DomainError> {
@@ -364,7 +364,7 @@ impl TransientTargets {
 }
 
 async fn flush_pending_items(
-    client: &riff_api::HttpClient,
+    client: &canto_api::HttpClient,
     creds: &Credentials,
     pending: Vec<PendingScrobble>,
 ) -> Vec<PendingScrobble> {

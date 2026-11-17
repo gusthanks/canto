@@ -1,0 +1,10 @@
+[package]
+name = "canto-core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Canto's app logic between the UI and the API layer, free of UI dependencies."
+
+[dependencies]
+canto-api = { path = "../canto-api" }
+rand = "0.10.3"

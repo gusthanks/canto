@@ -10,8 +10,8 @@
 use crate::app::components::display_add_css_provider;
 use crate::app::components::utils::{decode_px, set_css_class, set_missing_art};
 use crate::app::models::{CardLayout, CardModel, CardSize};
-use riff_api::models::is_resource_url;
-use riff_api::ApiService;
+use canto_api::models::is_resource_url;
+use canto_api::ApiService;
 
 use crate::app::load;
 use std::sync::Arc;
@@ -312,7 +312,7 @@ impl CardWidget {
         &self,
         url: String,
         api_service: Arc<ApiService>,
-        tag: riff_api::Load,
+        tag: canto_api::Load,
     ) -> impl std::future::Future<Output = ()> + 'static {
         let decode_size = decode_px(self.imp().icon_size.get());
         self.imp().decoded_px.set(decode_size);

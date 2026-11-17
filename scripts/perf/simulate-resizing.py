@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resize a running Riff's window back and forth, to profile how it handles resizing."""
+"""Resize a running Canto's window back and forth, to profile how it handles resizing."""
 
 import argparse
 import math
@@ -31,7 +31,7 @@ def find_app():
     desktop = Atspi.get_desktop(0)
     for i in range(desktop.get_child_count()):
         app = desktop.get_child_at_index(i)
-        if app and (app.get_name() or "").lower() == "riff":
+        if app and (app.get_name() or "").lower() == "canto":
             return app
     return None
 
@@ -75,7 +75,7 @@ def sweep(low, high, phase):
     return round(low + (high - low) * (1 - math.cos(2 * math.pi * phase)) / 2)
 
 
-class Riff:
+class Canto:
     def __init__(self, app_id):
         self.bus = Gio.bus_get_sync(Gio.BusType.SESSION)
         self.app_id = app_id
@@ -85,9 +85,9 @@ class Riff:
             (names,) = self.bus.call_sync(app_id, path, "org.gtk.Actions", "List", None,
                                           GLib.VariantType("(as)"), Gio.DBusCallFlags.NONE, 2000, None).unpack()
         except GLib.Error:
-            sys.exit("Riff is not running.")
+            sys.exit("Canto is not running.")
         if "resize_window" not in names:
-            sys.exit("Riff has no 'resize_window' action; this Riff build is too old.")
+            sys.exit("Canto has no 'resize_window' action; this Canto build is too old.")
 
     def show(self):
         self.bus.call_sync(self.app_id, self.path, "org.freedesktop.Application", "Activate",
@@ -139,10 +139,10 @@ def main():
     parser.add_argument("--app-id", default="io.github.gusthanks.Canto", help="application id (default: io.github.gusthanks.Canto)")
     args = parser.parse_args()
 
-    riff = Riff(args.app_id)
-    riff.show()
+    canto = Canto(args.app_id)
+    canto.show()
     if args.page == "artist":
-        artist = riff.open_artist()
+        artist = canto.open_artist()
         if not artist:
             sys.exit("Could not open a saved artist (is accessibility disabled, or are there none?).")
         print(f"Resizing on the page for {artist}")
@@ -150,7 +150,7 @@ def main():
     if original is None:
         print("Could not read the window size (is accessibility disabled?); it won't be restored.")
     fixed = original or args.max
-    scroll_bar = riff.page_scroll_bar() if args.scroll_period > 0 else None
+    scroll_bar = canto.page_scroll_bar() if args.scroll_period > 0 else None
     if args.scroll_period > 0 and not scroll_bar:
         print("Could not find the page's scroll bar; it won't be scrolled.")
 
@@ -162,7 +162,7 @@ def main():
             phase = (elapsed / args.period) % 1
             width = sweep(args.min[0], args.max[0], phase) if args.axis != "height" else fixed[0]
             height = sweep(args.min[1], args.max[1], phase) if args.axis != "width" else fixed[1]
-            riff.resize(width, height)
+            canto.resize(width, height)
             if scroll_bar:
                 try:
                     top = sweep(0, round(scroll_bar.get_maximum_value()), (elapsed / args.scroll_period) % 1)
@@ -176,7 +176,7 @@ def main():
     elapsed = time.monotonic() - start
 
     if original:
-        riff.resize(*original)
+        canto.resize(*original)
     print(f"Sent {resizes} resizes in {elapsed:.1f}s ({resizes / elapsed:.0f}/s).")
 
 

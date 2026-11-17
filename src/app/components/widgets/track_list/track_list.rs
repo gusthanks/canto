@@ -6,7 +6,7 @@ use std::ops::Deref;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use riff_api::ApiService;
+use canto_api::ApiService;
 
 use crate::app::components::utils::{ancestor, set_css_class, AnimatorDefault};
 use crate::app::components::{
@@ -16,7 +16,7 @@ use crate::app::components::{
 use crate::app::models::{SongListModel, SongModel, SongState, Track, TrackExt};
 use crate::app::state::{BrowserEvent, PlaybackEvent, SelectionEvent, SelectionState};
 use crate::app::{AppAction, AppEvent, ProvidesApi};
-use riff_config::feature_flags::{is_enabled, FeatureFlag};
+use canto_config::feature_flags::{is_enabled, FeatureFlag};
 
 const SKELETON_ROW_COUNT: usize = 10;
 
@@ -1075,7 +1075,7 @@ mod tests {
     }
 
     impl crate::app::ProvidesApi for MockTrackListModel {
-        fn api_service(&self) -> std::sync::Arc<riff_api::ApiService> {
+        fn api_service(&self) -> std::sync::Arc<canto_api::ApiService> {
             unimplemented!("not exercised by these tests")
         }
     }

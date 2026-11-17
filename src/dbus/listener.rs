@@ -52,7 +52,7 @@ impl AppPlaybackStateListener {
             art: song
                 .art
                 .largest()
-                .filter(|url| !riff_api::models::is_resource_url(url))
+                .filter(|url| !canto_api::models::is_resource_url(url))
                 .map(str::to_owned),
         })
     }

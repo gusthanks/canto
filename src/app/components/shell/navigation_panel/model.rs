@@ -15,8 +15,8 @@ use crate::app::playlist_actions::unfollow_and_unpin_playlist;
 use crate::app::state::{load_context, start_actions, PlaybackAction, Route};
 use crate::app::{AppAction, AppModel, BrowserAction, Dispatcher, PaginationTarget, SongsSource};
 use crate::settings;
-use riff_config::feature_flags::{is_enabled, FeatureFlag};
-use riff_core::play_queue::CONTEXT_PAGE_SIZE;
+use canto_config::feature_flags::{is_enabled, FeatureFlag};
+use canto_core::play_queue::CONTEXT_PAGE_SIZE;
 
 // Nothing for an empty context
 fn start_context(
@@ -119,8 +119,8 @@ pub struct NavigationPanelModel {
 impl NavigationPanelModel {
     pub fn new(app_model: Rc<AppModel>, dispatcher: Dispatcher) -> Self {
         let sort = LibrarySort::from_key(
-            &gtk::gio::Settings::new(riff_config::settings::SETTINGS)
-                .string(riff_config::settings::LIBRARY_SORT),
+            &gtk::gio::Settings::new(canto_config::settings::SETTINGS)
+                .string(canto_config::settings::LIBRARY_SORT),
         );
         Self {
             app_model,
@@ -139,8 +139,8 @@ impl NavigationPanelModel {
 
     pub fn set_sort(&self, sort: LibrarySort) {
         self.sort.set(sort);
-        let _ = gtk::gio::Settings::new(riff_config::settings::SETTINGS)
-            .set_string(riff_config::settings::LIBRARY_SORT, sort.key());
+        let _ = gtk::gio::Settings::new(canto_config::settings::SETTINGS)
+            .set_string(canto_config::settings::LIBRARY_SORT, sort.key());
     }
 
     pub fn set_query(&self, query: &str) {
@@ -385,14 +385,14 @@ impl NavigationPanelModel {
 
     /// Shows the cover at `url` in `image`, `px` pixels wide.
     pub(super) fn load_cover(&self, image: &gtk::Image, url: &str, px: i32) {
-        if riff_api::models::is_resource_url(url) {
+        if canto_api::models::is_resource_url(url) {
             return;
         }
         let api = self.app_model.api();
         let url = url.to_owned();
         let weak = image.downgrade();
         // Behind whatever page is loading
-        let tag = riff_api::Load::new(riff_api::LoadPriority::Visible, riff_api::BACKGROUND_EPOCH);
+        let tag = canto_api::Load::new(canto_api::LoadPriority::Visible, canto_api::BACKGROUND_EPOCH);
         glib::MainContext::default().spawn_local(async move {
             let texture = api.load_image(&url, px, px, tag).await;
             if let (Some(image), Some(texture)) = (weak.upgrade(), texture) {

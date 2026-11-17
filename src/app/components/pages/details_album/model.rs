@@ -18,7 +18,7 @@ use crate::app::state::{BrowserAction, BrowserEvent, SelectionState};
 use crate::app::{AppAction, AppEvent, AppModel, Dispatcher, PaginationTarget, SongsSource};
 use crate::settings;
 use crate::{impl_source_page, impl_source_track_list, impl_track_list_model_base};
-use riff_api::DomainError;
+use canto_api::DomainError;
 
 /// Data model for the album detail page. Composes `DetailsPageModel` via Deref.
 pub struct DetailsModel {
@@ -269,7 +269,7 @@ impl TrackListModel for DetailsModel {
 crate::impl_track_list_header_bar!(DetailsModel);
 
 impl crate::app::ProvidesApi for DetailsModel {
-    fn api_service(&self) -> std::sync::Arc<riff_api::ApiService> {
+    fn api_service(&self) -> std::sync::Arc<canto_api::ApiService> {
         self.app_model.api()
     }
 }

@@ -12,7 +12,7 @@ use crate::app::state::LoginEvent;
 use crate::app::{AppEvent, AppModel};
 use crate::settings::{CloseWindowBehavior, WindowGeometry};
 
-use riff_config::settings::SETTINGS;
+use canto_config::settings::SETTINGS;
 
 thread_local! {
     static WINDOW_GEOMETRY: RefCell<WindowGeometry> = const { RefCell::new(WindowGeometry {

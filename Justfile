@@ -4,7 +4,7 @@ compile *ARGS:
     just meson compile {{ARGS}}
 
 run: install
-    env RUST_BACKTRACE=full RUST_LOG='riff=debug,librespot=error' riff
+    env RUST_BACKTRACE=full RUST_LOG='canto=debug,librespot=error' canto
 
 install:
     just meson install

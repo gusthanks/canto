@@ -5,7 +5,7 @@ use libadwaita::prelude::*;
 
 use crate::settings::CloseWindowBehavior;
 
-use riff_config::settings::SETTINGS;
+use canto_config::settings::SETTINGS;
 
 pub fn show(window: &libadwaita::ApplicationWindow) {
     let dialog = libadwaita::AlertDialog::new(

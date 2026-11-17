@@ -6,8 +6,8 @@ use std::rc::Rc;
 use gio::prelude::{FileExt, FileMonitorExt, SettingsExt};
 use gtk::gdk;
 use libadwaita as adw;
-use riff_api::Load;
-use riff_config::settings::{ADAPTIVE_COVER_COLORS, APP_THEME, SETTINGS};
+use canto_api::Load;
+use canto_config::settings::{ADAPTIVE_COVER_COLORS, APP_THEME, SETTINGS};
 
 use crate::app::components::EventListener;
 use crate::app::state::PlaybackEvent;

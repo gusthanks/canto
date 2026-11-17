@@ -17,7 +17,7 @@ use crate::connect::{
 };
 use crate::player::Command;
 
-use riff_config::settings::SETTINGS;
+use canto_config::settings::SETTINGS;
 
 enum CurrentlyPlaying {
     WithSource {

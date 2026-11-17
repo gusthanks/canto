@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Dev setup script for Riff - installs build dependencies.
+# Dev setup script for Canto - installs build dependencies.
 # Detects the system package manager and prompts before installing.
 
 confirm_risks() {
     echo ""
     echo "WARNING!"
-    echo "This script is a best effort attempt to setup the required packages for building Riff on your system."
+    echo "This script is a best effort attempt to setup the required packages for building Canto on your system."
     echo "As follows this script might fail or break dependencies on your system."
     echo "If you are unconformable or do not understand the risks with installing packages, do not proceed."
     echo ""
@@ -125,7 +125,7 @@ if confirm_install; then
 
     if [[ "$NEED_RUSTUP" -eq 1 ]]; then
         echo ""
-        echo "Debian/Ubuntu ship a Rust toolchain that is too old for Riff's dependencies."
+        echo "Debian/Ubuntu ship a Rust toolchain that is too old for Canto's dependencies."
         echo "Installing the latest stable Rust via rustup..."
         if command -v rustup &>/dev/null; then
             rustup update stable
@@ -142,7 +142,7 @@ if confirm_install; then
     echo '  meson setup target -Dbuildtype=debug -Doffline=false --prefix="$HOME/.local"'
     echo '  ninja install -C target'
     echo 'You can run your local build with:'
-    echo '  ~/.local/bin/riff'
+    echo '  ~/.local/bin/canto'
 else
     echo "Aborted."
 fi

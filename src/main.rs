@@ -40,12 +40,12 @@ fn main() {
         libc::mallopt(libc::M_ARENA_MAX, MALLOC_ARENAS);
     }
 
-    let migrated = riff_config::settings::migrate_from_old_app_id();
+    let migrated = canto_config::settings::migrate_from_old_app_id();
     if migrated > 0 {
         // Before the logger starts
         eprintln!("canto: copied {migrated} settings from the old app id");
     }
-    let settings = settings::RiffSettings::new_from_gsettings().unwrap_or_default();
+    let settings = settings::CantoSettings::new_from_gsettings().unwrap_or_default();
     setup_gtk(&settings);
 
     // Looks like there's a side effect to declaring widgets that allows them to be referenced them in ui/blueprint files
@@ -230,10 +230,10 @@ fn language_env_plan(pref: &str) -> Option<LanguageEnvPlan> {
 
 fn apply_language_preference() {
     let pref = gio::SettingsSchemaSource::default()
-        .and_then(|src| src.lookup(riff_config::settings::SETTINGS, true))
+        .and_then(|src| src.lookup(canto_config::settings::SETTINGS, true))
         .map(|_| {
-            gio::Settings::new(riff_config::settings::SETTINGS)
-                .string(riff_config::settings::APP_LANGUAGE)
+            gio::Settings::new(canto_config::settings::SETTINGS)
+                .string(canto_config::settings::APP_LANGUAGE)
                 .to_string()
         })
         .unwrap_or_else(|| "system".to_string());
@@ -293,9 +293,39 @@ fn apply_language_preference_for(pref: &str) {
     }
 }
 
-fn setup_gtk(settings: &settings::RiffSettings) {
+/// Canto's caches used to live under ~/.cache/riff: move what is there to
+/// ~/.cache/canto once, so nothing has to be downloaded again.
+fn move_old_cache() {
+    move_old_cache_in(&glib::user_cache_dir());
+}
+
+fn move_old_cache_in(cache: &std::path::Path) {
+    let old = cache.join("riff");
+    if !old.is_dir() {
+        return;
+    }
+    let new = cache.join("canto");
+    if let Err(e) = std::fs::create_dir_all(&new) {
+        log::warn!("Could not create {}: {e}", new.display());
+        return;
+    }
+    for part in ["img", "net", "librespot"] {
+        let (from, to) = (old.join(part), new.join(part));
+        if from.exists() && !to.exists() {
+            match std::fs::rename(&from, &to) {
+                Ok(()) => log::info!("Moved {} to {}", from.display(), to.display()),
+                Err(e) => log::warn!("Could not move {}: {e}", from.display()),
+            }
+        }
+    }
+    // Only goes if nothing else is left in it
+    let _ = std::fs::remove_dir(&old);
+}
+
+fn setup_gtk(settings: &settings::CantoSettings) {
     // Setup logging
     env_logger::init();
+    move_old_cache();
 
     // Set application and program names so desktop environment and window manager identify Canto
     glib::set_application_name("Canto");
@@ -305,9 +335,9 @@ fn setup_gtk(settings: &settings::RiffSettings) {
     apply_language_preference();
 
     // Setup translations
-    textdomain("riff")
-        .and_then(|_| bindtextdomain("riff", config::LOCALEDIR))
-        .and_then(|_| bind_textdomain_codeset("riff", "UTF-8"))
+    textdomain("canto")
+        .and_then(|_| bindtextdomain("canto", config::LOCALEDIR))
+        .and_then(|_| bind_textdomain_codeset("canto", "UTF-8"))
         .expect("Could not setup localization");
 
     // Setup Gtk, Adwaita...
@@ -317,7 +347,7 @@ fn setup_gtk(settings: &settings::RiffSettings) {
     let manager = libadwaita::StyleManager::default();
     manager.set_color_scheme(settings.theme_preference);
 
-    let res = gio::Resource::load(config::PKGDATADIR.to_owned() + "/riff.gresource")
+    let res = gio::Resource::load(config::PKGDATADIR.to_owned() + "/canto.gresource")
         .expect("Could not load resources");
     gio::resources_register(&res);
 
@@ -587,5 +617,29 @@ mod language_tests {
         assert_eq!(std::env::var("LANGUAGE").as_deref(), Ok("es:pt_BR"));
 
         clear_test_env();
+    }
+}
+
+#[cfg(test)]
+mod old_cache_tests {
+    use super::move_old_cache_in;
+
+    #[test]
+    fn moves_the_old_cache_without_overwriting() {
+        let root = std::env::temp_dir().join(format!("canto-cache-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("riff/img")).unwrap();
+        std::fs::write(root.join("riff/img/a"), "old").unwrap();
+        std::fs::create_dir_all(root.join("riff/net")).unwrap();
+        std::fs::create_dir_all(root.join("canto/net")).unwrap();
+        std::fs::write(root.join("canto/net/b"), "new").unwrap();
+
+        move_old_cache_in(&root);
+
+        assert_eq!(std::fs::read_to_string(root.join("canto/img/a")).unwrap(), "old");
+        assert_eq!(std::fs::read_to_string(root.join("canto/net/b")).unwrap(), "new");
+        // The old net stays where it was, so the old folder stays too
+        assert!(root.join("riff/net").is_dir());
+        let _ = std::fs::remove_dir_all(&root);
     }
 }

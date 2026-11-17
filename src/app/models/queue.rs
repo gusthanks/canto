@@ -1,6 +1,6 @@
 //! Conversions for the playback queue.
 
-use riff_api::models::Queue;
+use canto_api::models::Queue;
 
 use super::Track;
 

@@ -103,7 +103,7 @@ impl TrackListModel for SearchScopeTracksModel {
 }
 
 impl crate::app::ProvidesApi for SearchScopeTracksModel {
-    fn api_service(&self) -> std::sync::Arc<riff_api::ApiService> {
+    fn api_service(&self) -> std::sync::Arc<canto_api::ApiService> {
         self.app_model.api()
     }
 }

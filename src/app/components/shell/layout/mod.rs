@@ -184,8 +184,8 @@ impl WindowLayout {
             }
         ));
 
-        let settings = gio::Settings::new(riff_config::settings::SETTINGS);
-        let rail_saved = settings.boolean(riff_config::settings::NAVIGATION_RAIL);
+        let settings = gio::Settings::new(canto_config::settings::SETTINGS);
+        let rail_saved = settings.boolean(canto_config::settings::NAVIGATION_RAIL);
         let rail_action =
             gio::SimpleAction::new_stateful(RAIL_ACTION, None, &rail_saved.to_variant());
         rail_action.connect_change_state(clone!(
@@ -196,7 +196,7 @@ impl WindowLayout {
                     return;
                 };
                 action.set_state(&rail.to_variant());
-                let _ = settings.set_boolean(riff_config::settings::NAVIGATION_RAIL, rail);
+                let _ = settings.set_boolean(canto_config::settings::NAVIGATION_RAIL, rail);
                 layout.navigation.set_rail(rail);
                 layout.apply_rail();
                 layout.fit();

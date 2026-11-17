@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Runs the same quality checks as the riff-quality CI workflow.
+# Runs the same quality checks as the canto-quality CI workflow.
 # Usage: ./scripts/checks/check-quality.sh
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

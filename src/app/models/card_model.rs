@@ -116,7 +116,7 @@ mod imp {
 mod tests {
     use super::*;
     use crate::app::models::{make_album, make_artist, make_playlist};
-    use riff_api::models::{ArtistRef, Image, ImageSet, Provider, ResourceId, UserRef};
+    use canto_api::models::{ArtistRef, Image, ImageSet, Provider, ResourceId, UserRef};
 
     #[test]
     fn test_new_with_all_fields() {

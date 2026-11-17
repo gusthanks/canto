@@ -10,8 +10,8 @@ use gtk::graphene::Point;
 use gtk::subclass::prelude::*;
 use gtk::CompositeTemplate;
 use libadwaita::prelude::*;
-use riff_api::models::is_resource_url;
-use riff_api::ApiService;
+use canto_api::models::is_resource_url;
+use canto_api::ApiService;
 
 use crate::app::components::utils::{add_hover_class, decode_px, set_css_class, set_missing_art};
 use crate::app::components::{

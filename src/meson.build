@@ -70,8 +70,8 @@ blueprints = custom_target('blueprints',
   command: [find_program('blueprint-compiler'), 'batch-compile', '@OUTPUT@', '@CURRENT_SOURCE_DIR@', '@INPUT@'],
 )
 
-gnome.compile_resources('riff',
-  'riff.gresource.xml',
+gnome.compile_resources('canto',
+  'canto.gresource.xml',
   gresource_bundle: true,
   install: true,
   install_dir: pkgdatadir,
@@ -144,11 +144,6 @@ final_bin = custom_target(
   ]
 )
 
-install_symlink(
-  'canto',
-  pointing_to: meson.project_name(),
-  install_dir: get_option('bindir')
-)
 
 test('Unit tests',
   cargo,

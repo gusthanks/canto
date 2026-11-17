@@ -11,7 +11,7 @@ use crate::app::components::{CardLayout, CardSize, CardWidget, ImageShape, SortO
 use crate::app::models::{CardModel, FilterOption};
 use crate::app::state::{EntryKey, PlaybackEvent, PlaybackState};
 use crate::app::{AppEvent, ListStore, ProvidesApi, SongsSource};
-use riff_api::ApiService;
+use canto_api::ApiService;
 use std::sync::Arc;
 
 // Constants

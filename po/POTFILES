@@ -45,8 +45,8 @@ src/connect/player.rs
 src/inhibitor.rs
 src/main.rs
 src/player/mod.rs
-crates/riff-api/src/defaults.rs
-crates/riff-api/src/models.rs
+crates/canto-api/src/defaults.rs
+crates/canto-api/src/models.rs
 
 # find src -name "*.blp" -print
 src/app/components/pages/details_album/release_details.blp

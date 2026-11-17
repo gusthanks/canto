@@ -8,8 +8,8 @@ use gtk::subclass::prelude::*;
 use gtk::{gdk, glib, CompositeTemplate};
 use libadwaita::prelude::*;
 use libadwaita::subclass::prelude::*;
-use riff_api::models::Device as ConnectDevice;
-use riff_config::settings::{APP_THEME, SETTINGS};
+use canto_api::models::Device as ConnectDevice;
+use canto_config::settings::{APP_THEME, SETTINGS};
 
 use crate::app::components::sleep_timer::SleepTimerController;
 use crate::app::components::track_radio::start_track_radio;
@@ -275,7 +275,7 @@ impl CommandPaletteDialog {
         let dispatcher = runtime.dispatcher.clone();
         let weak = self.downgrade();
         glib::MainContext::default().spawn_local(async move {
-            if let Ok(devices) = api.get_devices(riff_api::Load::background()).await {
+            if let Ok(devices) = api.get_devices(canto_api::Load::background()).await {
                 dispatcher.dispatch(PlaybackAction::SetAvailableDevices(devices).into());
                 if let Some(dialog) = weak.upgrade() {
                     let query = dialog.imp().search_entry.text().to_string();
@@ -478,7 +478,7 @@ fn build_row(entry: &PaletteEntry, app_model: &Rc<AppModel>) -> gtk::ListBoxRow 
         let url = url.to_owned();
         let weak = icon.downgrade();
         let px = COVER_PX * icon.scale_factor().max(2);
-        let tag = riff_api::Load::new(riff_api::LoadPriority::Visible, riff_api::BACKGROUND_EPOCH);
+        let tag = canto_api::Load::new(canto_api::LoadPriority::Visible, canto_api::BACKGROUND_EPOCH);
         glib::MainContext::default().spawn_local(async move {
             let texture = api.load_image(&url, px, px, tag).await;
             if let (Some(icon), Some(texture)) = (weak.upgrade(), texture) {
@@ -775,10 +775,10 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
 
 fn device_entry(dev: &ConnectDevice, category: &str) -> PaletteEntry {
     let icon = match dev.kind {
-        riff_api::DeviceKind::Computer => "computer-symbolic",
-        riff_api::DeviceKind::Phone => "phone-symbolic",
-        riff_api::DeviceKind::Tv => "tv-symbolic",
-        riff_api::DeviceKind::Speaker | riff_api::DeviceKind::Other => "audio-speakers-symbolic",
+        canto_api::DeviceKind::Computer => "computer-symbolic",
+        canto_api::DeviceKind::Phone => "phone-symbolic",
+        canto_api::DeviceKind::Tv => "tv-symbolic",
+        canto_api::DeviceKind::Speaker | canto_api::DeviceKind::Other => "audio-speakers-symbolic",
     };
     PaletteEntry {
         title: dev.label.clone(),
@@ -797,7 +797,7 @@ fn device_entry(dev: &ConnectDevice, category: &str) -> PaletteEntry {
     }
 }
 
-fn build_remote_entries(results: &riff_api::models::SearchResults) -> Vec<PaletteEntry> {
+fn build_remote_entries(results: &canto_api::models::SearchResults) -> Vec<PaletteEntry> {
     let mut out = Vec::new();
     let track_cat = gettext("Track");
     let album_cat = gettext("Album");

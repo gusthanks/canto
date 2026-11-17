@@ -20,19 +20,19 @@ use librespot::playback::player::{Player, PlayerEvent, PlayerEventChannel};
 
 use crate::app::models::RepeatMode;
 use crate::player::AppPlayerDelegate;
-use riff_audio_engine::{
+use canto_audio_engine::{
     CaptureSink, EqController, EqProcessor, LevelMeterController, LevelMeterProcessor,
     LimiterProcessor, MixController, MixProcessor, MonoController, MonoProcessor, PanController, PanProcessor,
     PitchController, PitchProcessor, ProcessorChain,
 };
 
-use riff_auth::{
-    AuthcodeChallenge, OAuthError, RiffOauthClient, SessionTokens, TokenStore, SESSION_CLIENT_ID,
+use canto_auth::{
+    AuthcodeChallenge, OAuthError, CantoOauthClient, SessionTokens, TokenStore, SESSION_CLIENT_ID,
 };
 
 use super::Command;
-use crate::settings::RiffSettings;
-use riff_auth as credentials;
+use crate::settings::CantoSettings;
+use canto_auth as credentials;
 use std::env;
 use std::error::Error;
 use std::fmt;
@@ -250,7 +250,7 @@ pub struct SpotifyPlayer {
     level_meter_controller: LevelMeterController,
 
     // Auth related stuff
-    oauth_client: Arc<RiffOauthClient>,
+    oauth_client: Arc<CantoOauthClient>,
     auth_challenge: Option<AuthcodeChallenge>,
     command_sender: UnboundedSender<Command>,
 
@@ -349,7 +349,7 @@ impl SpotifyPlayer {
             pitch_controller,
             mix_controller,
             level_meter_controller,
-            oauth_client: Arc::new(RiffOauthClient::new(token_store, session_tokens)),
+            oauth_client: Arc::new(CantoOauthClient::new(token_store, session_tokens)),
             auth_challenge: None,
             command_sender,
 
@@ -586,7 +586,7 @@ impl SpotifyPlayer {
                 self.begin_login(login.web_api, Some(login.session)).await
             }
             Command::ReloadSettings => {
-                let settings = RiffSettings::new_from_gsettings().unwrap_or_default();
+                let settings = CantoSettings::new_from_gsettings().unwrap_or_default();
                 self.settings = settings.player_settings;
 
                 // Clear the mixer so it gets recreated with updated volume curve/dB range
@@ -620,7 +620,7 @@ impl SpotifyPlayer {
                             return;
                         }
                     };
-                    match riff_api::check_user_profile(&token.access_token).await {
+                    match canto_api::check_user_profile(&token.access_token).await {
                         Ok(profile) => {
                             let _ =
                                 command_sender.unbounded_send(Command::ExplicitFilterRechecked {
@@ -640,7 +640,7 @@ impl SpotifyPlayer {
                 filter_locked,
             } => {
                 if filter_locked && !self.explicit_filter_locked {
-                    info!("Explicit content filter is now locked; syncing Riff's filter");
+                    info!("Explicit content filter is now locked; syncing Canto's filter");
                 }
                 self.explicit_filter_locked = filter_locked;
                 self.delegate.set_explicit_filter_locked(filter_locked);
@@ -711,7 +711,7 @@ impl SpotifyPlayer {
         // Check if the account is premium before connecting to librespot.
         // librespot will crash the process for free accounts, so we must
         // catch this early and report a graceful error instead.
-        let profile = match riff_api::check_user_profile(&credentials.access_token).await {
+        let profile = match canto_api::check_user_profile(&credentials.access_token).await {
             Ok(p) => p,
             Err(e) => {
                 error!("User profile check failed: {e:?}");
@@ -1126,7 +1126,7 @@ impl SpotifyPlayer {
 const KNOWN_AP_PORTS: [Option<u16>; 4] = [None, Some(80), Some(443), Some(4070)];
 
 fn librespot_cache_root() -> std::path::PathBuf {
-    glib::user_cache_dir().join("riff").join("librespot")
+    glib::user_cache_dir().join("canto").join("librespot")
 }
 
 pub fn clear_audio_cache() {
@@ -1239,7 +1239,7 @@ async fn create_session(
 ) -> Result<Session, SpotifyError> {
     // Dev-tools: when simulating offline, block new librespot sessions too.
     #[cfg(debug_assertions)]
-    if riff_api::is_simulate_offline() {
+    if canto_api::is_simulate_offline() {
         warn!("Blocking librespot session creation (simulate offline is active)");
         return Err(SpotifyError::TechnicalError);
     }

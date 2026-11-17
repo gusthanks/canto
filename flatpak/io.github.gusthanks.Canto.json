@@ -7,7 +7,7 @@
     "org.freedesktop.Sdk.Extension.rust-stable",
     "org.freedesktop.Sdk.Extension.openjdk25"
   ],
-  "command": "riff",
+  "command": "canto",
   "finish-args": [
     "--share=network",
     "--share=ipc",
@@ -20,15 +20,15 @@
   "build-options": {
     "append-path": "/usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/openjdk25/bin",
     "env": {
-      "CARGO_HOME": "/run/build/riff/cargo",
-      "OPENAPI_GENERATOR_JAR": "/run/build/riff/openapi-generator-cli-7.12.0.jar",
+      "CARGO_HOME": "/run/build/canto/cargo",
+      "OPENAPI_GENERATOR_JAR": "/run/build/canto/openapi-generator-cli-7.12.0.jar",
       "RUST_BACKTRACE": "full",
-      "RUST_LOG": "riff=debug"
+      "RUST_LOG": "canto=debug"
     }
   },
   "modules": [
     {
-      "name": "riff",
+      "name": "canto",
       "builddir": true,
       "buildsystem": "meson",
       "config-opts": [

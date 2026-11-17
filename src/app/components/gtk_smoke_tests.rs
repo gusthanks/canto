@@ -305,11 +305,11 @@ fn dump_now_panel_sample() {
     let lyrics: LyricsPageWidget = glib::Object::new();
     let lines = ["Eu vim do nada", "", "Hoje eu tô aqui"];
     lyrics.set_lyrics(
-        &riff_api::Lyrics::Synced(
+        &canto_api::Lyrics::Synced(
             lines
                 .iter()
                 .enumerate()
-                .map(|(i, t)| riff_api::lyrics::LyricLine {
+                .map(|(i, t)| canto_api::lyrics::LyricLine {
                     start_time_ms: i as u64 * 4000,
                     text: t.to_string(),
                 })

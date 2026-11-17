@@ -6,7 +6,7 @@ use libadwaita::subclass::prelude::*;
 use std::cell::{Cell, RefCell};
 use std::time::{Duration, Instant};
 
-use riff_api::Lyrics;
+use canto_api::Lyrics;
 
 mod imp {
     use super::*;
@@ -273,7 +273,7 @@ impl LyricsPageWidget {
         let Some(text) = texts.get(index) else {
             return;
         };
-        let lit = riff_api::lyrics::model::words_reached(text, progress);
+        let lit = canto_api::lyrics::model::words_reached(text, progress);
         if lit == imp.words_lit.replace(lit) {
             return;
         }
