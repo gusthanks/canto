@@ -88,6 +88,7 @@
     <file compressed="true" preprocess="xml-stripblanks" alias="paper-sheet-symbolic.svg">../data/hicolor/symbolic/actions/paper-sheet-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-genius-symbolic.svg">../data/hicolor/symbolic/actions/canto-genius-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-lastfm-symbolic.svg">../data/hicolor/symbolic/actions/canto-lastfm-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-expand-symbolic.svg">../data/hicolor/symbolic/actions/canto-expand-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="alarm-symbolic.svg">../data/hicolor/symbolic/actions/alarm-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-equalizer-symbolic.svg">../data/hicolor/symbolic/actions/canto-equalizer-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-lyrics-symbolic.svg">../data/hicolor/symbolic/actions/canto-lyrics-symbolic.svg</file>

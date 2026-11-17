@@ -259,6 +259,30 @@ impl NavigationPanel {
 
     /// The "+" (new playlist) in the sidebar's header, and the filter pills
     /// (Playlists, Albums, Artists) above the list.
+    /// Opens the library as a grid of big covers in the page, and collapses
+    /// the sidebar to covers so the grid gets the room.
+    fn expand_button(model: &Rc<NavigationPanelModel>) -> gtk::Button {
+        let button = gtk::Button::from_icon_name("canto-expand-symbolic");
+        // translators: Tooltip of the button that shows the user's library as a big grid.
+        button.set_tooltip_text(Some(&gettext("Expand Your Library")));
+        button.set_focus_on_click(false);
+        button.add_css_class("flat");
+        button.connect_clicked(clone!(
+            #[weak]
+            model,
+            move |button| {
+                let page = match model.filter() {
+                    LibraryFilter::Playlists => HomePage::SavedPlaylists,
+                    LibraryFilter::Artists => HomePage::SavedArtists,
+                    LibraryFilter::All | LibraryFilter::Albums => HomePage::Library,
+                };
+                model.navigate(super::NavigationPanelDestination::from_home_page(page));
+                let _ = button.activate_action("win.sidebar-rail", None);
+            }
+        ));
+        button
+    }
+
     fn add_library_controls(
         panel_box: &gtk::Box,
         model: &Rc<NavigationPanelModel>,
@@ -283,6 +307,7 @@ impl NavigationPanel {
 
         if let Some(header) = header {
             header.pack_end(&Self::new_playlist_button(model));
+            header.pack_end(&Self::expand_button(model));
         }
         if let Some(rail_header) = rail_header {
             let add = Self::new_playlist_button(model);
