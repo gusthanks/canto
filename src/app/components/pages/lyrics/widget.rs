@@ -399,6 +399,16 @@ impl LyricsPageWidget {
         scroller.set_child(Some(&list));
         let popover = gtk::Popover::new();
         popover.set_child(Some(&scroller));
+        // The arrow points up while the list is open
+        let button = self.imp().translate_language_button.downgrade();
+        popover.connect_visible_notify(move |popover| {
+            let Some(button) = button.upgrade() else { return };
+            button.set_icon_name(if popover.is_visible() {
+                "pan-up-symbolic"
+            } else {
+                "pan-down-symbolic"
+            });
+        });
         list.connect_row_activated(glib::clone!(
             #[weak]
             popover,
