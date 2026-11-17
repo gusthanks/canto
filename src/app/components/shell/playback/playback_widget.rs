@@ -77,6 +77,21 @@ mod imp {
         pub eq_popover: TemplateChild<gtk::Popover>,
         #[template_child]
         pub more_sleep_timer: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub customize_bar_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub bar_end: TemplateChild<gtk::Box>,
+        #[template_child]
+        pub lyrics_slot: TemplateChild<gtk::Box>,
+        #[template_child]
+        pub queue_slot: TemplateChild<gtk::Box>,
+        #[template_child]
+        pub device_slot: TemplateChild<gtk::Box>,
+        #[template_child]
+        pub volume_slot: TemplateChild<gtk::Box>,
+        #[template_child]
+        pub mini_player_slot: TemplateChild<gtk::Box>,
+        pub customize_popover: RefCell<Option<gtk::Popover>>,
 
         #[template_child]
         pub eq_preset_flat: TemplateChild<gtk::Button>,
@@ -151,6 +166,14 @@ mod imp {
                 mute_button: Default::default(),
                 eq_popover: Default::default(),
                 more_sleep_timer: Default::default(),
+                customize_bar_button: Default::default(),
+                bar_end: Default::default(),
+                lyrics_slot: Default::default(),
+                queue_slot: Default::default(),
+                device_slot: Default::default(),
+                volume_slot: Default::default(),
+                mini_player_slot: Default::default(),
+                customize_popover: Default::default(),
                 eq_preset_flat: Default::default(),
                 eq_preset_bass: Default::default(),
                 eq_preset_vocal: Default::default(),
@@ -192,11 +215,19 @@ mod imp {
     }
 
     impl ObjectImpl for PlaybackWidget {
+        fn dispose(&self) {
+            if let Some(popover) = self.customize_popover.take() {
+                popover.unparent();
+            }
+        }
+
         fn constructed(&self) {
             self.parent_constructed();
             self.now_playing.set_info_visible(true);
             self.now_playing.reset_info();
             display_add_css_provider(resource!("/components/playback.css"));
+
+            self.setup_customizable_bar();
 
             // The sleep timer lives in More Options; its own button only shows
             // while a timer runs, or while its menu is open from there
@@ -265,6 +296,72 @@ mod imp {
     }
 
     impl WidgetImpl for PlaybackWidget {}
+
+    impl PlaybackWidget {
+        /// Each optional button sits in a slot whose visibility follows a
+        /// player-bar-* setting. The narrow-window breakpoints hide the
+        /// buttons inside, so the two never fight over the same property.
+        fn setup_customizable_bar(&self) {
+            use riff_config::settings::{
+                PLAYER_BAR_DEVICE, PLAYER_BAR_LYRICS, PLAYER_BAR_MINI_PLAYER, PLAYER_BAR_QUEUE,
+                PLAYER_BAR_VOLUME,
+            };
+            let settings = gio::Settings::new(SETTINGS);
+            let items: [(&str, gtk::Box, String); 5] = [
+                (PLAYER_BAR_LYRICS, self.lyrics_slot.get(), gettextrs::gettext("Lyrics")),
+                (PLAYER_BAR_QUEUE, self.queue_slot.get(), gettextrs::gettext("Queue")),
+                // translators: Checkbox in "Customize Bar": the button that picks where the sound plays.
+                (PLAYER_BAR_DEVICE, self.device_slot.get(), gettextrs::gettext("Device")),
+                // translators: Checkbox in "Customize Bar": the volume slider.
+                (PLAYER_BAR_VOLUME, self.volume_slot.get(), gettextrs::gettext("Volume")),
+                (PLAYER_BAR_MINI_PLAYER, self.mini_player_slot.get(), gettextrs::gettext("Mini Player")),
+            ];
+
+            let list = gtk::Box::new(gtk::Orientation::Vertical, 2);
+            list.set_margin_top(6);
+            list.set_margin_bottom(6);
+            list.set_margin_start(6);
+            list.set_margin_end(6);
+            // translators: Heading of the popover that chooses which buttons the player bar shows.
+            let title = gtk::Label::new(Some(&gettextrs::gettext("Show in the Bar")));
+            title.set_xalign(0.0);
+            title.set_margin_start(6);
+            title.set_margin_bottom(4);
+            title.add_css_class("heading");
+            list.append(&title);
+            for (key, slot, label) in items {
+                settings.bind(key, &slot, "visible").get().build();
+                let check = gtk::CheckButton::with_label(&label);
+                settings.bind(key, &check, "active").build();
+                list.append(&check);
+            }
+
+            let popover = gtk::Popover::new();
+            popover.set_child(Some(&list));
+            popover.set_position(gtk::PositionType::Top);
+            popover.set_parent(&*self.bar_end);
+
+            // From More Options
+            let more = self.eq_popover.clone();
+            let pop = popover.clone();
+            self.customize_bar_button.connect_clicked(move |_| {
+                more.popdown();
+                pop.set_pointing_to(None::<&gtk::gdk::Rectangle>);
+                pop.popup();
+            });
+            // And by right-clicking the bar's buttons
+            let click = gtk::GestureClick::new();
+            click.set_button(gtk::gdk::BUTTON_SECONDARY);
+            let pop = popover.clone();
+            click.connect_pressed(move |gesture, _, x, y| {
+                gesture.set_state(gtk::EventSequenceState::Claimed);
+                pop.set_pointing_to(Some(&gtk::gdk::Rectangle::new(x as i32, y as i32, 1, 1)));
+                pop.popup();
+            });
+            self.bar_end.add_controller(click);
+            self.customize_popover.replace(Some(popover));
+        }
+    }
     impl BoxImpl for PlaybackWidget {}
 }
 

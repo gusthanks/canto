@@ -264,6 +264,26 @@
       <default>0</default>
       <summary>Manual synced lyrics timing offset in milliseconds</summary>
     </key>
+    <key name="player-bar-lyrics" type="b">
+      <default>true</default>
+      <summary>Show the Lyrics button in the player bar</summary>
+    </key>
+    <key name="player-bar-queue" type="b">
+      <default>true</default>
+      <summary>Show the Queue button in the player bar</summary>
+    </key>
+    <key name="player-bar-device" type="b">
+      <default>true</default>
+      <summary>Show the device (where the sound plays) button in the player bar</summary>
+    </key>
+    <key name="player-bar-volume" type="b">
+      <default>true</default>
+      <summary>Show the volume button in the player bar</summary>
+    </key>
+    <key name="player-bar-mini-player" type="b">
+      <default>true</default>
+      <summary>Show the Mini Player button in the player bar</summary>
+    </key>
     <key name="navigation-rail" type="b">
       <default>false</default>
       <summary>Show the sidebar collapsed to covers and icons</summary>

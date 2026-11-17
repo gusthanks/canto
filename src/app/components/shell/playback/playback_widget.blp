@@ -151,44 +151,50 @@ template $PlaybackWidget : Box {
         }
       }
 
-      Box {
+      Box bar_end {
         hexpand: false;
         halign: end;
         valign: center;
         spacing: 2;
 
-        Button lyrics_button {
-          width-request: 36;
-          height-request: 36;
-          icon-name: "canto-lyrics-symbolic";
-          /* Translators: Tooltip of the player bar button that shows or hides synced lyrics. */
-          tooltip-text: _("Lyrics");
-          action-name: "win.show-lyrics";
-          valign: center;
-          focus-on-click: false;
-          can-focus: false;
+        // User can hide this from the bar (player-bar-* settings)
+        Box lyrics_slot {
+          Button lyrics_button {
+            width-request: 36;
+            height-request: 36;
+            icon-name: "canto-lyrics-symbolic";
+            /* Translators: Tooltip of the player bar button that shows or hides synced lyrics. */
+            tooltip-text: _("Lyrics");
+            action-name: "win.show-lyrics";
+            valign: center;
+            focus-on-click: false;
+            can-focus: false;
 
-          styles [
-            "flat",
-            "circular",
-          ]
+            styles [
+              "flat",
+              "circular",
+            ]
+          }
         }
 
-        Button queue_button {
-          width-request: 36;
-          height-request: 36;
-          icon-name: "canto-queue-symbolic";
-          /* Translators: Tooltip of the playback bar button that shows or hides the queue. */
-          tooltip-text: _("Queue");
-          action-name: "win.show-queue";
-          valign: center;
-          focus-on-click: false;
-          can-focus: false;
+        // User can hide this from the bar (player-bar-* settings)
+        Box queue_slot {
+          Button queue_button {
+            width-request: 36;
+            height-request: 36;
+            icon-name: "canto-queue-symbolic";
+            /* Translators: Tooltip of the playback bar button that shows or hides the queue. */
+            tooltip-text: _("Queue");
+            action-name: "win.show-queue";
+            valign: center;
+            focus-on-click: false;
+            can-focus: false;
 
-          styles [
-            "flat",
-            "circular",
-          ]
+            styles [
+              "flat",
+              "circular",
+            ]
+          }
         }
 
         MenuButton sleep_timer_button {
@@ -334,22 +340,94 @@ template $PlaybackWidget : Box {
           };
         }
 
-        Box device_selector_box {
-          valign: center;
+        // User can hide this from the bar (player-bar-* settings)
+        Box device_slot {
+          Box device_selector_box {
+            valign: center;
 
-          $DeviceSelectorWidget device_selector {}
+            $DeviceSelectorWidget device_selector {}
+          }
         }
 
-        Box volume_box {
-          width-request: 132;
-          spacing: 2;
-          valign: center;
+        // User can hide this from the bar (player-bar-* settings)
+        Box volume_slot {
+          Box volume_box {
+            width-request: 132;
+            spacing: 2;
+            valign: center;
 
-          Button mute_button {
-            width-request: 34;
-            height-request: 34;
+            Button mute_button {
+              width-request: 34;
+              height-request: 34;
+              icon-name: "audio-volume-high-symbolic";
+              tooltip-text: _("Mute / Unmute");
+              focus-on-click: false;
+              can-focus: false;
+
+              styles [
+                "flat",
+                "circular",
+              ]
+            }
+
+            Scale volume_slider {
+              hexpand: true;
+              show-fill-level: true;
+              restrict-to-fill-level: false;
+              value-pos: left;
+
+              styles [
+                "volume-slider",
+              ]
+
+              adjustment: Adjustment {
+                lower: 0.0;
+                value: 0.7;
+                upper: 1.0;
+                step-increment: 0.01;
+                page-increment: 0.05;
+              };
+            }
+          }
+
+          MenuButton volume_button {
+            visible: false;
+            width-request: 36;
+            height-request: 36;
             icon-name: "audio-volume-high-symbolic";
-            tooltip-text: _("Mute / Unmute");
+            tooltip-text: _("Volume");
+            halign: end;
+            valign: center;
+            direction: up;
+            focus-on-click: false;
+            can-focus: false;
+
+            styles [
+              "flat",
+              "circular",
+            ]
+
+            popover: Popover {
+              child: Scale {
+                inverted: true;
+                orientation: vertical;
+                height-request: 160;
+                adjustment: bind volume_slider.adjustment;
+              };
+            };
+          }
+        }
+
+        // User can hide this from the bar (player-bar-* settings)
+        Box mini_player_slot {
+          Button mini_player_button {
+            width-request: 36;
+            height-request: 36;
+            icon-name: "canto-mini-player-symbolic";
+            /* Translators: Tooltip of the player bar button that opens the small player window. */
+            tooltip-text: _("Mini Player");
+            action-name: "win.mini-player";
+            valign: center;
             focus-on-click: false;
             can-focus: false;
 
@@ -358,69 +436,6 @@ template $PlaybackWidget : Box {
               "circular",
             ]
           }
-
-          Scale volume_slider {
-            hexpand: true;
-            show-fill-level: true;
-            restrict-to-fill-level: false;
-            value-pos: left;
-
-            styles [
-              "volume-slider",
-            ]
-
-            adjustment: Adjustment {
-              lower: 0.0;
-              value: 0.7;
-              upper: 1.0;
-              step-increment: 0.01;
-              page-increment: 0.05;
-            };
-          }
-        }
-
-        MenuButton volume_button {
-          visible: false;
-          width-request: 36;
-          height-request: 36;
-          icon-name: "audio-volume-high-symbolic";
-          tooltip-text: _("Volume");
-          halign: end;
-          valign: center;
-          direction: up;
-          focus-on-click: false;
-          can-focus: false;
-
-          styles [
-            "flat",
-            "circular",
-          ]
-
-          popover: Popover {
-            child: Scale {
-              inverted: true;
-              orientation: vertical;
-              height-request: 160;
-              adjustment: bind volume_slider.adjustment;
-            };
-          };
-        }
-
-        Button mini_player_button {
-          width-request: 36;
-          height-request: 36;
-          icon-name: "canto-mini-player-symbolic";
-          /* Translators: Tooltip of the player bar button that opens the small player window. */
-          tooltip-text: _("Mini Player");
-          action-name: "win.mini-player";
-          valign: center;
-          focus-on-click: false;
-          can-focus: false;
-
-          styles [
-            "flat",
-            "circular",
-          ]
         }
 
         MenuButton eq_button {
@@ -578,6 +593,21 @@ template $PlaybackWidget : Box {
 
                 child: Label {
                   label: _("Start Track Radio");
+                  xalign: 0.0;
+                };
+              }
+
+              Button customize_bar_button {
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Label {
+                  /* Translators: Item in the player bar's More Options menu: choose which buttons the bar shows. */
+                  label: _("Customize Bar…");
                   xalign: 0.0;
                 };
               }

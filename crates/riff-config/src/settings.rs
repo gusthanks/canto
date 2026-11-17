@@ -53,6 +53,12 @@ pub const APP_THEME: &str = "app-theme";
 pub const ADAPTIVE_COVER_COLORS: &str = "adaptive-cover-colors";
 pub const LYRICS_OFFSET_MS: &str = "lyrics-offset-ms";
 pub const NAVIGATION_RAIL: &str = "navigation-rail";
+/// Player bar buttons the user can hide: (settings key, button)
+pub const PLAYER_BAR_LYRICS: &str = "player-bar-lyrics";
+pub const PLAYER_BAR_QUEUE: &str = "player-bar-queue";
+pub const PLAYER_BAR_DEVICE: &str = "player-bar-device";
+pub const PLAYER_BAR_VOLUME: &str = "player-bar-volume";
+pub const PLAYER_BAR_MINI_PLAYER: &str = "player-bar-mini-player";
 pub const LYRICS_TRANSLATION: &str = "lyrics-translation";
 pub const LIBRARY_SORT: &str = "library-sort";
 pub const LYRICS_TRANSLATION_LANGUAGE: &str = "lyrics-translation-language";
