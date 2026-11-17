@@ -14,6 +14,8 @@ mod imp {
     #[template(resource = "/io/github/gusthanks/Canto/components/utility_panel.ui")]
     pub struct UtilityPanelWidget {
         #[template_child]
+        pub close_panel: TemplateChild<gtk::Button>,
+        #[template_child]
         pub resize_handle: TemplateChild<gtk::Box>,
         #[template_child]
         pub header: TemplateChild<libadwaita::HeaderBar>,
@@ -56,7 +58,23 @@ mod imp {
         }
     }
 
-    impl ObjectImpl for UtilityPanelWidget {}
+    impl ObjectImpl for UtilityPanelWidget {
+        fn constructed(&self) {
+            self.parent_constructed();
+            // The player bar's side panel button already hides the panel, so
+            // this arrow only shows when that button is taken off the bar.
+            // The binding keeps its own reference to the settings.
+            gtk::gio::Settings::new(canto_config::settings::SETTINGS)
+                .bind(
+                    canto_config::settings::PLAYER_BAR_SIDE_PANEL,
+                    &*self.close_panel,
+                    "visible",
+                )
+                .get()
+                .invert_boolean()
+                .build();
+        }
+    }
     impl WidgetImpl for UtilityPanelWidget {}
     impl BinImpl for UtilityPanelWidget {}
 }

@@ -288,6 +288,10 @@
       <default>true</default>
       <summary>Show the side panel button in the player bar</summary>
     </key>
+    <key name="player-bar-order" type="as">
+      <default>['lyrics', 'queue', 'device', 'volume', 'mini-player', 'more', 'side-panel']</default>
+      <summary>Order of the buttons at the end of the player bar</summary>
+    </key>
     <key name="navigation-rail" type="b">
       <default>false</default>
       <summary>Show the sidebar collapsed to covers and icons</summary>

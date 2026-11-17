@@ -88,6 +88,8 @@ mod imp {
         #[template_child]
         pub bar_end: TemplateChild<gtk::Box>,
         #[template_child]
+        pub eq_button: TemplateChild<gtk::MenuButton>,
+        #[template_child]
         pub lyrics_slot: TemplateChild<gtk::Box>,
         #[template_child]
         pub queue_slot: TemplateChild<gtk::Box>,
@@ -179,6 +181,7 @@ mod imp {
                 eq_presets_back: Default::default(),
                 customize_bar_button: Default::default(),
                 bar_end: Default::default(),
+                eq_button: Default::default(),
                 lyrics_slot: Default::default(),
                 queue_slot: Default::default(),
                 device_slot: Default::default(),
@@ -330,19 +333,21 @@ mod imp {
         /// buttons inside, so the two never fight over the same property.
         fn setup_customizable_bar(&self) {
             use canto_config::settings::{
-                PLAYER_BAR_DEVICE, PLAYER_BAR_LYRICS, PLAYER_BAR_MINI_PLAYER, PLAYER_BAR_QUEUE,
-                PLAYER_BAR_SIDE_PANEL, PLAYER_BAR_VOLUME,
+                player_bar_order, PLAYER_BAR_DEVICE, PLAYER_BAR_LYRICS, PLAYER_BAR_MINI_PLAYER,
+                PLAYER_BAR_ORDER, PLAYER_BAR_QUEUE, PLAYER_BAR_SIDE_PANEL, PLAYER_BAR_VOLUME,
             };
             let settings = gio::Settings::new(SETTINGS);
-            let items: [(&str, gtk::Box, String); 6] = [
-                (PLAYER_BAR_LYRICS, self.lyrics_slot.get(), gettextrs::gettext("Lyrics")),
-                (PLAYER_BAR_QUEUE, self.queue_slot.get(), gettextrs::gettext("Queue")),
+            let items: [(&str, &str, gtk::Widget, String); 7] = [
+                ("lyrics", PLAYER_BAR_LYRICS, self.lyrics_slot.get().upcast(), gettextrs::gettext("Lyrics")),
+                ("queue", PLAYER_BAR_QUEUE, self.queue_slot.get().upcast(), gettextrs::gettext("Queue")),
                 // translators: Checkbox in "Customize Bar": the button that picks where the sound plays.
-                (PLAYER_BAR_DEVICE, self.device_slot.get(), gettextrs::gettext("Device")),
+                ("device", PLAYER_BAR_DEVICE, self.device_slot.get().upcast(), gettextrs::gettext("Device")),
                 // translators: Checkbox in "Customize Bar": the volume slider.
-                (PLAYER_BAR_VOLUME, self.volume_slot.get(), gettextrs::gettext("Volume")),
-                (PLAYER_BAR_MINI_PLAYER, self.mini_player_slot.get(), gettextrs::gettext("Mini Player")),
-                (PLAYER_BAR_SIDE_PANEL, self.side_panel_slot.get(), gettextrs::gettext("Side Panel")),
+                ("volume", PLAYER_BAR_VOLUME, self.volume_slot.get().upcast(), gettextrs::gettext("Volume")),
+                ("mini-player", PLAYER_BAR_MINI_PLAYER, self.mini_player_slot.get().upcast(), gettextrs::gettext("Mini Player")),
+                // The gear has no key: it is always there, as the way back
+                ("more", "", self.eq_button.get().upcast(), gettextrs::gettext("More Options")),
+                ("side-panel", PLAYER_BAR_SIDE_PANEL, self.side_panel_slot.get().upcast(), gettextrs::gettext("Side Panel")),
             ];
 
             let list = gtk::Box::new(gtk::Orientation::Vertical, 2);
@@ -357,12 +362,97 @@ mod imp {
             title.set_margin_bottom(4);
             title.add_css_class("heading");
             list.append(&title);
-            for (key, slot, label) in items {
-                settings.bind(key, &slot, "visible").get().build();
-                let check = gtk::CheckButton::with_label(&label);
-                settings.bind(key, &check, "active").build();
-                list.append(&check);
+            // Each row: show/hide, then arrows that move the button along
+            let mut rows: Vec<(&'static str, gtk::Widget, gtk::Box, gtk::Button, gtk::Button)> =
+                Vec::new();
+            for (id, key, widget, label) in items {
+                let row = gtk::Box::new(gtk::Orientation::Horizontal, 2);
+                if key.is_empty() {
+                    let name = gtk::Label::new(Some(&label));
+                    name.set_xalign(0.0);
+                    name.set_hexpand(true);
+                    name.set_margin_start(30);
+                    row.append(&name);
+                } else {
+                    settings.bind(key, &widget, "visible").get().build();
+                    let check = gtk::CheckButton::with_label(&label);
+                    check.set_hexpand(true);
+                    settings.bind(key, &check, "active").build();
+                    row.append(&check);
+                }
+                let up = gtk::Button::from_icon_name("pan-up-symbolic");
+                // translators: Tooltip of the arrow that moves a button earlier in the player bar.
+                up.set_tooltip_text(Some(&gettextrs::gettext("Move Left")));
+                let down = gtk::Button::from_icon_name("pan-down-symbolic");
+                // translators: Tooltip of the arrow that moves a button later in the player bar.
+                down.set_tooltip_text(Some(&gettextrs::gettext("Move Right")));
+                for arrow in [&up, &down] {
+                    arrow.add_css_class("flat");
+                    arrow.add_css_class("circular");
+                    arrow.set_valign(gtk::Align::Center);
+                    row.append(arrow);
+                }
+                for (arrow, step) in [(&up, -1i32), (&down, 1i32)] {
+                    let settings = settings.clone();
+                    arrow.connect_clicked(move |_| {
+                        let mut order = player_bar_order(&settings.strv(PLAYER_BAR_ORDER)
+                            .iter()
+                            .map(|s| s.to_string())
+                            .collect::<Vec<_>>());
+                        let Some(at) = order.iter().position(|o| *o == id) else {
+                            return;
+                        };
+                        let to = at as i32 + step;
+                        if to < 0 || to as usize >= order.len() {
+                            return;
+                        }
+                        order.swap(at, to as usize);
+                        let _ = settings.set_strv(PLAYER_BAR_ORDER, order);
+                    });
+                }
+                list.append(&row);
+                rows.push((id, widget, row, up, down));
             }
+
+            // Lay the bar and the list out in the saved order, now and on change
+            let bar_end = self.bar_end.get();
+            let sleep_button = self.sleep_timer_button.get();
+            let apply = {
+                let list = list.clone();
+                let title = title.clone();
+                move |settings: &gio::Settings| {
+                    let order = player_bar_order(
+                        &settings
+                            .strv(PLAYER_BAR_ORDER)
+                            .iter()
+                            .map(|s| s.to_string())
+                            .collect::<Vec<_>>(),
+                    );
+                    let mut prev_widget: Option<gtk::Widget> = None;
+                    let mut prev_row: gtk::Widget = title.clone().upcast();
+                    for (index, id) in order.iter().enumerate() {
+                        let Some((_, widget, row, up, down)) =
+                            rows.iter().find(|(rid, ..)| rid == id)
+                        else {
+                            continue;
+                        };
+                        // The sleep timer button, shown while a timer runs,
+                        // stays right before the gear
+                        if *id == "more" {
+                            bar_end.reorder_child_after(&sleep_button, prev_widget.as_ref());
+                            prev_widget = Some(sleep_button.clone().upcast());
+                        }
+                        bar_end.reorder_child_after(widget, prev_widget.as_ref());
+                        prev_widget = Some(widget.clone());
+                        list.reorder_child_after(row, Some(&prev_row));
+                        prev_row = row.clone().upcast();
+                        up.set_sensitive(index > 0);
+                        down.set_sensitive(index + 1 < order.len());
+                    }
+                }
+            };
+            apply(&settings);
+            settings.connect_changed(Some(PLAYER_BAR_ORDER), move |settings, _| apply(settings));
 
             let popover = gtk::Popover::new();
             popover.set_child(Some(&list));

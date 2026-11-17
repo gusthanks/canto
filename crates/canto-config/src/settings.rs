@@ -60,6 +60,71 @@ pub const PLAYER_BAR_DEVICE: &str = "player-bar-device";
 pub const PLAYER_BAR_VOLUME: &str = "player-bar-volume";
 pub const PLAYER_BAR_MINI_PLAYER: &str = "player-bar-mini-player";
 pub const PLAYER_BAR_SIDE_PANEL: &str = "player-bar-side-panel";
+/// Order of the buttons at the end of the player bar, by id
+pub const PLAYER_BAR_ORDER: &str = "player-bar-order";
+pub const PLAYER_BAR_DEFAULT_ORDER: [&str; 7] = [
+    "lyrics",
+    "queue",
+    "device",
+    "volume",
+    "mini-player",
+    "more",
+    "side-panel",
+];
+
+/// The saved order, cleaned: unknown ids dropped, missing ones added where
+/// the default order has them, each id once.
+pub fn player_bar_order(saved: &[String]) -> Vec<&'static str> {
+    let mut order: Vec<&'static str> = Vec::new();
+    for id in saved {
+        if let Some(known) = PLAYER_BAR_DEFAULT_ORDER.iter().find(|d| **d == id.as_str()) {
+            if !order.contains(known) {
+                order.push(known);
+            }
+        }
+    }
+    for (index, id) in PLAYER_BAR_DEFAULT_ORDER.iter().enumerate() {
+        if !order.contains(id) {
+            // Right after the id that comes before it by default
+            let at = PLAYER_BAR_DEFAULT_ORDER[..index]
+                .iter()
+                .rev()
+                .find_map(|prev| order.iter().position(|o| o == prev))
+                .map_or(0, |p| p + 1);
+            order.insert(at, id);
+        }
+    }
+    order
+}
+
+#[cfg(test)]
+mod player_bar_order_tests {
+    use super::*;
+
+    fn owned(ids: &[&str]) -> Vec<String> {
+        ids.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn keeps_a_full_saved_order() {
+        let saved = owned(&["more", "side-panel", "lyrics", "queue", "device", "volume", "mini-player"]);
+        assert_eq!(
+            player_bar_order(&saved),
+            vec!["more", "side-panel", "lyrics", "queue", "device", "volume", "mini-player"]
+        );
+    }
+
+    #[test]
+    fn drops_unknown_and_repeated_ids_and_adds_missing_ones() {
+        let saved = owned(&["volume", "bogus", "volume", "lyrics"]);
+        assert_eq!(
+            player_bar_order(&saved),
+            // A missing button comes back next to its neighbor in the default order
+            vec!["volume", "mini-player", "more", "side-panel", "lyrics", "queue", "device"]
+        );
+        assert_eq!(player_bar_order(&[]), PLAYER_BAR_DEFAULT_ORDER.to_vec());
+    }
+}
 pub const LYRICS_TRANSLATION: &str = "lyrics-translation";
 pub const LIBRARY_SORT: &str = "library-sort";
 pub const LYRICS_TRANSLATION_LANGUAGE: &str = "lyrics-translation-language";
