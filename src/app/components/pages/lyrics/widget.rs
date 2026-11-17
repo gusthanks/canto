@@ -284,7 +284,8 @@ impl LyricsPageWidget {
     }
 
     fn line_label(&self, index: usize) -> Option<gtk::Label> {
-        self.line_box(index)?.first_child().and_downcast::<gtk::Label>()
+        let head = child_with_class(self.line_box(index)?.upcast_ref(), "lyric-line__head")?;
+        head.first_child().and_downcast::<gtk::Label>()
     }
 
     /// Shows `lines[i]` under lyric line `i` (`None` everywhere hides them).
@@ -293,9 +294,8 @@ impl LyricsPageWidget {
         for index in 0..count {
             let Some(translation) = self
                 .line_box(index)
-                .and_then(|b| b.last_child())
+                .and_then(|b| child_with_class(b.upcast_ref(), "lyric-translation"))
                 .and_downcast::<gtk::Label>()
-                .filter(|l| l.has_css_class("lyric-translation"))
             else {
                 continue;
             };
@@ -319,39 +319,43 @@ impl LyricsPageWidget {
         let count = self.imp().line_widgets.borrow().len();
         for index in 0..count {
             let Some(line) = self.line_box(index) else { continue };
-            // The line box: label, translation, then the annotation button
-            let existing = line
-                .last_child()
-                .and_downcast::<gtk::MenuButton>()
-                .filter(|b| b.has_css_class("lyric-annotation"));
-            let note = notes.and_then(|n| n.get(index)).and_then(|n| n.as_deref());
-            match (note, existing) {
-                (None, Some(button)) => line.remove(&button),
-                (Some(note), existing) => {
-                    let button = existing.unwrap_or_else(|| {
-                        let button = gtk::MenuButton::new();
-                        button.set_icon_name("canto-genius-symbolic");
-                        button.set_halign(gtk::Align::Start);
-                        button.add_css_class("flat");
-                        button.add_css_class("circular");
-                        button.add_css_class("lyric-annotation");
-                        // translators: Tooltip of the button on a lyric line that Genius explains.
-                        button.set_tooltip_text(Some(&gettextrs::gettext("What This Line Means")));
-                        line.append(&button);
-                        button
-                    });
-                    let text = gtk::Label::new(Some(note));
-                    text.set_wrap(true);
-                    text.set_max_width_chars(48);
-                    text.set_xalign(0.0);
-                    text.set_selectable(true);
-                    text.add_css_class("lyric-annotation__text");
-                    let popover = gtk::Popover::new();
-                    popover.set_child(Some(&text));
-                    button.set_popover(Some(&popover));
-                }
-                (None, None) => {}
+            let Some(head) = child_with_class(line.upcast_ref(), "lyric-line__head")
+                .and_downcast::<gtk::Box>()
+            else {
+                continue;
+            };
+            let Some(text) = child_with_class(line.upcast_ref(), "lyric-annotation__text")
+                .and_downcast::<gtk::Label>()
+            else {
+                continue;
+            };
+            if let Some(old) = child_with_class(head.upcast_ref(), "lyric-annotation") {
+                head.remove(&old);
             }
+            text.set_visible(false);
+            let Some(note) = notes.and_then(|n| n.get(index)).and_then(|n| n.as_deref()) else {
+                continue;
+            };
+            text.set_text(note);
+            // An icon, not a button: the line itself is a button (it seeks),
+            // and a button inside it never got the click
+            let mark = gtk::Image::from_icon_name("canto-genius-symbolic");
+            mark.set_valign(gtk::Align::Center);
+            mark.add_css_class("lyric-annotation");
+            // translators: Tooltip of the mark on a lyric line that Genius explains.
+            mark.set_tooltip_text(Some(&gettextrs::gettext("What This Line Means")));
+            mark.set_cursor_from_name(Some("pointer"));
+            let click = gtk::GestureClick::new();
+            click.connect_pressed(glib::clone!(
+                #[weak]
+                text,
+                move |gesture, _, _, _| {
+                    gesture.set_state(gtk::EventSequenceState::Claimed);
+                    text.set_visible(!text.is_visible());
+                }
+            ));
+            mark.add_controller(click);
+            head.append(&mark);
         }
     }
 
@@ -537,10 +541,15 @@ const TRANSLATION_LANGUAGES: &[(&str, &str)] = &[
     ("la", "Latina"),
 ];
 
-/// A lyric line's label with a hidden translation label under it.
+/// A lyric line: its label (with room for a Genius mark on the right), a
+/// hidden translation under it and a hidden Genius explanation under that.
 fn line_with_translation(label: &gtk::Label) -> gtk::Box {
     let line = gtk::Box::new(gtk::Orientation::Vertical, 2);
-    line.append(label);
+    let head = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    head.add_css_class("lyric-line__head");
+    label.set_hexpand(false);
+    head.append(label);
+    line.append(&head);
     let translation = gtk::Label::new(None);
     translation.set_wrap(true);
     translation.set_wrap_mode(gtk::pango::WrapMode::WordChar);
@@ -549,7 +558,27 @@ fn line_with_translation(label: &gtk::Label) -> gtk::Box {
     translation.set_visible(false);
     translation.add_css_class("lyric-translation");
     line.append(&translation);
+    let note = gtk::Label::new(None);
+    note.set_wrap(true);
+    note.set_wrap_mode(gtk::pango::WrapMode::WordChar);
+    note.set_halign(gtk::Align::Start);
+    note.set_xalign(0.0);
+    note.set_visible(false);
+    note.add_css_class("lyric-annotation__text");
+    line.append(&note);
     line
+}
+
+/// The child of `parent` that has `class`.
+fn child_with_class(parent: &gtk::Widget, class: &str) -> Option<gtk::Widget> {
+    let mut child = parent.first_child();
+    while let Some(widget) = child {
+        if widget.has_css_class(class) {
+            return Some(widget);
+        }
+        child = widget.next_sibling();
+    }
+    None
 }
 
 pub fn expose_widgets() {

@@ -458,12 +458,11 @@ row.navigation-row--playing label:not(.dim-label) {
   font-weight: 800;
 }
 
-/* Genius explanation button on a lyric line */
+/* Genius mark at the end of a lyric line, and its explanation under it */
 .lyric-annotation {
-  min-width: 24px;
-  min-height: 24px;
-  padding: 0;
-  opacity: 0.6;
+  -gtk-icon-size: 16px;
+  opacity: 0.55;
+  color: @accent_color;
 }
 
 .lyric-annotation:hover {
@@ -471,5 +470,15 @@ row.navigation-row--playing label:not(.dim-label) {
 }
 
 .lyric-annotation__text {
-  margin: 6px;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: alpha(currentColor, 0.07);
+  font-size: 0.62em;
+  font-weight: normal;
+  line-height: 1.35;
+}
+
+.lyrics--fullscreen .lyric-annotation__text {
+  font-size: 0.45em;
 }
