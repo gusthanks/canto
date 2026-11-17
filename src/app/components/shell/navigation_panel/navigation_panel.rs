@@ -7,8 +7,8 @@ use std::rc::Rc;
 use super::{
     context_menu::build_context_menu,
     navigation_panel_row::{NavigationPanelRow, COVER_PX},
-    LibraryFilter, LibrarySort, NavigationPanelItem, NavigationPanelModel,
-    LIBRARY_SECTION, PINNED_SECTION, SAVED_PLAYLISTS_SECTION,
+    LibraryFilter, LibrarySort, NavigationPanelItem, NavigationPanelModel, LIBRARY_SECTION,
+    PINNED_SECTION, SAVED_PLAYLISTS_SECTION,
 };
 use crate::app::components::PlaylistDialog;
 use crate::app::state::{HomePage, PlaybackEvent, Route, Transition};
@@ -29,26 +29,31 @@ impl NavigationPanel {
 
         let rail = Rc::new(Cell::new(false));
         let weak_model = Rc::downgrade(&model);
-        listbox.bind_model(Some(&list_store), clone!(
-            #[strong]
-            rail,
-            move |obj| {
-                let item = obj.downcast_ref::<NavigationPanelItem>().unwrap();
-                let row = if item.navigatable() {
-                    Self::make_navigatable(item, weak_model.upgrade().as_deref())
-                } else {
-                    match item.id().as_str() {
-                        SAVED_PLAYLISTS_SECTION => {
-                            Self::make_section_label(item, weak_model.upgrade().as_ref())
+        listbox.bind_model(
+            Some(&list_store),
+            clone!(
+                #[strong]
+                rail,
+                move |obj| {
+                    let item = obj.downcast_ref::<NavigationPanelItem>().unwrap();
+                    let row = if item.navigatable() {
+                        Self::make_navigatable(item, weak_model.upgrade().as_deref())
+                    } else {
+                        match item.id().as_str() {
+                            SAVED_PLAYLISTS_SECTION => {
+                                Self::make_section_label(item, weak_model.upgrade().as_ref())
+                            }
+                            PINNED_SECTION | LIBRARY_SECTION => {
+                                Self::make_section_label(item, None)
+                            }
+                            _ => unimplemented!(),
                         }
-                        PINNED_SECTION | LIBRARY_SECTION => Self::make_section_label(item, None),
-                        _ => unimplemented!(),
-                    }
-                };
-                Self::set_row_rail(&row, rail.get());
-                row
-            }
-        ));
+                    };
+                    Self::set_row_rail(&row, rail.get());
+                    row
+                }
+            ),
+        );
 
         listbox.connect_row_activated(clone!(
             #[weak]
@@ -84,6 +89,7 @@ impl NavigationPanel {
         // their squeezed titles show as "…"
         if let Some(sidebar) = navigation_panel_box.parent() {
             rail.set(sidebar.has_css_class("navigation-panel--rail"));
+            Self::set_scrollbar_rail(&listbox, rail.get());
             sidebar.connect_css_classes_notify(clone!(
                 #[weak]
                 listbox,
@@ -92,6 +98,7 @@ impl NavigationPanel {
                 move |sidebar| {
                     let collapsed = sidebar.has_css_class("navigation-panel--rail");
                     if rail.replace(collapsed) != collapsed {
+                        Self::set_scrollbar_rail(&listbox, collapsed);
                         let mut child = listbox.first_child();
                         while let Some(row) = child {
                             Self::set_row_rail(&row, collapsed);
@@ -481,7 +488,10 @@ impl NavigationPanel {
         tools
     }
 
-    fn make_navigatable(item: &NavigationPanelItem, model: Option<&NavigationPanelModel>) -> gtk::Widget {
+    fn make_navigatable(
+        item: &NavigationPanelItem,
+        model: Option<&NavigationPanelModel>,
+    ) -> gtk::Widget {
         let row = NavigationPanelRow::new(item.clone());
         row.set_selectable(false);
         if let Some(model) = model {
@@ -492,6 +502,21 @@ impl NavigationPanel {
             model.load_cover(&image, &url, COVER_PX * scale);
         }
         row.upcast()
+    }
+
+    /// The collapsed sidebar is as wide as a cover: a scrollbar there sits
+    /// on top of the covers. It still scrolls (wheel, touch), without one.
+    fn set_scrollbar_rail(listbox: &gtk::ListBox, collapsed: bool) {
+        if let Some(scrolled) = listbox
+            .ancestor(gtk::ScrolledWindow::static_type())
+            .and_downcast::<gtk::ScrolledWindow>()
+        {
+            scrolled.set_vscrollbar_policy(if collapsed {
+                gtk::PolicyType::External
+            } else {
+                gtk::PolicyType::Automatic
+            });
+        }
     }
 
     /// Covers and icons only while the sidebar is collapsed.
@@ -639,7 +664,9 @@ impl EventListener for NavigationPanel {
                 self.mark_playing();
                 if matches!(
                     event,
-                    AppEvent::PlaybackEvent(PlaybackEvent::TrackChanged(_) | PlaybackEvent::SourceChanged)
+                    AppEvent::PlaybackEvent(
+                        PlaybackEvent::TrackChanged(_) | PlaybackEvent::SourceChanged
+                    )
                 ) {
                     self.note_recent_play();
                 }

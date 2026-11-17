@@ -44,15 +44,15 @@ template $UtilityPanelWidget : Adw.Bin {
             active: true;
           }
 
-          ToggleButton queue_tab {
-            /* Translators: Tab label for the queue in utility panel. */
-            label: _("Queue");
-            group: now_tab;
-          }
-
           ToggleButton lyrics_tab {
             /* Translators: Tab label for lyrics in utility panel. */
             label: _("Lyrics");
+            group: now_tab;
+          }
+
+          ToggleButton queue_tab {
+            /* Translators: Tab label for the queue in utility panel. */
+            label: _("Queue");
             group: now_tab;
           }
         };

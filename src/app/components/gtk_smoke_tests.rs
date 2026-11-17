@@ -114,6 +114,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     );
 
     assert_card_playing_badge_shows_bars();
+    assert_scrollbar_stays_put();
 
     // Space plays/pauses unless it's typed into a text field
     let entry = gtk::SearchEntry::new();
@@ -170,6 +171,57 @@ fn assert_card_playing_badge_shows_bars() {
         "card playing badge shows no bars ({} colors)",
         colors
     );
+    window.destroy();
+}
+
+/// The page scrollbar keeps its width and place with the pointer on it:
+/// libadwaita widens it and pulls it off the edge, on top of the content.
+fn assert_scrollbar_stays_put() {
+    let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    content.set_size_request(300, 3000);
+    let scrolled = gtk::ScrolledWindow::new();
+    scrolled.set_child(Some(&content));
+    let window = gtk::Window::new();
+    window.set_default_size(400, 400);
+    window.set_child(Some(&scrolled));
+    window.present();
+    let bar = scrolled.vscrollbar();
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    while !bar.is_mapped() && std::time::Instant::now() < deadline {
+        pump(10);
+    }
+    pump(300);
+    let slider = |bar: &gtk::Widget| {
+        let mut w = bar.clone();
+        while let Some(child) = w.first_child() {
+            w = child;
+        }
+        w
+    };
+    let measure = |tag: &str| {
+        let b = bar.compute_bounds(&window).unwrap();
+        let s = slider(&bar).compute_bounds(&window).unwrap();
+        eprintln!(
+            "scrollbar {tag}: classes {:?} bar x={} w={} slider x={} w={}",
+            bar.css_classes(),
+            b.x(),
+            b.width(),
+            s.x(),
+            s.width()
+        );
+        (b.x(), b.width(), s.x(), s.width())
+    };
+    // One pass of the pointer first: before any, a fresh window still
+    // reports the size libadwaita gives a bar without overlay
+    bar.add_css_class("hovering");
+    pump(500);
+    bar.remove_css_class("hovering");
+    pump(800);
+    let idle = measure("idle");
+    bar.add_css_class("hovering");
+    pump(800);
+    let hover = measure("hover");
+    assert_eq!(idle, hover, "the scrollbar moves or grows on hover");
     window.destroy();
 }
 

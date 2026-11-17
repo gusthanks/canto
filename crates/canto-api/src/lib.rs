@@ -23,15 +23,16 @@ pub(crate) mod dev;
 
 pub use error::DomainError;
 pub use genius::{
-    build_genius_search_url, normalize_genius_query_title, GeniusRelationship, GeniusTrackInfo,
+    build_genius_search_url, normalize_genius_query_title, GeniusBioStatus, GeniusRelationship,
+    GeniusTrackInfo,
 };
 pub use lyrics::{LyricLine, Lyrics, LyricsCache, LyricsService};
-pub use providers::{ProviderCapabilities, ProviderKind};
 pub use providers::spotify::domain::{check_user_profile, UserProfileCheck};
 pub use providers::spotify::spotify_service;
+pub use providers::{ProviderCapabilities, ProviderKind};
 pub use radio::{build_radio_queue, DEFAULT_RADIO_TARGET_COUNT};
-pub use scheduler::{Load, LoadPriority, BACKGROUND_EPOCH};
 pub use reqwest::Client as HttpClient;
+pub use scheduler::{Load, LoadPriority, BACKGROUND_EPOCH};
 pub use service::ApiService;
 
 #[cfg(debug_assertions)]

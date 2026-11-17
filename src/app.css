@@ -84,27 +84,45 @@ popover.history-menu {
   font-weight: normal;
 }
 
-/* Scrollbars stay thin on hover: no dark track growing over the content */
-scrollbar.overlay-indicator.hovering {
+/* Scrollbars stay put: same width and place with or without the pointer
+   (libadwaita widens them and pulls them off the edge on hover, on top of
+   the content). Hover only darkens the slider. */
+scrollbar.overlay-indicator.vertical > range > trough,
+scrollbar.overlay-indicator.vertical.hovering > range > trough {
+  margin-left: 4px;
+  margin-right: 4px;
+}
+
+scrollbar.overlay-indicator.horizontal > range > trough,
+scrollbar.overlay-indicator.horizontal.hovering > range > trough {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+scrollbar.overlay-indicator.vertical.hovering > range > trough > slider {
+  min-width: 3px;
+}
+
+scrollbar.overlay-indicator.horizontal.hovering > range > trough > slider {
+  min-height: 3px;
+}
+
+/* No dark strip behind them either */
+scrollbar.overlay-indicator.hovering > range > trough,
+scrollbar.overlay-indicator.dragging > range > trough {
   background: transparent;
   border: none;
   box-shadow: none;
+  outline: none;
 }
 
-scrollbar.overlay-indicator.vertical.hovering slider {
-  min-width: 5px;
-  margin-left: 4px;
-  margin-right: 3px;
+scrollbar.overlay-indicator.hovering > range > trough > slider {
+  background-color: alpha(@window_fg_color, 0.45);
 }
 
-scrollbar.overlay-indicator.horizontal.hovering slider {
-  min-height: 5px;
-  margin-top: 4px;
-  margin-bottom: 3px;
-}
-
-scrollbar.overlay-indicator.hovering slider:hover {
-  background-color: alpha(@window_fg_color, 0.55);
+scrollbar.overlay-indicator.hovering > range > trough > slider:hover,
+scrollbar.overlay-indicator > range > trough > slider:active {
+  background-color: alpha(@window_fg_color, 0.65);
 }
 
 /* Hide scrollbars while the navigation stack's page transition is running */

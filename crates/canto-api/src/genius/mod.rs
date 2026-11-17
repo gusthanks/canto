@@ -37,6 +37,178 @@ pub struct GeniusTrackInfo {
     pub writers: Vec<String>,
     pub relationships: Vec<GeniusRelationship>,
     pub description: Option<String>,
+    /// Whether Genius reviewed the description (the song bio).
+    #[serde(default)]
+    pub description_status: Option<GeniusBioStatus>,
+    /// The description as Pango markup, links kept; paragraphs are
+    /// separated by a blank line.
+    #[serde(default)]
+    pub description_markup: Option<String>,
+}
+
+/// Genius's HTML (a song bio) as Pango markup: links (absolute, http or
+/// https), italics and bold are kept, paragraphs end with a blank line,
+/// everything else becomes plain text.
+pub fn genius_html_to_markup(html: &str) -> String {
+    let mut out = String::new();
+    let mut rest = html;
+    let mut open_links = 0usize;
+    while !rest.is_empty() {
+        let Some(lt) = rest.find('<') else {
+            out.push_str(&escape_markup(&decode_entities(rest)));
+            break;
+        };
+        out.push_str(&escape_markup(&decode_entities(&rest[..lt])));
+        let Some(gt) = rest[lt..].find('>') else {
+            out.push_str(&escape_markup(&decode_entities(&rest[lt..])));
+            break;
+        };
+        let tag = &rest[lt + 1..lt + gt];
+        rest = &rest[lt + gt + 1..];
+        let closing = tag.starts_with('/');
+        let name: String = tag
+            .trim_start_matches('/')
+            .chars()
+            .take_while(|c| c.is_ascii_alphanumeric())
+            .collect::<String>()
+            .to_ascii_lowercase();
+        match (name.as_str(), closing) {
+            ("a", false) => {
+                if let Some(href) = attribute(tag, "href").and_then(|h| absolute_link(&h)) {
+                    out.push_str(&format!("<a href=\"{}\">", escape_markup(&href)));
+                    open_links += 1;
+                }
+            }
+            ("a", true) => {
+                if open_links > 0 {
+                    out.push_str("</a>");
+                    open_links -= 1;
+                }
+            }
+            ("em" | "i", false) => out.push_str("<i>"),
+            ("em" | "i", true) => out.push_str("</i>"),
+            ("strong" | "b", false) => out.push_str("<b>"),
+            ("strong" | "b", true) => out.push_str("</b>"),
+            ("br", _) => out.push('\n'),
+            ("p" | "blockquote" | "ul" | "ol" | "h1" | "h2" | "h3" | "h4", true) => {
+                out.push_str("\n\n")
+            }
+            ("li", false) => out.push_str("• "),
+            ("li", true) => out.push('\n'),
+            _ => {}
+        }
+    }
+    while open_links > 0 {
+        out.push_str("</a>");
+        open_links -= 1;
+    }
+    // At most one blank line between paragraphs, none at the ends
+    let mut tidy = String::new();
+    for paragraph in out.split("\n\n").map(str::trim).filter(|p| !p.is_empty()) {
+        if !tidy.is_empty() {
+            tidy.push_str("\n\n");
+        }
+        tidy.push_str(paragraph);
+    }
+    tidy
+}
+
+fn attribute(tag: &str, name: &str) -> Option<String> {
+    let at = tag.find(&format!("{name}="))? + name.len() + 1;
+    let value = &tag[at..];
+    let quote = value.chars().next()?;
+    if quote == '"' || quote == '\'' {
+        let end = value[1..].find(quote)?;
+        Some(decode_entities(&value[1..1 + end]))
+    } else {
+        Some(value.split_whitespace().next()?.to_string())
+    }
+}
+
+fn absolute_link(href: &str) -> Option<String> {
+    let href = href.trim();
+    if href.starts_with("https://") || href.starts_with("http://") {
+        Some(href.to_string())
+    } else if href.starts_with('/') && !href.starts_with("//") {
+        Some(format!("https://genius.com{href}"))
+    } else {
+        None
+    }
+}
+
+fn decode_entities(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(amp) = rest.find('&') {
+        out.push_str(&rest[..amp]);
+        rest = &rest[amp..];
+        let decoded = rest.find(';').filter(|end| *end <= 10).and_then(|end| {
+            let entity = &rest[1..end];
+            let ch = match entity {
+                "amp" => Some('&'),
+                "lt" => Some('<'),
+                "gt" => Some('>'),
+                "quot" => Some('"'),
+                "apos" => Some('\''),
+                "nbsp" => Some(' '),
+                _ => entity.strip_prefix('#').and_then(|num| {
+                    let code = match num.strip_prefix(['x', 'X']) {
+                        Some(hex) => u32::from_str_radix(hex, 16).ok()?,
+                        None => num.parse().ok()?,
+                    };
+                    char::from_u32(code)
+                }),
+            }?;
+            Some((ch, end))
+        });
+        match decoded {
+            Some((ch, end)) => {
+                out.push(ch);
+                rest = &rest[end + 1..];
+            }
+            None => {
+                out.push('&');
+                rest = &rest[1..];
+            }
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+fn escape_markup(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
+}
+
+/// How far Genius vouches for a song bio, as genius.com shows it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum GeniusBioStatus {
+    /// Written by the community, not reviewed yet ("This song bio is unreviewed")
+    Unreviewed,
+    /// Accepted by Genius editors
+    Reviewed,
+    /// Written or confirmed by the artist
+    Verified,
+}
+
+/// The status of the bio's annotation in a `/songs/{id}` payload.
+fn bio_status(song: &Value) -> Option<GeniusBioStatus> {
+    let annotation = song
+        .get("description_annotation")?
+        .get("annotations")?
+        .as_array()?
+        .first()?;
+    if annotation.get("verified").and_then(Value::as_bool) == Some(true) {
+        return Some(GeniusBioStatus::Verified);
+    }
+    Some(match annotation.get("state").and_then(Value::as_str) {
+        Some("accepted") => GeniusBioStatus::Reviewed,
+        _ => GeniusBioStatus::Unreviewed,
+    })
 }
 
 /// Strip noisy edition/remaster/live/feature suffixes so Genius search matches cleanly.
@@ -206,10 +378,10 @@ pub fn build_genius_search_url(artist: &str, title: &str) -> String {
 
 pub fn genius_cache_key(track_id: &str, artist: &str, title: &str) -> String {
     if !track_id.trim().is_empty() {
-        format!("genius_song_v1_{}", track_id.trim())
+        format!("genius_song_v2_{}", track_id.trim())
     } else {
         format!(
-            "genius_song_v1_{}_{}",
+            "genius_song_v2_{}_{}",
             normalize_for_match(artist),
             normalize_for_match(title)
         )
@@ -262,7 +434,7 @@ pub async fn fetch_genius_track_info(
         return Ok(info);
     };
 
-    let song_url = format!("{GENIUS_API_BASE}/songs/{song_id}?text_format=plain");
+    let song_url = format!("{GENIUS_API_BASE}/songs/{song_id}?text_format=plain,html");
     let song_val = get_genius_json(client, &song_url, token).await?;
     let info = parse_genius_song_response(&song_val, song_id, fallback_url);
     write_cache(cache, &key, &info).await;
@@ -318,7 +490,10 @@ pub async fn fetch_genius_annotations(
 
 /// Parses `GET /referents` into fragment + explanation pairs.
 pub fn parse_genius_referents(value: &Value) -> Vec<GeniusAnnotation> {
-    let Some(referents) = value.pointer("/response/referents").and_then(Value::as_array) else {
+    let Some(referents) = value
+        .pointer("/response/referents")
+        .and_then(Value::as_array)
+    else {
         return Vec::new();
     };
     referents
@@ -326,7 +501,11 @@ pub fn parse_genius_referents(value: &Value) -> Vec<GeniusAnnotation> {
         .filter_map(|referent| {
             let fragment = referent.get("fragment")?.as_str()?.trim().to_string();
             let annotation = referent.get("annotations")?.as_array()?.first()?;
-            let body = annotation.pointer("/body/plain")?.as_str()?.trim().to_string();
+            let body = annotation
+                .pointer("/body/plain")?
+                .as_str()?
+                .trim()
+                .to_string();
             if fragment.is_empty() || body.is_empty() || body == "?" {
                 return None;
             }
@@ -350,7 +529,10 @@ fn fold(text: &str) -> String {
 }
 
 /// For each lyric line, the explanation of the fragment that starts on it.
-pub fn annotations_for_lines(lines: &[String], annotations: &[GeniusAnnotation]) -> Vec<Option<String>> {
+pub fn annotations_for_lines(
+    lines: &[String],
+    annotations: &[GeniusAnnotation],
+) -> Vec<Option<String>> {
     let folded: Vec<String> = lines.iter().map(|l| fold(l)).collect();
     let mut out = vec![None; lines.len()];
     for annotation in annotations {
@@ -393,6 +575,8 @@ fn empty_fallback(fallback_url: String) -> GeniusTrackInfo {
         writers: Vec::new(),
         relationships: Vec::new(),
         description: None,
+        description_status: None,
+        description_markup: None,
     }
 }
 
@@ -441,7 +625,11 @@ async fn get_genius_json(
 }
 
 fn primary_artist_name(artist: &str) -> &str {
-    artist.split(',').next().map(str::trim).unwrap_or(artist.trim())
+    artist
+        .split(',')
+        .next()
+        .map(str::trim)
+        .unwrap_or(artist.trim())
 }
 
 fn normalize_for_match(input: &str) -> String {
@@ -461,7 +649,11 @@ fn normalize_for_match(input: &str) -> String {
 }
 
 /// Rank Genius `/search` hits against expected artist & title and return best matching song id.
-pub fn pick_best_hit(search_json: &Value, expected_artist: &str, expected_title: &str) -> Option<u64> {
+pub fn pick_best_hit(
+    search_json: &Value,
+    expected_artist: &str,
+    expected_title: &str,
+) -> Option<u64> {
     let hits = search_json
         .get("response")
         .and_then(|r| r.get("hits"))
@@ -499,7 +691,13 @@ pub fn pick_best_hit(search_json: &Value, expected_artist: &str, expected_title:
             .map(normalize_for_match)
             .unwrap_or_default();
 
-        let score = score_hit(&target_artist, &target_title, &hit_artist, &hit_artists, &hit_title);
+        let score = score_hit(
+            &target_artist,
+            &target_title,
+            &hit_artist,
+            &hit_artists,
+            &hit_title,
+        );
         if score < 40 {
             continue;
         }
@@ -568,9 +766,7 @@ pub fn parse_genius_song_response(
         .unwrap_or(fallback_url);
 
     let full_title = non_empty_str(song.get("full_title"));
-    let album = song
-        .get("album")
-        .and_then(|a| non_empty_str(a.get("name")));
+    let album = song.get("album").and_then(|a| non_empty_str(a.get("name")));
     let release_date = non_empty_str(song.get("release_date_for_display"))
         .or_else(|| non_empty_str(song.get("release_date")));
 
@@ -583,6 +779,12 @@ pub fn parse_genius_song_response(
         .get("description")
         .and_then(|d| non_empty_str(d.get("plain")))
         .filter(|text| text != "?");
+    let description_status = description.as_ref().and_then(|_| bio_status(song));
+    let description_markup = description
+        .as_ref()
+        .and_then(|_| non_empty_str(song.get("description").and_then(|d| d.get("html"))))
+        .map(|html| genius_html_to_markup(&html))
+        .filter(|markup| !markup.is_empty());
 
     GeniusTrackInfo {
         song_id: Some(song_id),
@@ -596,6 +798,8 @@ pub fn parse_genius_song_response(
         writers,
         relationships,
         description,
+        description_status,
+        description_markup,
     }
 }
 
@@ -648,8 +852,8 @@ fn extract_relationships(val: Option<&Value>) -> Vec<GeniusRelationship> {
         };
         let mut tracks = Vec::new();
         for s in songs {
-            if let Some(title) = non_empty_str(s.get("full_title"))
-                .or_else(|| non_empty_str(s.get("title")))
+            if let Some(title) =
+                non_empty_str(s.get("full_title")).or_else(|| non_empty_str(s.get("title")))
             {
                 if !tracks.contains(&title) {
                     tracks.push(title);
@@ -756,7 +960,10 @@ mod tests {
                 ]
             }
         });
-        assert_eq!(pick_best_hit(&json, "Pink Floyd", "Money - Remastered"), Some(200));
+        assert_eq!(
+            pick_best_hit(&json, "Pink Floyd", "Money - Remastered"),
+            Some(200)
+        );
     }
 
     #[test]
@@ -781,7 +988,10 @@ mod tests {
                             "songs": []
                         }
                     ],
-                    "description": { "plain": "A critique of greed written in 7/4 time." }
+                    "description": { "plain": "A critique of greed written in 7/4 time." },
+                    "description_annotation": {
+                        "annotations": [{ "state": "pending", "verified": false }]
+                    }
                 }
             }
         });
@@ -800,5 +1010,43 @@ mod tests {
             info.description.as_deref(),
             Some("A critique of greed written in 7/4 time.")
         );
+        assert_eq!(info.description_status, Some(GeniusBioStatus::Unreviewed));
+    }
+
+    #[test]
+    fn turns_a_song_bio_into_markup_with_links() {
+        let html = r#"<p>&#8220;Nikes&#8221; is a <a href="https://genius.com/x" rel="noopener">music <em>video</em></a> &amp; more.</p>
+
+<p>See <a href="/albums/y">this</a> &lt;3<br>bye <img src="z.png"></p>"#;
+        assert_eq!(
+            genius_html_to_markup(html),
+            "\u{201c}Nikes\u{201d} is a <a href=\"https://genius.com/x\">music <i>video</i></a> &amp; more.\n\nSee <a href=\"https://genius.com/albums/y\">this</a> &lt;3\nbye"
+        );
+        assert_eq!(
+            genius_html_to_markup(r#"<a href="javascript:x">bad</a> ok"#),
+            "bad ok"
+        );
+    }
+
+    #[test]
+    fn reads_whether_the_song_bio_was_reviewed() {
+        let status = |annotation: serde_json::Value| {
+            bio_status(&serde_json::json!({
+                "description_annotation": { "annotations": [annotation] }
+            }))
+        };
+        assert_eq!(
+            status(serde_json::json!({ "state": "accepted", "verified": false })),
+            Some(GeniusBioStatus::Reviewed)
+        );
+        assert_eq!(
+            status(serde_json::json!({ "state": "accepted", "verified": true })),
+            Some(GeniusBioStatus::Verified)
+        );
+        assert_eq!(
+            status(serde_json::json!({ "state": "pending" })),
+            Some(GeniusBioStatus::Unreviewed)
+        );
+        assert_eq!(bio_status(&serde_json::json!({})), None);
     }
 }

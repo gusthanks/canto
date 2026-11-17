@@ -16,7 +16,7 @@ use crate::app::models::{Track, TrackExt};
 use crate::app::state::PlaybackEvent;
 use crate::app::{load, AppAction, AppEvent, AppModel, BrowserAction, BrowserEvent, Dispatcher};
 use canto_api::models::is_resource_url;
-use canto_api::{GeniusTrackInfo, Lyrics};
+use canto_api::{GeniusBioStatus, GeniusTrackInfo, Lyrics};
 use canto_config::settings::{GENIUS_ACCESS_TOKEN, LYRICS_OFFSET_MS, SETTINGS};
 
 /// Lines shown in the lyrics preview card.
@@ -185,6 +185,26 @@ fn heading(text: &str) -> gtk::Label {
     label
 }
 
+/// The start of a long bio: whole paragraphs up to about 280 characters
+/// (at least the first). `None` when the bio is short enough to show whole.
+fn folded_bio(markup: &str) -> Option<String> {
+    const FOLD_AT: usize = 280;
+    let paragraphs: Vec<&str> = markup.split("\n\n").collect();
+    if paragraphs.len() < 2 {
+        return None;
+    }
+    let mut kept = 0;
+    let mut length = 0;
+    for paragraph in &paragraphs {
+        if kept > 0 && length + paragraph.len() > FOLD_AT {
+            break;
+        }
+        length += paragraph.len();
+        kept += 1;
+    }
+    (kept < paragraphs.len()).then(|| paragraphs[..kept].join("\n\n"))
+}
+
 fn wrapping_label(classes: &[&str]) -> gtk::Label {
     let label = gtk::Label::new(None);
     label.set_halign(gtk::Align::Start);
@@ -223,8 +243,8 @@ fn make_card_activate(card: &gtk::Box, action: &'static str, tooltip: &str) {
 
 mod square_imp {
     use gtk::prelude::*;
-    use libadwaita::prelude::*;
     use gtk::subclass::prelude::*;
+    use libadwaita::prelude::*;
     use libadwaita::subclass::prelude::*;
 
     #[derive(Debug, Default)]
@@ -510,6 +530,56 @@ impl Widgets {
         self.credits_body.append(&button);
     }
 
+    /// The Genius song bio: its first paragraph with "Show More", links
+    /// clickable, and where it comes from and whether Genius reviewed it.
+    fn credits_bio(&self, info: &GeniusTrackInfo) {
+        let full = match (&info.description_markup, &info.description) {
+            (Some(markup), _) => markup.clone(),
+            (None, Some(plain)) => glib::markup_escape_text(plain).to_string(),
+            (None, None) => return,
+        };
+        let folded = folded_bio(&full);
+        let row = gtk::Box::new(gtk::Orientation::Vertical, 2);
+        row.set_margin_top(4);
+        let name_label = wrapping_label(&["caption", "dim-label"]);
+        // translators: Heading of the Genius song bio in the Credits card.
+        name_label.set_text(&gettext("About This Song"));
+        let text = wrapping_label(&["body"]);
+        text.set_markup(folded.as_deref().unwrap_or(&full));
+        text.set_selectable(true);
+        let source = wrapping_label(&["caption", "dim-label"]);
+        source.set_text(&match info.description_status {
+            Some(GeniusBioStatus::Unreviewed) => gettext("Song bio from Genius · Unreviewed"),
+            Some(GeniusBioStatus::Reviewed) => gettext("Song bio from Genius · Reviewed by Genius"),
+            Some(GeniusBioStatus::Verified) => {
+                gettext("Song bio from Genius · Verified by the artist")
+            }
+            None => gettext("Song bio from Genius"),
+        });
+        row.append(&name_label);
+        row.append(&text);
+        if let Some(folded) = folded {
+            let more = gtk::Button::with_label(&gettext("Show More"));
+            more.add_css_class("flat");
+            more.add_css_class("small");
+            more.set_halign(gtk::Align::Start);
+            let expanded = std::cell::Cell::new(false);
+            more.connect_clicked(move |button| {
+                let open = !expanded.get();
+                expanded.set(open);
+                text.set_markup(if open { &full } else { &folded });
+                button.set_label(&if open {
+                    gettext("Show Less")
+                } else {
+                    gettext("Show More")
+                });
+            });
+            row.append(&more);
+        }
+        row.append(&source);
+        self.credits_body.append(&row);
+    }
+
     fn show_credits(&self, track: &Track, info: &GeniusTrackInfo) {
         self.clear_credits();
         let mut any = false;
@@ -533,6 +603,10 @@ impl Widgets {
         }
         for rel in info.relationships.iter().filter(|r| !r.tracks.is_empty()) {
             self.credits_row(&rel.label, &rel.tracks.join("\n"));
+            any = true;
+        }
+        if info.description.as_deref().is_some_and(|d| !d.is_empty()) {
+            self.credits_bio(info);
             any = true;
         }
         if !any {
@@ -667,7 +741,13 @@ impl NowPanel {
                 &self.lyrics,
                 &self.loaded_for,
             );
-            sync_clock(w, &self.app_model, &self.settings, &self.clock, &self.lyrics);
+            sync_clock(
+                w,
+                &self.app_model,
+                &self.settings,
+                &self.clock,
+                &self.lyrics,
+            );
         }
     }
 
@@ -677,7 +757,12 @@ impl NowPanel {
 
     fn load_cover(&self, song: &Track) {
         let picture = self.widgets.cover.clone();
-        load_picture(&self.app_model, &picture, song.art.best_for_width(COVER_PX as u32), COVER_PX);
+        load_picture(
+            &self.app_model,
+            &picture,
+            song.art.best_for_width(COVER_PX as u32),
+            COVER_PX,
+        );
     }
 
     fn update_next(&self) {
@@ -853,8 +938,12 @@ fn load_playcounts(
     loaded_for: &Rc<RefCell<Option<String>>>,
 ) {
     w.stats_card.set_visible(false);
-    let api_key = settings.string(canto_config::settings::LASTFM_API_KEY).to_string();
-    let username = settings.string(canto_config::settings::LASTFM_USERNAME).to_string();
+    let api_key = settings
+        .string(canto_config::settings::LASTFM_API_KEY)
+        .to_string();
+    let username = settings
+        .string(canto_config::settings::LASTFM_USERNAME)
+        .to_string();
     if api_key.trim().is_empty() || username.trim().is_empty() {
         return;
     }
@@ -946,9 +1035,11 @@ fn sync_clock(
     let weak_lyrics = Rc::downgrade(lyrics);
     let settings = settings.clone();
     clock.start(move || {
-        let (Some(w), Some(model), Some(lyrics)) =
-            (weak_w.upgrade(), weak_model.upgrade(), weak_lyrics.upgrade())
-        else {
+        let (Some(w), Some(model), Some(lyrics)) = (
+            weak_w.upgrade(),
+            weak_model.upgrade(),
+            weak_lyrics.upgrade(),
+        ) else {
             return;
         };
         if lyrics.borrow().as_ref().is_some_and(Lyrics::is_synced) {
@@ -1014,7 +1105,12 @@ pub(crate) fn sample_for_tests(cover: &gtk::gdk::Texture) -> gtk::Widget {
         "<a href=\"artist:1\">Niink</a>, <a href=\"artist:2\">Jotapê</a>, <a href=\"artist:3\">Supernova Ent</a>",
     );
     show_like_state(&w.like, Some(true));
-    let lines = ["Todos esses manos querem ser", "Mas ninguém quer pagar o preço", "Eu vim do nada e tô aqui", "Olha onde a gente chegou"];
+    let lines = [
+        "Todos esses manos querem ser",
+        "Mas ninguém quer pagar o preço",
+        "Eu vim do nada e tô aqui",
+        "Olha onde a gente chegou",
+    ];
     w.lyrics_card.set_visible(true);
     for (label, text) in w.lyrics_lines.iter().zip(lines) {
         label.set_text(text);
@@ -1060,7 +1156,10 @@ mod tests {
     #[test]
     fn plain_lyrics_preview_the_first_lines() {
         let lyrics = Lyrics::Plain(vec!["a".into(), " ".into(), "b".into()]);
-        assert_eq!(preview_window(&lyrics, 0), (vec!["a".into(), "b".into()], None));
+        assert_eq!(
+            preview_window(&lyrics, 0),
+            (vec!["a".into(), "b".into()], None)
+        );
     }
 
     #[test]
