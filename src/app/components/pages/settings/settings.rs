@@ -1,9 +1,9 @@
 use crate::app::components::{labels, EventListener};
 use crate::app::AppEvent;
 use crate::settings::CantoSettings;
-use gettextrs::gettext;
 use canto_api::scrobbler::{build_auth_url, LastFmClient};
 use canto_config::feature_flags::FeatureFlag;
+use gettextrs::gettext;
 use std::cell::RefCell;
 
 use std::rc::Rc;
@@ -144,6 +144,21 @@ mod imp {
         pub clear_cache_button: TemplateChild<gtk::Button>,
 
         #[template_child]
+        pub soloist_group: TemplateChild<libadwaita::PreferencesGroup>,
+        #[template_child]
+        pub soloist_guide_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub soloist_enabled_switch: TemplateChild<libadwaita::SwitchRow>,
+        #[template_child]
+        pub soloist_key_entry: TemplateChild<libadwaita::PasswordEntryRow>,
+        #[template_child]
+        pub soloist_status_row: TemplateChild<libadwaita::ActionRow>,
+        #[template_child]
+        pub audio_group: TemplateChild<libadwaita::PreferencesGroup>,
+        #[template_child]
+        pub network_group: TemplateChild<libadwaita::PreferencesGroup>,
+
+        #[template_child]
         pub genius_guide_button: TemplateChild<gtk::Button>,
 
         #[template_child]
@@ -229,6 +244,7 @@ impl SettingsDialog {
         dialog.bind_feature_flags();
         dialog.connect_theme_select();
         dialog.setup_integrations();
+        dialog.setup_soloist();
         dialog
     }
 
@@ -613,7 +629,10 @@ impl SettingsDialog {
             .unwrap();
         bind_double_adjustment("normalisation-knee-db", &normalisation_knee.adjustment());
 
-        let language = widget.language.downcast_ref::<libadwaita::ComboRow>().unwrap();
+        let language = widget
+            .language
+            .downcast_ref::<libadwaita::ComboRow>()
+            .unwrap();
         settings
             .bind(canto_config::settings::APP_LANGUAGE, language, "selected")
             .mapping(|variant, _| {
@@ -885,10 +904,18 @@ impl SettingsDialog {
             .bind(LASTFM_API_SECRET, &*widget.lastfm_api_secret_entry, "text")
             .build();
         settings
-            .bind(LISTENBRAINZ_TOKEN, &*widget.listenbrainz_token_entry, "text")
+            .bind(
+                LISTENBRAINZ_TOKEN,
+                &*widget.listenbrainz_token_entry,
+                "text",
+            )
             .build();
         settings
-            .bind(VISUAL_BRIDGE_ENABLED, &*widget.visual_bridge_switch, "active")
+            .bind(
+                VISUAL_BRIDGE_ENABLED,
+                &*widget.visual_bridge_switch,
+                "active",
+            )
             .build();
     }
 
@@ -900,14 +927,16 @@ impl SettingsDialog {
             "These features are still in development and may be unstable or incomplete.",
         )));
 
-        settings
-            .bind(
-                FeatureFlag::Normalisation.key(),
-                &*self.imp().normalisation_group,
-                "visible",
-            )
-            .get()
-            .build();
+        if !crate::connect::account_needs_official_client() {
+            settings
+                .bind(
+                    FeatureFlag::Normalisation.key(),
+                    &*self.imp().normalisation_group,
+                    "visible",
+                )
+                .get()
+                .build();
+        }
 
         for flag in FeatureFlag::ALL.iter() {
             let row = libadwaita::SwitchRow::new();
@@ -976,6 +1005,96 @@ impl SettingsDialog {
         self.imp()
             .clear_cache_button
             .connect_clicked(move |_| on_clear());
+    }
+
+    /// The Soloist group: on/off, key, status. For accounts that can't play
+    /// inside Canto, the settings that only reach Canto's own player
+    /// (librespot) are hidden: through Soloist they'd do nothing.
+    fn setup_soloist(&self) {
+        let imp = self.imp();
+        let settings = gio::Settings::new(SETTINGS);
+        settings
+            .bind(
+                canto_config::settings::SOLOIST_ENABLED,
+                &*imp.soloist_enabled_switch,
+                "active",
+            )
+            .build();
+
+        let external_player = crate::connect::account_needs_official_client();
+        if external_player {
+            imp.audio_group.set_visible(false);
+            imp.normalisation_group.set_visible(false);
+            imp.network_group.set_visible(false);
+            imp.equalizer.set_visible(false);
+            imp.pan.set_visible(false);
+            imp.pitch.set_visible(false);
+            imp.audio_cache_size.set_visible(false);
+        }
+
+        let weak_self = self.downgrade();
+        imp.soloist_guide_button.connect_clicked(move |_| {
+            if let Some(dialog) = weak_self.upgrade() {
+                open_external_url(&dialog, "https://developer.spotify.com/dashboard/soloist");
+            }
+        });
+
+        let weak_self = self.downgrade();
+        imp.soloist_key_entry.connect_apply(move |entry| {
+            let key = entry.text().trim().to_string();
+            entry.set_sensitive(false);
+            let weak_dialog = weak_self.clone();
+            let entry = entry.clone();
+            glib::spawn_future_local(async move {
+                let stored = gio::spawn_blocking(move || {
+                    canto_auth::soloist_key::store_blocking(&key).map_err(|e| e.to_string())
+                })
+                .await;
+                entry.set_sensitive(true);
+                entry.set_text("");
+                let Some(dialog) = weak_dialog.upgrade() else {
+                    return;
+                };
+                match stored {
+                    Ok(Ok(())) => dialog.refresh_soloist_status(),
+                    other => {
+                        if let Ok(Err(e)) = &other {
+                            warn!("couldn't save the Soloist key: {e}");
+                        }
+                        dialog
+                            .imp()
+                            .soloist_status_row
+                            .set_subtitle(&gettext("Couldn't save the key in the keyring"));
+                    }
+                }
+            });
+        });
+
+        self.refresh_soloist_status();
+    }
+
+    fn refresh_soloist_status(&self) {
+        let weak_self = self.downgrade();
+        glib::spawn_future_local(async move {
+            let found = gio::spawn_blocking(|| {
+                (
+                    crate::connect::soloist::report(),
+                    canto_auth::soloist_key::is_saved_blocking(),
+                )
+            })
+            .await;
+            let (Some(dialog), Ok((report, key_saved))) = (weak_self.upgrade(), found) else {
+                return;
+            };
+            let imp = dialog.imp();
+            imp.soloist_key_entry.set_title(&if key_saved {
+                gettext("Soloist API Key (saved; type a new one to replace it)")
+            } else {
+                gettext("Soloist API Key")
+            });
+            imp.soloist_status_row
+                .set_subtitle(&soloist_status_text(&report, key_saved));
+        });
     }
 
     fn setup_integrations(&self) {
@@ -1275,9 +1394,7 @@ impl EventListener for Settings {
 
 fn open_external_url(widget: &impl IsA<gtk::Widget>, url: &str) {
     if open::that_detached(url).is_err() {
-        let parent = widget
-            .root()
-            .and_then(|r| r.downcast::<gtk::Window>().ok());
+        let parent = widget.root().and_then(|r| r.downcast::<gtk::Window>().ok());
         let launcher = gtk::UriLauncher::new(url);
         launcher.launch(parent.as_ref(), None::<&gio::Cancellable>, |_| {});
     }
@@ -1490,4 +1607,38 @@ fn present_scrobbling_guide_dialog(parent: &SettingsDialog) {
     toolbar.set_content(Some(&content));
     dialog.set_child(Some(&toolbar));
     dialog.present(Some(parent));
+}
+
+/// One line on how Soloist stands, for the settings window.
+fn soloist_status_text(report: &crate::connect::soloist::Report, key_saved: bool) -> String {
+    let mut text = if !report.installed {
+        gettext("Not installed. Canto plays through the Spotify app hidden in the background.")
+    } else if !key_saved {
+        gettext("Installed, waiting for a key")
+    } else if !report.running {
+        gettext("Ready. It starts when you press play.")
+    } else if !report.logged_in {
+        gettext("Running, not logged in yet: in Spotify on your phone, pick “Canto” in the device list once")
+    } else if report.active {
+        gettext("Running and playing through Canto")
+    } else {
+        gettext("Running and logged in")
+    };
+    match report.days_left {
+        Some(days) if days < 0 => {
+            text.push_str(" · ");
+            text.push_str(&gettext(
+                "This Soloist build has expired; download the new one",
+            ));
+        }
+        Some(days) if days <= 14 => {
+            text.push_str(" · ");
+            text.push_str(
+                &gettext("This Soloist build stops working in {days} days")
+                    .replace("{days}", &days.to_string()),
+            );
+        }
+        _ => {}
+    }
+    text
 }

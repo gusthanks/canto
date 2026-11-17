@@ -10,6 +10,7 @@ extern crate log;
 mod credentials;
 mod oauth2;
 mod session_tokens;
+pub mod soloist_key;
 mod token_store;
 
 pub use credentials::Credentials;

@@ -158,7 +158,8 @@ impl DeviceSelectorWidget {
         self.imp().button_content.set_icon_name(icon);
         // translators: Tooltip of the player bar's device button. {} is where the sound plays, e.g. "This Computer".
         self.set_tooltip_text(Some(&gettext("Playing on {}").replace("{}", &label)));
-        if matches!(device, Device::Connect(connect) if !crate::connect::is_this_computer(&connect.label)) {
+        if matches!(device, Device::Connect(connect) if !crate::connect::plays_here(&connect.label))
+        {
             self.add_css_class("device-selector--away");
         } else {
             self.remove_css_class("device-selector--away");
@@ -199,7 +200,7 @@ const DEVICE_COMPUTER_ICON: &str = "canto-device-computer-symbolic";
 
 /// Our own drawing for each kind of device (a round puck for smart speakers).
 fn device_icon(device: &ConnectDevice) -> &'static str {
-    if crate::connect::is_this_computer(&device.label) {
+    if crate::connect::plays_here(&device.label) {
         return DEVICE_COMPUTER_ICON;
     }
     match device.kind {
@@ -211,10 +212,10 @@ fn device_icon(device: &ConnectDevice) -> &'static str {
     }
 }
 
-/// The Spotify app on this computer is shown as "This Computer", not by the
-/// computer's name.
+/// The player on this computer (Canto's Soloist, or the Spotify app here) is
+/// shown as "This Computer", not by its Connect name.
 fn device_label(device: &ConnectDevice) -> String {
-    if crate::connect::is_this_computer(&device.label) {
+    if crate::connect::plays_here(&device.label) {
         gettext("This Computer")
     } else {
         device.label.clone()

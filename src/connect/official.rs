@@ -21,12 +21,16 @@ static PIDFILE_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 /// Path of the marker file remembering that this account needs the official client.
 fn marker_path() -> PathBuf {
-    glib::user_data_dir().join("canto").join("use-official-client")
+    glib::user_data_dir()
+        .join("canto")
+        .join("use-official-client")
 }
 
 /// Path of the file remembering the Connect id of this computer's Spotify app.
 fn device_id_path() -> PathBuf {
-    glib::user_data_dir().join("canto").join("official-device-id")
+    glib::user_data_dir()
+        .join("canto")
+        .join("official-device-id")
 }
 
 /// Remembers the Connect id of the Spotify app on this computer, so a later
@@ -101,7 +105,11 @@ pub fn find_local_official_device(devices: &[Device], allow_any_computer: bool) 
         .as_ref()
         .and_then(|h| computers.clone().find(|d| d.label.eq_ignore_ascii_case(h)));
     by_name
-        .or_else(|| allow_any_computer.then(|| computers.clone().next()).flatten())
+        .or_else(|| {
+            allow_any_computer
+                .then(|| computers.clone().next())
+                .flatten()
+        })
         .cloned()
 }
 
@@ -149,7 +157,9 @@ impl OfficialClient {
         }
         let program = spotify_command();
         if !is_binary_available(&program) {
-            return Err(format!("official Spotify client binary not found: {program}"));
+            return Err(format!(
+                "official Spotify client binary not found: {program}"
+            ));
         }
 
         let on_hyprland = std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE").is_some();
@@ -377,7 +387,10 @@ pub fn keep_hidden_workspace_closed(duration: Duration) {
     std::thread::spawn(move || {
         let deadline = Instant::now() + duration;
         let name = HIDDEN_WORKSPACE.trim_start_matches("special:");
-        let toggle = format!("hl.dispatch(hl.dsp.workspace.toggle_special({}))", lua_quote(name));
+        let toggle = format!(
+            "hl.dispatch(hl.dsp.workspace.toggle_special({}))",
+            lua_quote(name)
+        );
         while Instant::now() < deadline {
             let shown = Command::new("hyprctl")
                 .args(["monitors", "-j"])
@@ -469,7 +482,11 @@ fn hyprctl_dispatch(args: &[&str]) -> bool {
     let ok = parse_hyprctl_ok(&stdout);
     if !ok {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        debug!("hyprctl dispatch rejected: stdout='{}' stderr='{}'", stdout.trim(), stderr.trim());
+        debug!(
+            "hyprctl dispatch rejected: stdout='{}' stderr='{}'",
+            stdout.trim(),
+            stderr.trim()
+        );
     }
     ok
 }
@@ -511,18 +528,14 @@ fn find_spotify_client_in_json(clients_json: &[u8], pid: Option<u32>) -> Option<
 
     by_pid.or_else(|| {
         list.iter().find_map(|c| {
-            let class = c
-                .get("class")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default();
+            let class = c.get("class").and_then(|v| v.as_str()).unwrap_or_default();
             let initial_class = c
                 .get("initialClass")
                 .and_then(|v| v.as_str())
                 .unwrap_or_default();
-            (class.eq_ignore_ascii_case("spotify")
-                || initial_class.eq_ignore_ascii_case("spotify"))
-            .then(|| client_match_from_value(c))
-            .flatten()
+            (class.eq_ignore_ascii_case("spotify") || initial_class.eq_ignore_ascii_case("spotify"))
+                .then(|| client_match_from_value(c))
+                .flatten()
         })
     })
 }
@@ -638,7 +651,9 @@ mod tests {
         assert!(parse_hyprctl_ok("ok\n"));
         assert!(parse_hyprctl_ok("ok ; ok\n"));
         assert!(!parse_hyprctl_ok(""));
-        assert!(!parse_hyprctl_ok("Invalid dispatcher, requested foo does not exist"));
+        assert!(!parse_hyprctl_ok(
+            "Invalid dispatcher, requested foo does not exist"
+        ));
         assert!(!parse_hyprctl_ok("Window 0x123 not found"));
         assert!(!parse_hyprctl_ok("ok\nInvalid"));
     }

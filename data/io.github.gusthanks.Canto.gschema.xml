@@ -403,6 +403,11 @@
       <summary>Scrobble remote Spotify Connect playback</summary>
       <description>Include tracks played on remote Spotify Connect devices when scrobbling is enabled.</description>
     </key>
+    <key name="soloist-enabled" type="b">
+      <default>true</default>
+      <summary>Play through Spotify Soloist</summary>
+      <description>When librespot can't play this account, play through Spotify Soloist, Spotify's own headless player, instead of the hidden desktop app. Needs a Soloist API key.</description>
+    </key>
     <key name="lastfm-api-key" type="s">
       <default>""</default>
       <summary>Last.fm API key</summary>

@@ -133,6 +133,7 @@ pub const GENIUS_ACCESS_TOKEN: &str = "genius-access-token";
 pub const SCROBBLE_ENABLED: &str = "scrobble-enabled";
 pub const SCROBBLE_RESPECT_REMOTE: &str = "scrobble-respect-remote";
 pub const LASTFM_API_KEY: &str = "lastfm-api-key";
+pub const SOLOIST_ENABLED: &str = "soloist-enabled";
 pub const LASTFM_API_SECRET: &str = "lastfm-api-secret";
 pub const LASTFM_SESSION_KEY: &str = "lastfm-session-key";
 pub const LASTFM_USERNAME: &str = "lastfm-username";

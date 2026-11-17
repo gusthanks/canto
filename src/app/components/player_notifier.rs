@@ -324,10 +324,13 @@ impl PlayerNotifier {
     }
 
     fn switch_device(&mut self, device: &Device) {
-        self.official_client_pending = false;
+        // A switch that answers a press on play (the player here started
+        // for it) must start the track, even if the app no longer counts
+        // as playing by then
+        let play_requested = std::mem::take(&mut self.official_client_pending);
         match device {
             Device::Connect(device) => {
-                let was_playing = self.is_playing();
+                let was_playing = self.is_playing() || play_requested;
                 self.send_command_to_local_player(Command::PlayerStop);
                 self.send_command_to_connect_player(ConnectCommand::SetDevice(device.id.clone()));
                 if was_playing {

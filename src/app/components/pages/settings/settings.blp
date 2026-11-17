@@ -149,7 +149,42 @@ template $SettingsWindow : Adw.PreferencesDialog {
       }
     }
 
-    Adw.PreferencesGroup {
+    Adw.PreferencesGroup soloist_group {
+      title: _("Spotify Soloist");
+      description: _("Spotify's official player for Linux, with no window. Canto plays through it when this account can't play inside Canto. It needs a free developer key from Spotify.");
+
+      header-suffix: Button soloist_guide_button {
+        label: _("How to get a key");
+        valign: center;
+
+        styles [
+          "flat",
+        ]
+      };
+
+      Adw.SwitchRow soloist_enabled_switch {
+        title: _("Play Through Soloist");
+        subtitle: _("When off, or without a key, Canto uses the Spotify app hidden in the background");
+      }
+
+      Adw.PasswordEntryRow soloist_key_entry {
+        title: _("Soloist API Key");
+        show-apply-button: true;
+      }
+
+      Adw.ActionRow soloist_status_row {
+        title: _("Status");
+        subtitle: _("Checking…");
+        subtitle-selectable: true;
+      }
+
+      Adw.ActionRow soloist_quality_row {
+        title: _("Audio Quality");
+        subtitle: _("Spotify picks it. To change it, open Spotify on your phone, tap “Canto” in the device list and choose the quality.");
+      }
+    }
+
+    Adw.PreferencesGroup audio_group {
       /* Translators: Header for a group of preference items regarding audio */
 
       title: _("Audio");
@@ -342,7 +377,7 @@ template $SettingsWindow : Adw.PreferencesDialog {
 
     $PitchWidget pitch {}
 
-    Adw.PreferencesGroup {
+    Adw.PreferencesGroup network_group {
       /* Translators: Header for a group of preference items regarding network */
 
       title: _("Network");

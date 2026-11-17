@@ -1,6 +1,8 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
+use canto_api::models::Device as ConnectDevice;
+use canto_config::settings::{APP_THEME, SETTINGS};
 use gettextrs::gettext;
 use gio::prelude::*;
 use gtk::prelude::*;
@@ -8,8 +10,6 @@ use gtk::subclass::prelude::*;
 use gtk::{gdk, glib, CompositeTemplate};
 use libadwaita::prelude::*;
 use libadwaita::subclass::prelude::*;
-use canto_api::models::Device as ConnectDevice;
-use canto_config::settings::{APP_THEME, SETTINGS};
 
 use crate::app::components::sleep_timer::SleepTimerController;
 use crate::app::components::track_radio::start_track_radio;
@@ -153,7 +153,9 @@ impl CommandPaletteDialog {
         let rt_closed = Rc::clone(&runtime);
         dialog.connect_closed(move |_| {
             rt_closed.debouncer.stop();
-            rt_closed.search_gen.set(rt_closed.search_gen.get().wrapping_add(1));
+            rt_closed
+                .search_gen
+                .set(rt_closed.search_gen.get().wrapping_add(1));
         });
 
         dialog.setup_signals(&runtime);
@@ -268,7 +270,12 @@ impl CommandPaletteDialog {
     }
 
     fn refresh_devices_async(&self, runtime: &Rc<PaletteRuntime>) {
-        if !runtime.app_model.api().provider_capabilities().supports_connect {
+        if !runtime
+            .app_model
+            .api()
+            .provider_capabilities()
+            .supports_connect
+        {
             return;
         }
         let api = runtime.app_model.api();
@@ -343,7 +350,11 @@ impl CommandPaletteDialog {
         }
         let current = list.selected_row().map(|r| r.index()).unwrap_or(-1);
         let next = if current < 0 {
-            if delta >= 0 { 0 } else { count as i32 - 1 }
+            if delta >= 0 {
+                0
+            } else {
+                count as i32 - 1
+            }
         } else {
             (current + delta).clamp(0, count as i32 - 1)
         };
@@ -478,7 +489,10 @@ fn build_row(entry: &PaletteEntry, app_model: &Rc<AppModel>) -> gtk::ListBoxRow 
         let url = url.to_owned();
         let weak = icon.downgrade();
         let px = COVER_PX * icon.scale_factor().max(2);
-        let tag = canto_api::Load::new(canto_api::LoadPriority::Visible, canto_api::BACKGROUND_EPOCH);
+        let tag = canto_api::Load::new(
+            canto_api::LoadPriority::Visible,
+            canto_api::BACKGROUND_EPOCH,
+        );
         glib::MainContext::default().spawn_local(async move {
             let texture = api.load_image(&url, px, px, tag).await;
             if let (Some(icon), Some(texture)) = (weak.upgrade(), texture) {
@@ -662,7 +676,8 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         category: action_cat.clone(),
         icon_name: "canto-lastfm-symbolic",
         shortcut_hint: None,
-        keywords: "stats statistics last.fm lastfm top artists tracks albums wrapped estatisticas".into(),
+        keywords: "stats statistics last.fm lastfm top artists tracks albums wrapped estatisticas"
+            .into(),
         cover_url: None,
         round_cover: false,
         action: PaletteAction::ListeningStats,
@@ -671,7 +686,12 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
     if let Some(current) = runtime.app_model.get_state().playback.current_song() {
         entries.push(PaletteEntry {
             title: format!("{}: {}", gettext("Start Track Radio"), current.title),
-            subtitle: current.artists.iter().map(|a| a.name.as_str()).collect::<Vec<_>>().join(", "),
+            subtitle: current
+                .artists
+                .iter()
+                .map(|a| a.name.as_str())
+                .collect::<Vec<_>>()
+                .join(", "),
             category: action_cat,
             icon_name: "media-optical-cd-audio-symbolic",
             shortcut_hint: None,
@@ -708,7 +728,11 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
     for mins in [15_u32, 30, 45, 60] {
         entries.push(PaletteEntry {
             title: format!("{}: {mins} min", gettext("Sleep Timer")),
-            subtitle: format!("{} {mins} {}", gettext("Pause playback after"), gettext("minutes")),
+            subtitle: format!(
+                "{} {mins} {}",
+                gettext("Pause playback after"),
+                gettext("minutes")
+            ),
             category: timer_cat.clone(),
             icon_name: "alarm-symbolic",
             shortcut_hint: None,
@@ -775,6 +799,7 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
 
 fn device_entry(dev: &ConnectDevice, category: &str) -> PaletteEntry {
     let icon = match dev.kind {
+        _ if crate::connect::plays_here(&dev.label) => "computer-symbolic",
         canto_api::DeviceKind::Computer => "computer-symbolic",
         canto_api::DeviceKind::Phone => "phone-symbolic",
         canto_api::DeviceKind::Tv => "tv-symbolic",
