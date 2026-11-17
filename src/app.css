@@ -451,3 +451,25 @@ row.navigation-row--playing label:not(.dim-label) {
   margin-left: 13px;
   margin-right: 26px;
 }
+
+/* Last.fm play counts in the Now Playing panel */
+.now-panel__stat-number {
+  font-size: 1.5em;
+  font-weight: 800;
+}
+
+/* Genius explanation button on a lyric line */
+.lyric-annotation {
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  opacity: 0.6;
+}
+
+.lyric-annotation:hover {
+  opacity: 1;
+}
+
+.lyric-annotation__text {
+  margin: 6px;
+}

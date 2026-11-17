@@ -56,7 +56,106 @@ pub fn build_auth_url(api_key: &str, token: &str) -> String {
 
 pub struct LastFmClient;
 
+/// How many times the user has played a track, its album and its artist.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Playcounts {
+    pub track: Option<u64>,
+    pub album: Option<u64>,
+    pub artist: Option<u64>,
+}
+
+/// A count Last.fm sends as a number or a string ("37").
+fn count(value: Option<&Value>) -> Option<u64> {
+    match value? {
+        Value::Number(n) => n.as_u64(),
+        Value::String(s) => s.trim().parse().ok(),
+        _ => None,
+    }
+}
+
 impl LastFmClient {
+    /// [`Self::playcounts`] with a shared HTTP client.
+    pub async fn user_playcounts(
+        api_key: &str,
+        username: &str,
+        artist: &str,
+        track: &str,
+        album: Option<&str>,
+    ) -> Result<Playcounts, DomainError> {
+        static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+        let client = CLIENT.get_or_init(reqwest::Client::new).clone();
+        Self::playcounts(&client, api_key, username, artist, track, album).await
+    }
+
+    /// The user's play counts for a track, its album and its artist
+    /// (`track.getInfo`, `album.getInfo`, `artist.getInfo` with `username`).
+    pub async fn playcounts(
+        client: &reqwest::Client,
+        api_key: &str,
+        username: &str,
+        artist: &str,
+        track: &str,
+        album: Option<&str>,
+    ) -> Result<Playcounts, DomainError> {
+        let (api_key, username) = (api_key.trim(), username.trim());
+        if api_key.is_empty() || username.is_empty() {
+            return Err(DomainError::NoToken);
+        }
+        let get = |method: &'static str, extra: Vec<(&'static str, String)>| {
+            let mut params = vec![
+                ("method", method.to_string()),
+                ("api_key", api_key.to_string()),
+                ("username", username.to_string()),
+                ("autocorrect", "1".to_string()),
+                ("format", "json".to_string()),
+            ];
+            params.extend(extra);
+            async move {
+                let url = url::Url::parse_with_params(LASTFM_API_ROOT, &params)
+                    .map_err(|e| DomainError::Parse(e.to_string()))?;
+                let response = client
+                    .get(url)
+                    .header(reqwest::header::USER_AGENT, LASTFM_USER_AGENT)
+                    .timeout(Duration::from_secs(12))
+                    .send()
+                    .await
+                    .map_err(|e| DomainError::Network(e.without_url().to_string()))?;
+                parse_lastfm_response(response).await
+            }
+        };
+        let artist_s = artist.to_string();
+        let track_info = get(
+            "track.getInfo",
+            vec![("artist", artist_s.clone()), ("track", track.to_string())],
+        );
+        let artist_info = get("artist.getInfo", vec![("artist", artist_s.clone())]);
+        let album_info = async {
+            match album {
+                Some(album) if !album.trim().is_empty() => Some(
+                    get(
+                        "album.getInfo",
+                        vec![("artist", artist_s.clone()), ("album", album.to_string())],
+                    )
+                    .await,
+                ),
+                _ => None,
+            }
+        };
+        let (track_info, artist_info, album_info) =
+            futures::join!(track_info, artist_info, album_info);
+        Ok(Playcounts {
+            track: track_info
+                .ok()
+                .and_then(|v| count(v.pointer("/track/userplaycount"))),
+            album: album_info
+                .and_then(Result::ok)
+                .and_then(|v| count(v.pointer("/album/userplaycount"))),
+            artist: artist_info
+                .ok()
+                .and_then(|v| count(v.pointer("/artist/stats/userplaycount"))),
+        })
+    }
+
     /// Step 1 of Last.fm auth: request a short-lived auth token (`auth.getToken`).
     pub async fn get_token(
         client: &reqwest::Client,
@@ -360,6 +459,14 @@ mod tests {
             "sec",
         );
         assert_eq!(a, b);
+    }
+
+    #[test]
+    fn play_counts_come_as_numbers_or_strings() {
+        let v: Value = serde_json::json!({"track": {"userplaycount": "37"}, "n": 5});
+        assert_eq!(count(v.pointer("/track/userplaycount")), Some(37));
+        assert_eq!(count(v.pointer("/n")), Some(5));
+        assert_eq!(count(v.pointer("/missing")), None);
     }
 
     #[test]

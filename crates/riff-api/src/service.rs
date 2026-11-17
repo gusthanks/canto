@@ -158,6 +158,29 @@ impl ApiService {
         .await
     }
 
+    /// Genius' explanations for lines of the track, matched to `lines`.
+    pub async fn fetch_genius_line_annotations(
+        &self,
+        track_id: &str,
+        artist: &str,
+        title: &str,
+        token: &str,
+        lines: &[String],
+    ) -> Result<Vec<Option<String>>, DomainError> {
+        let info = self.fetch_genius_track_info(track_id, artist, title, token).await?;
+        let Some(song_id) = info.song_id.filter(|_| info.is_exact_match) else {
+            return Ok(vec![None; lines.len()]);
+        };
+        let annotations = crate::genius::fetch_genius_annotations(
+            &self.http_client,
+            Some(&self.api_disk),
+            song_id,
+            token,
+        )
+        .await?;
+        Ok(crate::genius::annotations_for_lines(lines, &annotations))
+    }
+
     pub async fn fetch_track_radio(
         &self,
         seed: &Track,

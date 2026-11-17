@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 21:14-0300\n"
+"POT-Creation-Date: 2026-11-16 21:30-0300\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -56,7 +56,7 @@ msgstr "Сохраненные треки"
 #. translators: Header above the tracks the user added to the play queue, on the queue page.
 #. translators: Heading of the card showing the track that plays next.
 #: src/app/components/labels.rs:29
-#: src/app/components/shell/now_panel/mod.rs:365
+#: src/app/components/shell/now_panel/mod.rs:367
 msgid "Next in Queue"
 msgstr ""
 
@@ -383,8 +383,8 @@ msgstr "Все плейлисты"
 #. translators: Title of the full-screen lyrics window.
 #. Translators: Tooltip of the player bar button that shows or hides synced lyrics.
 #. Translators: Tab label for lyrics in utility panel.
-#: src/app/components/pages/lyrics/component.rs:70
-#: src/app/components/shell/now_panel/mod.rs:350
+#: src/app/components/pages/lyrics/component.rs:71
+#: src/app/components/shell/now_panel/mod.rs:352
 #: src/app/components/shell/fullscreen_lyrics.rs:78
 #: src/app/components/shell/playback/playback_widget.blp:166
 #: src/app/components/shell/utility_panel/utility_panel.blp:55
@@ -392,8 +392,8 @@ msgid "Lyrics"
 msgstr ""
 
 #. translators: Short text displayed instead of a track title when nothing plays
-#: src/app/components/pages/lyrics/component.rs:320
-#: src/app/components/pages/lyrics/component.rs:609
+#: src/app/components/pages/lyrics/component.rs:348
+#: src/app/components/pages/lyrics/component.rs:678
 #: src/app/components/shell/playback/playback_info.rs:112
 #: src/app/components/shell/fullscreen_lyrics.rs:161
 #, fuzzy
@@ -401,14 +401,24 @@ msgid "No Track Playing"
 msgstr "Воспроизводится сейчас"
 
 #. Translators: Shown when no lyrics are found.
-#: src/app/components/pages/lyrics/component.rs:467
+#: src/app/components/pages/lyrics/component.rs:496
 #: src/app/components/pages/lyrics/lyrics_page.blp:54
 msgid "No Lyrics Available"
 msgstr ""
 
-#: src/app/components/pages/lyrics/component.rs:468
+#: src/app/components/pages/lyrics/component.rs:497
 #: src/app/components/pages/lyrics/lyrics_page.blp:55
 msgid "Lyrics couldn't be found for this song."
+msgstr ""
+
+#. translators: Tooltip of the button on a lyric line that Genius explains.
+#: src/app/components/pages/lyrics/widget.rs:339
+msgid "What This Line Means"
+msgstr ""
+
+#. translators: First entry of the lyrics translation languages: the app's own language.
+#: src/app/components/pages/lyrics/widget.rs:371
+msgid "App Language"
 msgstr ""
 
 #. translators: Title of the queue, listing what plays next, when it's shown beside the content.
@@ -817,7 +827,7 @@ msgstr ""
 
 #. Translators: Tooltip of the button in the lyrics that shows them full screen.
 #: src/app/components/shell/command_palette/widget.rs:557
-#: src/app/components/pages/lyrics/lyrics_page.blp:145
+#: src/app/components/pages/lyrics/lyrics_page.blp:157
 msgid "Full-Screen Lyrics"
 msgstr ""
 
@@ -1001,91 +1011,109 @@ msgid "Select a track to play"
 msgstr "Сохраненные треки"
 
 #: src/app/components/shell/now_panel/mod.rs:36
-#: src/app/components/shell/now_panel/mod.rs:961
+#: src/app/components/shell/now_panel/mod.rs:1068
 #, fuzzy
 msgid "Go to Album"
 msgstr "Альбомы"
 
 #. translators: Side panel view of the current track, when nothing plays.
-#: src/app/components/shell/now_panel/mod.rs:313
+#: src/app/components/shell/now_panel/mod.rs:315
 #: src/app/components/shell/mini_player.rs:248
 #, fuzzy
 msgid "Nothing Playing"
 msgstr "Воспроизводится сейчас"
 
-#: src/app/components/shell/now_panel/mod.rs:314
+#: src/app/components/shell/now_panel/mod.rs:316
 msgid "Play something and it shows up here."
 msgstr ""
 
 #. translators: Tooltip of the lyrics preview card in the Now Playing panel.
-#: src/app/components/shell/now_panel/mod.rs:359
+#: src/app/components/shell/now_panel/mod.rs:361
 #, fuzzy
 msgid "Show Lyrics"
 msgstr "Воспроизводится сейчас"
 
 #. translators: Tooltip of the next track card in the Now Playing panel.
-#: src/app/components/shell/now_panel/mod.rs:389
+#: src/app/components/shell/now_panel/mod.rs:391
 #, fuzzy
 msgid "Show Queue"
 msgstr "Добавить в очередь"
 
-#: src/app/components/shell/now_panel/mod.rs:394
+#: src/app/components/shell/now_panel/mod.rs:397
+#, fuzzy
+msgid "Your Plays"
+msgstr "Фонотека"
+
+#: src/app/components/shell/now_panel/mod.rs:405
 msgid "Credits"
 msgstr ""
 
+#: src/app/components/shell/now_panel/mod.rs:444
+msgid "this song"
+msgstr ""
+
+#: src/app/components/shell/now_panel/mod.rs:445
+#, fuzzy
+msgid "this album"
+msgstr "Посмотреть альбом"
+
+#: src/app/components/shell/now_panel/mod.rs:446
+msgid "this artist"
+msgstr ""
+
 #. translators: Credits row in the Now Playing panel: the track's artists.
-#: src/app/components/shell/now_panel/mod.rs:466
+#: src/app/components/shell/now_panel/mod.rs:508
 msgid "Performed by"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:469
+#: src/app/components/shell/now_panel/mod.rs:511
 msgid "Producer(s)"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:470
+#: src/app/components/shell/now_panel/mod.rs:512
 msgid "Writer(s)"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:471
+#: src/app/components/shell/now_panel/mod.rs:513
 #, fuzzy
 msgid "Featured Artists"
 msgstr "Исполнители"
 
-#: src/app/components/shell/now_panel/mod.rs:479
+#: src/app/components/shell/now_panel/mod.rs:521
 #, fuzzy
 msgid "Release Date"
 msgstr "Релизы"
 
-#: src/app/components/shell/now_panel/mod.rs:488
+#: src/app/components/shell/now_panel/mod.rs:530
 msgid "No detailed credits were found on Genius for this track."
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:495
+#: src/app/components/shell/now_panel/mod.rs:537
 #, fuzzy
 msgid "Open on Genius"
 msgstr "Поиск в Spotify."
 
-#: src/app/components/shell/now_panel/mod.rs:497
-#: src/app/components/shell/now_panel/mod.rs:767
+#: src/app/components/shell/now_panel/mod.rs:539
+#: src/app/components/shell/now_panel/mod.rs:811
 #, fuzzy
 msgid "Search on Genius"
 msgstr "Поиск в Spotify."
 
-#: src/app/components/shell/now_panel/mod.rs:739
+#: src/app/components/shell/now_panel/mod.rs:783
 msgid "Add a Genius token to see who produced and wrote this track."
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:741
+#: src/app/components/shell/now_panel/mod.rs:785
 #, fuzzy
 msgid "Set Up Genius"
 msgstr "Поиск в Spotify."
 
 #. translators: Shown while the credits of the current track load.
-#: src/app/components/shell/now_panel/mod.rs:747
+#: src/app/components/shell/now_panel/mod.rs:791
 msgid "Loading credits…"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:765
+#: src/app/components/shell/now_panel/mod.rs:809
 msgid "Couldn't load the credits from Genius."
 msgstr ""
 
@@ -1410,6 +1438,11 @@ msgstr ""
 #. Translators: Tooltip of the lyrics button that shows a translation under each line.
 #: src/app/components/pages/lyrics/lyrics_page.blp:134
 msgid "Translate Lyrics"
+msgstr ""
+
+#. Translators: Tooltip of the button that picks the language lyrics are translated into.
+#: src/app/components/pages/lyrics/lyrics_page.blp:145
+msgid "Translation Language"
 msgstr ""
 
 #. Translators: Button label. Selects all visible songs.

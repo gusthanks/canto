@@ -345,6 +345,11 @@
       <default>false</default>
       <summary>Show a translation under each lyric line</summary>
     </key>
+    <key name="lyrics-translation-language" type="s">
+      <default>"auto"</default>
+      <summary>Language lyrics are translated into</summary>
+      <description>A language code like "en" or "ja"; "auto" uses the interface language.</description>
+    </key>
     <key name="google-translate-api-key" type="s">
       <default>""</default>
       <summary>Google Cloud Translation API key</summary>

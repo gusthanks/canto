@@ -40,6 +40,8 @@ mod imp {
         pub fullscreen_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub translate_button: TemplateChild<gtk::ToggleButton>,
+        #[template_child]
+        pub translate_language_button: TemplateChild<gtk::MenuButton>,
 
         pub line_widgets: RefCell<Vec<gtk::Widget>>,
         pub active_index: RefCell<Option<usize>>,
@@ -311,9 +313,90 @@ impl LyricsPageWidget {
             .collect()
     }
 
+    /// Marks the lines Genius explains: a small button on the line opens the
+    /// explanation (`None` everywhere removes them).
+    pub fn set_annotations(&self, notes: Option<&[Option<String>]>) {
+        let count = self.imp().line_widgets.borrow().len();
+        for index in 0..count {
+            let Some(line) = self.line_box(index) else { continue };
+            // The line box: label, translation, then the annotation button
+            let existing = line
+                .last_child()
+                .and_downcast::<gtk::MenuButton>()
+                .filter(|b| b.has_css_class("lyric-annotation"));
+            let note = notes.and_then(|n| n.get(index)).and_then(|n| n.as_deref());
+            match (note, existing) {
+                (None, Some(button)) => line.remove(&button),
+                (Some(note), existing) => {
+                    let button = existing.unwrap_or_else(|| {
+                        let button = gtk::MenuButton::new();
+                        button.set_icon_name("canto-genius-symbolic");
+                        button.set_halign(gtk::Align::Start);
+                        button.add_css_class("flat");
+                        button.add_css_class("circular");
+                        button.add_css_class("lyric-annotation");
+                        // translators: Tooltip of the button on a lyric line that Genius explains.
+                        button.set_tooltip_text(Some(&gettextrs::gettext("What This Line Means")));
+                        line.append(&button);
+                        button
+                    });
+                    let text = gtk::Label::new(Some(note));
+                    text.set_wrap(true);
+                    text.set_max_width_chars(48);
+                    text.set_xalign(0.0);
+                    text.set_selectable(true);
+                    text.add_css_class("lyric-annotation__text");
+                    let popover = gtk::Popover::new();
+                    popover.set_child(Some(&text));
+                    button.set_popover(Some(&popover));
+                }
+                (None, None) => {}
+            }
+        }
+    }
+
     /// Shows the translate button pressed or not.
     pub fn set_translate_active(&self, active: bool) {
         self.imp().translate_button.set_active(active);
+    }
+
+    /// A list of languages under the translate button; `f` gets the code
+    /// picked ("auto" for the interface's language).
+    pub fn connect_language_picked<F: Fn(&str) + 'static>(&self, f: F) {
+        let list = gtk::ListBox::new();
+        list.set_selection_mode(gtk::SelectionMode::None);
+        list.add_css_class("navigation-sidebar");
+        let mut codes = vec!["auto"];
+        // translators: First entry of the lyrics translation languages: the app's own language.
+        let mut names = vec![gettextrs::gettext("App Language")];
+        for (code, name) in TRANSLATION_LANGUAGES {
+            codes.push(code);
+            names.push(name.to_string());
+        }
+        for name in &names {
+            let label = gtk::Label::new(Some(name));
+            label.set_xalign(0.0);
+            list.append(&label);
+        }
+        let scroller = gtk::ScrolledWindow::new();
+        scroller.set_hscrollbar_policy(gtk::PolicyType::Never);
+        scroller.set_propagate_natural_height(true);
+        scroller.set_max_content_height(360);
+        scroller.set_min_content_width(200);
+        scroller.set_child(Some(&list));
+        let popover = gtk::Popover::new();
+        popover.set_child(Some(&scroller));
+        list.connect_row_activated(glib::clone!(
+            #[weak]
+            popover,
+            move |_, row| {
+                if let Some(code) = codes.get(row.index() as usize) {
+                    f(code);
+                }
+                popover.popdown();
+            }
+        ));
+        self.imp().translate_language_button.set_popover(Some(&popover));
     }
 
     pub fn connect_translate_toggled<F: Fn(bool) + 'static>(&self, f: F) {
@@ -423,6 +506,36 @@ pub fn karaoke_markup(text: &str, lit: usize) -> String {
     let rest = glib::markup_escape_text(&rest.join(" "));
     format!("{sung} <span alpha=\"45%\">{rest}</span>")
 }
+
+/// Languages lyrics can be translated into, by their own names.
+const TRANSLATION_LANGUAGES: &[(&str, &str)] = &[
+    ("pt", "Português"),
+    ("en", "English"),
+    ("es", "Español"),
+    ("fr", "Français"),
+    ("it", "Italiano"),
+    ("de", "Deutsch"),
+    ("nl", "Nederlands"),
+    ("sv", "Svenska"),
+    ("pl", "Polski"),
+    ("tr", "Türkçe"),
+    ("el", "Ελληνικά"),
+    ("ru", "Русский"),
+    ("uk", "Українська"),
+    ("ar", "العربية"),
+    ("he", "עברית"),
+    ("hi", "हिन्दी"),
+    ("id", "Bahasa Indonesia"),
+    ("vi", "Tiếng Việt"),
+    ("th", "ไทย"),
+    ("ja", "日本語"),
+    ("ko", "한국어"),
+    ("zh-CN", "中文 (简体)"),
+    ("zh-TW", "中文 (繁體)"),
+    ("yo", "Yorùbá"),
+    ("sw", "Kiswahili"),
+    ("la", "Latina"),
+];
 
 /// A lyric line's label with a hidden translation label under it.
 fn line_with_translation(label: &gtk::Label) -> gtk::Box {

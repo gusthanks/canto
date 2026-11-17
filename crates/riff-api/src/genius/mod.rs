@@ -269,6 +269,109 @@ pub async fn fetch_genius_track_info(
     Ok(info)
 }
 
+/// A lyric fragment and what Genius says about it.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GeniusAnnotation {
+    pub fragment: String,
+    pub body: String,
+    /// Reviewed by Genius editors, not only a contributor's note
+    pub verified: bool,
+}
+
+/// The explanations Genius has for lines of a song (`GET /referents`).
+pub async fn fetch_genius_annotations(
+    client: &reqwest::Client,
+    cache: Option<&DiskCache>,
+    song_id: u64,
+    token: &str,
+) -> Result<Vec<GeniusAnnotation>, DomainError> {
+    let key = format!("genius_annotations_{song_id}");
+    if let Some(disk) = cache {
+        if let Some(entry) = disk.read(&key).await {
+            if matches!(entry.state, EntryState::Fresh) {
+                if let Ok(cached) = serde_json::from_slice::<Vec<GeniusAnnotation>>(&entry.data) {
+                    return Ok(cached);
+                }
+            }
+        }
+    }
+    let mut annotations = Vec::new();
+    for page in 1..=4 {
+        let url = format!(
+            "{GENIUS_API_BASE}/referents?song_id={song_id}&text_format=plain&per_page=50&page={page}"
+        );
+        let value = get_genius_json(client, &url, token.trim()).await?;
+        let found = parse_genius_referents(&value);
+        let done = found.len() < 50;
+        annotations.extend(found);
+        if done {
+            break;
+        }
+    }
+    if let Some(disk) = cache {
+        if let Ok(bytes) = serde_json::to_vec(&annotations) {
+            disk.write(&key, &bytes, GENIUS_CACHE_TTL, None).await;
+        }
+    }
+    Ok(annotations)
+}
+
+/// Parses `GET /referents` into fragment + explanation pairs.
+pub fn parse_genius_referents(value: &Value) -> Vec<GeniusAnnotation> {
+    let Some(referents) = value.pointer("/response/referents").and_then(Value::as_array) else {
+        return Vec::new();
+    };
+    referents
+        .iter()
+        .filter_map(|referent| {
+            let fragment = referent.get("fragment")?.as_str()?.trim().to_string();
+            let annotation = referent.get("annotations")?.as_array()?.first()?;
+            let body = annotation.pointer("/body/plain")?.as_str()?.trim().to_string();
+            if fragment.is_empty() || body.is_empty() || body == "?" {
+                return None;
+            }
+            let verified = annotation.get("state").and_then(Value::as_str) == Some("accepted")
+                || annotation.get("verified").and_then(Value::as_bool) == Some(true);
+            Some(GeniusAnnotation {
+                fragment,
+                body,
+                verified,
+            })
+        })
+        .collect()
+}
+
+/// Lowercase letters and digits only, for matching a fragment to a line.
+fn fold(text: &str) -> String {
+    text.chars()
+        .filter(|c| c.is_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect()
+}
+
+/// For each lyric line, the explanation of the fragment that starts on it.
+pub fn annotations_for_lines(lines: &[String], annotations: &[GeniusAnnotation]) -> Vec<Option<String>> {
+    let folded: Vec<String> = lines.iter().map(|l| fold(l)).collect();
+    let mut out = vec![None; lines.len()];
+    for annotation in annotations {
+        let first = annotation
+            .fragment
+            .lines()
+            .map(fold)
+            .find(|l| l.chars().count() >= 4);
+        let Some(first) = first else { continue };
+        let hit = folded.iter().position(|line| {
+            line.chars().count() >= 4 && (line.contains(&first) || first.contains(line.as_str()))
+        });
+        if let Some(index) = hit {
+            if out[index].is_none() {
+                out[index] = Some(annotation.body.clone());
+            }
+        }
+    }
+    out
+}
+
 async fn write_cache(cache: Option<&DiskCache>, key: &str, info: &GeniusTrackInfo) {
     if let Some(disk) = cache {
         if let Ok(bytes) = serde_json::to_vec(info) {
@@ -566,6 +669,27 @@ fn extract_relationships(val: Option<&Value>) -> Vec<GeniusRelationship> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn referents_parse_and_land_on_their_lines() {
+        let value = serde_json::json!({"response": {"referents": [
+            {"fragment": "30 no comando", "annotations": [{"body": {"plain": "A gravadora dele"}, "state": "pending"}]},
+            {"fragment": "Ahn, se eu quiser\nela deixa", "annotations": [{"body": {"plain": "Outra"}, "state": "accepted"}]},
+            {"fragment": "x", "annotations": [{"body": {"plain": "?"}}]}
+        ]}});
+        let annotations = super::parse_genius_referents(&value);
+        assert_eq!(annotations.len(), 2);
+        assert!(annotations[1].verified);
+        let lines = vec![
+            "Yeah, 30 no comando!".to_string(),
+            String::new(),
+            "Ahn, se eu quiser".to_string(),
+        ];
+        let marked = super::annotations_for_lines(&lines, &annotations);
+        assert_eq!(marked[0].as_deref(), Some("A gravadora dele"));
+        assert_eq!(marked[1], None);
+        assert_eq!(marked[2].as_deref(), Some("Outra"));
+    }
+
     use super::*;
 
     #[test]

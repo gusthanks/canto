@@ -10,7 +10,8 @@ use glib::clone;
 use gtk::prelude::*;
 use riff_api::Lyrics;
 use riff_config::settings::{
-    APP_LANGUAGE, GOOGLE_TRANSLATE_API_KEY, LYRICS_OFFSET_MS, LYRICS_TRANSLATION, SETTINGS,
+    APP_LANGUAGE, GOOGLE_TRANSLATE_API_KEY, LYRICS_OFFSET_MS, LYRICS_TRANSLATION,
+    LYRICS_TRANSLATION_LANGUAGE, SETTINGS,
 };
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -86,6 +87,33 @@ impl LyricsPage {
                 let _ = settings_translate.set_boolean(LYRICS_TRANSLATION, active);
             }
         });
+        // Picking a language turns the translation on, in that language
+        self.widget.connect_language_picked(clone!(
+            #[strong(rename_to = settings)]
+            self.settings,
+            move |code| {
+                let _ = settings.set_string(LYRICS_TRANSLATION_LANGUAGE, code);
+                let _ = settings.set_boolean(LYRICS_TRANSLATION, true);
+            }
+        ));
+        self.settings.connect_changed(
+            Some(LYRICS_TRANSLATION_LANGUAGE),
+            clone!(
+                #[weak(rename_to = widget)]
+                self.widget,
+                #[weak(rename_to = app_model)]
+                self.app_model,
+                #[weak(rename_to = current_track_id)]
+                self.current_track_id,
+                move |settings, _| {
+                    let track = current_track_id.borrow().clone();
+                    if let Some(track_id) = track.filter(|_| settings.boolean(LYRICS_TRANSLATION)) {
+                        widget.set_translations(None);
+                        translate_lyrics(&widget, &app_model, &track_id);
+                    }
+                }
+            ),
+        );
         self.settings.connect_changed(
             Some(LYRICS_TRANSLATION),
             clone!(
@@ -455,6 +483,7 @@ fn apply_lyrics_to_widget(
         if gio::Settings::new(SETTINGS).boolean(LYRICS_TRANSLATION) {
             translate_lyrics(widget, app_model, track_id);
         }
+        annotate_lyrics(widget, app_model, track_id);
 
         if is_synced && widget.is_mapped() && app_model.get_state().playback.is_playing() {
             start_clock_loop(clock, widget, app_model, lyrics_cell, offset_ms);
@@ -471,9 +500,49 @@ fn apply_lyrics_to_widget(
     }
 }
 
-/// The language lyrics are translated into: the interface's.
+/// Marks the lines Genius explains (with a Genius token).
+fn annotate_lyrics(widget: &LyricsPageWidget, app_model: &Rc<AppModel>, track_id: &str) {
+    let token = gio::Settings::new(SETTINGS)
+        .string(riff_config::settings::GENIUS_ACCESS_TOKEN)
+        .trim()
+        .to_string();
+    let Some(track) = app_model.get_state().playback.current_song() else {
+        return;
+    };
+    if token.is_empty() || track.rri.id != track_id {
+        return;
+    }
+    let lines = widget.line_texts();
+    let api = app_model.api();
+    let weak_widget = widget.downgrade();
+    let track_id = track_id.to_string();
+    let artist = track.artists_name();
+    let title = track.title.clone();
+    glib::spawn_future_local(async move {
+        let result = api
+            .fetch_genius_line_annotations(&track_id, &artist, &title, &token, &lines)
+            .await;
+        let Some(widget) = weak_widget.upgrade() else {
+            return;
+        };
+        if widget.line_texts() != lines {
+            return;
+        }
+        match result {
+            Ok(notes) => widget.set_annotations(Some(&notes)),
+            Err(e) => warn!("Genius annotations failed: {e}"),
+        }
+    });
+}
+
+/// The language lyrics are translated into: the one picked in the lyrics
+/// bar, or else the interface's.
 fn translation_target() -> String {
     let settings = gio::Settings::new(SETTINGS);
+    let picked = settings.string(LYRICS_TRANSLATION_LANGUAGE).to_string();
+    if !picked.is_empty() && picked != "auto" {
+        return picked;
+    }
     let chosen = settings.string(APP_LANGUAGE).to_string();
     let locale = if chosen.is_empty() || chosen == "system" {
         glib::language_names()

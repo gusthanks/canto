@@ -299,6 +299,8 @@ struct Widgets {
     next_title: gtk::Label,
     next_artist: gtk::Label,
     credits_body: gtk::Box,
+    stats_card: gtk::Box,
+    stats_body: gtk::Box,
 }
 
 impl Widgets {
@@ -390,6 +392,15 @@ impl Widgets {
         next_card.set_visible(false);
         content.append(&next_card);
 
+        // translators: Heading of the card with how many times the user played the track, its album and artist (from Last.fm).
+        let stats_card = card(&["now-panel__stats"]);
+        stats_card.append(&heading(&gettext("Your Plays")));
+        let stats_body = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        stats_body.set_homogeneous(true);
+        stats_card.append(&stats_body);
+        stats_card.set_visible(false);
+        content.append(&stats_card);
+
         let credits_card = card(&["now-panel__credits"]);
         credits_card.append(&heading(&gettext("Credits")));
         let credits_body = gtk::Box::new(gtk::Orientation::Vertical, 8);
@@ -419,7 +430,38 @@ impl Widgets {
             next_title,
             next_artist,
             credits_body,
+            stats_card,
+            stats_body,
         }
+    }
+
+    /// The play counts, as three columns: song, album, artist.
+    fn show_playcounts(&self, counts: &riff_api::scrobbler::Playcounts) {
+        while let Some(child) = self.stats_body.first_child() {
+            self.stats_body.remove(&child);
+        }
+        let columns = [
+            (counts.track, gettext("this song")),
+            (counts.album, gettext("this album")),
+            (counts.artist, gettext("this artist")),
+        ];
+        let mut any = false;
+        for (count, what) in columns {
+            let Some(count) = count else { continue };
+            any = true;
+            let column = gtk::Box::new(gtk::Orientation::Vertical, 0);
+            let number = gtk::Label::new(Some(&format_count(count)));
+            number.set_halign(gtk::Align::Start);
+            number.add_css_class("now-panel__stat-number");
+            let label = gtk::Label::new(Some(&what));
+            label.set_halign(gtk::Align::Start);
+            label.add_css_class("dim-label");
+            label.add_css_class("caption");
+            column.append(&number);
+            column.append(&label);
+            self.stats_body.append(&column);
+        }
+        self.stats_card.set_visible(any);
     }
 
     fn clear_credits(&self) {
@@ -733,6 +775,8 @@ fn load_extras(
         render_lyrics(&w, &model, &settings_l, &cell);
     });
 
+    load_playcounts(w, settings, &track, &track_id, loaded_for);
+
     let token = settings.string(GENIUS_ACCESS_TOKEN).trim().to_string();
     if token.is_empty() {
         w.credits_text(&gettext(
@@ -768,6 +812,69 @@ fn load_extras(
                     crate::app::components::open_external_url(button, &url)
                 });
             }
+        }
+    });
+}
+
+/// "1.234" style thousands, in the interface's language.
+fn format_count(count: u64) -> String {
+    let digits = count.to_string();
+    let english = glib::language_names()
+        .first()
+        .is_none_or(|l| l.starts_with("en") || l.as_str() == "C");
+    let separator = if english { ',' } else { '.' };
+    let mut out = String::new();
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i) % 3 == 0 {
+            out.push(separator);
+        }
+        out.push(c);
+    }
+    out
+}
+
+/// How many times the user played this track, album and artist, from Last.fm.
+fn load_playcounts(
+    w: &Rc<Widgets>,
+    settings: &gio::Settings,
+    track: &Track,
+    track_id: &str,
+    loaded_for: &Rc<RefCell<Option<String>>>,
+) {
+    w.stats_card.set_visible(false);
+    let api_key = settings.string(riff_config::settings::LASTFM_API_KEY).to_string();
+    let username = settings.string(riff_config::settings::LASTFM_USERNAME).to_string();
+    if api_key.trim().is_empty() || username.trim().is_empty() {
+        return;
+    }
+    let artist = track
+        .artists
+        .first()
+        .map(|a| a.name.clone())
+        .unwrap_or_else(|| track.artists_name());
+    let title = track.title.clone();
+    let album = track.album.as_ref().map(|a| a.name.clone());
+    let track_id = track_id.to_string();
+    let weak_w = Rc::downgrade(w);
+    let weak_loaded = Rc::downgrade(loaded_for);
+    glib::spawn_future_local(async move {
+        let result = riff_api::scrobbler::LastFmClient::user_playcounts(
+            &api_key,
+            &username,
+            &artist,
+            &title,
+            album.as_deref(),
+        )
+        .await;
+        let (Some(w), Some(loaded)) = (weak_w.upgrade(), weak_loaded.upgrade()) else {
+            return;
+        };
+        if loaded.borrow().as_deref() != Some(track_id.as_str()) {
+            return;
+        }
+        match result {
+            Ok(counts) => w.show_playcounts(&counts),
+            Err(e) => debug!("Last.fm play counts failed: {e}"),
         }
     });
 }

@@ -139,6 +139,18 @@ template $LyricsPageWidget : Adw.Bin {
         ]
       }
 
+      MenuButton translate_language_button {
+        icon-name: "pan-down-symbolic";
+        /* Translators: Tooltip of the button that picks the language lyrics are translated into. */
+        tooltip-text: _("Translation Language");
+
+        styles [
+          "flat",
+          "circular",
+          "lyrics-translate-language",
+        ]
+      }
+
       Button fullscreen_button {
         icon-name: "view-fullscreen-symbolic";
         /* Translators: Tooltip of the button in the lyrics that shows them full screen. */

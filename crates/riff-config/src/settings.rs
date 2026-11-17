@@ -10,6 +10,7 @@ pub const ADAPTIVE_COVER_COLORS: &str = "adaptive-cover-colors";
 pub const LYRICS_OFFSET_MS: &str = "lyrics-offset-ms";
 pub const NAVIGATION_RAIL: &str = "navigation-rail";
 pub const LYRICS_TRANSLATION: &str = "lyrics-translation";
+pub const LYRICS_TRANSLATION_LANGUAGE: &str = "lyrics-translation-language";
 pub const GOOGLE_TRANSLATE_API_KEY: &str = "google-translate-api-key";
 pub const GENIUS_ACCESS_TOKEN: &str = "genius-access-token";
 pub const SCROBBLE_ENABLED: &str = "scrobble-enabled";

@@ -134,9 +134,10 @@ row:hover .song__like:hover {
   opacity: 1;
 }
 
+/* Liked tracks: a filled heart in the accent color, always shown */
 .song--liked .song__like {
   opacity: 1;
-  color: alpha(currentColor, 0.55);
+  color: @accent_color;
 }
 
 .song__menu {
