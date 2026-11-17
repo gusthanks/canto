@@ -93,6 +93,13 @@
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-lyrics-symbolic.svg">../data/hicolor/symbolic/actions/canto-lyrics-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-queue-symbolic.svg">../data/hicolor/symbolic/actions/canto-queue-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-mini-player-symbolic.svg">../data/hicolor/symbolic/actions/canto-mini-player-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-settings-symbolic.svg">../data/hicolor/symbolic/actions/canto-settings-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-side-panel-symbolic.svg">../data/hicolor/symbolic/actions/canto-side-panel-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-lyrics-sync-symbolic.svg">../data/hicolor/symbolic/actions/canto-lyrics-sync-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-device-speaker-symbolic.svg">../data/hicolor/symbolic/actions/canto-device-speaker-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-device-computer-symbolic.svg">../data/hicolor/symbolic/actions/canto-device-computer-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-device-phone-symbolic.svg">../data/hicolor/symbolic/actions/canto-device-phone-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-device-tv-symbolic.svg">../data/hicolor/symbolic/actions/canto-device-tv-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-more-symbolic.svg">../data/hicolor/symbolic/actions/canto-more-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="go-previous-symbolic.svg">../data/hicolor/symbolic/actions/go-previous-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="go-next-symbolic.svg">../data/hicolor/symbolic/actions/go-next-symbolic.svg</file>

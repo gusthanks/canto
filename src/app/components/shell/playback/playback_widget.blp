@@ -39,6 +39,7 @@ template $PlaybackWidget : Box {
         mini_player_button.visible: false;
         queue_button.visible: false;
         sleep_timer_button.visible: false;
+        side_panel_button.visible: false;
         playback_center.margin-start: 10;
         playback_center.margin-end: 10;
       }
@@ -441,7 +442,7 @@ template $PlaybackWidget : Box {
         MenuButton eq_button {
           width-request: 36;
           height-request: 36;
-          icon-name: "canto-more-symbolic";
+          icon-name: "canto-settings-symbolic";
           /* Translators: Tooltip of the player bar button that opens the sleep timer, equalizer and audio options. */
           tooltip-text: _("More Options");
           valign: center;
@@ -628,6 +629,26 @@ template $PlaybackWidget : Box {
               }
             };
           };
+        }
+
+        // User can hide this from the bar (player-bar-* settings)
+        Box side_panel_slot {
+          ToggleButton side_panel_button {
+            width-request: 36;
+            height-request: 36;
+            icon-name: "canto-side-panel-symbolic";
+            /* Translators: Tooltip of the player bar button that shows or hides the right side panel (Now Playing, Queue, Lyrics). */
+            tooltip-text: _("Side Panel");
+            action-name: "win.utility-panel";
+            valign: center;
+            focus-on-click: false;
+            can-focus: false;
+
+            styles [
+              "flat",
+              "circular",
+            ]
+          }
         }
       }
     };

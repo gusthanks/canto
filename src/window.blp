@@ -378,24 +378,6 @@ Adw.ApplicationWindow window {
                   $AppHeaderBar app_header {
                     valign: start;
                   }
-
-                  // A tab on the right edge while the side panel is closed, so
-                  // it's clear there is one (see App::make_panel_manager)
-                  [overlay]
-                  Button utility_edge_tab {
-                    icon-name: "pan-start-symbolic";
-                    /* Translators: Tooltip of the small tab on the right edge that shows the side panel (Now Playing, Queue, Lyrics). */
-                    tooltip-text: _("Show Side Panel");
-                    action-name: "win.utility-panel";
-                    halign: end;
-                    valign: center;
-                    focus-on-click: false;
-                    can-focus: false;
-
-                    styles [
-                      "utility-edge-tab",
-                    ]
-                  }
                 };
               };
             };

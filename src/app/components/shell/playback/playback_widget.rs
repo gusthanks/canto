@@ -91,6 +91,8 @@ mod imp {
         pub volume_slot: TemplateChild<gtk::Box>,
         #[template_child]
         pub mini_player_slot: TemplateChild<gtk::Box>,
+        #[template_child]
+        pub side_panel_slot: TemplateChild<gtk::Box>,
         pub customize_popover: RefCell<Option<gtk::Popover>>,
 
         #[template_child]
@@ -173,6 +175,7 @@ mod imp {
                 device_slot: Default::default(),
                 volume_slot: Default::default(),
                 mini_player_slot: Default::default(),
+                side_panel_slot: Default::default(),
                 customize_popover: Default::default(),
                 eq_preset_flat: Default::default(),
                 eq_preset_bass: Default::default(),
@@ -304,10 +307,10 @@ mod imp {
         fn setup_customizable_bar(&self) {
             use riff_config::settings::{
                 PLAYER_BAR_DEVICE, PLAYER_BAR_LYRICS, PLAYER_BAR_MINI_PLAYER, PLAYER_BAR_QUEUE,
-                PLAYER_BAR_VOLUME,
+                PLAYER_BAR_SIDE_PANEL, PLAYER_BAR_VOLUME,
             };
             let settings = gio::Settings::new(SETTINGS);
-            let items: [(&str, gtk::Box, String); 5] = [
+            let items: [(&str, gtk::Box, String); 6] = [
                 (PLAYER_BAR_LYRICS, self.lyrics_slot.get(), gettextrs::gettext("Lyrics")),
                 (PLAYER_BAR_QUEUE, self.queue_slot.get(), gettextrs::gettext("Queue")),
                 // translators: Checkbox in "Customize Bar": the button that picks where the sound plays.
@@ -315,6 +318,7 @@ mod imp {
                 // translators: Checkbox in "Customize Bar": the volume slider.
                 (PLAYER_BAR_VOLUME, self.volume_slot.get(), gettextrs::gettext("Volume")),
                 (PLAYER_BAR_MINI_PLAYER, self.mini_player_slot.get(), gettextrs::gettext("Mini Player")),
+                (PLAYER_BAR_SIDE_PANEL, self.side_panel_slot.get(), gettextrs::gettext("Side Panel")),
             ];
 
             let list = gtk::Box::new(gtk::Orientation::Vertical, 2);

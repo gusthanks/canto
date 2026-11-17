@@ -45,8 +45,19 @@ Box custom_content {
   orientation: vertical;
 
   CheckButton this_device_button {
-    label: _("This Device");
     sensitive: true;
+
+    child: Box {
+      spacing: 8;
+
+      Image {
+        icon-name: "canto-device-computer-symbolic";
+      }
+
+      Label {
+        label: _("This Device");
+      }
+    };
   }
 
   Box devices {

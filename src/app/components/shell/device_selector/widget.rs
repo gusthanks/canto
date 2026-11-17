@@ -57,6 +57,13 @@ mod imp {
     }
 
     impl ObjectImpl for DeviceSelectorWidget {
+        // The menu is parented by hand in constructed(), so it must be
+        // unparented here: left behind, it outlived the widget and crashed
+        // once it held icons
+        fn dispose(&self) {
+            self.popover.unparent();
+        }
+
         fn constructed(&self) {
             self.parent_constructed();
 
@@ -143,14 +150,8 @@ impl DeviceSelectorWidget {
             Device::Connect(connect) => device_label(connect),
         };
         let icon = match device {
-            Device::Local => "audio-x-generic-symbolic",
-            Device::Connect(connect) => match connect.kind {
-                DeviceKind::Phone => "phone-symbolic",
-                DeviceKind::Computer => "computer-symbolic",
-                DeviceKind::Speaker => "audio-speakers-symbolic",
-                DeviceKind::Tv => "tv-symbolic",
-                DeviceKind::Other => "audio-x-generic-symbolic",
-            },
+            Device::Local => DEVICE_COMPUTER_ICON,
+            Device::Connect(connect) => device_icon(connect),
         };
         // Icon only in the player bar; the name is in the tooltip and the menu
         self.imp().button_content.set_label("");
@@ -179,14 +180,34 @@ impl DeviceSelectorWidget {
         }
 
         for device in devices {
+            // Icon of the kind of device, then its name
+            let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+            row.append(&gtk::Image::from_icon_name(device_icon(device)));
+            row.append(&gtk::Label::new(Some(&device_label(device))));
             let check = gtk::CheckButton::builder()
                 .action_name(format!("{}.{}", ACTIONS, CONNECT_ACTION))
                 .action_target(&Some(&device.id).to_variant())
                 .group(&*widget.this_device_button)
-                .label(device_label(device))
+                .child(&row)
                 .build();
             widget.devices.append(&check);
         }
+    }
+}
+
+const DEVICE_COMPUTER_ICON: &str = "canto-device-computer-symbolic";
+
+/// Our own drawing for each kind of device (a round puck for smart speakers).
+fn device_icon(device: &ConnectDevice) -> &'static str {
+    if crate::connect::is_this_computer(&device.label) {
+        return DEVICE_COMPUTER_ICON;
+    }
+    match device.kind {
+        DeviceKind::Phone => "canto-device-phone-symbolic",
+        DeviceKind::Computer => DEVICE_COMPUTER_ICON,
+        DeviceKind::Speaker => "canto-device-speaker-symbolic",
+        DeviceKind::Tv => "canto-device-tv-symbolic",
+        DeviceKind::Other => "audio-x-generic-symbolic",
     }
 }
 

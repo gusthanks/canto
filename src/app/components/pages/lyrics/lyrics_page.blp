@@ -82,42 +82,6 @@ template $LyricsPageWidget : Adw.Bin {
         "lyric-sync-bar",
       ]
 
-      Button offset_minus_button {
-        label: "-100 ms";
-        tooltip-text: _("Delay lyrics (-100 ms)");
-
-        styles [
-          "flat",
-          "circular",
-        ]
-      }
-
-      Button offset_reset_button {
-        label: "0 ms";
-        tooltip-text: _("Reset lyrics sync offset");
-
-        styles [
-          "flat",
-          "lyric-sync-offset",
-        ]
-      }
-
-      Button offset_plus_button {
-        label: "+100 ms";
-        tooltip-text: _("Advance lyrics (+100 ms)");
-
-        styles [
-          "flat",
-          "circular",
-        ]
-      }
-
-      Separator {
-        orientation: vertical;
-        margin-top: 4;
-        margin-bottom: 4;
-      }
-
       Button reload_button {
         icon-name: "view-refresh-symbolic";
         tooltip-text: _("Reload lyrics");
@@ -128,27 +92,116 @@ template $LyricsPageWidget : Adw.Bin {
         ]
       }
 
-      ToggleButton translate_button {
-        icon-name: "canto-translate-symbolic";
-        /* Translators: Tooltip of the lyrics button that shows a translation under each line. */
-        tooltip-text: _("Translate Lyrics");
+      MenuButton sync_button {
+        icon-name: "canto-lyrics-sync-symbolic";
+        /* Translators: Tooltip of the lyrics button that opens the timing adjustment (make lyrics come earlier or later). */
+        tooltip-text: _("Lyrics Timing");
 
         styles [
           "flat",
           "circular",
+          "lyric-sync-button",
         ]
+
+        popover: Popover {
+          child: Box {
+            orientation: vertical;
+            spacing: 8;
+            margin-top: 6;
+            margin-bottom: 6;
+            margin-start: 6;
+            margin-end: 6;
+
+            Label {
+              /* Translators: Heading of the lyrics timing popover. */
+              label: _("Lyrics Timing");
+              xalign: 0.0;
+
+              styles [
+                "heading",
+              ]
+            }
+
+            Label {
+              /* Translators: Explanation in the lyrics timing popover. */
+              label: _("If the lyrics run ahead of or behind the song, nudge them here.");
+              xalign: 0.0;
+              wrap: true;
+              max-width-chars: 28;
+
+              styles [
+                "dim-label",
+                "caption",
+              ]
+            }
+
+            Box {
+              spacing: 4;
+              halign: center;
+
+              styles [
+                "lyric-sync-stepper",
+              ]
+
+              Button offset_minus_button {
+                label: "−100 ms";
+                tooltip-text: _("Delay lyrics (-100 ms)");
+
+                styles [
+                  "flat",
+                ]
+              }
+
+              Button offset_reset_button {
+                label: "0 ms";
+                tooltip-text: _("Reset lyrics sync offset");
+
+                styles [
+                  "flat",
+                  "lyric-sync-offset",
+                ]
+              }
+
+              Button offset_plus_button {
+                label: "+100 ms";
+                tooltip-text: _("Advance lyrics (+100 ms)");
+
+                styles [
+                  "flat",
+                ]
+              }
+            }
+          };
+        };
       }
 
-      MenuButton translate_language_button {
-        icon-name: "pan-down-symbolic";
-        /* Translators: Tooltip of the button that picks the language lyrics are translated into. */
-        tooltip-text: _("Translation Language");
-
+      // Translate and its language read as one control
+      Box translate_group {
         styles [
-          "flat",
-          "circular",
-          "lyrics-translate-language",
+          "linked",
+          "lyrics-translate-group",
         ]
+
+        ToggleButton translate_button {
+          icon-name: "canto-translate-symbolic";
+          /* Translators: Tooltip of the lyrics button that shows a translation under each line. */
+          tooltip-text: _("Translate Lyrics");
+
+          styles [
+            "flat",
+          ]
+        }
+
+        MenuButton translate_language_button {
+          icon-name: "pan-down-symbolic";
+          /* Translators: Tooltip of the button that picks the language lyrics are translated into. */
+          tooltip-text: _("Translation Language");
+
+          styles [
+            "flat",
+            "lyrics-translate-language",
+          ]
+        }
       }
 
       Button fullscreen_button {

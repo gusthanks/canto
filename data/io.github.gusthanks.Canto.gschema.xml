@@ -284,6 +284,10 @@
       <default>true</default>
       <summary>Show the Mini Player button in the player bar</summary>
     </key>
+    <key name="player-bar-side-panel" type="b">
+      <default>true</default>
+      <summary>Show the side panel button in the player bar</summary>
+    </key>
     <key name="navigation-rail" type="b">
       <default>false</default>
       <summary>Show the sidebar collapsed to covers and icons</summary>

@@ -1,5 +1,6 @@
-// Full-screen lyrics: the synced lyrics big over a blurred, darkened cover,
-// in their own full-screen window (Escape or the close button leave it).
+// Full-screen lyrics: the sharp cover on the left, the synced lyrics big on
+// the right, over a solid dark shade of the cover's color, in their own
+// full-screen window (Escape or the close button leave it).
 
 use gettextrs::gettext;
 use gtk::prelude::*;
@@ -14,14 +15,35 @@ use riff_api::models::is_resource_url;
 
 pub const SHOW_FULLSCREEN_LYRICS_ACTION: &str = "fullscreen-lyrics";
 
-/// The cover is decoded this small and scaled up: a cheap blur.
-const BLUR_PX: i32 = 24;
+/// The cover is decoded at this size: sharp on a full-screen display.
+const COVER_PX: i32 = 640;
+/// Logical size of the cover on screen.
+const COVER_SIZE: i32 = 400;
+/// Background when there is no cover color.
+const FALLBACK_BG: &str = "#121212";
 
 struct View {
     window: gtk::Window,
-    backdrop: gtk::Picture,
+    cover: gtk::Picture,
     title: gtk::Label,
     artist: gtk::Label,
+    background: gtk::CssProvider,
+}
+
+/// A solid, dark shade of the cover's color for the whole window.
+fn background_css(cover_color: Option<&str>) -> String {
+    let color = cover_color
+        .and_then(crate::app::theme::valid_hex_color)
+        .map(|hex| format!("mix({hex}, #0a0a0a, 0.78)"))
+        .unwrap_or_else(|| FALLBACK_BG.to_string());
+    format!(".lyrics-fullscreen-window {{ background-color: {color}; }}")
+}
+
+fn set_cover(view: &View, texture: Option<&gtk::gdk::Texture>) {
+    view.cover.set_paintable(texture);
+    let color = texture.and_then(crate::app::theme::extract_cover_accent_from_texture);
+    view.background
+        .load_from_string(&background_css(color.as_deref()));
 }
 
 pub struct FullscreenLyrics {
@@ -78,36 +100,72 @@ fn build_view(parent: Option<&gtk::Window>, lyrics: &gtk::Widget) -> View {
     window.set_title(Some(&gettext("Lyrics")));
     window.add_css_class("lyrics-fullscreen-window");
 
-    let backdrop = gtk::Picture::new();
-    backdrop.set_content_fit(gtk::ContentFit::Cover);
-    backdrop.set_can_shrink(true);
-    backdrop.add_css_class("lyrics-fullscreen__backdrop");
+    let background = gtk::CssProvider::new();
+    background.load_from_string(&background_css(None));
+    if let Some(display) = gtk::gdk::Display::default() {
+        gtk::style_context_add_provider_for_display(
+            &display,
+            &background,
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 1,
+        );
+    }
 
-    let shade = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    shade.add_css_class("lyrics-fullscreen__shade");
+    // Left: the sharp cover, with the title and artist under it
+    let cover = gtk::Picture::new();
+    cover.set_content_fit(gtk::ContentFit::Cover);
+    cover.set_can_shrink(true);
+    cover.set_size_request(COVER_SIZE, COVER_SIZE);
+    // The clip rounds the corners; the shadow sits on the box around it
+    let cover_clip = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    cover_clip.set_overflow(gtk::Overflow::Hidden);
+    cover_clip.add_css_class("lyrics-fullscreen__cover-clip");
+    cover_clip.append(&cover);
+    let cover_shadow = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    cover_shadow.add_css_class("lyrics-fullscreen__cover");
+    cover_shadow.set_halign(gtk::Align::Start);
+    cover_shadow.append(&cover_clip);
 
-    let content = gtk::Box::new(gtk::Orientation::Vertical, 8);
-    content.set_margin_top(28);
-    content.set_margin_bottom(28);
-    content.set_margin_start(40);
-    content.set_margin_end(40);
-
-    let top = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-    let text = gtk::Box::new(gtk::Orientation::Vertical, 2);
-    text.set_hexpand(true);
     let title = gtk::Label::new(None);
     title.set_halign(gtk::Align::Start);
-    title.set_ellipsize(gtk::pango::EllipsizeMode::End);
-    title.add_css_class("title-2");
+    title.set_xalign(0.0);
+    title.set_wrap(true);
+    title.set_max_width_chars(22);
+    title.add_css_class("title-1");
     let artist = gtk::Label::new(None);
     artist.set_halign(gtk::Align::Start);
-    artist.set_ellipsize(gtk::pango::EllipsizeMode::End);
-    artist.add_css_class("dim-label");
-    text.append(&title);
-    text.append(&artist);
-    top.append(&text);
+    artist.set_xalign(0.0);
+    artist.set_wrap(true);
+    artist.set_max_width_chars(30);
+    artist.add_css_class("lyrics-fullscreen__artist");
+
+    let side = gtk::Box::new(gtk::Orientation::Vertical, 6);
+    side.set_valign(gtk::Align::Center);
+    side.set_width_request(COVER_SIZE);
+    side.append(&cover_shadow);
+    title.set_margin_top(22);
+    side.append(&title);
+    side.append(&artist);
+
+    // Right: the lyrics
+    let clamp = libadwaita::Clamp::new();
+    clamp.set_maximum_size(820);
+    clamp.set_hexpand(true);
+    clamp.set_vexpand(true);
+    clamp.set_child(Some(lyrics));
+
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 64);
+    row.set_margin_top(48);
+    row.set_margin_bottom(32);
+    row.set_margin_start(64);
+    row.set_margin_end(64);
+    row.append(&side);
+    row.append(&clamp);
+
     let close = gtk::Button::from_icon_name("view-restore-symbolic");
-    close.set_valign(gtk::Align::Center);
+    close.set_halign(gtk::Align::End);
+    close.set_valign(gtk::Align::Start);
+    close.set_margin_top(24);
+    close.set_margin_end(24);
     close.add_css_class("circular");
     close.add_css_class("osd");
     // translators: Tooltip of the button leaving full-screen lyrics.
@@ -118,19 +176,10 @@ fn build_view(parent: Option<&gtk::Window>, lyrics: &gtk::Widget) -> View {
             window.close();
         }
     });
-    top.append(&close);
-    content.append(&top);
-
-    let clamp = libadwaita::Clamp::new();
-    clamp.set_maximum_size(900);
-    clamp.set_vexpand(true);
-    clamp.set_child(Some(lyrics));
-    content.append(&clamp);
 
     let overlay = gtk::Overlay::new();
-    overlay.set_child(Some(&backdrop));
-    overlay.add_overlay(&shade);
-    overlay.add_overlay(&content);
+    overlay.set_child(Some(&row));
+    overlay.add_overlay(&close);
     window.set_child(Some(&overlay));
 
     let keys = gtk::EventControllerKey::new();
@@ -149,9 +198,10 @@ fn build_view(parent: Option<&gtk::Window>, lyrics: &gtk::Widget) -> View {
 
     View {
         window,
-        backdrop,
+        cover,
         title,
         artist,
+        background,
     }
 }
 
@@ -160,27 +210,30 @@ fn update_view(view: &View, app_model: &AppModel) {
     let Some(song) = song else {
         view.title.set_text(&gettext("No Track Playing"));
         view.artist.set_text("");
-        view.backdrop.set_paintable(None::<&gtk::gdk::Paintable>);
+        set_cover(view, None);
         return;
     };
     view.title.set_text(&song.title);
     view.artist.set_text(&song.artists_name());
     let Some(url) = song
         .art
-        .best_for_width(64)
+        .best_for_width(COVER_PX as u32)
         .filter(|url| !is_resource_url(url))
         .map(str::to_owned)
     else {
-        view.backdrop.set_paintable(None::<&gtk::gdk::Paintable>);
+        set_cover(view, None);
         return;
     };
     let api = app_model.api();
-    let weak = view.backdrop.downgrade();
+    let cover = view.cover.downgrade();
+    let background = view.background.clone();
     let tag = load::transport();
     glib::MainContext::default().spawn_local(async move {
-        let texture = api.load_image(&url, BLUR_PX, BLUR_PX, tag).await;
-        if let (Some(backdrop), Some(texture)) = (weak.upgrade(), texture) {
-            backdrop.set_paintable(Some(&texture));
+        let texture = api.load_image(&url, COVER_PX, COVER_PX, tag).await;
+        if let (Some(cover), Some(texture)) = (cover.upgrade(), texture) {
+            cover.set_paintable(Some(&texture));
+            let color = crate::app::theme::extract_cover_accent_from_texture(&texture);
+            background.load_from_string(&background_css(color.as_deref()));
         }
     });
 }
@@ -230,6 +283,6 @@ pub(crate) fn sample_for_tests(cover: &gtk::gdk::Texture) -> gtk::Window {
     let view = build_view(None, lyrics_widget.upcast_ref());
     view.title.set_text("TODOS ESSES MANOS");
     view.artist.set_text("Niink, Jotapê, Supernova Ent");
-    view.backdrop.set_paintable(Some(cover));
+    set_cover(&view, Some(cover));
     view.window
 }

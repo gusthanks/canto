@@ -35,6 +35,8 @@ mod imp {
         #[template_child]
         pub offset_plus_button: TemplateChild<gtk::Button>,
         #[template_child]
+        pub sync_button: TemplateChild<gtk::MenuButton>,
+        #[template_child]
         pub reload_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub fullscreen_button: TemplateChild<gtk::Button>,
@@ -156,6 +158,15 @@ impl LyricsPageWidget {
             format!("{offset_ms} ms")
         };
         self.imp().offset_reset_button.set_label(&text);
+        let sync = &self.imp().sync_button;
+        if offset_ms == 0 {
+            sync.remove_css_class("lyric-sync-button--shifted");
+            sync.set_tooltip_text(Some(&gettextrs::gettext("Lyrics Timing")));
+        } else {
+            sync.add_css_class("lyric-sync-button--shifted");
+            // translators: Tooltip of the lyrics timing button while an offset is set. {} is like "+200 ms".
+            sync.set_tooltip_text(Some(&gettextrs::gettext("Lyrics Timing ({})").replace("{}", &text)));
+        }
     }
 
     pub fn connect_offset_minus<F: Fn() + 'static>(&self, f: F) {
@@ -243,9 +254,7 @@ impl LyricsPageWidget {
             }
         };
 
-        imp.offset_minus_button.set_visible(is_synced);
-        imp.offset_reset_button.set_visible(is_synced);
-        imp.offset_plus_button.set_visible(is_synced);
+        imp.sync_button.set_visible(is_synced);
         imp.sync_toolbar.set_visible(true);
         imp.lyrics_stack.set_visible_child_name("list");
         imp.lyrics_scroller.vadjustment().set_value(0.0);

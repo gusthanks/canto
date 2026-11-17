@@ -388,23 +388,9 @@ impl App {
             layout,
         );
         let sheet = BottomSheet::new(builder.object("bottom_sheet").unwrap());
-        let manager = Box::new(PanelManager::new(
+        Box::new(PanelManager::new(
             &window, panel, sheet, app_header, app_model, dispatcher,
-        ));
-        // The edge tab shows only while the side panel is closed
-        let edge_tab: gtk::Widget = builder.object("utility_edge_tab").unwrap();
-        if let Some(action) = window
-            .lookup_action("utility-panel")
-            .and_then(|a| a.downcast::<gio::SimpleAction>().ok())
-        {
-            let sync = move |action: &gio::SimpleAction| {
-                let open = action.state().and_then(|s| s.get::<bool>()).unwrap_or(false);
-                gtk::prelude::WidgetExt::set_visible(&edge_tab, !open);
-            };
-            sync(&action);
-            action.connect_state_notify(sync);
-        }
-        manager
+        ))
     }
 
     fn make_search_button(builder: &gtk::Builder, dispatcher: Dispatcher) -> Box<SearchButton> {

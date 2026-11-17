@@ -59,6 +59,7 @@ pub const PLAYER_BAR_QUEUE: &str = "player-bar-queue";
 pub const PLAYER_BAR_DEVICE: &str = "player-bar-device";
 pub const PLAYER_BAR_VOLUME: &str = "player-bar-volume";
 pub const PLAYER_BAR_MINI_PLAYER: &str = "player-bar-mini-player";
+pub const PLAYER_BAR_SIDE_PANEL: &str = "player-bar-side-panel";
 pub const LYRICS_TRANSLATION: &str = "lyrics-translation";
 pub const LIBRARY_SORT: &str = "library-sort";
 pub const LYRICS_TRANSLATION_LANGUAGE: &str = "lyrics-translation-language";

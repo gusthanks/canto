@@ -84,6 +84,29 @@ popover.history-menu {
   font-weight: normal;
 }
 
+/* Scrollbars stay thin on hover: no dark track growing over the content */
+scrollbar.overlay-indicator.hovering {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+scrollbar.overlay-indicator.vertical.hovering slider {
+  min-width: 5px;
+  margin-left: 4px;
+  margin-right: 3px;
+}
+
+scrollbar.overlay-indicator.horizontal.hovering slider {
+  min-height: 5px;
+  margin-top: 4px;
+  margin-bottom: 3px;
+}
+
+scrollbar.overlay-indicator.hovering slider:hover {
+  background-color: alpha(@window_fg_color, 0.55);
+}
+
 /* Hide scrollbars while the navigation stack's page transition is running */
 stack.transitioning scrollbar {
   opacity: 0;
@@ -210,6 +233,49 @@ bottom-sheet.bottom-sheet--padded > sheet {
   border: 1px solid alpha(@window_fg_color, 0.08);
 }
 
+/* Translate + language: one pill, split by a hairline */
+.lyrics-translate-group {
+  border-radius: 999px;
+  background: alpha(@window_fg_color, 0.06);
+}
+
+.lyrics-translate-group > button {
+  min-height: 32px;
+  border-radius: 999px;
+}
+
+.lyrics-translate-group > button:first-child {
+  padding-left: 10px;
+  padding-right: 6px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.lyrics-translate-group > menubutton > button {
+  min-height: 32px;
+  min-width: 22px;
+  padding-left: 4px;
+  padding-right: 8px;
+  border-radius: 0 999px 999px 0;
+  box-shadow: inset 1px 0 0 alpha(@window_fg_color, 0.12);
+}
+
+.lyrics-translate-group > button:checked {
+  background: alpha(@accent_bg_color, 0.22);
+  color: @accent_color;
+}
+
+/* Timing button lights up while the lyrics carry an offset */
+.lyric-sync-button.lyric-sync-button--shifted > button {
+  color: @accent_color;
+}
+
+.lyric-sync-stepper > button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-variant-numeric: tabular-nums;
+}
+
 .lyric-sync-offset {
   font-variant-numeric: tabular-nums;
   font-size: 0.82rem;
@@ -296,8 +362,18 @@ bottom-sheet.bottom-sheet--padded > sheet {
   color: #ffffff;
 }
 
-.lyrics-fullscreen__shade {
-  background-color: alpha(#000000, 0.55);
+.lyrics-fullscreen__cover {
+  border-radius: 14px;
+  box-shadow: 0 24px 60px alpha(#000000, 0.45), 0 4px 14px alpha(#000000, 0.3);
+}
+
+.lyrics-fullscreen__cover-clip {
+  border-radius: 14px;
+}
+
+.lyrics-fullscreen__artist {
+  font-size: 1.25rem;
+  opacity: 0.7;
 }
 
 .lyrics--fullscreen .lyric-line {
@@ -431,6 +507,11 @@ bottom-sheet.bottom-sheet--padded > sheet {
 .navigation-row--playing .navigation-row__playing,
 row.navigation-row--playing label:not(.dim-label) {
   color: @accent_color;
+}
+
+.navigation-row__playing {
+  /* Room for the scrollbar */
+  margin-right: 8px;
 }
 
 .navigation-row__pin {
@@ -576,22 +657,4 @@ overlay-split-view.canto-cards .navigation-sidebar {
 .stats-period {
   padding: 4px 12px;
   min-height: 0;
-}
-
-/* Tab on the page's right edge that opens the side panel */
-.utility-edge-tab {
-  min-width: 14px;
-  min-height: 56px;
-  padding: 0 1px 0 3px;
-  margin: 0;
-  border-radius: 10px 0 0 10px;
-  background-color: alpha(@view_fg_color, 0.08);
-  -gtk-icon-size: 12px;
-  opacity: 0.6;
-  transition: opacity 150ms ease, background-color 150ms ease;
-}
-
-.utility-edge-tab:hover {
-  opacity: 1;
-  background-color: alpha(@view_fg_color, 0.16);
 }

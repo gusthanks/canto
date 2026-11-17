@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-17 08:54-0300\n"
+"POT-Creation-Date: 2026-11-17 09:27-0300\n"
 "Language: pt-br\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -65,7 +65,7 @@ msgstr "A seguir na fila"
 #: src/app/components/shell/command_palette/widget.rs:537
 #: src/app/components/pages/shortcuts/shortcuts.blp:84
 #: src/app/components/shell/playback/playback_info.blp:18
-#: src/app/components/shell/playback/playback_widget.blp:72
+#: src/app/components/shell/playback/playback_widget.blp:73
 #: src/app/components/shell/utility_panel/utility_panel.blp:43
 msgid "Now Playing"
 msgstr "Tocando agora"
@@ -228,7 +228,7 @@ msgstr "Normal"
 #. translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
 #: src/app/components/labels.rs:110
 #: src/app/components/shell/command_palette/widget.rs:673
-#: src/app/components/shell/playback/playback_widget.blp:595 src/window.blp:446
+#: src/app/components/shell/playback/playback_widget.blp:596 src/window.blp:428
 msgid "Start Track Radio"
 msgstr "Iniciar Rádio da Faixa"
 
@@ -373,10 +373,10 @@ msgstr "Todas as listas de reprodução"
 #. Translators: Tab label for lyrics in utility panel.
 #: src/app/components/pages/lyrics/component.rs:71
 #: src/app/components/shell/now_panel/mod.rs:352
-#: src/app/components/shell/fullscreen_lyrics.rs:78
-#: src/app/components/shell/playback/playback_widget.blp:167
+#: src/app/components/shell/fullscreen_lyrics.rs:100
+#: src/app/components/shell/playback/playback_widget.blp:168
 #: src/app/components/shell/utility_panel/utility_panel.blp:55
-#: src/app/components/shell/playback/playback_widget.rs:311
+#: src/app/components/shell/playback/playback_widget.rs:314
 msgid "Lyrics"
 msgstr "Letra"
 
@@ -384,7 +384,7 @@ msgstr "Letra"
 #: src/app/components/pages/lyrics/component.rs:348
 #: src/app/components/pages/lyrics/component.rs:678
 #: src/app/components/shell/playback/playback_info.rs:112
-#: src/app/components/shell/fullscreen_lyrics.rs:161
+#: src/app/components/shell/fullscreen_lyrics.rs:211
 msgid "No Track Playing"
 msgstr "Nenhuma faixa tocando"
 
@@ -399,13 +399,27 @@ msgstr "Letra indisponível"
 msgid "Lyrics couldn't be found for this song."
 msgstr "Não foi possível encontrar a letra desta música."
 
+#. Translators: Tooltip of the lyrics button that opens the timing adjustment (make lyrics come earlier or later).
+#. Translators: Heading of the lyrics timing popover.
+#: src/app/components/pages/lyrics/widget.rs:164
+#: src/app/components/pages/lyrics/lyrics_page.blp:98
+#: src/app/components/pages/lyrics/lyrics_page.blp:117
+msgid "Lyrics Timing"
+msgstr "Tempo da letra"
+
+#. translators: Tooltip of the lyrics timing button while an offset is set. {} is like "+200 ms".
+#: src/app/components/pages/lyrics/widget.rs:168
+#, rust-format
+msgid "Lyrics Timing ({})"
+msgstr "Tempo da letra ({})"
+
 #. translators: Tooltip of the mark on a lyric line that Genius explains.
-#: src/app/components/pages/lyrics/widget.rs:346
+#: src/app/components/pages/lyrics/widget.rs:355
 msgid "What This Line Means"
 msgstr "O que esta linha quer dizer"
 
 #. translators: First entry of the lyrics translation languages: the app's own language.
-#: src/app/components/pages/lyrics/widget.rs:375
+#: src/app/components/pages/lyrics/widget.rs:384
 msgid "App Language"
 msgstr "Idioma do app"
 
@@ -413,9 +427,9 @@ msgstr "Idioma do app"
 #. Translators: Tooltip of the playback bar button that shows or hides the queue.
 #. Translators: Tab label for the queue in utility panel.
 #: src/app/components/pages/queue/component.rs:58
-#: src/app/components/shell/playback/playback_widget.blp:187
+#: src/app/components/shell/playback/playback_widget.blp:188
 #: src/app/components/shell/utility_panel/utility_panel.blp:49
-#: src/app/components/shell/playback/playback_widget.rs:312
+#: src/app/components/shell/playback/playback_widget.rs:315
 msgid "Queue"
 msgstr "Fila"
 
@@ -725,7 +739,7 @@ msgid "Open"
 msgstr ""
 
 #: src/app/components/shell/command_palette/command_palette.blp:5
-#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:441
+#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:423
 msgid "Command Palette"
 msgstr "Paleta de Comandos"
 
@@ -759,15 +773,15 @@ msgstr "Ação"
 #: src/app/components/shell/command_palette/widget.rs:533
 #: src/app/components/shell/command_palette/widget.rs:710
 #: src/app/components/sleep_timer.rs:45 src/app/components/sleep_timer.rs:49
-#: src/app/components/shell/playback/playback_widget.blp:205
-#: src/app/components/shell/playback/playback_widget.blp:245
-#: src/app/components/shell/playback/playback_widget.blp:482
+#: src/app/components/shell/playback/playback_widget.blp:206
+#: src/app/components/shell/playback/playback_widget.blp:246
+#: src/app/components/shell/playback/playback_widget.blp:483
 msgid "Sleep Timer"
 msgstr "Timer para dormir"
 
 #. translators: Checkbox in "Customize Bar": the button that picks where the sound plays.
 #: src/app/components/shell/command_palette/widget.rs:534
-#: src/app/components/shell/playback/playback_widget.rs:314
+#: src/app/components/shell/playback/playback_widget.rs:317
 msgid "Device"
 msgstr "Aparelho"
 
@@ -829,7 +843,7 @@ msgstr "Mostrar ou ocultar Letras e Notas da Faixa"
 
 #. Translators: Tooltip of the button in the lyrics that shows them full screen.
 #: src/app/components/shell/command_palette/widget.rs:638
-#: src/app/components/pages/lyrics/lyrics_page.blp:157
+#: src/app/components/pages/lyrics/lyrics_page.blp:210
 msgid "Full-Screen Lyrics"
 msgstr "Letra em tela cheia"
 
@@ -839,8 +853,8 @@ msgstr "Mostrar a letra grande, sobre a capa"
 
 #. Translators: Tooltip of the player bar button that opens the small player window.
 #: src/app/components/shell/command_palette/widget.rs:649
-#: src/app/components/shell/playback/playback_widget.blp:428
-#: src/app/components/shell/playback/playback_widget.rs:317
+#: src/app/components/shell/playback/playback_widget.blp:429
+#: src/app/components/shell/playback/playback_widget.rs:320
 msgid "Mini Player"
 msgstr "Mini player"
 
@@ -850,7 +864,7 @@ msgstr "Deixar os controles numa janela pequena"
 
 #. translators: Title of the window with the user's Last.fm listening stats.
 #: src/app/components/shell/command_palette/widget.rs:660
-#: src/app/components/shell/stats_dialog.rs:45 src/window.blp:451
+#: src/app/components/shell/stats_dialog.rs:45 src/window.blp:433
 msgid "Your Stats"
 msgstr "Suas estatísticas"
 
@@ -924,7 +938,7 @@ msgstr "Trocar tema ao vivo"
 
 #: src/app/components/shell/command_palette/widget.rs:755
 #: src/app/components/shell/device_selector/widget.rs:142
-#: src/app/components/shell/device_selector/device_selector.blp:48
+#: src/app/components/shell/device_selector/device_selector.blp:58
 msgid "This Device"
 msgstr "Este dispositivo"
 
@@ -1059,12 +1073,12 @@ msgid "Playing similar tracks"
 msgstr "Tocando faixas semelhantes"
 
 #. translators: Tooltip of the player bar's device button. {} is where the sound plays, e.g. "This Computer".
-#: src/app/components/shell/device_selector/widget.rs:159
+#: src/app/components/shell/device_selector/widget.rs:153
 #, rust-format
 msgid "Playing on {}"
 msgstr "Tocando em {}"
 
-#: src/app/components/shell/device_selector/widget.rs:197
+#: src/app/components/shell/device_selector/widget.rs:211
 msgid "This Computer"
 msgstr "Este computador"
 
@@ -1202,7 +1216,7 @@ msgid "Couldn't load the credits from Genius."
 msgstr "Não foi possível carregar os créditos do Genius."
 
 #. translators: Tooltip of the button leaving full-screen lyrics.
-#: src/app/components/shell/fullscreen_lyrics.rs:114
+#: src/app/components/shell/fullscreen_lyrics.rs:172
 msgid "Exit Full Screen (Esc)"
 msgstr "Sair da tela cheia (Esc)"
 
@@ -1318,7 +1332,7 @@ msgstr "Backend de áudio"
 
 #: src/app/components/shell/window/close_dialog.rs:17
 #: src/app/components/pages/settings/settings.blp:104
-#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:485
+#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:467
 msgid "Quit"
 msgstr "Fechar"
 
@@ -1527,28 +1541,34 @@ msgid "Reload Lyrics"
 msgstr "Recarregar letra"
 
 #: src/app/components/pages/lyrics/lyrics_page.blp:87
-msgid "Delay lyrics (-100 ms)"
-msgstr "Atrasar letra (-100 ms)"
-
-#: src/app/components/pages/lyrics/lyrics_page.blp:97
-msgid "Reset lyrics sync offset"
-msgstr "Zerar ajuste de sincronização"
-
-#: src/app/components/pages/lyrics/lyrics_page.blp:107
-msgid "Advance lyrics (+100 ms)"
-msgstr "Adiantar letra (+100 ms)"
-
-#: src/app/components/pages/lyrics/lyrics_page.blp:123
 msgid "Reload lyrics"
 msgstr "Recarregar letra"
 
+#. Translators: Explanation in the lyrics timing popover.
+#: src/app/components/pages/lyrics/lyrics_page.blp:127
+msgid "If the lyrics run ahead of or behind the song, nudge them here."
+msgstr ""
+"Se a letra estiver adiantada ou atrasada em relação à música, ajuste aqui."
+
+#: src/app/components/pages/lyrics/lyrics_page.blp:148
+msgid "Delay lyrics (-100 ms)"
+msgstr "Atrasar letra (-100 ms)"
+
+#: src/app/components/pages/lyrics/lyrics_page.blp:157
+msgid "Reset lyrics sync offset"
+msgstr "Zerar ajuste de sincronização"
+
+#: src/app/components/pages/lyrics/lyrics_page.blp:167
+msgid "Advance lyrics (+100 ms)"
+msgstr "Adiantar letra (+100 ms)"
+
 #. Translators: Tooltip of the lyrics button that shows a translation under each line.
-#: src/app/components/pages/lyrics/lyrics_page.blp:134
+#: src/app/components/pages/lyrics/lyrics_page.blp:188
 msgid "Translate Lyrics"
 msgstr "Traduzir letra"
 
 #. Translators: Tooltip of the button that picks the language lyrics are translated into.
-#: src/app/components/pages/lyrics/lyrics_page.blp:145
+#: src/app/components/pages/lyrics/lyrics_page.blp:198
 msgid "Translation Language"
 msgstr "Idioma da tradução"
 
@@ -2276,11 +2296,11 @@ msgstr ""
 msgid "Main Menu"
 msgstr "Menu principal"
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:458
+#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:440
 msgid "Preferences"
 msgstr "Preferências"
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:463
+#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:445
 msgid "Keyboard Shortcuts"
 msgstr "Atalhos de teclado"
 
@@ -2307,78 +2327,84 @@ msgstr ""
 msgid "Forward"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:265
+#: src/app/components/shell/playback/playback_widget.blp:266
 msgid "Off"
 msgstr "Desativado"
 
-#: src/app/components/shell/playback/playback_widget.blp:279
+#: src/app/components/shell/playback/playback_widget.blp:280
 msgid "End of current track"
 msgstr "Fim da faixa atual"
 
-#: src/app/components/shell/playback/playback_widget.blp:293
+#: src/app/components/shell/playback/playback_widget.blp:294
 msgid "15 min"
 msgstr "15 min"
 
-#: src/app/components/shell/playback/playback_widget.blp:307
+#: src/app/components/shell/playback/playback_widget.blp:308
 msgid "30 min"
 msgstr "30 min"
 
-#: src/app/components/shell/playback/playback_widget.blp:321
+#: src/app/components/shell/playback/playback_widget.blp:322
 msgid "45 min"
 msgstr "45 min"
 
-#: src/app/components/shell/playback/playback_widget.blp:335
+#: src/app/components/shell/playback/playback_widget.blp:336
 msgid "60 min"
 msgstr "60 min"
 
-#: src/app/components/shell/playback/playback_widget.blp:363
+#: src/app/components/shell/playback/playback_widget.blp:364
 msgid "Mute / Unmute"
 msgstr "Silenciar / reativar som"
 
 #. translators: Checkbox in "Customize Bar": the volume slider.
-#: src/app/components/shell/playback/playback_widget.blp:398
-#: src/app/components/shell/playback/playback_widget.rs:316
+#: src/app/components/shell/playback/playback_widget.blp:399
+#: src/app/components/shell/playback/playback_widget.rs:319
 msgid "Volume"
 msgstr "Volume"
 
 #. Translators: Tooltip of the player bar button that opens the sleep timer, equalizer and audio options.
-#: src/app/components/shell/playback/playback_widget.blp:446
+#: src/app/components/shell/playback/playback_widget.blp:447
 #: src/app/components/widgets/details_page/header.blp:213
 msgid "More Options"
 msgstr "Mais opções"
 
-#: src/app/components/shell/playback/playback_widget.blp:499
+#: src/app/components/shell/playback/playback_widget.blp:500
 msgid "Equalizer Presets"
 msgstr "Predefinições do equalizador"
 
-#: src/app/components/shell/playback/playback_widget.blp:519
+#: src/app/components/shell/playback/playback_widget.blp:520
 msgid "Flat"
 msgstr "Plano"
 
-#: src/app/components/shell/playback/playback_widget.blp:533
+#: src/app/components/shell/playback/playback_widget.blp:534
 msgid "Bass Boost"
 msgstr "Reforço de graves"
 
-#: src/app/components/shell/playback/playback_widget.blp:547
+#: src/app/components/shell/playback/playback_widget.blp:548
 msgid "Vocal"
 msgstr "Vocal"
 
-#: src/app/components/shell/playback/playback_widget.blp:561
+#: src/app/components/shell/playback/playback_widget.blp:562
 msgid "Lo-Fi"
 msgstr "Lo-Fi"
 
-#: src/app/components/shell/playback/playback_widget.blp:575
+#: src/app/components/shell/playback/playback_widget.blp:576
 msgid "Acoustic"
 msgstr "Acústico"
 
 #. Translators: Item in the player bar's More Options menu: choose which buttons the bar shows.
-#: src/app/components/shell/playback/playback_widget.blp:610
+#: src/app/components/shell/playback/playback_widget.blp:611
 msgid "Customize Bar…"
 msgstr "Personalizar barra…"
 
-#: src/app/components/shell/playback/playback_widget.blp:625
+#: src/app/components/shell/playback/playback_widget.blp:626
 msgid "Audio Settings…"
 msgstr "Configurações de áudio…"
+
+#. Translators: Tooltip of the player bar button that shows or hides the right side panel (Now Playing, Queue, Lyrics).
+#: src/app/components/shell/playback/playback_widget.blp:641
+#: src/app/components/shell/playback/playback_widget.rs:321
+msgid "Side Panel"
+msgstr "Painel lateral"
 
 #. Translators: tooltip of the button picking the cover image of a new playlist
 #. translators: Title of the dialog picking a playlist's cover.
@@ -2468,13 +2494,8 @@ msgstr "Sua Biblioteca"
 msgid "Collapse Sidebar"
 msgstr "Recolher barra lateral"
 
-#. Translators: Tooltip of the small tab on the right edge that shows the side panel (Now Playing, Queue, Lyrics).
-#: src/window.blp:388
-msgid "Show Side Panel"
-msgstr "Mostrar painel lateral"
-
 #. Translators: One line under the app name in the About window.
-#: src/window.blp:432
+#: src/window.blp:414
 msgid ""
 "Your music services in one calm player, with synced lyrics, translations and "
 "listening stats."
@@ -2482,15 +2503,15 @@ msgstr ""
 "Seus serviços de música num player tranquilo, com letra sincronizada, "
 "tradução e estatísticas do que você ouve."
 
-#: src/window.blp:468
+#: src/window.blp:450
 msgid "Report Issue"
 msgstr ""
 
-#: src/window.blp:473
+#: src/window.blp:455
 msgid "About Canto"
 msgstr "Sobre o Canto"
 
-#: src/window.blp:480
+#: src/window.blp:462
 msgid "Log Out"
 msgstr "Sair"
 
@@ -2572,7 +2593,7 @@ msgid "Riff and Spot Artists"
 msgstr "Artistas do Riff e do Spot"
 
 #. translators: Heading of the popover that chooses which buttons the player bar shows.
-#: src/app/components/shell/playback/playback_widget.rs:326
+#: src/app/components/shell/playback/playback_widget.rs:330
 msgid "Show in the Bar"
 msgstr "Mostrar na barra"
 
