@@ -250,6 +250,19 @@ impl App {
         });
         window.add_action(&palette_action);
 
+        let stats_action = gio::SimpleAction::new("listening-stats", None);
+        let stats_win = window.clone();
+        let stats_model = Rc::clone(model);
+        let stats_disp = dispatcher.clone();
+        stats_action.connect_activate(move |_, _| {
+            crate::app::components::stats_dialog::open(
+                &stats_win,
+                Rc::clone(&stats_model),
+                stats_disp.clone(),
+            );
+        });
+        window.add_action(&stats_action);
+
         let radio_action = gio::SimpleAction::new("start-track-radio", None);
         let radio_model = Rc::clone(model);
         let radio_disp = dispatcher;

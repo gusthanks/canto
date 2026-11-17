@@ -9,7 +9,10 @@ pub mod listenbrainz;
 pub mod queue;
 pub mod tracker;
 
-pub use lastfm::{build_auth_url, sign_lastfm_params, LastFmClient, LastFmSession, Playcounts};
+pub use lastfm::{
+    build_auth_url, sign_lastfm_params, LastFmClient, LastFmSession, ListeningStats, Playcounts,
+    StatsPeriod, TopItem,
+};
 pub use listenbrainz::ListenBrainzClient;
 pub use queue::{PendingScrobble, RetryQueue, ScrobbleTarget, MAX_QUEUE_ITEMS};
 pub use tracker::{ScrobbleAction, ScrobbleTrackMetadata, ScrobbleTracker};

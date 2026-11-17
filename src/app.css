@@ -499,3 +499,81 @@ row.navigation-row--playing label:not(.dim-label) {
   font-size: 0.9em;
   font-weight: 600;
 }
+
+/* Rounded cards: the library, the page and the side panel float over the
+   same color as the top and bottom bars, with room between them */
+overlay-split-view.canto-cards {
+  background-color: @headerbar_bg_color;
+}
+
+overlay-split-view.canto-cards > .sidebar-pane,
+overlay-split-view.canto-cards > .content-pane {
+  box-shadow: none;
+  border: none;
+  background: none;
+}
+
+overlay-split-view.canto-cards overlay-split-view.canto-cards > .sidebar-pane,
+overlay-split-view.canto-cards overlay-split-view.canto-cards > .content-pane,
+overlay-split-view.canto-cards > .sidebar-pane.end {
+  margin: 0 4px 8px 4px;
+  border-radius: 10px;
+  background-color: @view_bg_color;
+}
+
+overlay-split-view.canto-cards overlay-split-view.canto-cards > .sidebar-pane:not(.end) {
+  margin-left: 8px;
+}
+
+overlay-split-view.canto-cards > .sidebar-pane.end {
+  margin-right: 8px;
+}
+
+/* The page's right edge, when the side panel is closed */
+overlay-split-view.canto-cards > .content-pane {
+  margin-right: 4px;
+}
+
+overlay-split-view.canto-cards .navigation-sidebar {
+  background: none;
+}
+
+/* Your Stats */
+.stats-total {
+  padding: 12px 6px;
+  border-radius: 12px;
+  background: alpha(currentColor, 0.06);
+}
+
+.stats-total__number {
+  font-size: 1.6em;
+  font-weight: 800;
+}
+
+.stats-cover {
+  border-radius: 6px;
+  background: alpha(currentColor, 0.08);
+}
+
+.stats-cover--round {
+  border-radius: 999px;
+}
+
+.stats-bar trough {
+  min-height: 3px;
+  border-radius: 3px;
+}
+
+.stats-bar block {
+  min-height: 3px;
+  border-radius: 3px;
+}
+
+.stats-bar block.filled {
+  background-color: @accent_color;
+}
+
+.stats-period {
+  padding: 4px 12px;
+  min-height: 0;
+}

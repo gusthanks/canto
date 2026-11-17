@@ -73,7 +73,158 @@ fn count(value: Option<&Value>) -> Option<u64> {
     }
 }
 
+/// A time window of the user's listening stats.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StatsPeriod {
+    Week,
+    Month,
+    Year,
+    Overall,
+}
+
+impl StatsPeriod {
+    pub const ALL: [StatsPeriod; 4] = [Self::Week, Self::Month, Self::Year, Self::Overall];
+
+    fn api_value(self) -> &'static str {
+        match self {
+            Self::Week => "7day",
+            Self::Month => "1month",
+            Self::Year => "12month",
+            Self::Overall => "overall",
+        }
+    }
+}
+
+/// One line of a top list: a name, who made it (tracks and albums), how
+/// many times the user played it and a picture when Last.fm has one.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct TopItem {
+    pub name: String,
+    pub artist: Option<String>,
+    pub plays: u64,
+    pub image: Option<String>,
+}
+
+/// The user's most played artists, tracks and albums in a period.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ListeningStats {
+    pub artists: Vec<TopItem>,
+    pub tracks: Vec<TopItem>,
+    pub albums: Vec<TopItem>,
+    /// How many different artists, tracks and albums (not plays)
+    pub artist_count: Option<u64>,
+    pub track_count: Option<u64>,
+    pub album_count: Option<u64>,
+}
+
+/// Last.fm's placeholder picture (a grey star), served for every artist
+/// and track since it dropped their images.
+const LASTFM_PLACEHOLDER: &str = "2a96cbd8b46e442fc41c2b86b821562f";
+
+/// The items of a `user.getTop*` answer (`root` like "topartists", `key` like "artist").
+fn top_items(value: &Value, root: &str, key: &str) -> (Vec<TopItem>, Option<u64>) {
+    let Some(list) = value.get(root) else {
+        return (vec![], None);
+    };
+    let total = count(list.get("@attr").and_then(|a| a.get("total")));
+    let items = list
+        .get(key)
+        .and_then(Value::as_array)
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|item| {
+                    let name = item.get("name")?.as_str()?.trim().to_string();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    let artist = item
+                        .get("artist")
+                        .and_then(|a| a.get("name").or(Some(a)))
+                        .and_then(Value::as_str)
+                        .map(str::to_string);
+                    let image = item
+                        .get("image")
+                        .and_then(Value::as_array)
+                        .and_then(|images| {
+                            ["extralarge", "large", "medium"].iter().find_map(|size| {
+                                images
+                                    .iter()
+                                    .find(|i| i.get("size").and_then(Value::as_str) == Some(size))
+                                    .and_then(|i| i.get("#text")?.as_str())
+                            })
+                        })
+                        .filter(|url| !url.is_empty() && !url.contains(LASTFM_PLACEHOLDER))
+                        .map(str::to_string);
+                    Some(TopItem {
+                        name,
+                        artist,
+                        plays: count(item.get("playcount")).unwrap_or(0),
+                        image,
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    (items, total)
+}
+
 impl LastFmClient {
+    /// The user's top artists, tracks and albums in `period`
+    /// (`user.getTopArtists`, `user.getTopTracks`, `user.getTopAlbums`).
+    pub async fn listening_stats(
+        api_key: &str,
+        username: &str,
+        period: StatsPeriod,
+        limit: usize,
+    ) -> Result<ListeningStats, DomainError> {
+        static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+        let client = CLIENT.get_or_init(reqwest::Client::new).clone();
+        let (api_key, username) = (api_key.trim(), username.trim());
+        if api_key.is_empty() || username.is_empty() {
+            return Err(DomainError::NoToken);
+        }
+        let get = |method: &'static str| {
+            let params = [
+                ("method", method.to_string()),
+                ("api_key", api_key.to_string()),
+                ("user", username.to_string()),
+                ("period", period.api_value().to_string()),
+                ("limit", limit.to_string()),
+                ("format", "json".to_string()),
+            ];
+            let client = client.clone();
+            async move {
+                let url = url::Url::parse_with_params(LASTFM_API_ROOT, &params)
+                    .map_err(|e| DomainError::Parse(e.to_string()))?;
+                let response = client
+                    .get(url)
+                    .header(reqwest::header::USER_AGENT, LASTFM_USER_AGENT)
+                    .timeout(Duration::from_secs(15))
+                    .send()
+                    .await
+                    .map_err(|e| DomainError::Network(e.without_url().to_string()))?;
+                parse_lastfm_response(response).await
+            }
+        };
+        let (artists, tracks, albums) = futures::join!(
+            get("user.getTopArtists"),
+            get("user.getTopTracks"),
+            get("user.getTopAlbums")
+        );
+        let (artists, artist_count) = top_items(&artists?, "topartists", "artist");
+        let (tracks, track_count) = top_items(&tracks?, "toptracks", "track");
+        let (albums, album_count) = top_items(&albums?, "topalbums", "album");
+        Ok(ListeningStats {
+            artists,
+            tracks,
+            albums,
+            artist_count,
+            track_count,
+            album_count,
+        })
+    }
+
     /// [`Self::playcounts`] with a shared HTTP client.
     pub async fn user_playcounts(
         api_key: &str,
@@ -475,5 +626,37 @@ mod tests {
             build_auth_url("abc123", "tok789"),
             "https://www.last.fm/api/auth/?api_key=abc123&token=tok789"
         );
+    }
+}
+
+#[cfg(test)]
+mod stats_tests {
+    use super::*;
+
+    #[test]
+    fn top_lists_parse_and_skip_the_placeholder_picture() {
+        let value: Value = serde_json::from_str(
+            r##"{"toptracks":{"track":[
+                {"name":"MEU CEMITÉRIO","playcount":"9","artist":{"name":"Matuê"},
+                 "image":[{"size":"large","#text":"https://x/2a96cbd8b46e442fc41c2b86b821562f.png"}]},
+                {"name":"","playcount":"1"}
+            ],"@attr":{"total":"503"}}}"##,
+        )
+        .unwrap();
+        let (items, total) = top_items(&value, "toptracks", "track");
+        assert_eq!(total, Some(503));
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].artist.as_deref(), Some("Matuê"));
+        assert_eq!(items[0].plays, 9);
+        assert_eq!(items[0].image, None);
+
+        let value: Value = serde_json::from_str(
+            r##"{"topalbums":{"album":[{"name":"XTRANHO","playcount":92,"artist":{"name":"Matuê"},
+                "image":[{"size":"medium","#text":"https://x/m.png"},{"size":"extralarge","#text":"https://x/xl.png"}]}]}}"##,
+        )
+        .unwrap();
+        let (items, _) = top_items(&value, "topalbums", "album");
+        assert_eq!(items[0].image.as_deref(), Some("https://x/xl.png"));
+        assert_eq!(items[0].plays, 92);
     }
 }

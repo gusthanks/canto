@@ -257,6 +257,10 @@ Adw.ApplicationWindow window {
           ]
 
           content: Adw.OverlaySplitView utility_split {
+            styles [
+              "canto-cards",
+            ]
+
             sidebar-position: end;
             show-sidebar: false;
             pin-sidebar: true;
@@ -265,6 +269,10 @@ Adw.ApplicationWindow window {
             // An OverlaySplitView collapses without reparenting its children,
             // which would rebuild every page
             content: Adw.OverlaySplitView navigation_split {
+              styles [
+                "canto-cards",
+              ]
+
               vexpand: true;
               pin-sidebar: true;
               sidebar-width-unit: px;
@@ -419,6 +427,11 @@ menu main_menu {
     item {
       label: _("Start Track Radio");
       action: "win.start-track-radio";
+    }
+
+    item {
+      label: _("Your Stats");
+      action: "win.listening-stats";
     }
   }
 

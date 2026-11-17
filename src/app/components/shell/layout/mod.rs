@@ -236,6 +236,7 @@ impl WindowLayout {
         }
 
         Self::align_top_center_with_sidebar(builder);
+        Self::clip_card_panes(builder);
         layout.wire_resize(Which::Navigation, navigation_handle);
         layout.wire_resize(Which::Utility, utility_handle);
         layout
@@ -340,6 +341,23 @@ impl WindowLayout {
         let collapse = window_width <= sp_to_px(MOBILE_WIDTH_SP);
         if self.utility.split.is_collapsed() != collapse {
             self.utility.split.set_collapsed(collapse);
+        }
+    }
+
+    /// The library, the page and the side panel are rounded cards (see
+    /// `.canto-cards` in app.css); what is inside them is cut at the corners.
+    fn clip_card_panes(builder: &gtk::Builder) {
+        for name in ["navigation_split", "utility_split"] {
+            let Some(split) = builder.object::<libadwaita::OverlaySplitView>(name) else {
+                continue;
+            };
+            let mut child = split.first_child();
+            while let Some(pane) = child {
+                if pane.has_css_class("sidebar-pane") || pane.has_css_class("content-pane") {
+                    pane.set_overflow(gtk::Overflow::Hidden);
+                }
+                child = pane.next_sibling();
+            }
         }
     }
 

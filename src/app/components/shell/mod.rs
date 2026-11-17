@@ -48,3 +48,5 @@ pub use mini_player::MiniPlayer;
 
 pub mod command_palette;
 pub use command_palette::*;
+
+pub mod stats_dialog;

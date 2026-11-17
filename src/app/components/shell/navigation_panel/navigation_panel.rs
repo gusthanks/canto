@@ -622,7 +622,11 @@ impl EventListener for NavigationPanel {
                 | BrowserEvent::PinnedPlaylistsUpdated
                 | BrowserEvent::LibraryUpdated
                 | BrowserEvent::SavedArtistsUpdated,
-            ) => self.update_playlists_in_navigation_panel(),
+            ) => {
+                self.update_playlists_in_navigation_panel();
+                // The library loads once logged in: the history can come now
+                self.model.refresh_recents(&self.list_store);
+            }
             AppEvent::PlaybackEvent(
                 PlaybackEvent::TrackChanged(_)
                 | PlaybackEvent::SourceChanged

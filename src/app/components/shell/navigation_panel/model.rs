@@ -180,8 +180,19 @@ impl NavigationPanelModel {
         let weak_model = Rc::downgrade(self);
         let weak_store = list_store.downgrade();
         glib::spawn_future_local(async move {
-            let Ok(fetched) = api.get_recent_contexts().await else {
-                return;
+            let fetched = match api.get_recent_contexts().await {
+                Ok(fetched) => {
+                    log::info!("recently played: {} items", fetched.len());
+                    fetched
+                }
+                Err(err) => {
+                    log::debug!("recently played failed: {err:?}");
+                    // Not logged in yet, most likely: try again on the next chance
+                    if let Some(model) = weak_model.upgrade() {
+                        model.recents_fetched.set(None);
+                    }
+                    return;
+                }
             };
             let (Some(model), Some(store)) = (weak_model.upgrade(), weak_store.upgrade()) else {
                 return;

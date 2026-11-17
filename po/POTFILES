@@ -17,6 +17,7 @@ src/app/components/pages/settings/settings.rs
 src/app/components/shell/clipboard_import/mod.rs
 src/app/components/shell/command_palette/command_palette.blp
 src/app/components/shell/command_palette/widget.rs
+src/app/components/shell/stats_dialog.rs
 src/app/components/sleep_timer.rs
 src/app/components/track_radio.rs
 src/app/components/shell/device_selector/widget.rs

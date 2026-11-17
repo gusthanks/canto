@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 22:20-0300\n"
+"POT-Creation-Date: 2026-11-16 22:46-0300\n"
 "Language: ia\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -62,7 +62,7 @@ msgstr ""
 #. Translators: Tooltip on the cover art in the player bar.
 #. Translators: Tab label for the current track in utility panel.
 #: src/app/components/labels.rs:32
-#: src/app/components/shell/command_palette/widget.rs:474
+#: src/app/components/shell/command_palette/widget.rs:537
 #: src/app/components/pages/shortcuts/shortcuts.blp:84
 #: src/app/components/shell/playback/playback_info.blp:18
 #: src/app/components/shell/playback/playback_widget.blp:73
@@ -195,9 +195,9 @@ msgstr "Nove lista de reproduction"
 #. translators: This is the caption shown in the header of an album's detail page when the release is a full album.
 #. translators: An album in the back/forward history menu, while its name is loading.
 #: src/app/components/labels.rs:95 src/app/components/labels.rs:180
-#: src/app/components/shell/command_palette/widget.rs:693
-#: src/app/components/shell/navigation_panel/model.rs:337
-#: src/app/components/shell/navigation_panel/model.rs:798
+#: src/app/components/shell/command_palette/widget.rs:803
+#: src/app/components/shell/navigation_panel/model.rs:344
+#: src/app/components/shell/navigation_panel/model.rs:805
 #: src/app/components/pages/settings/settings.blp:254
 #, fuzzy
 msgid "Album"
@@ -227,8 +227,8 @@ msgstr ""
 
 #. translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
 #: src/app/components/labels.rs:110
-#: src/app/components/shell/command_palette/widget.rs:577
-#: src/app/components/shell/playback/playback_widget.blp:475 src/window.blp:420
+#: src/app/components/shell/command_palette/widget.rs:673
+#: src/app/components/shell/playback/playback_widget.blp:475 src/window.blp:428
 msgid "Start Track Radio"
 msgstr ""
 
@@ -292,9 +292,9 @@ msgstr "{} per {}"
 
 #. translators: An artist in the back/forward history menu, while their name is loading.
 #: src/app/components/labels.rs:182
-#: src/app/components/shell/command_palette/widget.rs:694
-#: src/app/components/shell/navigation_panel/model.rs:339
-#: src/app/components/shell/navigation_panel/model.rs:822
+#: src/app/components/shell/command_palette/widget.rs:804
+#: src/app/components/shell/navigation_panel/model.rs:346
+#: src/app/components/shell/navigation_panel/model.rs:829
 #, fuzzy
 msgid "Artist"
 msgstr "Artistas"
@@ -303,9 +303,9 @@ msgstr "Artistas"
 #: src/app/components/labels.rs:184
 #: src/app/components/pages/details_playlist/model.rs:154
 #: src/app/components/pages/saved_tracks/model.rs:63
-#: src/app/components/shell/command_palette/widget.rs:695
-#: src/app/components/shell/navigation_panel/model.rs:357
-#: src/app/components/shell/navigation_panel/model.rs:742
+#: src/app/components/shell/command_palette/widget.rs:805
+#: src/app/components/shell/navigation_panel/model.rs:364
+#: src/app/components/shell/navigation_panel/model.rs:749
 #, fuzzy
 msgid "Playlist"
 msgstr "Listas de reproduction"
@@ -317,7 +317,7 @@ msgstr ""
 
 #. translators: The search page in the back/forward history menu.
 #: src/app/components/labels.rs:188
-#: src/app/components/shell/command_palette/widget.rs:492
+#: src/app/components/shell/command_palette/widget.rs:559
 #: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:194
 #: src/window.blp:222
 #, fuzzy
@@ -339,7 +339,9 @@ msgstr ""
 msgid "An error occured. Check logs for details!"
 msgstr "Ocurreva un error. Verifica le registros pro detalios!"
 
+#. translators: Heading of a list in the stats.
 #: src/app/components/pages/details_artist/widget.rs:33
+#: src/app/components/shell/stats_dialog.rs:241
 msgid "Top Tracks"
 msgstr "Melior tracias"
 
@@ -463,8 +465,8 @@ msgstr "Tu listas de reproduction essera monstrate hic."
 
 #. translators: This is a navigation panel entry to browse to the songs the user liked (the heart).
 #: src/app/components/pages/saved_tracks/model.rs:59
-#: src/app/components/shell/command_palette/widget.rs:501
-#: src/app/components/shell/navigation_panel/model.rs:469
+#: src/app/components/shell/command_palette/widget.rs:570
+#: src/app/components/shell/navigation_panel/model.rs:476
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:73
 msgid "Liked Songs"
 msgstr ""
@@ -482,7 +484,7 @@ msgstr "Tracias"
 
 #. translators: This is a navigation panel entry to browse to followed artists.
 #: src/app/components/pages/search/search.rs:432
-#: src/app/components/shell/command_palette/widget.rs:510
+#: src/app/components/shell/command_palette/widget.rs:581
 #: src/app/components/shell/navigation/factory.rs:82
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:77
 #: src/app/components/shell/navigation_panel/navigation_panel.rs:301
@@ -499,7 +501,7 @@ msgstr "Albumes"
 
 #. translators: This is a navigation panel entry that marks that the entries below are playlists.
 #: src/app/components/pages/search/search.rs:452
-#: src/app/components/shell/command_palette/widget.rs:519
+#: src/app/components/shell/command_palette/widget.rs:592
 #: src/app/components/shell/navigation/factory.rs:71
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:75
 #: src/app/components/shell/navigation_panel/navigation_panel.rs:299
@@ -707,7 +709,7 @@ msgid "Open"
 msgstr ""
 
 #: src/app/components/shell/command_palette/command_palette.blp:5
-#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:415
+#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:423
 msgid "Command Palette"
 msgstr ""
 
@@ -725,207 +727,294 @@ msgstr ""
 msgid "Try a different keyword or search for an artist, album, or song."
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:467
+#: src/app/components/shell/command_palette/widget.rs:530
 #: src/app/components/pages/shortcuts/shortcuts.blp:61
 msgid "Navigation"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:468
+#: src/app/components/shell/command_palette/widget.rs:531
 msgid "Theme"
 msgstr "Thema"
 
-#: src/app/components/shell/command_palette/widget.rs:469
+#: src/app/components/shell/command_palette/widget.rs:532
 msgid "Action"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:470
-#: src/app/components/shell/command_palette/widget.rs:608
+#: src/app/components/shell/command_palette/widget.rs:533
+#: src/app/components/shell/command_palette/widget.rs:710
 #: src/app/components/sleep_timer.rs:45 src/app/components/sleep_timer.rs:49
 #: src/app/components/shell/playback/playback_widget.blp:215
 #: src/app/components/shell/playback/playback_widget.blp:255
 msgid "Sleep Timer"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:471
+#: src/app/components/shell/command_palette/widget.rs:534
 #, fuzzy
 msgid "Device"
 msgstr "Dispositivo ALSA"
 
-#: src/app/components/shell/command_palette/widget.rs:475
+#: src/app/components/shell/command_palette/widget.rs:538
 msgid "Show the current track in the side panel"
 msgstr ""
 
 #. translators: This is a navigation panel entry to browse to saved albums.
-#: src/app/components/shell/command_palette/widget.rs:483
+#: src/app/components/shell/command_palette/widget.rs:548
 #: src/app/components/shell/navigation/factory.rs:55
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:71
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:140
 msgid "Library"
 msgstr "Bibliotheca"
 
-#: src/app/components/shell/command_palette/widget.rs:484
+#: src/app/components/shell/command_palette/widget.rs:549
 #, fuzzy
 msgid "Browse saved albums"
 msgstr "Tu ha nulle albumes salvate."
 
-#: src/app/components/shell/command_palette/widget.rs:493
+#: src/app/components/shell/command_palette/widget.rs:560
 #, fuzzy
 msgid "Open search page"
 msgstr "Scribe pro cercar."
 
-#: src/app/components/shell/command_palette/widget.rs:502
+#: src/app/components/shell/command_palette/widget.rs:571
 #, fuzzy
 msgid "Open your saved tracks"
 msgstr "Tracias salvate"
 
-#: src/app/components/shell/command_palette/widget.rs:511
+#: src/app/components/shell/command_palette/widget.rs:582
 #, fuzzy
 msgid "Open followed artists"
 msgstr "Tote le listas de reproduction"
 
-#: src/app/components/shell/command_palette/widget.rs:520
+#: src/app/components/shell/command_palette/widget.rs:593
 #, fuzzy
 msgid "Open saved playlists"
 msgstr "Tu non ha listas de reproduction salvate."
 
-#: src/app/components/shell/command_palette/widget.rs:528
+#: src/app/components/shell/command_palette/widget.rs:603
 msgid "Settings"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:529
+#: src/app/components/shell/command_palette/widget.rs:604
 #, fuzzy
 msgid "Open Preferences dialog"
 msgstr "Preferentias"
 
-#: src/app/components/shell/command_palette/widget.rs:539
+#: src/app/components/shell/command_palette/widget.rs:616
 msgid "Toggle Queue"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:540
+#: src/app/components/shell/command_palette/widget.rs:617
 msgid "Show or hide the playback queue panel"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:548
+#: src/app/components/shell/command_palette/widget.rs:627
 msgid "Toggle Lyrics"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:549
+#: src/app/components/shell/command_palette/widget.rs:628
 msgid "Show or hide Lyrics and Track Notes"
 msgstr ""
 
 #. Translators: Tooltip of the button in the lyrics that shows them full screen.
-#: src/app/components/shell/command_palette/widget.rs:557
+#: src/app/components/shell/command_palette/widget.rs:638
 #: src/app/components/pages/lyrics/lyrics_page.blp:157
 msgid "Full-Screen Lyrics"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:558
+#: src/app/components/shell/command_palette/widget.rs:639
 msgid "Show the lyrics big, over the cover"
 msgstr ""
 
 #. Translators: Tooltip of the player bar button that opens the small player window.
-#: src/app/components/shell/command_palette/widget.rs:566
+#: src/app/components/shell/command_palette/widget.rs:649
 #: src/app/components/shell/playback/playback_widget.blp:183
 msgid "Mini Player"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:567
+#: src/app/components/shell/command_palette/widget.rs:650
 msgid "Keep the controls in a small window"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:589
+#. translators: Title of the window with the user's Last.fm listening stats.
+#: src/app/components/shell/command_palette/widget.rs:660
+#: src/app/components/shell/stats_dialog.rs:45 src/window.blp:433
+#, fuzzy
+msgid "Your Stats"
+msgstr "Bibliotheca"
+
+#: src/app/components/shell/command_palette/widget.rs:661
+msgid "What you played most, from Last.fm"
+msgstr ""
+
+#: src/app/components/shell/command_palette/widget.rs:687
 msgid "Sleep Timer: Off"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:590
+#: src/app/components/shell/command_palette/widget.rs:688
 msgid "Disable active sleep timer"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:598
+#: src/app/components/shell/command_palette/widget.rs:698
 msgid "Sleep Timer: End of Current Track"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:599
+#: src/app/components/shell/command_palette/widget.rs:699
 msgid "Pause playback when this song finishes"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:609
+#: src/app/components/shell/command_palette/widget.rs:711
 msgid "Pause playback after"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:609
+#: src/app/components/shell/command_palette/widget.rs:711
 msgid "minutes"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:620
+#: src/app/components/shell/command_palette/widget.rs:724
 #: src/app/components/pages/settings/settings.blp:37
 msgid "Omarchy Live"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:621
+#: src/app/components/shell/command_palette/widget.rs:725
 msgid "Neutral"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:622
+#: src/app/components/shell/command_palette/widget.rs:726
 #: src/app/components/pages/settings/settings.blp:39
 msgid "Spotify Green"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:623
+#: src/app/components/shell/command_palette/widget.rs:727
 #: src/app/components/pages/settings/settings.blp:40
 #, fuzzy
 msgid "OLED Dark"
 msgstr "Obscur"
 
-#: src/app/components/shell/command_palette/widget.rs:624
+#: src/app/components/shell/command_palette/widget.rs:728
 #: src/app/components/pages/settings/settings.blp:41
 msgid "Warm Vinyl"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:625
+#: src/app/components/shell/command_palette/widget.rs:729
 #: src/app/components/pages/settings/settings.blp:42
 msgid "Purple Night"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:630
+#: src/app/components/shell/command_palette/widget.rs:734
 msgid "Active theme"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:632
+#: src/app/components/shell/command_palette/widget.rs:736
 msgid "Switch theme live"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:649
+#: src/app/components/shell/command_palette/widget.rs:755
 #: src/app/components/shell/device_selector/widget.rs:142
 #: src/app/components/shell/device_selector/device_selector.blp:9
 #: src/app/components/shell/device_selector/device_selector.blp:37
 msgid "This Device"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:651
+#: src/app/components/shell/command_palette/widget.rs:757
 msgid "Active playback device"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:653
+#: src/app/components/shell/command_palette/widget.rs:759
 msgid "Transfer playback locally"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:678
+#: src/app/components/shell/command_palette/widget.rs:786
 msgid "Active Connect device"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:680
+#: src/app/components/shell/command_palette/widget.rs:788
 msgid "Transfer playback to device"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:692
+#: src/app/components/shell/command_palette/widget.rs:802
 #: src/app/components/pages/settings/settings.blp:253
 #, fuzzy
 msgid "Track"
 msgstr "Tracias"
 
-#: src/app/components/shell/command_palette/widget.rs:734
+#: src/app/components/shell/command_palette/widget.rs:848
 msgid "Open artist page"
+msgstr ""
+
+#. translators: Stats period: the last 7 days.
+#: src/app/components/shell/stats_dialog.rs:149
+msgid "Last 7 Days"
+msgstr ""
+
+#. translators: Stats period: the last 30 days.
+#: src/app/components/shell/stats_dialog.rs:151
+msgid "Last Month"
+msgstr ""
+
+#. translators: Stats period: the last 12 months.
+#: src/app/components/shell/stats_dialog.rs:153
+msgid "Last Year"
+msgstr ""
+
+#. translators: Stats period: since the account was created.
+#: src/app/components/shell/stats_dialog.rs:155
+msgid "All Time"
+msgstr ""
+
+#: src/app/components/shell/stats_dialog.rs:165
+msgid "Link Last.fm to See Your Stats"
+msgstr ""
+
+#: src/app/components/shell/stats_dialog.rs:167
+msgid "Add your Last.fm username and API key in Preferences → Integrations."
+msgstr ""
+
+#: src/app/components/shell/stats_dialog.rs:189
+msgid "Couldn't Load Your Stats"
+msgstr ""
+
+#: src/app/components/shell/stats_dialog.rs:192
+msgid "Last.fm didn't answer. Try again in a moment."
+msgstr ""
+
+#: src/app/components/shell/stats_dialog.rs:207
+#, fuzzy
+msgid "Nothing Played in This Period"
+msgstr "Ora in reproduction"
+
+#. translators: Under a number in the stats: how many different artists.
+#: src/app/components/shell/stats_dialog.rs:219
+#, fuzzy
+msgid "artists"
+msgstr "Artistas"
+
+#. translators: Under a number in the stats: how many different tracks.
+#: src/app/components/shell/stats_dialog.rs:221
+#, fuzzy
+msgid "tracks"
+msgstr "Tracias"
+
+#. translators: Under a number in the stats: how many different albums.
+#: src/app/components/shell/stats_dialog.rs:223
+#, fuzzy
+msgid "albums"
+msgstr "Albumes"
+
+#. translators: Heading of a list in the stats.
+#: src/app/components/shell/stats_dialog.rs:239
+#, fuzzy
+msgid "Top Artists"
+msgstr "Artistas"
+
+#. translators: Heading of a list in the stats.
+#: src/app/components/shell/stats_dialog.rs:243
+#, fuzzy
+msgid "Top Albums"
+msgstr "Albumes"
+
+#: src/app/components/shell/stats_dialog.rs:322
+#, rust-format
+msgid "{} plays"
 msgstr ""
 
 #: src/app/components/sleep_timer.rs:33
@@ -998,7 +1087,7 @@ msgid "Select a track to play"
 msgstr "Tracias salvate"
 
 #: src/app/components/shell/now_panel/mod.rs:36
-#: src/app/components/shell/now_panel/mod.rs:1068
+#: src/app/components/shell/now_panel/mod.rs:1079
 #, fuzzy
 msgid "Go to Album"
 msgstr "Albumes"
@@ -1031,76 +1120,82 @@ msgstr "Adder al cauda"
 msgid "Your Plays"
 msgstr "Bibliotheca"
 
-#: src/app/components/shell/now_panel/mod.rs:405
+#. A click opens the full stats
+#. translators: Tooltip of the "Your Plays" card in the Now Playing panel.
+#: src/app/components/shell/now_panel/mod.rs:404
+msgid "See Your Stats"
+msgstr ""
+
+#: src/app/components/shell/now_panel/mod.rs:416
 msgid "Credits"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:444
+#: src/app/components/shell/now_panel/mod.rs:455
 msgid "this song"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:445
+#: src/app/components/shell/now_panel/mod.rs:456
 #, fuzzy
 msgid "this album"
 msgstr "Vider album"
 
-#: src/app/components/shell/now_panel/mod.rs:446
+#: src/app/components/shell/now_panel/mod.rs:457
 msgid "this artist"
 msgstr ""
 
 #. translators: Credits row in the Now Playing panel: the track's artists.
-#: src/app/components/shell/now_panel/mod.rs:508
+#: src/app/components/shell/now_panel/mod.rs:519
 msgid "Performed by"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:511
+#: src/app/components/shell/now_panel/mod.rs:522
 msgid "Producer(s)"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:512
+#: src/app/components/shell/now_panel/mod.rs:523
 msgid "Writer(s)"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:513
+#: src/app/components/shell/now_panel/mod.rs:524
 #, fuzzy
 msgid "Featured Artists"
 msgstr "Artistas"
 
-#: src/app/components/shell/now_panel/mod.rs:521
+#: src/app/components/shell/now_panel/mod.rs:532
 #, fuzzy
 msgid "Release Date"
 msgstr "Lanciamentos"
 
-#: src/app/components/shell/now_panel/mod.rs:530
+#: src/app/components/shell/now_panel/mod.rs:541
 msgid "No detailed credits were found on Genius for this track."
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:537
+#: src/app/components/shell/now_panel/mod.rs:548
 #, fuzzy
 msgid "Open on Genius"
 msgstr "Cercar Spotify."
 
-#: src/app/components/shell/now_panel/mod.rs:539
-#: src/app/components/shell/now_panel/mod.rs:811
+#: src/app/components/shell/now_panel/mod.rs:550
+#: src/app/components/shell/now_panel/mod.rs:822
 #, fuzzy
 msgid "Search on Genius"
 msgstr "Cercar Spotify."
 
-#: src/app/components/shell/now_panel/mod.rs:783
+#: src/app/components/shell/now_panel/mod.rs:794
 msgid "Add a Genius token to see who produced and wrote this track."
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:785
+#: src/app/components/shell/now_panel/mod.rs:796
 #, fuzzy
 msgid "Set Up Genius"
 msgstr "Cercar Spotify."
 
 #. translators: Shown while the credits of the current track load.
-#: src/app/components/shell/now_panel/mod.rs:791
+#: src/app/components/shell/now_panel/mod.rs:802
 msgid "Loading credits…"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:809
+#: src/app/components/shell/now_panel/mod.rs:820
 msgid "Couldn't load the credits from Genius."
 msgstr ""
 
@@ -1150,30 +1245,30 @@ msgstr ""
 msgid "Creator"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:340
+#: src/app/components/shell/navigation_panel/model.rs:347
 msgid "Song"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:396
+#: src/app/components/shell/navigation_panel/model.rs:403
 msgid "Unnamed Playlist"
 msgstr "Lista de reproduction sin nomine"
 
-#: src/app/components/shell/navigation_panel/model.rs:833
+#: src/app/components/shell/navigation_panel/model.rs:840
 #, fuzzy
 msgid "Pinned Playlist"
 msgstr "Lista de reproduction sin nomine"
 
-#: src/app/components/shell/navigation_panel/model.rs:834
+#: src/app/components/shell/navigation_panel/model.rs:841
 #, fuzzy
 msgid "Pinned Album"
 msgstr "Vider album"
 
-#: src/app/components/shell/navigation_panel/model.rs:835
+#: src/app/components/shell/navigation_panel/model.rs:842
 #, fuzzy
 msgid "Pinned Artist"
 msgstr "Artistas"
 
-#: src/app/components/shell/navigation_panel/model.rs:836
+#: src/app/components/shell/navigation_panel/model.rs:843
 #, fuzzy
 msgid "Pinned Track"
 msgstr "Tracias salvate"
@@ -1221,7 +1316,7 @@ msgstr ""
 
 #: src/app/components/shell/window/close_dialog.rs:17
 #: src/app/components/pages/settings/settings.blp:102
-#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:454
+#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:467
 msgid "Quit"
 msgstr "Quitar"
 
@@ -1306,7 +1401,7 @@ msgstr ""
 msgid "Compilations"
 msgstr ""
 
-#: src/app/mod.rs:261
+#: src/app/mod.rs:274
 #, fuzzy
 msgid "No track is currently playing"
 msgstr "Ora in reproduction"
@@ -2166,11 +2261,11 @@ msgstr ""
 msgid "Main Menu"
 msgstr ""
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:427
+#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:440
 msgid "Preferences"
 msgstr "Preferentias"
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:432
+#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:445
 msgid "Keyboard Shortcuts"
 msgstr ""
 
@@ -2332,31 +2427,31 @@ msgstr ""
 msgid "What do you want to play?"
 msgstr ""
 
-#: src/window.blp:294
+#: src/window.blp:302
 #, fuzzy
 msgid "Expand Your Library"
 msgstr "Bibliotheca"
 
 #. Translators: Title of the left panel, which lists the user's playlists, albums and artists.
-#: src/window.blp:316
+#: src/window.blp:324
 #, fuzzy
 msgid "Your Library"
 msgstr "Bibliotheca"
 
-#: src/window.blp:327
+#: src/window.blp:335
 msgid "Collapse Sidebar"
 msgstr ""
 
-#: src/window.blp:437
+#: src/window.blp:450
 msgid "Report Issue"
 msgstr ""
 
-#: src/window.blp:442
+#: src/window.blp:455
 #, fuzzy
 msgid "About Canto"
 msgstr "A proposito de"
 
-#: src/window.blp:449
+#: src/window.blp:462
 msgid "Log Out"
 msgstr "Clauder le session"
 

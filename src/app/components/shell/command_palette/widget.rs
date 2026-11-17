@@ -29,6 +29,7 @@ enum PaletteAction {
     ToggleLyrics,
     FullscreenLyrics,
     MiniPlayer,
+    ListeningStats,
     StartTrackRadio(Track),
     SetTheme(&'static str),
     SetSleepTimerOff,
@@ -655,6 +656,17 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         round_cover: false,
         action: PaletteAction::MiniPlayer,
     });
+    entries.push(PaletteEntry {
+        title: gettext("Your Stats"),
+        subtitle: gettext("What you played most, from Last.fm"),
+        category: action_cat.clone(),
+        icon_name: "canto-lastfm-symbolic",
+        shortcut_hint: None,
+        keywords: "stats statistics last.fm lastfm top artists tracks albums wrapped estatisticas".into(),
+        cover_url: None,
+        round_cover: false,
+        action: PaletteAction::ListeningStats,
+    });
 
     if let Some(current) = runtime.app_model.get_state().playback.current_song() {
         entries.push(PaletteEntry {
@@ -917,6 +929,9 @@ fn execute_action(runtime: &PaletteRuntime, action: PaletteAction) {
         }
         PaletteAction::MiniPlayer => {
             let _ = WidgetExt::activate_action(&runtime.window, "win.mini-player", None);
+        }
+        PaletteAction::ListeningStats => {
+            let _ = WidgetExt::activate_action(&runtime.window, "win.listening-stats", None);
         }
         PaletteAction::FullscreenLyrics => {
             let _ = WidgetExt::activate_action(&runtime.window, "win.fullscreen-lyrics", None);

@@ -399,6 +399,17 @@ impl Widgets {
         stats_body.set_homogeneous(true);
         stats_card.append(&stats_body);
         stats_card.set_visible(false);
+        // A click opens the full stats
+        // translators: Tooltip of the "Your Plays" card in the Now Playing panel.
+        stats_card.set_tooltip_text(Some(&gettext("See Your Stats")));
+        stats_card.set_cursor_from_name(Some("pointer"));
+        let open_stats = gtk::GestureClick::new();
+        open_stats.connect_released(|gesture, _, _, _| {
+            if let Some(widget) = gesture.widget() {
+                let _ = widget.activate_action("win.listening-stats", None);
+            }
+        });
+        stats_card.add_controller(open_stats);
         content.append(&stats_card);
 
         let credits_card = card(&["now-panel__credits"]);
