@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 23:24-0300\n"
+"POT-Creation-Date: 2026-11-16 22:46-0300\n"
 "Language: eu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -196,8 +196,8 @@ msgstr "Erreprodukzio-zerrendara gehitu..."
 #. translators: An album in the back/forward history menu, while its name is loading.
 #: src/app/components/labels.rs:95 src/app/components/labels.rs:180
 #: src/app/components/shell/command_palette/widget.rs:803
-#: src/app/components/shell/navigation_panel/model.rs:348
-#: src/app/components/shell/navigation_panel/model.rs:809
+#: src/app/components/shell/navigation_panel/model.rs:344
+#: src/app/components/shell/navigation_panel/model.rs:805
 #: src/app/components/pages/settings/settings.blp:254
 #, fuzzy
 msgid "Album"
@@ -293,8 +293,8 @@ msgstr "{} {} -ek eginda"
 #. translators: An artist in the back/forward history menu, while their name is loading.
 #: src/app/components/labels.rs:182
 #: src/app/components/shell/command_palette/widget.rs:804
-#: src/app/components/shell/navigation_panel/model.rs:350
-#: src/app/components/shell/navigation_panel/model.rs:833
+#: src/app/components/shell/navigation_panel/model.rs:346
+#: src/app/components/shell/navigation_panel/model.rs:829
 #, fuzzy
 msgid "Artist"
 msgstr "Artistak"
@@ -304,8 +304,8 @@ msgstr "Artistak"
 #: src/app/components/pages/details_playlist/model.rs:154
 #: src/app/components/pages/saved_tracks/model.rs:63
 #: src/app/components/shell/command_palette/widget.rs:805
-#: src/app/components/shell/navigation_panel/model.rs:368
-#: src/app/components/shell/navigation_panel/model.rs:753
+#: src/app/components/shell/navigation_panel/model.rs:364
+#: src/app/components/shell/navigation_panel/model.rs:749
 #, fuzzy
 msgid "Playlist"
 msgstr "Erreprodukzio-zerrendak"
@@ -466,7 +466,7 @@ msgstr "Zure erreprodukzio zerrendak hemen agertuko dira."
 #. translators: This is a navigation panel entry to browse to the songs the user liked (the heart).
 #: src/app/components/pages/saved_tracks/model.rs:59
 #: src/app/components/shell/command_palette/widget.rs:570
-#: src/app/components/shell/navigation_panel/model.rs:480
+#: src/app/components/shell/navigation_panel/model.rs:476
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:73
 msgid "Liked Songs"
 msgstr ""
@@ -487,13 +487,13 @@ msgstr "Pistak"
 #: src/app/components/shell/command_palette/widget.rs:581
 #: src/app/components/shell/navigation/factory.rs:82
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:77
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:326
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:301
 #: src/app/components/pages/shortcuts/shortcuts.blp:89
 msgid "Artists"
 msgstr "Artistak"
 
 #: src/app/components/pages/search/search.rs:442
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:325
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:300
 #: src/app/models/card_enums.rs:173
 #: src/app/components/pages/shortcuts/shortcuts.blp:94
 msgid "Albums"
@@ -504,7 +504,7 @@ msgstr "Albumak"
 #: src/app/components/shell/command_palette/widget.rs:592
 #: src/app/components/shell/navigation/factory.rs:71
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:75
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:324
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:299
 #: src/app/components/pages/shortcuts/shortcuts.blp:99
 msgid "Playlists"
 msgstr "Erreprodukzio-zerrendak"
@@ -1242,30 +1242,30 @@ msgstr ""
 msgid "Creator"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:351
+#: src/app/components/shell/navigation_panel/model.rs:347
 msgid "Song"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:407
+#: src/app/components/shell/navigation_panel/model.rs:403
 msgid "Unnamed Playlist"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:844
+#: src/app/components/shell/navigation_panel/model.rs:840
 #, fuzzy
 msgid "Pinned Playlist"
 msgstr "Erreprodukzio-zerrendak"
 
-#: src/app/components/shell/navigation_panel/model.rs:845
+#: src/app/components/shell/navigation_panel/model.rs:841
 #, fuzzy
 msgid "Pinned Album"
 msgstr "Albuma ikusi"
 
-#: src/app/components/shell/navigation_panel/model.rs:846
+#: src/app/components/shell/navigation_panel/model.rs:842
 #, fuzzy
 msgid "Pinned Artist"
 msgstr "Artistak"
 
-#: src/app/components/shell/navigation_panel/model.rs:847
+#: src/app/components/shell/navigation_panel/model.rs:843
 #, fuzzy
 msgid "Pinned Track"
 msgstr "Gordetako pistak"
@@ -1280,27 +1280,20 @@ msgstr ""
 
 #. Translators: title of the dialog that creates a new playlist
 #: src/app/components/shell/navigation_panel/navigation_panel.rs:238
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:548
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:523
 #: src/app/components/widgets/playlist_dialog/playlist_dialog.blp:7
 msgid "New Playlist"
 msgstr ""
 
-#. translators: Tooltip of the button that shows the user's library as a big grid.
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:267
-#: src/window.blp:302
-#, fuzzy
-msgid "Expand Your Library"
-msgstr "Biblioteka"
-
 #. translators: Tooltip and placeholder of the search inside Your Library.
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:394
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:369
 #, fuzzy
 msgid "Search in Your Library"
 msgstr "Biblioteka"
 
 #. translators: Tooltip of the button that picks how Your Library is ordered.
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:449
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:455
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:424
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:430
 #: src/app/components/widgets/card_list/card_view_menu.blp:57
 msgid "Sort By"
 msgstr ""
@@ -2426,6 +2419,11 @@ msgstr ""
 #: src/window.blp:211
 msgid "What do you want to play?"
 msgstr ""
+
+#: src/window.blp:302
+#, fuzzy
+msgid "Expand Your Library"
+msgstr "Biblioteka"
 
 #. Translators: Title of the left panel, which lists the user's playlists, albums and artists.
 #: src/window.blp:324
