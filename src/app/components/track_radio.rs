@@ -4,9 +4,9 @@ use std::cell::Cell;
 use std::collections::HashSet;
 use std::rc::Rc;
 
-use gettextrs::gettext;
 use canto_api::DEFAULT_RADIO_TARGET_COUNT;
 use canto_config::settings::{SETTINGS, SMART_QUEUE_CONTINUATION};
+use gettextrs::gettext;
 
 use crate::app::components::sleep_timer::SleepTimerController;
 use crate::app::components::EventListener;
@@ -28,7 +28,12 @@ pub fn start_track_radio(app_model: &Rc<AppModel>, dispatcher: &Dispatcher, seed
 
     glib::MainContext::default().spawn_local(async move {
         match api
-            .fetch_track_radio(&seed, &exclude_ids, DEFAULT_RADIO_TARGET_COUNT, load::visible())
+            .fetch_track_radio(
+                &seed,
+                &exclude_ids,
+                DEFAULT_RADIO_TARGET_COUNT,
+                load::visible(),
+            )
             .await
         {
             Ok(tracks) if tracks.is_empty() => {
@@ -52,7 +57,8 @@ pub fn start_track_radio(app_model: &Rc<AppModel>, dispatcher: &Dispatcher, seed
                     for action in start_actions(false, load_context(source, Some(label), load)) {
                         dispatcher.dispatch(action);
                     }
-                    dispatcher.dispatch(AppAction::ShowNotification(gettext("Started Track Radio")));
+                    dispatcher
+                        .dispatch(AppAction::ShowNotification(gettext("Started Track Radio")));
                     return;
                 }
 
@@ -76,7 +82,10 @@ pub fn start_track_radio(app_model: &Rc<AppModel>, dispatcher: &Dispatcher, seed
                 dispatcher.dispatch(AppAction::ShowNotification(gettext("Started Track Radio")));
             }
             Err(e) => {
-                warn!("track_radio: failed to build radio for {}: {e}", seed.rri.id);
+                warn!(
+                    "track_radio: failed to build radio for {}: {e}",
+                    seed.rri.id
+                );
                 dispatcher.dispatch(AppAction::ShowNotification(gettext(
                     "Could not start Track Radio right now",
                 )));
@@ -119,7 +128,12 @@ impl SmartQueueController {
 
         glib::MainContext::default().spawn_local(async move {
             let Ok(tracks) = api
-                .fetch_track_radio(&seed, &HashSet::new(), DEFAULT_RADIO_TARGET_COUNT, load::visible())
+                .fetch_track_radio(
+                    &seed,
+                    &HashSet::new(),
+                    DEFAULT_RADIO_TARGET_COUNT,
+                    load::visible(),
+                )
                 .await
             else {
                 return;

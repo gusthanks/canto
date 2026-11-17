@@ -26,9 +26,18 @@ const ARTWORK_SIZE: i32 = 48;
 pub const EQ_PRESETS: [(&str, [f64; 10]); 5] = [
     ("flat", [0.0; 10]),
     ("bass", [5.0, 4.0, 2.5, 1.0, 0.0, 0.0, 0.5, 1.0, 1.5, 1.5]),
-    ("vocal", [-2.0, -1.5, 0.0, 2.0, 3.5, 3.5, 2.0, 0.5, -1.0, -1.5]),
-    ("lofi", [2.5, 2.0, 1.0, 0.0, -1.5, -2.5, -3.5, -4.5, -5.0, -6.0]),
-    ("acoustic", [2.0, 1.5, 1.0, 0.5, 1.5, 1.5, 2.0, 2.5, 2.0, 1.0]),
+    (
+        "vocal",
+        [-2.0, -1.5, 0.0, 2.0, 3.5, 3.5, 2.0, 0.5, -1.0, -1.5],
+    ),
+    (
+        "lofi",
+        [2.5, 2.0, 1.0, 0.0, -1.5, -2.5, -3.5, -4.5, -5.0, -6.0],
+    ),
+    (
+        "acoustic",
+        [2.0, 1.5, 1.0, 0.5, 1.5, 1.5, 2.0, 2.5, 2.0, 1.0],
+    ),
 ];
 
 fn apply_eq_preset(gains: [f64; 10]) {
@@ -338,16 +347,51 @@ mod imp {
             };
             let settings = gio::Settings::new(SETTINGS);
             let items: [(&str, &str, gtk::Widget, String); 7] = [
-                ("lyrics", PLAYER_BAR_LYRICS, self.lyrics_slot.get().upcast(), gettextrs::gettext("Lyrics")),
-                ("queue", PLAYER_BAR_QUEUE, self.queue_slot.get().upcast(), gettextrs::gettext("Queue")),
+                (
+                    "lyrics",
+                    PLAYER_BAR_LYRICS,
+                    self.lyrics_slot.get().upcast(),
+                    gettextrs::gettext("Lyrics"),
+                ),
+                (
+                    "queue",
+                    PLAYER_BAR_QUEUE,
+                    self.queue_slot.get().upcast(),
+                    gettextrs::gettext("Queue"),
+                ),
                 // translators: Checkbox in "Customize Bar": the button that picks where the sound plays.
-                ("device", PLAYER_BAR_DEVICE, self.device_slot.get().upcast(), gettextrs::gettext("Device")),
+                (
+                    "device",
+                    PLAYER_BAR_DEVICE,
+                    self.device_slot.get().upcast(),
+                    gettextrs::gettext("Device"),
+                ),
                 // translators: Checkbox in "Customize Bar": the volume slider.
-                ("volume", PLAYER_BAR_VOLUME, self.volume_slot.get().upcast(), gettextrs::gettext("Volume")),
-                ("mini-player", PLAYER_BAR_MINI_PLAYER, self.mini_player_slot.get().upcast(), gettextrs::gettext("Mini Player")),
+                (
+                    "volume",
+                    PLAYER_BAR_VOLUME,
+                    self.volume_slot.get().upcast(),
+                    gettextrs::gettext("Volume"),
+                ),
+                (
+                    "mini-player",
+                    PLAYER_BAR_MINI_PLAYER,
+                    self.mini_player_slot.get().upcast(),
+                    gettextrs::gettext("Mini Player"),
+                ),
                 // The gear has no key: it is always there, as the way back
-                ("more", "", self.eq_button.get().upcast(), gettextrs::gettext("More Options")),
-                ("side-panel", PLAYER_BAR_SIDE_PANEL, self.side_panel_slot.get().upcast(), gettextrs::gettext("Side Panel")),
+                (
+                    "more",
+                    "",
+                    self.eq_button.get().upcast(),
+                    gettextrs::gettext("More Options"),
+                ),
+                (
+                    "side-panel",
+                    PLAYER_BAR_SIDE_PANEL,
+                    self.side_panel_slot.get().upcast(),
+                    gettextrs::gettext("Side Panel"),
+                ),
             ];
 
             let list = gtk::Box::new(gtk::Orientation::Vertical, 2);
@@ -363,8 +407,13 @@ mod imp {
             title.add_css_class("heading");
             list.append(&title);
             // Each row: show/hide, then arrows that move the button along
-            let mut rows: Vec<(&'static str, gtk::Widget, gtk::Box, gtk::Button, gtk::Button)> =
-                Vec::new();
+            let mut rows: Vec<(
+                &'static str,
+                gtk::Widget,
+                gtk::Box,
+                gtk::Button,
+                gtk::Button,
+            )> = Vec::new();
             for (id, key, widget, label) in items {
                 let row = gtk::Box::new(gtk::Orientation::Horizontal, 2);
                 if key.is_empty() {
@@ -395,10 +444,13 @@ mod imp {
                 for (arrow, step) in [(&up, -1i32), (&down, 1i32)] {
                     let settings = settings.clone();
                     arrow.connect_clicked(move |_| {
-                        let mut order = player_bar_order(&settings.strv(PLAYER_BAR_ORDER)
-                            .iter()
-                            .map(|s| s.to_string())
-                            .collect::<Vec<_>>());
+                        let mut order = player_bar_order(
+                            &settings
+                                .strv(PLAYER_BAR_ORDER)
+                                .iter()
+                                .map(|s| s.to_string())
+                                .collect::<Vec<_>>(),
+                        );
                         let Some(at) = order.iter().position(|o| *o == id) else {
                             return;
                         };

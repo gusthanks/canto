@@ -179,7 +179,8 @@ impl WindowLayout {
             navigation_handle,
             move |split| {
                 layout.fit();
-                navigation_handle.set_visible(!split.is_collapsed() && !layout.navigation.is_rail());
+                navigation_handle
+                    .set_visible(!split.is_collapsed() && !layout.navigation.is_rail());
                 layout.apply_rail();
             }
         ));
@@ -212,7 +213,10 @@ impl WindowLayout {
                     layout.open_navigation_overlay();
                     return;
                 }
-                let rail = action.state().and_then(|s| s.get::<bool>()).unwrap_or(false);
+                let rail = action
+                    .state()
+                    .and_then(|s| s.get::<bool>())
+                    .unwrap_or(false);
                 action.change_state(&(!rail).to_variant());
             }
         ));
@@ -385,7 +389,8 @@ impl WindowLayout {
                     let sidebar_end = side.x() + side.width();
                     let start_without_margin = own.x() - current as f32;
                     let gap = 12.0;
-                    wanted = (sidebar_end - gap - own.width() - start_without_margin).max(0.0) as i32;
+                    wanted =
+                        (sidebar_end - gap - own.width() - start_without_margin).max(0.0) as i32;
                 }
             }
             if (wanted - current).abs() > 1 {

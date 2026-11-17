@@ -46,7 +46,9 @@ pub mod scrobbler;
 pub use scrobbler::ScrobblerController;
 
 pub mod sleep_timer;
-pub use sleep_timer::{SleepTimerController, SleepTimerListener, SleepTimerMode, SleepTimerSnapshot};
+pub use sleep_timer::{
+    SleepTimerController, SleepTimerListener, SleepTimerMode, SleepTimerSnapshot,
+};
 
 pub mod track_radio;
 pub use track_radio::{start_track_radio, SmartQueueController};

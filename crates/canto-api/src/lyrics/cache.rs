@@ -36,7 +36,9 @@ impl LyricsCache {
 
     /// Normalize Spotify track URIs or IDs to a canonical key.
     pub fn normalize_key(key: &str) -> &str {
-        key.trim().strip_prefix("spotify:track:").unwrap_or(key.trim())
+        key.trim()
+            .strip_prefix("spotify:track:")
+            .unwrap_or(key.trim())
     }
 
     pub fn cache_path(&self, key: &str) -> PathBuf {
@@ -143,14 +145,18 @@ mod tests {
         let lyrics = Lyrics::Plain(vec!["Just plain lyrics".into()]);
 
         // Store using full spotify URI
-        cache.store("spotify:track:4cOdK2wGLETKBW3PvgPWqT", &lyrics).expect("store");
+        cache
+            .store("spotify:track:4cOdK2wGLETKBW3PvgPWqT", &lyrics)
+            .expect("store");
 
         // Lookup using bare ID should succeed
         let hit_by_id = cache.get("4cOdK2wGLETKBW3PvgPWqT").expect("hit by id");
         assert_eq!(hit_by_id, lyrics);
 
         // Lookup using URI should also succeed
-        let hit_by_uri = cache.get("spotify:track:4cOdK2wGLETKBW3PvgPWqT").expect("hit by uri");
+        let hit_by_uri = cache
+            .get("spotify:track:4cOdK2wGLETKBW3PvgPWqT")
+            .expect("hit by uri");
         assert_eq!(hit_by_uri, lyrics);
 
         // Clean up

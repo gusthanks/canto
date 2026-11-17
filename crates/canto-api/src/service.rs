@@ -172,7 +172,9 @@ impl ApiService {
         token: &str,
         lines: &[String],
     ) -> Result<Vec<Option<String>>, DomainError> {
-        let info = self.fetch_genius_track_info(track_id, artist, title, token).await?;
+        let info = self
+            .fetch_genius_track_info(track_id, artist, title, token)
+            .await?;
         let Some(song_id) = info.song_id.filter(|_| info.is_exact_match) else {
             return Ok(vec![None; lines.len()]);
         };

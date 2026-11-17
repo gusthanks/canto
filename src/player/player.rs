@@ -22,12 +22,12 @@ use crate::app::models::RepeatMode;
 use crate::player::AppPlayerDelegate;
 use canto_audio_engine::{
     CaptureSink, EqController, EqProcessor, LevelMeterController, LevelMeterProcessor,
-    LimiterProcessor, MixController, MixProcessor, MonoController, MonoProcessor, PanController, PanProcessor,
-    PitchController, PitchProcessor, ProcessorChain,
+    LimiterProcessor, MixController, MixProcessor, MonoController, MonoProcessor, PanController,
+    PanProcessor, PitchController, PitchProcessor, ProcessorChain,
 };
 
 use canto_auth::{
-    AuthcodeChallenge, OAuthError, CantoOauthClient, SessionTokens, TokenStore, SESSION_CLIENT_ID,
+    AuthcodeChallenge, CantoOauthClient, OAuthError, SessionTokens, TokenStore, SESSION_CLIENT_ID,
 };
 
 use super::Command;

@@ -1,5 +1,5 @@
-use gettextrs::gettext;
 use crate::config;
+use gettextrs::gettext;
 
 pub fn setup_about(about: libadwaita::AboutDialog) {
     setup_credits(&about);

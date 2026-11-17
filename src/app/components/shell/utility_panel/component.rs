@@ -38,8 +38,7 @@ impl UtilityPanel {
     ) {
         self.widget.set_pages(now, queue, lyrics);
         let has_content = now.is_some() || queue.is_some() || lyrics.is_some();
-        self.split
-            .set_sidebar(has_content.then_some(&self.widget));
+        self.split.set_sidebar(has_content.then_some(&self.widget));
         self.widget
             .resize_handle()
             .set_visible(has_content && !self.split.is_collapsed());

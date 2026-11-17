@@ -44,11 +44,21 @@ impl LyricsTranslator {
     fn cache_path(&self, key: &str, target: &str) -> PathBuf {
         let safe = |s: &str| -> String {
             s.chars()
-                .map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '_' })
+                .map(|c| {
+                    if c.is_ascii_alphanumeric() || c == '-' {
+                        c
+                    } else {
+                        '_'
+                    }
+                })
                 .collect()
         };
-        let key = key.trim().strip_prefix("spotify:track:").unwrap_or(key.trim());
-        self.root.join(format!("{}.{}.json", safe(key), safe(target)))
+        let key = key
+            .trim()
+            .strip_prefix("spotify:track:")
+            .unwrap_or(key.trim());
+        self.root
+            .join(format!("{}.{}.json", safe(key), safe(target)))
     }
 
     pub fn cached(&self, key: &str, target: &str) -> Option<Translation> {
@@ -90,7 +100,9 @@ impl LyricsTranslator {
             Some(key) => self.cloud(&texts, target, key.trim()).await?,
             None => self.keyless(&texts, target).await?,
         };
-        let same_language = detected.as_deref().is_some_and(|d| same_language(d, target));
+        let same_language = detected
+            .as_deref()
+            .is_some_and(|d| same_language(d, target));
         let mut out = vec![None; lines.len()];
         for ((index, original), translation) in sent.iter().zip(translated) {
             let translation = translation.trim();
@@ -179,7 +191,9 @@ fn chunks<'a>(texts: &[&'a str], max: usize) -> Vec<Vec<&'a str>> {
 /// (plain strings when the source language was given).
 fn parse_keyless(body: &str, expected: usize) -> Result<(Vec<String>, Vec<String>), String> {
     let value: serde_json::Value = serde_json::from_str(body).map_err(|e| e.to_string())?;
-    let items = value.as_array().ok_or("unexpected answer from Google Translate")?;
+    let items = value
+        .as_array()
+        .ok_or("unexpected answer from Google Translate")?;
     if items.len() != expected {
         return Err(format!("{} translations for {expected} lines", items.len()));
     }
@@ -189,7 +203,12 @@ fn parse_keyless(body: &str, expected: usize) -> Result<(Vec<String>, Vec<String
         match item {
             serde_json::Value::String(text) => lines.push(text.clone()),
             serde_json::Value::Array(pair) => {
-                lines.push(pair.first().and_then(|t| t.as_str()).unwrap_or("").to_string());
+                lines.push(
+                    pair.first()
+                        .and_then(|t| t.as_str())
+                        .unwrap_or("")
+                        .to_string(),
+                );
                 if let Some(language) = pair.get(1).and_then(|l| l.as_str()) {
                     languages.push(language.to_string());
                 }
@@ -247,7 +266,12 @@ fn decode_entities(text: &str) -> String {
 
 /// "pt-BR" and "pt" are the same language here.
 fn same_language(a: &str, b: &str) -> bool {
-    let base = |s: &str| s.split(['-', '_']).next().unwrap_or("").to_ascii_lowercase();
+    let base = |s: &str| {
+        s.split(['-', '_'])
+            .next()
+            .unwrap_or("")
+            .to_ascii_lowercase()
+    };
     base(a) == base(b)
 }
 
@@ -276,7 +300,14 @@ mod tests {
     fn keyless_answer_has_one_translation_per_line() {
         let body = r#"[["Eu estou apaixonado","en"],["Nós empurramos e puxamos","en"],["Tom e Jerry","fr"]]"#;
         let (lines, languages) = parse_keyless(body, 3).unwrap();
-        assert_eq!(lines, ["Eu estou apaixonado", "Nós empurramos e puxamos", "Tom e Jerry"]);
+        assert_eq!(
+            lines,
+            [
+                "Eu estou apaixonado",
+                "Nós empurramos e puxamos",
+                "Tom e Jerry"
+            ]
+        );
         assert_eq!(most_common(languages).as_deref(), Some("en"));
         let (plain, none) = parse_keyless(r#"["Olá","Boa noite"]"#, 2).unwrap();
         assert_eq!(plain, ["Olá", "Boa noite"]);

@@ -107,10 +107,26 @@ mod player_bar_order_tests {
 
     #[test]
     fn keeps_a_full_saved_order() {
-        let saved = owned(&["more", "side-panel", "lyrics", "queue", "device", "volume", "mini-player"]);
+        let saved = owned(&[
+            "more",
+            "side-panel",
+            "lyrics",
+            "queue",
+            "device",
+            "volume",
+            "mini-player",
+        ]);
         assert_eq!(
             player_bar_order(&saved),
-            vec!["more", "side-panel", "lyrics", "queue", "device", "volume", "mini-player"]
+            vec![
+                "more",
+                "side-panel",
+                "lyrics",
+                "queue",
+                "device",
+                "volume",
+                "mini-player"
+            ]
         );
     }
 
@@ -120,7 +136,15 @@ mod player_bar_order_tests {
         assert_eq!(
             player_bar_order(&saved),
             // A missing button comes back next to its neighbor in the default order
-            vec!["volume", "mini-player", "more", "side-panel", "lyrics", "queue", "device"]
+            vec![
+                "volume",
+                "mini-player",
+                "more",
+                "side-panel",
+                "lyrics",
+                "queue",
+                "device"
+            ]
         );
         assert_eq!(player_bar_order(&[]), PLAYER_BAR_DEFAULT_ORDER.to_vec());
     }

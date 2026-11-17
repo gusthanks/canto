@@ -73,7 +73,8 @@ impl FullscreenLyrics {
         let parent = main_window.clone();
         action.connect_activate(move |_, _| {
             let mut slot = view.borrow_mut();
-            let view = slot.get_or_insert_with(|| build_view(Some(parent.upcast_ref()), &lyrics_widget));
+            let view =
+                slot.get_or_insert_with(|| build_view(Some(parent.upcast_ref()), &lyrics_widget));
             update_view(view, &app_model);
             view.window.present();
             view.window.fullscreen();
@@ -242,7 +243,9 @@ impl EventListener for FullscreenLyrics {
     fn on_event(&mut self, event: &AppEvent) {
         self.lyrics.on_event(event);
         if let AppEvent::PlaybackEvent(
-            PlaybackEvent::TrackChanged(_) | PlaybackEvent::TrackSynced | PlaybackEvent::PlaybackStopped,
+            PlaybackEvent::TrackChanged(_)
+            | PlaybackEvent::TrackSynced
+            | PlaybackEvent::PlaybackStopped,
         ) = event
         {
             self.refresh();

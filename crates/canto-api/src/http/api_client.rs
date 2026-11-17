@@ -3,13 +3,13 @@
 use std::sync::OnceLock;
 use std::time::Instant;
 
-use http::Extensions;
-use reqwest::{Request, Response, StatusCode, Url};
-use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, Middleware, Next};
 use canto_config::api::{
     API_MAX_IDLE_CONNECTIONS_PER_HOST, API_REQUEST_TIMEOUT, POOL_CONNECT_TIMEOUT,
     POOL_TCP_KEEPALIVE,
 };
+use http::Extensions;
+use reqwest::{Request, Response, StatusCode, Url};
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, Middleware, Next};
 
 /// Per-provider trace-id header, keyed by request host.
 const PROVIDER_TRACE_ID_HEADERS: &[(&str, &str)] = &[("api.spotify.com", "spotify-request-id")];
@@ -81,7 +81,10 @@ impl Middleware for LoggingMiddleware {
 fn give_bodyless_writes_a_length(req: &mut Request) {
     let writes = matches!(
         *req.method(),
-        reqwest::Method::PUT | reqwest::Method::POST | reqwest::Method::PATCH | reqwest::Method::DELETE
+        reqwest::Method::PUT
+            | reqwest::Method::POST
+            | reqwest::Method::PATCH
+            | reqwest::Method::DELETE
     );
     if !writes {
         return;
@@ -205,8 +208,14 @@ mod tests {
         let mut with_body = Request::new(reqwest::Method::PUT, url.clone());
         *with_body.body_mut() = Some(reqwest::Body::from("{}"));
         give_bodyless_writes_a_length(&mut with_body);
-        assert_eq!(with_body.body().and_then(|b| b.as_bytes()), Some(&b"{}"[..]));
-        assert!(with_body.headers().get(reqwest::header::CONTENT_LENGTH).is_none());
+        assert_eq!(
+            with_body.body().and_then(|b| b.as_bytes()),
+            Some(&b"{}"[..])
+        );
+        assert!(with_body
+            .headers()
+            .get(reqwest::header::CONTENT_LENGTH)
+            .is_none());
 
         let mut null_put = Request::new(reqwest::Method::PUT, url.clone());
         *null_put.body_mut() = Some(reqwest::Body::from("null"));

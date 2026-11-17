@@ -123,7 +123,9 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     if let Some(text) = text {
         assert!(crate::app::space_is_typing(Some(text)));
     }
-    assert!(!crate::app::space_is_typing(Some(gtk::Button::new().upcast())));
+    assert!(!crate::app::space_is_typing(Some(
+        gtk::Button::new().upcast()
+    )));
     assert!(!crate::app::space_is_typing(None));
 
     // The Now Playing side panel builds, with its heart icons available.
@@ -287,9 +289,7 @@ fn dump_now_panel_sample() {
         w * 4,
     );
     let theme = gtk::CssProvider::new();
-    theme.load_from_string(
-        "@define-color canto_cover_accent #c0392b;",
-    );
+    theme.load_from_string("@define-color canto_cover_accent #c0392b;");
     gtk::style_context_add_provider_for_display(
         &gtk::gdk::Display::default().unwrap(),
         &theme,
@@ -307,8 +307,18 @@ fn dump_now_panel_sample() {
     // The main window's frame: top bar over the sidebar and content
     let builder = gtk::Builder::from_resource("/io/github/gusthanks/Canto/window.ui");
     let main: libadwaita::ApplicationWindow = builder.object("window").unwrap();
-    for id in ["top_bar", "top_history", "home_button", "search_button", "top_search_slot", "user"] {
-        assert!(builder.object::<glib::Object>(id).is_some(), "{id} must exist");
+    for id in [
+        "top_bar",
+        "top_history",
+        "home_button",
+        "search_button",
+        "top_search_slot",
+        "user",
+    ] {
+        assert!(
+            builder.object::<glib::Object>(id).is_some(),
+            "{id} must exist"
+        );
     }
     let header: super::AppHeaderBar = builder.object("app_header").unwrap();
     header.set_history_slot(&builder.object("top_history").unwrap());
@@ -345,7 +355,10 @@ fn dump_now_panel_sample() {
         Some(field.upcast_ref::<gtk::Widget>())
     );
     let stack: gtk::Stack = builder.object("top_search_stack").unwrap();
-    assert_eq!(stack.visible_child().as_ref(), Some(slot.upcast_ref::<gtk::Widget>()));
+    assert_eq!(
+        stack.visible_child().as_ref(),
+        Some(slot.upcast_ref::<gtk::Widget>())
+    );
     field.set_placeholder_text(Some("Search field"));
     pump(1500);
     distinct_colors(main.upcast_ref(), "main-window-search-sample");
@@ -410,10 +423,8 @@ fn dump_now_panel_sample() {
         gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
     );
     let header_widget: super::DetailsHeaderWidget = glib::Object::new();
-    let header = super::DetailsHeader::for_widget(
-        header_widget.clone(),
-        super::HeaderImageShape::Square,
-    );
+    let header =
+        super::DetailsHeader::for_widget(header_widget.clone(), super::HeaderImageShape::Square);
     header.set_caption("Album");
     header.set_title("ESSÊNCIA DE RISCO");
     header.set_subtitle("Niink, Supernova Ent · 2026 · 18 songs");
@@ -460,7 +471,11 @@ fn dump_now_panel_sample() {
         window.set_child(Some(&sidebar));
         window.present();
         pump(1200);
-        let name = if rail { "sidebar-rail-sample" } else { "sidebar-sample" };
+        let name = if rail {
+            "sidebar-rail-sample"
+        } else {
+            "sidebar-sample"
+        };
         distinct_colors(window.upcast_ref(), name);
         window.destroy();
     }

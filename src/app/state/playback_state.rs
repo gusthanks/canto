@@ -1878,15 +1878,17 @@ mod tests {
         ));
         state.act(PlaybackAction::Load("3".to_string()));
         // Spotify reports only what plays from now on
-        state.act(PlaybackAction::SyncRemoteState(Box::new(RemotePlaybackState {
-            tracks: Some(vec![song("3"), song("4")]),
-            track_id: Some("3".to_string()),
-            is_playing: true,
-            position_ms: 500,
-            repeat: RepeatMode::Off,
-            shuffle: false,
-            volume: None,
-        })));
+        state.act(PlaybackAction::SyncRemoteState(Box::new(
+            RemotePlaybackState {
+                tracks: Some(vec![song("3"), song("4")]),
+                track_id: Some("3".to_string()),
+                is_playing: true,
+                position_ms: 500,
+                repeat: RepeatMode::Off,
+                shuffle: false,
+                volume: None,
+            },
+        )));
         assert_eq!(state.current_source(), Some(&source));
 
         let events = state.act(PlaybackAction::Previous);
@@ -1895,15 +1897,17 @@ mod tests {
             .any(|e| matches!(e, PlaybackEvent::TrackChanged(id) if id == "2")));
 
         // A track from elsewhere still takes Spotify's queue
-        state.act(PlaybackAction::SyncRemoteState(Box::new(RemotePlaybackState {
-            tracks: Some(vec![song("z")]),
-            track_id: Some("z".to_string()),
-            is_playing: true,
-            position_ms: 0,
-            repeat: RepeatMode::Off,
-            shuffle: false,
-            volume: None,
-        })));
+        state.act(PlaybackAction::SyncRemoteState(Box::new(
+            RemotePlaybackState {
+                tracks: Some(vec![song("z")]),
+                track_id: Some("z".to_string()),
+                is_playing: true,
+                position_ms: 0,
+                repeat: RepeatMode::Off,
+                shuffle: false,
+                volume: None,
+            },
+        )));
         assert_eq!(state.song_ids(), ["z"]);
     }
 
@@ -1911,24 +1915,34 @@ mod tests {
     fn connect_device_skips_past_what_canto_knows_of_its_queue() {
         let mut state = PlaybackState::default();
         state.act(PlaybackAction::SwitchDevice(connect_device("alexa")));
-        state.act(PlaybackAction::SyncRemoteState(Box::new(RemotePlaybackState {
-            tracks: Some(vec![song("only")]),
-            track_id: Some("only".to_string()),
-            is_playing: true,
-            position_ms: 500,
-            repeat: RepeatMode::Off,
-            shuffle: false,
-            volume: None,
-        })));
+        state.act(PlaybackAction::SyncRemoteState(Box::new(
+            RemotePlaybackState {
+                tracks: Some(vec![song("only")]),
+                track_id: Some("only".to_string()),
+                is_playing: true,
+                position_ms: 500,
+                repeat: RepeatMode::Off,
+                shuffle: false,
+                volume: None,
+            },
+        )));
         let was_playing = state.is_playing();
 
         let previous = state.act(PlaybackAction::Previous);
-        assert!(previous.iter().any(|e| matches!(e, PlaybackEvent::RemoteSkip(false))));
-        assert!(!previous.iter().any(|e| matches!(e, PlaybackEvent::NoPreviousTrack)));
+        assert!(previous
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::RemoteSkip(false))));
+        assert!(!previous
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::NoPreviousTrack)));
 
         let next = state.act(PlaybackAction::Next);
-        assert!(next.iter().any(|e| matches!(e, PlaybackEvent::RemoteSkip(true))));
-        assert!(!next.iter().any(|e| matches!(e, PlaybackEvent::PlaybackStopped)));
+        assert!(next
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::RemoteSkip(true))));
+        assert!(!next
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::PlaybackStopped)));
         assert_eq!(state.is_playing(), was_playing);
     }
 
@@ -2031,9 +2045,10 @@ mod tests {
         assert!(events
             .iter()
             .any(|e| matches!(e, PlaybackEvent::PlaylistChanged)));
-        assert!(!events
-            .iter()
-            .any(|e| matches!(e, PlaybackEvent::TrackSynced | PlaybackEvent::TrackChanged(_))));
+        assert!(!events.iter().any(|e| matches!(
+            e,
+            PlaybackEvent::TrackSynced | PlaybackEvent::TrackChanged(_)
+        )));
         assert!(!events
             .iter()
             .any(|e| matches!(e, PlaybackEvent::PlayStateSynced(_))));

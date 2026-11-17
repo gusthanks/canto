@@ -89,7 +89,10 @@ fn link_to_main_window(view: &View, main: glib::WeakRef<libadwaita::ApplicationW
             }
         }
     };
-    for target in [view.cover_area.upcast_ref::<gtk::Widget>(), view.text_area.upcast_ref()] {
+    for target in [
+        view.cover_area.upcast_ref::<gtk::Widget>(),
+        view.text_area.upcast_ref(),
+    ] {
         let click = gtk::GestureClick::new();
         let mini = view.window.downgrade();
         click.connect_released(move |gesture, _, _, _| {
@@ -236,8 +239,11 @@ fn update_play(view: &View, app_model: &AppModel) {
     } else {
         "media-playback-start-symbolic"
     });
-    view.play
-        .set_tooltip_text(Some(&if playing { gettext("Pause") } else { gettext("Play") }));
+    view.play.set_tooltip_text(Some(&if playing {
+        gettext("Pause")
+    } else {
+        gettext("Play")
+    }));
 }
 
 fn update_view(view: &View, app_model: &AppModel) {

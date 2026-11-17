@@ -634,7 +634,10 @@ impl AppHeaderBar {
         if in_sidebar && toggle.parent().as_ref() != Some(slot.upcast_ref()) {
             if let Some(parent) = toggle.parent() {
                 if let Some(header) = parent.ancestor(libadwaita::HeaderBar::static_type()) {
-                    header.downcast_ref::<libadwaita::HeaderBar>().unwrap().remove(&toggle);
+                    header
+                        .downcast_ref::<libadwaita::HeaderBar>()
+                        .unwrap()
+                        .remove(&toggle);
                 } else if let Some(parent) = parent.downcast_ref::<gtk::Box>() {
                     parent.remove(&toggle);
                 }

@@ -103,7 +103,11 @@ fn find_year_edition_dash(lower: &str) -> Option<usize> {
     while i + 8 <= bytes.len() {
         if &bytes[i..i + 3] == needle && bytes[i + 3..i + 7].iter().all(|b| b.is_ascii_digit()) {
             let tail = &lower[i + 7..];
-            if tail.contains("remaster") || tail.contains("mix") || tail.contains("version") || tail.contains("edit") {
+            if tail.contains("remaster")
+                || tail.contains("mix")
+                || tail.contains("version")
+                || tail.contains("edit")
+            {
                 return Some(i);
             }
         }
@@ -119,7 +123,11 @@ fn find_year_edition_paren(lower: &str) -> Option<usize> {
     while i + 7 <= bytes.len() {
         if &bytes[i..i + 2] == needle && bytes[i + 2..i + 6].iter().all(|b| b.is_ascii_digit()) {
             let tail = &lower[i + 6..];
-            if tail.contains("remaster") || tail.contains("mix") || tail.contains("version") || tail.contains("edition") {
+            if tail.contains("remaster")
+                || tail.contains("mix")
+                || tail.contains("version")
+                || tail.contains("edition")
+            {
                 return Some(i);
             }
         }
@@ -176,8 +184,15 @@ impl LyricsService {
         album_name: Option<&str>,
         duration_secs: Option<u32>,
     ) -> Option<Lyrics> {
-        self.fetch_lyrics_inner(key, track_name, artist_name, album_name, duration_secs, false)
-            .await
+        self.fetch_lyrics_inner(
+            key,
+            track_name,
+            artist_name,
+            album_name,
+            duration_secs,
+            false,
+        )
+        .await
     }
 
     /// Refetch lyrics from LRCLIB bypassing the cached disk copy.
@@ -189,8 +204,15 @@ impl LyricsService {
         album_name: Option<&str>,
         duration_secs: Option<u32>,
     ) -> Option<Lyrics> {
-        self.fetch_lyrics_inner(key, track_name, artist_name, album_name, duration_secs, true)
-            .await
+        self.fetch_lyrics_inner(
+            key,
+            track_name,
+            artist_name,
+            album_name,
+            duration_secs,
+            true,
+        )
+        .await
     }
 
     async fn fetch_lyrics_inner(
@@ -233,7 +255,10 @@ impl LyricsService {
         }
 
         // 4. Fallback: search endpoint with duration preference
-        if let Some(lyrics) = self.query_search(track_name, artist_name, duration_secs).await {
+        if let Some(lyrics) = self
+            .query_search(track_name, artist_name, duration_secs)
+            .await
+        {
             let _ = self.cache.store(key, &lyrics);
             return Some(lyrics);
         }
@@ -247,7 +272,10 @@ impl LyricsService {
                 let _ = self.cache.store(key, &lyrics);
                 return Some(lyrics);
             }
-            if let Some(lyrics) = self.query_search(&clean_title, artist_name, duration_secs).await {
+            if let Some(lyrics) = self
+                .query_search(&clean_title, artist_name, duration_secs)
+                .await
+            {
                 let _ = self.cache.store(key, &lyrics);
                 return Some(lyrics);
             }
@@ -300,10 +328,7 @@ impl LyricsService {
         artist_name: &str,
         duration_secs: Option<u32>,
     ) -> Option<Lyrics> {
-        let query = [
-            ("track_name", track_name),
-            ("artist_name", artist_name),
-        ];
+        let query = [("track_name", track_name), ("artist_name", artist_name)];
 
         let resp = self
             .client
@@ -327,7 +352,9 @@ impl LyricsService {
             items.sort_by(|a, b| {
                 let diff_a = a.duration.map_or(f64::MAX, |d| (d - target_f).abs());
                 let diff_b = b.duration.map_or(f64::MAX, |d| (d - target_f).abs());
-                diff_a.partial_cmp(&diff_b).unwrap_or(std::cmp::Ordering::Equal)
+                diff_a
+                    .partial_cmp(&diff_b)
+                    .unwrap_or(std::cmp::Ordering::Equal)
             });
         }
 
@@ -340,10 +367,9 @@ impl LyricsService {
             }
         }
         for item in &items {
-            if let Some(lyrics) = parse_lyrics(
-                item.synced_lyrics.as_deref(),
-                item.plain_lyrics.as_deref(),
-            ) {
+            if let Some(lyrics) =
+                parse_lyrics(item.synced_lyrics.as_deref(), item.plain_lyrics.as_deref())
+            {
                 return Some(lyrics);
             }
         }

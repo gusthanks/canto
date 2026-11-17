@@ -1,11 +1,11 @@
 #[cfg(debug_assertions)]
 use crate::player::Command;
 use crate::settings::{CantoSettings, StateTracker};
+use canto_auth::{SessionTokens, TokenStore};
+use canto_config::feature_flags::FeatureFlag;
 use futures::channel::mpsc::UnboundedSender;
 use gio::prelude::*;
 use glib::object::Cast;
-use canto_auth::{SessionTokens, TokenStore};
-use canto_config::feature_flags::FeatureFlag;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;

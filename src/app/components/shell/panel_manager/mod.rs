@@ -3,9 +3,8 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use crate::app::components::{
-    AppHeaderBar, BottomSheet, Component, EventListener, FullscreenLyrics, LyricsPage, MiniPlayer, NowPanel,
-    QueuePage,
-    QueuePageWidget, UtilityPanel,
+    AppHeaderBar, BottomSheet, Component, EventListener, FullscreenLyrics, LyricsPage, MiniPlayer,
+    NowPanel, QueuePage, QueuePageWidget, UtilityPanel,
 };
 use crate::app::state::PlaybackEvent;
 use crate::app::{AppAction, AppEvent, AppModel, Dispatcher};

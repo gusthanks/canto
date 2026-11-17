@@ -602,11 +602,20 @@ mod tests {
     #[test]
     fn api_sig_handles_utf8_and_parameter_permutation_invariance() {
         let a = sign_lastfm_params(
-            &[("method", "track.updateNowPlaying"), ("artist", "Café Tacvba"), ("track", "Eres")],
+            &[
+                ("method", "track.updateNowPlaying"),
+                ("artist", "Café Tacvba"),
+                ("track", "Eres"),
+            ],
             "sec",
         );
         let b = sign_lastfm_params(
-            &[("track", "Eres"), ("artist", "Café Tacvba"), ("method", "track.updateNowPlaying"), ("format", "xml")],
+            &[
+                ("track", "Eres"),
+                ("artist", "Café Tacvba"),
+                ("method", "track.updateNowPlaying"),
+                ("format", "xml"),
+            ],
             "sec",
         );
         assert_eq!(a, b);

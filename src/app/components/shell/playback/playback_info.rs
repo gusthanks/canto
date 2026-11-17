@@ -3,8 +3,8 @@ use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 
-use crate::app::components::utils::set_missing_art;
 use crate::app::components::now_panel::{show_like_state, title_markup};
+use crate::app::components::utils::set_missing_art;
 
 mod imp {
 
@@ -97,7 +97,9 @@ impl PlaybackInfoWidget {
     /// `artists_markup` comes from `now_panel::artists_markup`.
     pub fn set_track(&self, title: &str, has_album: bool, artists_markup: &str) {
         let widget = self.imp();
-        widget.song_title.set_markup(&title_markup(title, has_album));
+        widget
+            .song_title
+            .set_markup(&title_markup(title, has_album));
         widget.song_artist.set_markup(artists_markup);
         widget.song_title.remove_css_class("dim-label");
         widget.song_info_box.set_visible(true);

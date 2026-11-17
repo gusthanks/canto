@@ -163,7 +163,10 @@ pub async fn fetch_similar_tracks(
             Ok(tracks) => pool.extend(tracks),
             Err(e @ (DomainError::NoToken | DomainError::AuthExpired)) => fatal_auth = Some(e),
             Err(e) => {
-                debug!("radio: optional recommendations unavailable for {}: {e}", seed.rri.id);
+                debug!(
+                    "radio: optional recommendations unavailable for {}: {e}",
+                    seed.rri.id
+                );
             }
         }
     }
@@ -209,7 +212,10 @@ pub async fn fetch_similar_tracks(
         if pool.len() >= target_count * 2 {
             break;
         }
-        match api.search_scoped(&query, SearchType::Track, 0, 20, load).await {
+        match api
+            .search_scoped(&query, SearchType::Track, 0, 20, load)
+            .await
+        {
             Ok(res) => pool.extend(res.tracks.items),
             Err(e @ (DomainError::NoToken | DomainError::AuthExpired)) => fatal_auth = Some(e),
             Err(e) => debug!("radio: search query '{query}' failed: {e}"),
@@ -270,7 +276,12 @@ mod tests {
 
         let candidates = vec![
             make_track("seed", "Breathe (In the Air)", "a1", "Pink Floyd"),
-            make_track("dup_title", "Breathe (In the Air) - 2011 Remastered", "a1", "Pink Floyd"),
+            make_track(
+                "dup_title",
+                "Breathe (In the Air) - 2011 Remastered",
+                "a1",
+                "Pink Floyd",
+            ),
             make_track("queued", "Already Queued", "a2", "Artist 2"),
             unplayable,
             make_track("t1", "Time", "a1", "Pink Floyd"),
@@ -307,7 +318,11 @@ mod tests {
         let seed = make_track("seed", "Echoes - 2016 Remaster", "a1", "Pink Floyd");
         let queries = build_radio_search_queries(
             &seed,
-            &["progressive rock".into(), "psychedelic rock".into(), "art rock".into()],
+            &[
+                "progressive rock".into(),
+                "psychedelic rock".into(),
+                "art rock".into(),
+            ],
         );
         assert_eq!(
             queries,

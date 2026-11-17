@@ -31,7 +31,8 @@ impl SettingsModel {
     }
 
     pub fn notify(&self, message: String) {
-        self.dispatcher.dispatch(AppAction::ShowNotification(message));
+        self.dispatcher
+            .dispatch(AppAction::ShowNotification(message));
     }
 
     pub fn http_client(&self) -> canto_api::HttpClient {

@@ -4,11 +4,11 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
+use canto_api::scrobbler::{LastFmClient, ListeningStats, StatsPeriod, TopItem};
 use gettextrs::gettext;
 use gtk::prelude::*;
 use gtk::{gio, glib};
 use libadwaita::prelude::*;
-use canto_api::scrobbler::{LastFmClient, ListeningStats, StatsPeriod, TopItem};
 
 use crate::app::models::Track;
 use crate::app::state::{load_context, start_actions, BrowserAction, PlaybackAction, Route};
@@ -39,7 +39,11 @@ struct Stats {
 
 /// Opens the stats over `window`. Without a Last.fm account it says how to
 /// link one.
-pub fn open(window: &libadwaita::ApplicationWindow, app_model: Rc<AppModel>, dispatcher: Dispatcher) {
+pub fn open(
+    window: &libadwaita::ApplicationWindow,
+    app_model: Rc<AppModel>,
+    dispatcher: Dispatcher,
+) {
     let dialog = libadwaita::Dialog::builder()
         // translators: Title of the window with the user's Last.fm listening stats.
         .title(gettext("Your Stats"))
@@ -159,10 +163,15 @@ fn period_label(period: StatsPeriod) -> String {
 impl Stats {
     fn load(self: &Rc<Self>) {
         let settings = gio::Settings::new(canto_config::settings::SETTINGS);
-        let api_key = settings.string(canto_config::settings::LASTFM_API_KEY).to_string();
-        let username = settings.string(canto_config::settings::LASTFM_USERNAME).to_string();
+        let api_key = settings
+            .string(canto_config::settings::LASTFM_API_KEY)
+            .to_string();
+        let username = settings
+            .string(canto_config::settings::LASTFM_USERNAME)
+            .to_string();
         if api_key.trim().is_empty() || username.trim().is_empty() {
-            self.status.set_title(&gettext("Link Last.fm to See Your Stats"));
+            self.status
+                .set_title(&gettext("Link Last.fm to See Your Stats"));
             self.status.set_description(Some(&gettext(
                 "Add your Last.fm username and API key in Preferences → Integrations.",
             )));
@@ -187,9 +196,9 @@ impl Stats {
                 Err(err) => {
                     log::warn!("Last.fm stats failed: {err}");
                     stats.status.set_title(&gettext("Couldn't Load Your Stats"));
-                    stats
-                        .status
-                        .set_description(Some(&gettext("Last.fm didn't answer. Try again in a moment.")));
+                    stats.status.set_description(Some(&gettext(
+                        "Last.fm didn't answer. Try again in a moment.",
+                    )));
                     stats.stack.set_visible_child_name("status");
                 }
             }
@@ -204,7 +213,8 @@ impl Stats {
             && listening.tracks.is_empty()
             && listening.albums.is_empty();
         if nothing {
-            self.status.set_title(&gettext("Nothing Played in This Period"));
+            self.status
+                .set_title(&gettext("Nothing Played in This Period"));
             self.status.set_description(None);
             self.stack.set_visible_child_name("status");
             return;
@@ -350,7 +360,10 @@ impl Stats {
         let api = self.app_model.api();
         let weak = cover.downgrade();
         let px = COVER_PX * cover.scale_factor().max(2);
-        let tag = canto_api::Load::new(canto_api::LoadPriority::Visible, canto_api::BACKGROUND_EPOCH);
+        let tag = canto_api::Load::new(
+            canto_api::LoadPriority::Visible,
+            canto_api::BACKGROUND_EPOCH,
+        );
         glib::spawn_future_local(async move {
             let texture = api.load_image(&url, px, px, tag).await;
             if let (Some(cover), Some(texture)) = (weak.upgrade(), texture) {
@@ -374,29 +387,44 @@ impl Stats {
         let weak_self = Rc::downgrade(self);
         let weak_cover = cover.downgrade();
         let found = Rc::clone(found);
-        let tag = canto_api::Load::new(canto_api::LoadPriority::Visible, canto_api::BACKGROUND_EPOCH);
+        let tag = canto_api::Load::new(
+            canto_api::LoadPriority::Visible,
+            canto_api::BACKGROUND_EPOCH,
+        );
         glib::spawn_future_local(async move {
             let Ok(results) = api.search(&query, 0, 5, tag).await else {
                 return;
             };
             let hit = match kind {
                 Kind::Artist => results.artists.items.first().map(|a| {
-                    (Found::Artist(a.rri.id.clone()), a.art.best_for_width(96).map(str::to_owned))
+                    (
+                        Found::Artist(a.rri.id.clone()),
+                        a.art.best_for_width(96).map(str::to_owned),
+                    )
                 }),
                 Kind::Album => results.albums.items.first().map(|a| {
-                    (Found::Album(a.rri.id.clone()), a.art.best_for_width(96).map(str::to_owned))
+                    (
+                        Found::Album(a.rri.id.clone()),
+                        a.art.best_for_width(96).map(str::to_owned),
+                    )
                 }),
                 Kind::Track => results.tracks.items.first().map(|t| {
-                    (Found::Track(Box::new(t.clone())), t.art.best_for_width(96).map(str::to_owned))
+                    (
+                        Found::Track(Box::new(t.clone())),
+                        t.art.best_for_width(96).map(str::to_owned),
+                    )
                 }),
             };
             let Some((target, picture)) = hit else {
                 return;
             };
             *found.borrow_mut() = Some(target);
-            if let (true, Some(url), Some(stats), Some(cover)) =
-                (needs_picture, picture, weak_self.upgrade(), weak_cover.upgrade())
-            {
+            if let (true, Some(url), Some(stats), Some(cover)) = (
+                needs_picture,
+                picture,
+                weak_self.upgrade(),
+                weak_cover.upgrade(),
+            ) {
                 stats.load_picture(&cover, url);
             }
         });

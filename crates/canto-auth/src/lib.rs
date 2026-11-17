@@ -15,7 +15,7 @@ mod token_store;
 
 pub use credentials::Credentials;
 pub use oauth2::{
-    AuthcodeChallenge, LoginCredentials, OAuthError, CantoOauthClient, SESSION_CLIENT_ID,
+    AuthcodeChallenge, CantoOauthClient, LoginCredentials, OAuthError, SESSION_CLIENT_ID,
 };
 pub use session_tokens::SessionTokens;
 pub use token_store::TokenStore;

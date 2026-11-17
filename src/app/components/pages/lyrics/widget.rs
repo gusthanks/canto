@@ -121,9 +121,7 @@ impl Default for LyricsPageWidget {
 
 pub fn open_external_url(widget: &impl IsA<gtk::Widget>, url: &str) {
     if open::that_detached(url).is_err() {
-        let parent = widget
-            .root()
-            .and_then(|r| r.downcast::<gtk::Window>().ok());
+        let parent = widget.root().and_then(|r| r.downcast::<gtk::Window>().ok());
         let launcher = gtk::UriLauncher::new(url);
         launcher.launch(parent.as_ref(), None::<&gio::Cancellable>, |_| {});
     }
@@ -165,7 +163,9 @@ impl LyricsPageWidget {
         } else {
             sync.add_css_class("lyric-sync-button--shifted");
             // translators: Tooltip of the lyrics timing button while an offset is set. {} is like "+200 ms".
-            sync.set_tooltip_text(Some(&gettextrs::gettext("Lyrics Timing ({})").replace("{}", &text)));
+            sync.set_tooltip_text(Some(
+                &gettextrs::gettext("Lyrics Timing ({})").replace("{}", &text),
+            ));
         }
     }
 
@@ -318,7 +318,11 @@ impl LyricsPageWidget {
     pub fn line_texts(&self) -> Vec<String> {
         let count = self.imp().line_widgets.borrow().len();
         (0..count)
-            .map(|i| self.line_label(i).map(|l| l.text().to_string()).unwrap_or_default())
+            .map(|i| {
+                self.line_label(i)
+                    .map(|l| l.text().to_string())
+                    .unwrap_or_default()
+            })
             .collect()
     }
 
@@ -327,9 +331,11 @@ impl LyricsPageWidget {
     pub fn set_annotations(&self, notes: Option<&[Option<String>]>) {
         let count = self.imp().line_widgets.borrow().len();
         for index in 0..count {
-            let Some(line) = self.line_box(index) else { continue };
-            let Some(head) = child_with_class(line.upcast_ref(), "lyric-line__head")
-                .and_downcast::<gtk::Box>()
+            let Some(line) = self.line_box(index) else {
+                continue;
+            };
+            let Some(head) =
+                child_with_class(line.upcast_ref(), "lyric-line__head").and_downcast::<gtk::Box>()
             else {
                 continue;
             };
@@ -402,7 +408,9 @@ impl LyricsPageWidget {
         // The arrow points up while the list is open
         let button = self.imp().translate_language_button.downgrade();
         popover.connect_visible_notify(move |popover| {
-            let Some(button) = button.upgrade() else { return };
+            let Some(button) = button.upgrade() else {
+                return;
+            };
             button.set_icon_name(if popover.is_visible() {
                 "pan-up-symbolic"
             } else {
@@ -419,7 +427,9 @@ impl LyricsPageWidget {
                 popover.popdown();
             }
         ));
-        self.imp().translate_language_button.set_popover(Some(&popover));
+        self.imp()
+            .translate_language_button
+            .set_popover(Some(&popover));
     }
 
     pub fn connect_translate_toggled<F: Fn(bool) + 'static>(&self, f: F) {
@@ -436,9 +446,10 @@ impl LyricsPageWidget {
         }
         // The line left behind shows plain again
         if let Some(previous) = *active_cell {
-            if let (Some(label), Some(text)) =
-                (self.line_label(previous), imp.line_texts.borrow().get(previous))
-            {
+            if let (Some(label), Some(text)) = (
+                self.line_label(previous),
+                imp.line_texts.borrow().get(previous),
+            ) {
                 label.set_text(text);
             }
         }
@@ -508,8 +519,13 @@ impl LyricsPageWidget {
                 vadjust,
                 move |val| vadjust.set_value(val)
             ));
-            let anim =
-                libadwaita::TimedAnimation::new(&*imp.lyrics_scroller, current, target, 260, target_fn);
+            let anim = libadwaita::TimedAnimation::new(
+                &*imp.lyrics_scroller,
+                current,
+                target,
+                260,
+                target_fn,
+            );
             anim.set_easing(libadwaita::Easing::EaseOutCubic);
             anim.play();
             *imp.scroll_anim.borrow_mut() = Some(anim);

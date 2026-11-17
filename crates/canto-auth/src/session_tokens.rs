@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use tokio::task::JoinHandle;
 
 use crate::credentials::Credentials;
-use crate::oauth2::{OauthClient, CantoOauthClient, SESSION_CLIENT_ID};
+use crate::oauth2::{CantoOauthClient, OauthClient, SESSION_CLIENT_ID};
 use crate::token_store::TokenStore;
 
 struct InnerSessionTokens {

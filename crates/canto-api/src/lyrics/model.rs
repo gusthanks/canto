@@ -101,8 +101,14 @@ mod karaoke_tests {
 
     fn lyrics() -> Lyrics {
         Lyrics::Synced(vec![
-            LyricLine { start_time_ms: 1000, text: "um dois tres".into() },
-            LyricLine { start_time_ms: 20000, text: "quatro".into() },
+            LyricLine {
+                start_time_ms: 1000,
+                text: "um dois tres".into(),
+            },
+            LyricLine {
+                start_time_ms: 20000,
+                text: "quatro".into(),
+            },
         ])
     }
 

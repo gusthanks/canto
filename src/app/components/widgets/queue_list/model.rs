@@ -126,7 +126,6 @@ impl QueueListModel {
     fn drop_keys(key: &str, target: &str) -> Option<(EntryKey, EntryKey)> {
         Some((key.parse().ok()?, target.parse().ok()?))
     }
-
 }
 
 fn queue_entry(row: &SongModel) -> Option<(EntryKey, QueueRole)> {
@@ -310,7 +309,9 @@ impl TrackListModel for QueueListModel {
         }
         group.add_action(&song.make_album_action(dispatcher.clone()));
         group.add_action(&song.make_link_action());
-        group.add_action(&song.make_radio_action(Rc::clone(&self.base.app_model), dispatcher.clone()));
+        group.add_action(
+            &song.make_radio_action(Rc::clone(&self.base.app_model), dispatcher.clone()),
+        );
         let actions = match queue_entry(row) {
             Some((key, QueueRole::Queued)) => {
                 song.make_queue_entry_actions(key, dispatcher.clone())

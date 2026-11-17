@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 
+use canto_api::models::{Page, RepeatMode, Track};
 use rand::rngs::SmallRng;
 use rand::seq::{IndexedRandom, SliceRandom};
 use rand::RngExt;
-use canto_api::models::{Page, RepeatMode, Track};
 
 use super::context::{Context, CONTEXT_PAGE_SIZE};
 use super::{EntryKey, PageRequest, SongsSource};
@@ -711,7 +711,12 @@ impl PlayQueue {
 
     /// Replaces the queue with a snapshot already ordered by a remote Spotify Connect device,
     /// preserving its track order even when shuffle is active and selecting `current_id` if present.
-    pub fn set_remote_queue(&mut self, tracks: Vec<Track>, current_id: Option<&str>, shuffled: bool) {
+    pub fn set_remote_queue(
+        &mut self,
+        tracks: Vec<Track>,
+        current_id: Option<&str>,
+        shuffled: bool,
+    ) {
         let len = tracks.len();
         self.history.clear();
         self.queued.clear();
@@ -721,9 +726,8 @@ impl PlayQueue {
         self.shuffled = shuffled;
         self.order = (0..len).collect();
         self.next_order.clear();
-        self.cursor = current_id.and_then(|id| {
-            (0..len).find(|&i| self.context.get(i).is_some_and(|t| t.rri.id == id))
-        });
+        self.cursor = current_id
+            .and_then(|id| (0..len).find(|&i| self.context.get(i).is_some_and(|t| t.rri.id == id)));
         self.now = if self.cursor.is_some() {
             Now::Context
         } else {
@@ -774,8 +778,8 @@ impl PlayQueue {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::SeedableRng;
     use canto_api::models::{ContentRating, ImageSet, ResourceId};
+    use rand::SeedableRng;
 
     fn make_track(id: &str) -> Track {
         Track {

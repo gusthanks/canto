@@ -76,7 +76,10 @@ impl ScrobbleTracker {
             self.active = None;
             return Vec::new();
         };
-        if track.id.trim().is_empty() || track.title.trim().is_empty() || track.artist.trim().is_empty() {
+        if track.id.trim().is_empty()
+            || track.title.trim().is_empty()
+            || track.artist.trim().is_empty()
+        {
             self.active = None;
             return Vec::new();
         }
@@ -216,10 +219,14 @@ mod tests {
         // Play another 29s -> still under 60s
         for _ in 0..5 {
             now += 5_000;
-            assert!(tracker.update(Some(&t), true, 55_000, false, true, now).is_empty());
+            assert!(tracker
+                .update(Some(&t), true, 55_000, false, true, now)
+                .is_empty());
         }
         now += 4_000;
-        assert!(tracker.update(Some(&t), true, 59_000, false, true, now).is_empty());
+        assert!(tracker
+            .update(Some(&t), true, 59_000, false, true, now)
+            .is_empty());
 
         // 1 more second reaches 60_000ms -> submits scrobble once
         now += 1_000;
@@ -228,7 +235,9 @@ mod tests {
 
         // Subsequent ticks do NOT double-scrobble
         now += 5_000;
-        assert!(tracker.update(Some(&t), true, 65_000, false, true, now).is_empty());
+        assert!(tracker
+            .update(Some(&t), true, 65_000, false, true, now)
+            .is_empty());
     }
 
     #[test]
@@ -242,7 +251,9 @@ mod tests {
         for i in 1..=47 {
             now += 5_000; // 47 * 5s = 235s
             assert!(
-                tracker.update(Some(&t), true, i * 5_000, false, true, now).is_empty(),
+                tracker
+                    .update(Some(&t), true, i * 5_000, false, true, now)
+                    .is_empty(),
                 "must not scrobble before 240s"
             );
         }
@@ -260,7 +271,9 @@ mod tests {
         tracker.update(Some(&short), true, 0, false, true, now);
         for _ in 0..5 {
             now += 5_000;
-            assert!(tracker.update(Some(&short), true, 20_000, false, true, now).is_empty());
+            assert!(tracker
+                .update(Some(&short), true, 20_000, false, true, now)
+                .is_empty());
         }
     }
 
@@ -276,9 +289,27 @@ mod tests {
         // Simulate duplicate poll/sync ticks firing at the exact same timestamp & 3s intervals
         for step in 1..=13 {
             let wall = 100_000 + step * 3_000; // up to 39s elapsed
-            assert!(tracker.update(Some(&t), true, 1_000 + (step as u32) * 3_000, true, true, wall).is_empty());
+            assert!(tracker
+                .update(
+                    Some(&t),
+                    true,
+                    1_000 + (step as u32) * 3_000,
+                    true,
+                    true,
+                    wall
+                )
+                .is_empty());
             // Redundant tick 10ms later with stale position does not over-count
-            assert!(tracker.update(Some(&t), true, 1_000 + (step as u32) * 3_000, true, true, wall + 10).is_empty());
+            assert!(tracker
+                .update(
+                    Some(&t),
+                    true,
+                    1_000 + (step as u32) * 3_000,
+                    true,
+                    true,
+                    wall + 10
+                )
+                .is_empty());
         }
 
         // Real clock passes 40s total -> triggers once
@@ -290,7 +321,11 @@ mod tests {
     fn respects_remote_toggle_when_disabled() {
         let mut tracker = ScrobbleTracker::new();
         let t = track("rem", 120_000);
-        assert!(tracker.update(Some(&t), true, 0, true, false, 10_000).is_empty());
-        assert!(tracker.update(Some(&t), true, 5_000, true, false, 15_000).is_empty());
+        assert!(tracker
+            .update(Some(&t), true, 0, true, false, 10_000)
+            .is_empty());
+        assert!(tracker
+            .update(Some(&t), true, 5_000, true, false, 15_000)
+            .is_empty());
     }
 }

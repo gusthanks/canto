@@ -3,9 +3,7 @@ use gtk::prelude::*;
 use std::rc::Rc;
 use tokio::sync::oneshot;
 
-use super::{
-    NavigationPanelDestination, NavigationPanelItem,
-};
+use super::{NavigationPanelDestination, NavigationPanelItem};
 use crate::app::components::{
     dispatch_api_call, dispatch_api_call_many, dispatch_api_read, dispatch_api_read_many,
     queue_source_tracks, upload_playlist_cover, PlaylistForm, Saved,
@@ -227,7 +225,10 @@ impl NavigationPanelModel {
                 .into_iter()
                 .filter(|item| {
                     item.title().to_lowercase().contains(&query)
-                        || item.property::<String>("subtitle").to_lowercase().contains(&query)
+                        || item
+                            .property::<String>("subtitle")
+                            .to_lowercase()
+                            .contains(&query)
                 })
                 .collect()
         };
@@ -247,7 +248,9 @@ impl NavigationPanelModel {
             }),
             LibrarySort::RecentlyAdded => {}
             LibrarySort::Alphabetical => items.sort_by_key(|item| item.title().to_lowercase()),
-            LibrarySort::Creator => items.sort_by_key(|item| (creator(item), item.title().to_lowercase())),
+            LibrarySort::Creator => {
+                items.sort_by_key(|item| (creator(item), item.title().to_lowercase()))
+            }
         }
         items
     }
@@ -265,9 +268,17 @@ impl NavigationPanelModel {
     /// Whether `item` is what the music plays from.
     pub fn is_playing_from(&self, item: &NavigationPanelItem) -> bool {
         match (self.app_model_state_source(), item.destination()) {
-            (Some(SongsSource::Playlist(id)), Some(NavigationPanelDestination::Playlist(p))) => id == p.id,
-            (Some(SongsSource::Album(id)), Some(NavigationPanelDestination::Album { id: a, .. })) => id == a,
-            (Some(SongsSource::Artist(id)), Some(NavigationPanelDestination::Artist { id: a, .. })) => id == a,
+            (Some(SongsSource::Playlist(id)), Some(NavigationPanelDestination::Playlist(p))) => {
+                id == p.id
+            }
+            (
+                Some(SongsSource::Album(id)),
+                Some(NavigationPanelDestination::Album { id: a, .. }),
+            ) => id == a,
+            (
+                Some(SongsSource::Artist(id)),
+                Some(NavigationPanelDestination::Artist { id: a, .. }),
+            ) => id == a,
             (Some(SongsSource::SavedTracks), Some(NavigationPanelDestination::SavedTracks)) => true,
             _ => false,
         }
@@ -365,7 +376,10 @@ impl NavigationPanelModel {
                     .map(|c| c.subtitle())
             })
         };
-        item.set_subtitle(with_detail(&gettext("Playlist"), &owner.unwrap_or_default()));
+        item.set_subtitle(with_detail(
+            &gettext("Playlist"),
+            &owner.unwrap_or_default(),
+        ));
         item
     }
 
@@ -392,7 +406,10 @@ impl NavigationPanelModel {
         let url = url.to_owned();
         let weak = image.downgrade();
         // Behind whatever page is loading
-        let tag = canto_api::Load::new(canto_api::LoadPriority::Visible, canto_api::BACKGROUND_EPOCH);
+        let tag = canto_api::Load::new(
+            canto_api::LoadPriority::Visible,
+            canto_api::BACKGROUND_EPOCH,
+        );
         glib::MainContext::default().spawn_local(async move {
             let texture = api.load_image(&url, px, px, tag).await;
             if let (Some(image), Some(texture)) = (weak.upgrade(), texture) {
@@ -749,7 +766,8 @@ impl NavigationPanelModel {
         let (pinned, playlists) = self.build_navigation_panel_items();
         let mut items: Vec<NavigationPanelItem> = Vec::new();
         if filter.shows_playlists() {
-            let saved = NavigationPanelItem::from_destination(NavigationPanelDestination::SavedTracks);
+            let saved =
+                NavigationPanelItem::from_destination(NavigationPanelDestination::SavedTracks);
             saved.set_subtitle(gettext("Playlist"));
             items.push(saved);
         }
@@ -802,10 +820,11 @@ impl NavigationPanelModel {
         cards
             .into_iter()
             .map(|card| {
-                let item = NavigationPanelItem::from_destination(NavigationPanelDestination::Album {
-                    id: card.id(),
-                    title: card.title(),
-                });
+                let item =
+                    NavigationPanelItem::from_destination(NavigationPanelDestination::Album {
+                        id: card.id(),
+                        title: card.title(),
+                    });
                 item.set_subtitle(with_detail(&gettext("Album"), &card.subtitle()));
                 if let Some(url) = card.image() {
                     item.set_image(url);
@@ -826,10 +845,11 @@ impl NavigationPanelModel {
         cards
             .into_iter()
             .map(|card| {
-                let item = NavigationPanelItem::from_destination(NavigationPanelDestination::Artist {
-                    id: card.id(),
-                    title: card.title(),
-                });
+                let item =
+                    NavigationPanelItem::from_destination(NavigationPanelDestination::Artist {
+                        id: card.id(),
+                        title: card.title(),
+                    });
                 item.set_subtitle(gettext("Artist"));
                 if let Some(url) = card.image() {
                     item.set_image(url);

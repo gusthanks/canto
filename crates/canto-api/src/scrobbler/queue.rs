@@ -49,13 +49,19 @@ impl RetryQueue {
                     parsed
                 }
                 Err(e) => {
-                    warn!("scrobbler: ignoring corrupt retry queue {}: {e}", path.display());
+                    warn!(
+                        "scrobbler: ignoring corrupt retry queue {}: {e}",
+                        path.display()
+                    );
                     VecDeque::new()
                 }
             },
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => VecDeque::new(),
             Err(e) => {
-                warn!("scrobbler: failed to read retry queue {}: {e}", path.display());
+                warn!(
+                    "scrobbler: failed to read retry queue {}: {e}",
+                    path.display()
+                );
                 VecDeque::new()
             }
         };
@@ -152,7 +158,9 @@ impl RetryQueue {
         let Ok(bytes) = serde_json::to_vec(&self.items) else {
             return;
         };
-        let tmp = self.path.with_extension(format!("tmp.{}", std::process::id()));
+        let tmp = self
+            .path
+            .with_extension(format!("tmp.{}", std::process::id()));
         if let Err(e) = std::fs::write(&tmp, &bytes) {
             warn!("scrobbler: failed to write {}: {e}", tmp.display());
             return;
@@ -199,10 +207,7 @@ mod tests {
         assert_eq!(q.len(), MAX_QUEUE_ITEMS);
         let reloaded = RetryQueue::load_from(path.clone());
         assert_eq!(reloaded.len(), MAX_QUEUE_ITEMS);
-        assert_eq!(
-            reloaded.items.front().unwrap().track.title,
-            "Track 20"
-        );
+        assert_eq!(reloaded.items.front().unwrap().track.title, "Track 20");
 
         let _ = std::fs::remove_dir_all(&dir);
     }

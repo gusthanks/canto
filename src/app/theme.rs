@@ -3,11 +3,11 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::rc::Rc;
 
+use canto_api::Load;
+use canto_config::settings::{ADAPTIVE_COVER_COLORS, APP_THEME, SETTINGS};
 use gio::prelude::{FileExt, FileMonitorExt, SettingsExt};
 use gtk::gdk;
 use libadwaita as adw;
-use canto_api::Load;
-use canto_config::settings::{ADAPTIVE_COVER_COLORS, APP_THEME, SETTINGS};
 
 use crate::app::components::EventListener;
 use crate::app::state::PlaybackEvent;
@@ -419,7 +419,9 @@ pub fn build_theme_css(palette: Option<&ThemePalette>, cover_accent: Option<&str
         ));
     }
 
-    css.push_str(&format!("@define-color canto_cover_accent {cover_color};\n"));
+    css.push_str(&format!(
+        "@define-color canto_cover_accent {cover_color};\n"
+    ));
     css
 }
 
@@ -511,8 +513,8 @@ impl ThemeEngine {
 
         let path = omarchy_colors_path();
         let theme_dir = path.parent().unwrap_or(path.as_path());
-        if let Ok(mon) =
-            gio::File::for_path(theme_dir).monitor_directory(gio::FileMonitorFlags::NONE, gio::Cancellable::NONE)
+        if let Ok(mon) = gio::File::for_path(theme_dir)
+            .monitor_directory(gio::FileMonitorFlags::NONE, gio::Cancellable::NONE)
         {
             mon.connect_changed(glib::clone!(
                 #[weak(rename_to = engine)]

@@ -157,11 +157,7 @@ const ORIG_LANG_ENV: &str = "CANTO_ORIG_LANG";
 const UNSET_ENV_SENTINEL: &str = "__CANTO_UNSET__";
 
 fn is_c_locale(locale: &str) -> bool {
-    let base = locale
-        .split(['.', '@'])
-        .next()
-        .unwrap_or(locale)
-        .trim();
+    let base = locale.split(['.', '@']).next().unwrap_or(locale).trim();
     base.eq_ignore_ascii_case("C") || base.eq_ignore_ascii_case("POSIX")
 }
 
@@ -636,8 +632,14 @@ mod old_cache_tests {
 
         move_old_cache_in(&root);
 
-        assert_eq!(std::fs::read_to_string(root.join("canto/img/a")).unwrap(), "old");
-        assert_eq!(std::fs::read_to_string(root.join("canto/net/b")).unwrap(), "new");
+        assert_eq!(
+            std::fs::read_to_string(root.join("canto/img/a")).unwrap(),
+            "old"
+        );
+        assert_eq!(
+            std::fs::read_to_string(root.join("canto/net/b")).unwrap(),
+            "new"
+        );
         // The old net stays where it was, so the old folder stays too
         assert!(root.join("riff/net").is_dir());
         let _ = std::fs::remove_dir_all(&root);

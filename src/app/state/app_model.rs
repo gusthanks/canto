@@ -1,6 +1,6 @@
 use crate::app::state::*;
-use ref_filter_map::*;
 use canto_api::ApiService;
+use ref_filter_map::*;
 use std::cell::{Ref, RefCell};
 use std::sync::Arc;
 

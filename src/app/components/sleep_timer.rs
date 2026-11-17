@@ -192,9 +192,10 @@ impl SleepTimerController {
         if self.app_model.get_state().playback.is_playing() {
             self.dispatcher.dispatch(PlaybackAction::Pause.into());
         }
-        self.dispatcher.dispatch(AppAction::ShowNotification(gettext(
-            "Sleep timer paused playback",
-        )));
+        self.dispatcher
+            .dispatch(AppAction::ShowNotification(gettext(
+                "Sleep timer paused playback",
+            )));
     }
 }
 
@@ -214,7 +215,9 @@ impl EventListener for SleepTimerListener {
             return;
         }
         match event {
-            AppEvent::PlaybackEvent(PlaybackEvent::TrackChanged(_) | PlaybackEvent::TrackSynced) => {
+            AppEvent::PlaybackEvent(
+                PlaybackEvent::TrackChanged(_) | PlaybackEvent::TrackSynced,
+            ) => {
                 let has_track = self
                     .controller
                     .app_model
@@ -222,8 +225,10 @@ impl EventListener for SleepTimerListener {
                     .playback
                     .current_song_id()
                     .is_some();
-                match decide_end_of_track_transition(self.controller.armed_has_track.get(), has_track)
-                {
+                match decide_end_of_track_transition(
+                    self.controller.armed_has_track.get(),
+                    has_track,
+                ) {
                     EndOfTrackAction::ArmNow => self.controller.armed_has_track.set(true),
                     EndOfTrackAction::Expire => self.controller.expire(false),
                     EndOfTrackAction::Wait => {}
@@ -244,7 +249,10 @@ enum EndOfTrackAction {
     Expire,
 }
 
-fn decide_end_of_track_transition(armed_has_track: bool, current_has_track: bool) -> EndOfTrackAction {
+fn decide_end_of_track_transition(
+    armed_has_track: bool,
+    current_has_track: bool,
+) -> EndOfTrackAction {
     if !armed_has_track {
         if current_has_track {
             EndOfTrackAction::ArmNow

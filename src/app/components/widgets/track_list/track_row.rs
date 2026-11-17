@@ -2,6 +2,8 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::Arc;
 
+use canto_api::models::is_resource_url;
+use canto_api::ApiService;
 use gdk::Rectangle;
 use gettextrs::gettext;
 use gio::MenuModel;
@@ -10,8 +12,6 @@ use gtk::graphene::Point;
 use gtk::subclass::prelude::*;
 use gtk::CompositeTemplate;
 use libadwaita::prelude::*;
-use canto_api::models::is_resource_url;
-use canto_api::ApiService;
 
 use crate::app::components::utils::{add_hover_class, decode_px, set_css_class, set_missing_art};
 use crate::app::components::{

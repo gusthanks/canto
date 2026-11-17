@@ -4,15 +4,15 @@ use crate::app::components::{Component, EventListener};
 use crate::app::models::TrackExt;
 use crate::app::state::{PlaybackAction, PlaybackEvent};
 use crate::app::{AppEvent, AppModel, Dispatcher};
-use gettextrs::gettext;
-use gio::prelude::SettingsExt;
-use glib::clone;
-use gtk::prelude::*;
 use canto_api::Lyrics;
 use canto_config::settings::{
     APP_LANGUAGE, GOOGLE_TRANSLATE_API_KEY, LYRICS_OFFSET_MS, LYRICS_TRANSLATION,
     LYRICS_TRANSLATION_LANGUAGE, SETTINGS,
 };
+use gettextrs::gettext;
+use gio::prelude::SettingsExt;
+use glib::clone;
+use gtk::prelude::*;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
@@ -128,7 +128,9 @@ impl LyricsPage {
                     widget.set_translate_active(active);
                     let track = current_track_id.borrow().clone();
                     match track {
-                        Some(track_id) if active => translate_lyrics(&widget, &app_model, &track_id),
+                        Some(track_id) if active => {
+                            translate_lyrics(&widget, &app_model, &track_id)
+                        }
                         _ => widget.set_translations(None),
                     }
                 }
@@ -579,8 +581,7 @@ fn translate_lyrics(widget: &LyricsPageWidget, app_model: &Rc<AppModel>, track_i
             return;
         };
         // Lyrics changed (another track) or translation turned off meanwhile
-        if widget.line_texts() != lines
-            || !gio::Settings::new(SETTINGS).boolean(LYRICS_TRANSLATION)
+        if widget.line_texts() != lines || !gio::Settings::new(SETTINGS).boolean(LYRICS_TRANSLATION)
         {
             return;
         }

@@ -45,7 +45,8 @@ impl PageHeader {
 
     /// The page runs up under the bar (see `AppHeaderBar::apply_floating`).
     pub fn set_floating(&self, floats: bool) {
-        self.widget.update_page(&self.name, |page| page.floats = floats);
+        self.widget
+            .update_page(&self.name, |page| page.floats = floats);
     }
 
     pub fn set_title_revealed(&self, revealed: bool) {

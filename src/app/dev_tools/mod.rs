@@ -33,8 +33,8 @@ pub fn wire_dev_tools(
     let navigation_panel_header: libadwaita::HeaderBar =
         builder.object("navigation_panel_header").unwrap();
     navigation_panel_header.pack_start(&dev_menu);
-    let dev_env = std::env::var_os("CANTO_DEV")
-        .is_some_and(|v| !v.is_empty() && v != "0" && v != "false");
+    let dev_env =
+        std::env::var_os("CANTO_DEV").is_some_and(|v| !v.is_empty() && v != "0" && v != "false");
     dev_menu.set_visible(dev_env);
 
     if let Some(window) = builder.object::<libadwaita::ApplicationWindow>("window") {

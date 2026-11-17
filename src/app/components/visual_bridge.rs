@@ -8,9 +8,9 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use gio::prelude::*;
 use canto_audio_engine::LevelMeterController;
 use canto_config::settings::{SETTINGS, VISUAL_BRIDGE_ENABLED};
+use gio::prelude::*;
 
 use crate::app::components::EventListener;
 use crate::app::state::PlaybackEvent;
@@ -223,18 +223,19 @@ impl Inner {
             self.stop_timer();
         } else if self.timer.borrow().is_none() {
             let weak = Rc::downgrade(self);
-            let source = glib::timeout_add_local(Duration::from_millis(BRIDGE_INTERVAL_MS), move || {
-                let Some(inner) = weak.upgrade() else {
-                    return glib::ControlFlow::Break;
-                };
-                if !inner.enabled.get() || !inner.app_model.get_state().playback.is_playing() {
-                    inner.level_meter.reset();
-                    *inner.timer.borrow_mut() = None;
-                    return glib::ControlFlow::Break;
-                }
-                inner.write_snapshot(true);
-                glib::ControlFlow::Continue
-            });
+            let source =
+                glib::timeout_add_local(Duration::from_millis(BRIDGE_INTERVAL_MS), move || {
+                    let Some(inner) = weak.upgrade() else {
+                        return glib::ControlFlow::Break;
+                    };
+                    if !inner.enabled.get() || !inner.app_model.get_state().playback.is_playing() {
+                        inner.level_meter.reset();
+                        *inner.timer.borrow_mut() = None;
+                        return glib::ControlFlow::Break;
+                    }
+                    inner.write_snapshot(true);
+                    glib::ControlFlow::Continue
+                });
             *self.timer.borrow_mut() = Some(source);
         }
         self.write_snapshot(true);
@@ -243,7 +244,10 @@ impl Inner {
     fn write_snapshot(&self, active: bool) {
         let snapshot = self.build_snapshot(active);
         if let Err(e) = write_atomic_state(&self.state_path, &snapshot) {
-            debug!("visual_bridge: failed writing {}: {e}", self.state_path.display());
+            debug!(
+                "visual_bridge: failed writing {}: {e}",
+                self.state_path.display()
+            );
         }
     }
 

@@ -11,14 +11,21 @@ pub fn parse_timestamp(tag: &str) -> Option<u64> {
 
     let minutes = min_str.trim().parse::<u64>().ok()?;
 
-    let (sec_part, frac_part) = if let Some(pair) = sec_str.trim().split_once('.').or_else(|| sec_str.trim().split_once(',')) {
+    let (sec_part, frac_part) = if let Some(pair) = sec_str
+        .trim()
+        .split_once('.')
+        .or_else(|| sec_str.trim().split_once(','))
+    {
         pair
     } else {
         (sec_str.trim(), "")
     };
 
     let seconds = sec_part.parse::<u64>().ok()?;
-    let digits: String = frac_part.chars().take_while(|c| c.is_ascii_digit()).collect();
+    let digits: String = frac_part
+        .chars()
+        .take_while(|c| c.is_ascii_digit())
+        .collect();
     let frac_ms = match digits.len() {
         0 => 0,
         1 => digits.parse::<u64>().ok()? * 100,
@@ -86,8 +93,8 @@ pub fn parse_lrc(input: &str) -> Vec<LyricLine> {
     if offset_ms != 0 {
         for line in &mut lines {
             // Standard LRC: positive [offset:+N] shifts lyrics earlier by subtracting N ms.
-            let adjusted = (line.start_time_ms as i128 - i128::from(offset_ms))
-                .clamp(0, i128::from(u64::MAX));
+            let adjusted =
+                (line.start_time_ms as i128 - i128::from(offset_ms)).clamp(0, i128::from(u64::MAX));
             line.start_time_ms = adjusted as u64;
         }
     }
@@ -172,7 +179,10 @@ mod tests {
         let lines = parse_lrc(lrc);
         assert_eq!(lines.len(), 3);
         assert_eq!(lines[0].start_time_ms, 5060);
-        assert_eq!(lines[0].text, "Yesterday, all my troubles seemed so far away");
+        assert_eq!(
+            lines[0].text,
+            "Yesterday, all my troubles seemed so far away"
+        );
         assert_eq!(lines[1].start_time_ms, 13530);
         assert_eq!(lines[1].text, "Now it looks as though they're here to stay");
         assert_eq!(lines[2].start_time_ms, 17240);
@@ -191,7 +201,10 @@ mod tests {
         let lines = parse_lrc(lrc);
         assert_eq!(lines.len(), 1);
         assert_eq!(lines[0].start_time_ms, 5060);
-        assert_eq!(lines[0].text, "Yesterday, all my troubles seemed so far away");
+        assert_eq!(
+            lines[0].text,
+            "Yesterday, all my troubles seemed so far away"
+        );
     }
 
     #[test]

@@ -283,7 +283,9 @@ impl DetailsPageModel {
             group.add_action(&song.make_album_action(self.dispatcher.clone()));
         }
         group.add_action(&song.make_link_action());
-        group.add_action(&song.make_radio_action(Rc::clone(&self.app_model), self.dispatcher.clone()));
+        group.add_action(
+            &song.make_radio_action(Rc::clone(&self.app_model), self.dispatcher.clone()),
+        );
         for action in song.make_queue_actions(self.dispatcher.clone()) {
             group.add_action(&action);
         }
@@ -676,11 +678,15 @@ mod tests {
     #[test]
     fn test_is_playback_event_play_state_synced() {
         assert_eq!(
-            is_playback_event(&AppEvent::PlaybackEvent(PlaybackEvent::PlayStateSynced(true))),
+            is_playback_event(&AppEvent::PlaybackEvent(PlaybackEvent::PlayStateSynced(
+                true
+            ))),
             Some(true)
         );
         assert_eq!(
-            is_playback_event(&AppEvent::PlaybackEvent(PlaybackEvent::PlayStateSynced(false))),
+            is_playback_event(&AppEvent::PlaybackEvent(PlaybackEvent::PlayStateSynced(
+                false
+            ))),
             Some(false)
         );
         assert_eq!(

@@ -8,16 +8,16 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use gio::prelude::*;
 use canto_api::scrobbler::{
-    LastFmClient, ListenBrainzClient, PendingScrobble, RetryQueue, ScrobbleAction,
-    ScrobbleTarget, ScrobbleTrack, ScrobbleTrackMetadata, ScrobbleTracker,
+    LastFmClient, ListenBrainzClient, PendingScrobble, RetryQueue, ScrobbleAction, ScrobbleTarget,
+    ScrobbleTrack, ScrobbleTrackMetadata, ScrobbleTracker,
 };
 use canto_api::DomainError;
 use canto_config::settings::{
     LASTFM_API_KEY, LASTFM_API_SECRET, LASTFM_SESSION_KEY, LISTENBRAINZ_TOKEN, SCROBBLE_ENABLED,
     SCROBBLE_RESPECT_REMOTE, SETTINGS,
 };
+use gio::prelude::*;
 
 use crate::app::components::EventListener;
 use crate::app::state::{Device, PlaybackEvent};
@@ -256,7 +256,10 @@ impl Inner {
                         match res {
                             Ok(()) => flushed_ok = true,
                             Err(e) if e.is_transient() => {
-                                queue.lock().await.enqueue(ScrobbleTarget::LastFm, track.clone());
+                                queue
+                                    .lock()
+                                    .await
+                                    .enqueue(ScrobbleTarget::LastFm, track.clone());
                             }
                             Err(e) => warn!("scrobbler: Last.fm rejected scrobble: {e}"),
                         }

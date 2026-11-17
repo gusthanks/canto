@@ -30,11 +30,26 @@ mod recent_tests {
 
     #[test]
     fn context_uris_become_library_keys() {
-        assert_eq!(recent_context_key("spotify:playlist:abc").as_deref(), Some("playlist:abc"));
-        assert_eq!(recent_context_key("spotify:user:gus:playlist:xyz").as_deref(), Some("playlist:xyz"));
-        assert_eq!(recent_context_key("spotify:album:1").as_deref(), Some("album:1"));
-        assert_eq!(recent_context_key("spotify:artist:2").as_deref(), Some("artist:2"));
-        assert_eq!(recent_context_key("spotify:user:gus:collection").as_deref(), Some("liked"));
+        assert_eq!(
+            recent_context_key("spotify:playlist:abc").as_deref(),
+            Some("playlist:abc")
+        );
+        assert_eq!(
+            recent_context_key("spotify:user:gus:playlist:xyz").as_deref(),
+            Some("playlist:xyz")
+        );
+        assert_eq!(
+            recent_context_key("spotify:album:1").as_deref(),
+            Some("album:1")
+        );
+        assert_eq!(
+            recent_context_key("spotify:artist:2").as_deref(),
+            Some("artist:2")
+        );
+        assert_eq!(
+            recent_context_key("spotify:user:gus:collection").as_deref(),
+            Some("liked")
+        );
         assert_eq!(recent_context_key("spotify:show:3"), None);
     }
 }
