@@ -336,6 +336,9 @@ bottom-sheet.bottom-sheet--padded > sheet {
   padding-left: 0;
   padding-right: 0;
   min-height: 44px;
+  /* Room between the covers */
+  margin-top: 4px;
+  margin-bottom: 4px;
 }
 
 /* Mini player */

@@ -281,6 +281,30 @@ impl NavigationPanelModel {
             })
     }
 
+    /// Plays what a library row opens, from its first track (double click).
+    pub(super) fn play_destination(&self, dest: NavigationPanelDestination) {
+        match dest {
+            NavigationPanelDestination::Playlist(summary) => self.play_playlist(summary.id),
+            NavigationPanelDestination::Album { id, .. } => self.play_album(id, false),
+            NavigationPanelDestination::Artist { id, .. } => self.play_artist(id, false),
+            NavigationPanelDestination::Track { id, .. } => self.play_track(id),
+            NavigationPanelDestination::SavedTracks => self.play_liked_songs(),
+            _ => {}
+        }
+    }
+
+    fn play_liked_songs(&self) {
+        let api = self.app_model.api();
+        let source = SongsSource::SavedTracks;
+        let name = Some(gettext("Liked Songs"));
+        dispatch_api_read_many(&self.dispatcher, move |tag| async move {
+            let batch = api.get_saved_tracks(0, CONTEXT_PAGE_SIZE, tag).await?;
+            let empty = batch.items.is_empty();
+            let load = PlaybackAction::LoadPagedSongs(source.clone(), batch);
+            Ok(start_context(empty, source, name, load, false))
+        });
+    }
+
     pub(super) fn play_playlist(&self, id: String) {
         self.start_playlist(id, false);
     }

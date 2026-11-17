@@ -159,6 +159,29 @@ impl NavigationPanel {
             }
         );
 
+        // Double click on a row plays it from the first track
+        let double_click = gtk::GestureClick::new();
+        double_click.set_button(1);
+        double_click.connect_pressed(clone!(
+            #[weak]
+            model,
+            #[weak]
+            listbox,
+            move |_, n_press, _, y| {
+                if n_press != 2 {
+                    return;
+                }
+                let destination = listbox
+                    .row_at_y(y as i32)
+                    .and_downcast::<NavigationPanelRow>()
+                    .and_then(|row| row.item().destination());
+                if let Some(dest) = destination {
+                    model.play_destination(dest);
+                }
+            }
+        ));
+        listbox.add_controller(double_click);
+
         let right_click = gtk::GestureClick::new();
         right_click.set_button(3);
         right_click.connect_pressed(clone!(
