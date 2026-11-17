@@ -30,13 +30,15 @@ template $SettingsWindow : Adw.PreferencesDialog {
       Adw.ComboRow app_theme {
         /* Translators: Title for the live color theme selector in settings */
         title: _("Color Theme");
-        /* Translators: Subtitle for the live color theme selector */
-        subtitle: _("Applies immediately across the interface");
+        /* Translators: Subtitle for the color theme selector. "Follow System" is its first option. */
+        subtitle: _("Follow System uses your Omarchy theme and changes with it");
         model: StringList {
           strings [
-            _("Omarchy Live"),
+            /* Translators: Color theme option: the desktop's colors (the Omarchy theme when there is one), live. */
+            _("Follow System"),
             _("Neutral (Adwaita)"),
-            _("Spotify Green"),
+            /* Translators: Color theme option, a dark theme with green accents. */
+            _("Green"),
             _("OLED Dark"),
             _("Warm Vinyl"),
             _("Purple Night")

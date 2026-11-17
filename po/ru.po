@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-17 07:10-0300\n"
+"POT-Creation-Date: 2026-11-17 08:47-0300\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -200,7 +200,7 @@ msgstr "Новый плейлист"
 #: src/app/components/shell/command_palette/widget.rs:803
 #: src/app/components/shell/navigation_panel/model.rs:348
 #: src/app/components/shell/navigation_panel/model.rs:809
-#: src/app/components/pages/settings/settings.blp:254
+#: src/app/components/pages/settings/settings.blp:256
 #, fuzzy
 msgid "Album"
 msgstr "Альбомы"
@@ -552,7 +552,7 @@ msgid "Click 1. Open Auth to approve Canto in your browser"
 msgstr ""
 
 #: src/app/components/pages/settings/settings.rs:1060
-#: src/app/components/pages/settings/settings.blp:511
+#: src/app/components/pages/settings/settings.blp:513
 msgid "Enter API Key and Secret above, then connect your account"
 msgstr ""
 
@@ -884,33 +884,37 @@ msgstr ""
 msgid "minutes"
 msgstr ""
 
+#. Translators: Color theme option: the desktop's colors (the Omarchy theme when there is one), live.
 #: src/app/components/shell/command_palette/widget.rs:724
-#: src/app/components/pages/settings/settings.blp:37
-msgid "Omarchy Live"
-msgstr ""
+#: src/app/components/pages/settings/settings.blp:23
+#: src/app/components/pages/settings/settings.blp:38
+#, fuzzy
+msgid "Follow System"
+msgstr "Система"
 
 #: src/app/components/shell/command_palette/widget.rs:725
 msgid "Neutral"
 msgstr ""
 
+#. Translators: Color theme option, a dark theme with green accents.
 #: src/app/components/shell/command_palette/widget.rs:726
-#: src/app/components/pages/settings/settings.blp:39
-msgid "Spotify Green"
+#: src/app/components/pages/settings/settings.blp:41
+msgid "Green"
 msgstr ""
 
 #: src/app/components/shell/command_palette/widget.rs:727
-#: src/app/components/pages/settings/settings.blp:40
+#: src/app/components/pages/settings/settings.blp:42
 #, fuzzy
 msgid "OLED Dark"
 msgstr "Темная"
 
 #: src/app/components/shell/command_palette/widget.rs:728
-#: src/app/components/pages/settings/settings.blp:41
+#: src/app/components/pages/settings/settings.blp:43
 msgid "Warm Vinyl"
 msgstr ""
 
 #: src/app/components/shell/command_palette/widget.rs:729
-#: src/app/components/pages/settings/settings.blp:42
+#: src/app/components/pages/settings/settings.blp:44
 msgid "Purple Night"
 msgstr ""
 
@@ -945,7 +949,7 @@ msgid "Transfer playback to device"
 msgstr ""
 
 #: src/app/components/shell/command_palette/widget.rs:802
-#: src/app/components/pages/settings/settings.blp:253
+#: src/app/components/pages/settings/settings.blp:255
 #, fuzzy
 msgid "Track"
 msgstr "Треки"
@@ -1331,13 +1335,13 @@ msgid "How should Canto close while audio is playing?"
 msgstr ""
 
 #: src/app/components/shell/window/close_dialog.rs:16
-#: src/app/components/pages/settings/settings.blp:101
+#: src/app/components/pages/settings/settings.blp:103
 #, fuzzy
 msgid "Run in Background"
 msgstr "Аудио Бэкэнд"
 
 #: src/app/components/shell/window/close_dialog.rs:17
-#: src/app/components/pages/settings/settings.blp:102
+#: src/app/components/pages/settings/settings.blp:104
 #: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:485
 msgid "Quit"
 msgstr "Выйти из программы"
@@ -1381,7 +1385,7 @@ msgstr ""
 #. translators: Button of the dialog asking to confirm clearing the play queue: clears it.
 #. Translators: Label for the button that clears the cache
 #: src/app/components/widgets/queue_list/model.rs:263
-#: src/app/components/pages/settings/settings.blp:435
+#: src/app/components/pages/settings/settings.blp:437
 msgid "Clear"
 msgstr ""
 
@@ -1748,313 +1752,308 @@ msgstr ""
 msgid "Requires restarting the app to take effect"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:23
-#, fuzzy
-msgid "Follow System"
-msgstr "Система"
-
 #. Translators: Title for the live color theme selector in settings
 #: src/app/components/pages/settings/settings.blp:32
 #, fuzzy
 msgid "Color Theme"
 msgstr "Тема"
 
-#. Translators: Subtitle for the live color theme selector
+#. Translators: Subtitle for the color theme selector. "Follow System" is its first option.
 #: src/app/components/pages/settings/settings.blp:34
-msgid "Applies immediately across the interface"
+msgid "Follow System uses your Omarchy theme and changes with it"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:38
+#: src/app/components/pages/settings/settings.blp:39
 msgid "Neutral (Adwaita)"
 msgstr ""
 
 #. Translators: Title for light/dark appearance mode when using the Neutral theme
-#: src/app/components/pages/settings/settings.blp:50
+#: src/app/components/pages/settings/settings.blp:52
 msgid "Light/Dark Mode"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:53
+#: src/app/components/pages/settings/settings.blp:55
 msgid "Light"
 msgstr "Светлая"
 
-#: src/app/components/pages/settings/settings.blp:54
+#: src/app/components/pages/settings/settings.blp:56
 msgid "Dark"
 msgstr "Темная"
 
-#: src/app/components/pages/settings/settings.blp:55
+#: src/app/components/pages/settings/settings.blp:57
 msgid "System"
 msgstr "Система"
 
 #. Translators: Title for adaptive album cover tinting preference
-#: src/app/components/pages/settings/settings.blp:62
+#: src/app/components/pages/settings/settings.blp:64
 msgid "Adaptive Cover Colors"
 msgstr ""
 
 #. Translators: Description for adaptive album cover tinting
-#: src/app/components/pages/settings/settings.blp:64
+#: src/app/components/pages/settings/settings.blp:66
 msgid "Subtle background tint from the playing album cover"
 msgstr ""
 
 #. Translators: Title for an item in preferences
-#: src/app/components/pages/settings/settings.blp:70
+#: src/app/components/pages/settings/settings.blp:72
 msgid "Queue Side Panel"
 msgstr ""
 
 #. Translators: Description for the queue side panel preference
-#: src/app/components/pages/settings/settings.blp:74
+#: src/app/components/pages/settings/settings.blp:76
 msgid "Show the queue in a panel at the side of the window"
 msgstr ""
 
 #. Translators: Title for the manual synced lyrics offset preference
-#: src/app/components/pages/settings/settings.blp:79
+#: src/app/components/pages/settings/settings.blp:81
 msgid "Lyrics Sync Offset (ms)"
 msgstr ""
 
 #. Translators: Description explaining positive vs negative lyrics offset
-#: src/app/components/pages/settings/settings.blp:81
+#: src/app/components/pages/settings/settings.blp:83
 msgid "Positive advances lyrics earlier; negative delays them"
 msgstr ""
 
 #. Translators: Title for an item in preferences
-#: src/app/components/pages/settings/settings.blp:93
+#: src/app/components/pages/settings/settings.blp:95
 msgid "Close Window Behavior"
 msgstr ""
 
 #. Translators: Description for the close window behavior preference
-#: src/app/components/pages/settings/settings.blp:97
+#: src/app/components/pages/settings/settings.blp:99
 msgid "Canto's behavior when closing the main window"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:100
+#: src/app/components/pages/settings/settings.blp:102
 msgid "Ask"
 msgstr ""
 
 #. Translators: Title for the keep device awake toggle in preferences
-#: src/app/components/pages/settings/settings.blp:110
+#: src/app/components/pages/settings/settings.blp:112
 msgid "Keep Device Awake While Playing"
 msgstr ""
 
 #. Translators: Description for the keep device awake toggle
-#: src/app/components/pages/settings/settings.blp:114
+#: src/app/components/pages/settings/settings.blp:116
 msgid "Prevent the system from automatically suspending while audio is playing"
 msgstr ""
 
 #. Translators: Title for the skip explicit tracks toggle in preferences
-#: src/app/components/pages/settings/settings.blp:120
+#: src/app/components/pages/settings/settings.blp:122
 msgid "Skip Explicit Tracks"
 msgstr ""
 
 #. Translators: Description for the skip explicit tracks toggle
-#: src/app/components/pages/settings/settings.blp:124
+#: src/app/components/pages/settings/settings.blp:126
 msgid "Automatically skip tracks marked as explicit"
 msgstr ""
 
 #. Translators: Title for automatic track radio continuation toggle
-#: src/app/components/pages/settings/settings.blp:129
+#: src/app/components/pages/settings/settings.blp:131
 msgid "Smart Queue Continuation"
 msgstr ""
 
 #. Translators: Description for automatic track radio continuation
-#: src/app/components/pages/settings/settings.blp:131
+#: src/app/components/pages/settings/settings.blp:133
 msgid "Continue playing similar tracks automatically when your queue finishes"
 msgstr ""
 
 #. Translators: Title for the shuffle separation preference
-#: src/app/components/pages/settings/settings.blp:137
+#: src/app/components/pages/settings/settings.blp:139
 msgid "Shuffle Separation"
 msgstr ""
 
 #. Translators: Header for a group of preference items regarding audio
-#: src/app/components/pages/settings/settings.blp:153
+#: src/app/components/pages/settings/settings.blp:155
 msgid "Audio"
 msgstr "Аудио"
 
 #. Translators: Title for an item in preferences
-#: src/app/components/pages/settings/settings.blp:158
+#: src/app/components/pages/settings/settings.blp:160
 msgid "Audio Backend"
 msgstr "Аудио Бэкэнд"
 
 #. Translators: Title for an item in preferences
-#: src/app/components/pages/settings/settings.blp:170
+#: src/app/components/pages/settings/settings.blp:172
 msgid "ALSA Device"
 msgstr "ALSA Device"
 
 #. Translators: Description for the item (ALSA Device) in preferences
-#: src/app/components/pages/settings/settings.blp:174
+#: src/app/components/pages/settings/settings.blp:176
 msgid "Applied only if audio backend is ALSA"
 msgstr "Применяется, только если звуковой бэкэнд ALSA"
 
 #. Translators: Title for an item in preferences
-#: src/app/components/pages/settings/settings.blp:184
+#: src/app/components/pages/settings/settings.blp:186
 msgid "Audio Quality"
 msgstr "Качество звука"
 
-#: src/app/components/pages/settings/settings.blp:185
+#: src/app/components/pages/settings/settings.blp:187
 msgid "Streaming bitrate from Spotify (higher uses more bandwidth)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:188
+#: src/app/components/pages/settings/settings.blp:190
 msgid "Normal"
 msgstr "Нормальное"
 
-#: src/app/components/pages/settings/settings.blp:189
+#: src/app/components/pages/settings/settings.blp:191
 msgid "High"
 msgstr "Высокое"
 
-#: src/app/components/pages/settings/settings.blp:190
+#: src/app/components/pages/settings/settings.blp:192
 msgid "Very High"
 msgstr "Очень высокое"
 
-#: src/app/components/pages/settings/settings.blp:191
+#: src/app/components/pages/settings/settings.blp:193
 msgid "Lossless"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:197
+#: src/app/components/pages/settings/settings.blp:199
 #, fuzzy
 msgid "Audio Format"
 msgstr "Качество звука"
 
-#: src/app/components/pages/settings/settings.blp:198
+#: src/app/components/pages/settings/settings.blp:200
 msgid "Sample bit depth for audio output"
 msgstr ""
 
 #. Translators: Title for an item in preferences
-#: src/app/components/pages/settings/settings.blp:214
+#: src/app/components/pages/settings/settings.blp:216
 msgid "Gapless Playback"
 msgstr "Непрерывное воспроизведение"
 
-#: src/app/components/pages/settings/settings.blp:215
+#: src/app/components/pages/settings/settings.blp:217
 msgid "Eliminates silence between consecutive tracks"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:219
+#: src/app/components/pages/settings/settings.blp:221
 msgid "Volume Curve"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:220
+#: src/app/components/pages/settings/settings.blp:222
 msgid "Controls how the volume slider responds"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:223
+#: src/app/components/pages/settings/settings.blp:225
 msgid "Logarithmic"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:224
+#: src/app/components/pages/settings/settings.blp:226
 msgid "Linear"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:225
+#: src/app/components/pages/settings/settings.blp:227
 msgid "Cubic"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:231
+#: src/app/components/pages/settings/settings.blp:233
 #, fuzzy
 msgid "Mono Audio"
 msgstr "Аудио"
 
-#: src/app/components/pages/settings/settings.blp:232
+#: src/app/components/pages/settings/settings.blp:234
 msgid ""
 "Mix left and right channels together so both speakers play the same audio"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:238
+#: src/app/components/pages/settings/settings.blp:240
 #, fuzzy
 msgid "Normalisation"
 msgstr "Нормальное"
 
-#: src/app/components/pages/settings/settings.blp:239
+#: src/app/components/pages/settings/settings.blp:241
 msgid "Adjust volume levels between tracks for consistent loudness"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:242
+#: src/app/components/pages/settings/settings.blp:244
 msgid "Enable Normalisation"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:243
+#: src/app/components/pages/settings/settings.blp:245
 msgid "Automatically adjust volume between tracks"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:247
+#: src/app/components/pages/settings/settings.blp:249
 msgid "Normalisation Type"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:248
+#: src/app/components/pages/settings/settings.blp:250
 msgid "How gain values are selected"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:252
+#: src/app/components/pages/settings/settings.blp:254
 msgid "Auto"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:260
+#: src/app/components/pages/settings/settings.blp:262
 msgid "Normalisation Method"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:261
+#: src/app/components/pages/settings/settings.blp:263
 msgid "Basic clips peaks, Dynamic uses a limiter"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:265
+#: src/app/components/pages/settings/settings.blp:267
 msgid "Dynamic"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:266
+#: src/app/components/pages/settings/settings.blp:268
 msgid "Basic"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:272
+#: src/app/components/pages/settings/settings.blp:274
 msgid "Pre-gain (dB)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:273
+#: src/app/components/pages/settings/settings.blp:275
 msgid "Additional gain applied before normalisation"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:285
+#: src/app/components/pages/settings/settings.blp:287
 msgid "Threshold (dBFS)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:286
+#: src/app/components/pages/settings/settings.blp:288
 msgid "Ceiling for dynamic normalisation"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:298
+#: src/app/components/pages/settings/settings.blp:300
 msgid "Attack (ms)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:299
+#: src/app/components/pages/settings/settings.blp:301
 msgid "How quickly the limiter reacts to peaks"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:311
+#: src/app/components/pages/settings/settings.blp:313
 #, fuzzy
 msgid "Release (ms)"
 msgstr "Релизы"
 
-#: src/app/components/pages/settings/settings.blp:312
+#: src/app/components/pages/settings/settings.blp:314
 msgid "How quickly the limiter recovers after peaks"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:324
+#: src/app/components/pages/settings/settings.blp:326
 msgid "Knee (dB)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:325
+#: src/app/components/pages/settings/settings.blp:327
 msgid "Width of the soft knee for the limiter"
 msgstr ""
 
 #. Translators: Header for a group of preference items regarding network
-#: src/app/components/pages/settings/settings.blp:346
+#: src/app/components/pages/settings/settings.blp:348
 msgid "Network"
 msgstr "Сеть"
 
 #. Translators: Title for an item in preferences
-#: src/app/components/pages/settings/settings.blp:351
+#: src/app/components/pages/settings/settings.blp:353
 msgid "Access Point Port"
 msgstr "Порт точки доступа"
 
 #. Translators: Longer description for an item (Access Point Port) in preferences
-#: src/app/components/pages/settings/settings.blp:355
+#: src/app/components/pages/settings/settings.blp:357
 msgid ""
 "Port used for connections to Spotify’s Access Point. Set to 0 if any port is "
 "fine."
@@ -2063,82 +2062,82 @@ msgstr ""
 "если все порты в порядке."
 
 #. Translators: Header for a group of preference items regarding data caching
-#: src/app/components/pages/settings/settings.blp:366
+#: src/app/components/pages/settings/settings.blp:368
 msgid "Caching"
 msgstr ""
 
 #. Translators: Description under the Caching preferences header
-#: src/app/components/pages/settings/settings.blp:370
+#: src/app/components/pages/settings/settings.blp:372
 msgid "Control how Canto caches data locally."
 msgstr ""
 
 #. Translators: Title for the in-memory cache size preference
-#: src/app/components/pages/settings/settings.blp:375
+#: src/app/components/pages/settings/settings.blp:377
 msgid "Memory Cache Size (MB)"
 msgstr ""
 
 #. Translators: Description for the in-memory cache size preference
-#: src/app/components/pages/settings/settings.blp:379
+#: src/app/components/pages/settings/settings.blp:381
 msgid "Maximum memory allocated for caching data while Canto is running."
 msgstr ""
 
 #. Translators: Title for the on-disk image cache size preference
-#: src/app/components/pages/settings/settings.blp:392
+#: src/app/components/pages/settings/settings.blp:394
 msgid "Disk Cache Size (MB)"
 msgstr ""
 
 #. Translators: Description for the on-disk image cache size preference
-#: src/app/components/pages/settings/settings.blp:396
+#: src/app/components/pages/settings/settings.blp:398
 msgid "Maximum disk space allocated for caching data between sessions."
 msgstr ""
 
 #. Translators: Title for the disk audio cache size preference
-#: src/app/components/pages/settings/settings.blp:409
+#: src/app/components/pages/settings/settings.blp:411
 msgid "Audio Cache Size (MB)"
 msgstr ""
 
 #. Translators: Description for the disk audio cache size preference
-#: src/app/components/pages/settings/settings.blp:413
+#: src/app/components/pages/settings/settings.blp:415
 msgid "Maximum disk space allocated for caching downloaded audio."
 msgstr ""
 
 #. Translators: Title for the clear cache action row
-#: src/app/components/pages/settings/settings.blp:426
+#: src/app/components/pages/settings/settings.blp:428
 msgid "Clear Cache"
 msgstr ""
 
 #. Translators: Description for the clear cache action row
-#: src/app/components/pages/settings/settings.blp:430
+#: src/app/components/pages/settings/settings.blp:432
 msgid "Remove all cached data and images stored on disk"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:448
+#: src/app/components/pages/settings/settings.blp:450
 msgid "Integrations"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:452
+#: src/app/components/pages/settings/settings.blp:454
 msgid "Genius (Credits and Liner Notes)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:453
+#: src/app/components/pages/settings/settings.blp:455
 msgid ""
 "Optional Client Access Token to show producers, writers and featured artists "
 "in the Now Playing panel."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:456
+#: src/app/components/pages/settings/settings.blp:458
 msgid "How to get token"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:465
+#: src/app/components/pages/settings/settings.blp:467
 msgid "Client Access Token"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:470
+#: src/app/components/pages/settings/settings.blp:472
 msgid "Lyrics Translation"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:471
+#: src/app/components/pages/settings/settings.blp:473
 msgid ""
 "Lyrics are translated through Google Translate for free, without a key. That "
 "free route isn't official and may stop working; a Google Cloud API key "
@@ -2146,83 +2145,83 @@ msgid ""
 "reliable."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:474
+#: src/app/components/pages/settings/settings.blp:476
 msgid "Google Cloud API Key (optional)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:479
+#: src/app/components/pages/settings/settings.blp:481
 msgid "Scrobbling (Last.fm and ListenBrainz)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:480
+#: src/app/components/pages/settings/settings.blp:482
 msgid ""
 "Track played songs to Last.fm and/or ListenBrainz with automatic offline "
 "retry."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:483
+#: src/app/components/pages/settings/settings.blp:485
 msgid "How to set up scrobbling"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:492
+#: src/app/components/pages/settings/settings.blp:494
 msgid "Enable Scrobbling"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:493
+#: src/app/components/pages/settings/settings.blp:495
 msgid "Send Now Playing updates and scrobble tracks after listening"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:497
+#: src/app/components/pages/settings/settings.blp:499
 msgid "Scrobble Connect Devices"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:498
+#: src/app/components/pages/settings/settings.blp:500
 msgid "Also track plays from active Spotify Connect speakers and phones"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:502
+#: src/app/components/pages/settings/settings.blp:504
 msgid "Last.fm API Key"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:506
+#: src/app/components/pages/settings/settings.blp:508
 msgid "Last.fm API Secret"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:510
+#: src/app/components/pages/settings/settings.blp:512
 msgid "Authorize Last.fm"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:519
+#: src/app/components/pages/settings/settings.blp:521
 msgid "1. Open Auth"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:523
+#: src/app/components/pages/settings/settings.blp:525
 msgid "2. Complete"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:528
+#: src/app/components/pages/settings/settings.blp:530
 msgid "Disconnect"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:539
+#: src/app/components/pages/settings/settings.blp:541
 msgid "ListenBrainz User Token"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:544
+#: src/app/components/pages/settings/settings.blp:546
 msgid "Visual Bridge (External Visualizers)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:545
+#: src/app/components/pages/settings/settings.blp:547
 msgid ""
 "Opt-in lightweight local state and audio RMS/peak output for external 3D "
 "visualizers such as Chaosphere."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:548
+#: src/app/components/pages/settings/settings.blp:550
 msgid "Enable Visual Bridge"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:549
+#: src/app/components/pages/settings/settings.blp:551
 msgid ""
 "Write active track, theme colors, and audio energy levels to "
 "$XDG_RUNTIME_DIR/canto/state.json"

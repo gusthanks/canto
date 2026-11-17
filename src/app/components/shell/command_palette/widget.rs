@@ -721,9 +721,9 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
 
     // Live Themes
     let themes: [(&'static str, String); 6] = [
-        ("omarchy", gettext("Omarchy Live")),
+        ("omarchy", gettext("Follow System")),
         ("neutral", gettext("Neutral")),
-        ("spotify-green", gettext("Spotify Green")),
+        ("spotify-green", gettext("Green")),
         ("oled-dark", gettext("OLED Dark")),
         ("warm-vinyl", gettext("Warm Vinyl")),
         ("purple-night", gettext("Purple Night")),
