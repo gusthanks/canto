@@ -78,6 +78,12 @@ mod imp {
         #[template_child]
         pub more_sleep_timer: TemplateChild<gtk::Button>,
         #[template_child]
+        pub more_stack: TemplateChild<gtk::Stack>,
+        #[template_child]
+        pub eq_open_presets: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub eq_presets_back: TemplateChild<gtk::Button>,
+        #[template_child]
         pub customize_bar_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub bar_end: TemplateChild<gtk::Box>,
@@ -168,6 +174,9 @@ mod imp {
                 mute_button: Default::default(),
                 eq_popover: Default::default(),
                 more_sleep_timer: Default::default(),
+                more_stack: Default::default(),
+                eq_open_presets: Default::default(),
+                eq_presets_back: Default::default(),
                 customize_bar_button: Default::default(),
                 bar_end: Default::default(),
                 lyrics_slot: Default::default(),
@@ -247,6 +256,21 @@ mod imp {
                 if !sleep_label.is_visible() {
                     sleep_button.set_visible(false);
                 }
+            });
+
+            // The presets live one level down: Equalizer › slides to them, and
+            // the menu opens on its first page again next time
+            let stack = self.more_stack.clone();
+            self.eq_open_presets
+                .connect_clicked(move |_| stack.set_visible_child_name("presets"));
+            let stack = self.more_stack.clone();
+            self.eq_presets_back
+                .connect_clicked(move |_| stack.set_visible_child_name("main"));
+            let stack = self.more_stack.clone();
+            self.eq_popover.connect_closed(move |_| {
+                stack.set_transition_type(gtk::StackTransitionType::None);
+                stack.set_visible_child_name("main");
+                stack.set_transition_type(gtk::StackTransitionType::SlideLeftRight);
             });
 
             let popover = self.eq_popover.clone();

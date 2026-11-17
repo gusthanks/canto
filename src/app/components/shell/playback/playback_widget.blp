@@ -456,7 +456,16 @@ template $PlaybackWidget : Box {
           ]
 
           popover: Popover eq_popover {
-            child: Box {
+            child: Stack more_stack {
+              transition-type: slide_left_right;
+              vhomogeneous: false;
+              hhomogeneous: false;
+              interpolate-size: true;
+
+              StackPage {
+                name: "main";
+
+                child: Box {
               orientation: vertical;
               spacing: 4;
               margin-top: 6;
@@ -491,24 +500,7 @@ template $PlaybackWidget : Box {
                 };
               }
 
-              Separator {
-                margin-top: 2;
-                margin-bottom: 4;
-              }
-
-              Label {
-                label: _("Equalizer Presets");
-                xalign: 0.0;
-                margin-start: 8;
-                margin-bottom: 4;
-
-                styles [
-                  "caption-heading",
-                  "dim-label",
-                ]
-              }
-
-              Button eq_preset_flat {
+              Button eq_open_presets {
                 halign: fill;
 
                 styles [
@@ -516,65 +508,23 @@ template $PlaybackWidget : Box {
                   "playback-preset-btn",
                 ]
 
-                child: Label {
-                  label: _("Flat");
-                  xalign: 0.0;
-                };
-              }
+                child: Box {
+                  spacing: 10;
 
-              Button eq_preset_bass {
-                halign: fill;
+                  Image {
+                    icon-name: "canto-equalizer-symbolic";
+                  }
 
-                styles [
-                  "flat",
-                  "playback-preset-btn",
-                ]
+                  Label {
+                    /* Translators: Item in the player bar's More Options menu that opens the equalizer presets. */
+                    label: _("Equalizer");
+                    xalign: 0.0;
+                    hexpand: true;
+                  }
 
-                child: Label {
-                  label: _("Bass Boost");
-                  xalign: 0.0;
-                };
-              }
-
-              Button eq_preset_vocal {
-                halign: fill;
-
-                styles [
-                  "flat",
-                  "playback-preset-btn",
-                ]
-
-                child: Label {
-                  label: _("Vocal");
-                  xalign: 0.0;
-                };
-              }
-
-              Button eq_preset_lofi {
-                halign: fill;
-
-                styles [
-                  "flat",
-                  "playback-preset-btn",
-                ]
-
-                child: Label {
-                  label: _("Lo-Fi");
-                  xalign: 0.0;
-                };
-              }
-
-              Button eq_preset_acoustic {
-                halign: fill;
-
-                styles [
-                  "flat",
-                  "playback-preset-btn",
-                ]
-
-                child: Label {
-                  label: _("Acoustic");
-                  xalign: 0.0;
+                  Image {
+                    icon-name: "pan-end-symbolic";
+                  }
                 };
               }
 
@@ -625,6 +575,124 @@ template $PlaybackWidget : Box {
                 child: Label {
                   label: _("Audio Settings…");
                   xalign: 0.0;
+                };
+              }
+                };
+              }
+
+              StackPage {
+                name: "presets";
+
+                child: Box {
+                  orientation: vertical;
+                  spacing: 4;
+                  margin-top: 6;
+                  margin-bottom: 6;
+                  margin-start: 6;
+                  margin-end: 6;
+
+                  Button eq_presets_back {
+                    halign: fill;
+
+                    styles [
+                      "flat",
+                      "playback-preset-btn",
+                    ]
+
+                    child: Box {
+                      spacing: 10;
+
+                      Image {
+                        icon-name: "pan-start-symbolic";
+                      }
+
+                      Label {
+                        label: _("Equalizer");
+                        xalign: 0.0;
+                        hexpand: true;
+
+                        styles [
+                          "heading",
+                        ]
+                      }
+                    };
+                  }
+
+                  Separator {
+                    margin-top: 2;
+                    margin-bottom: 4;
+                  }
+
+
+                  Button eq_preset_flat {
+                    halign: fill;
+
+                    styles [
+                      "flat",
+                      "playback-preset-btn",
+                    ]
+
+                    child: Label {
+                      label: _("Flat");
+                      xalign: 0.0;
+                    };
+                  }
+
+                  Button eq_preset_bass {
+                    halign: fill;
+
+                    styles [
+                      "flat",
+                      "playback-preset-btn",
+                    ]
+
+                    child: Label {
+                      label: _("Bass Boost");
+                      xalign: 0.0;
+                    };
+                  }
+
+                  Button eq_preset_vocal {
+                    halign: fill;
+
+                    styles [
+                      "flat",
+                      "playback-preset-btn",
+                    ]
+
+                    child: Label {
+                      label: _("Vocal");
+                      xalign: 0.0;
+                    };
+                  }
+
+                  Button eq_preset_lofi {
+                    halign: fill;
+
+                    styles [
+                      "flat",
+                      "playback-preset-btn",
+                    ]
+
+                    child: Label {
+                      label: _("Lo-Fi");
+                      xalign: 0.0;
+                    };
+                  }
+
+                  Button eq_preset_acoustic {
+                    halign: fill;
+
+                    styles [
+                      "flat",
+                      "playback-preset-btn",
+                    ]
+
+                    child: Label {
+                      label: _("Acoustic");
+                      xalign: 0.0;
+                    };
+                  }
                 };
               }
             };
