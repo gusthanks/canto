@@ -40,6 +40,10 @@ pub struct PlaybackState {
     // Track that ended naturally when the local queue finished (`TrackEnded`),
     // preserved across `stop()` for opt-in Smart Queue Continuation.
     last_finished_track: Option<Track>,
+    // The last track the account played, shown (paused) when Canto opened
+    // with nothing playing, and where it stopped. Nothing plays it yet: the
+    // first play starts it on a player, from there
+    staged: Option<(String, u32)>,
 }
 
 // Most mutatings methods shouldn't be pub
@@ -519,6 +523,57 @@ impl PlaybackState {
         events
     }
 
+    fn staged_is_current(&self) -> bool {
+        self.staged.as_ref().map(|(id, _)| id) == self.current_song_id().as_ref()
+    }
+
+    fn stage(&mut self, staged: StagedPlay) -> Vec<PlaybackEvent> {
+        // Something started meanwhile, or another device is followed
+        if !self.is_local() || self.queue.current().is_some() || self.queue.has_source() {
+            return vec![];
+        }
+        let StagedPlay {
+            source,
+            page,
+            track_id,
+            position_ms,
+        } = staged;
+        self.queue.add_page(source, page);
+        if !self.queue.select_remote_id(&track_id) {
+            self.queue.clear();
+            self.refresh_view();
+            return vec![];
+        }
+        debug!("showing the last track played: {track_id} at {position_ms} ms");
+        self.is_playing = false;
+        self.seek_position.set(position_ms as u64, false);
+        self.staged = Some((track_id, position_ms));
+        self.refresh_view();
+        vec![
+            PlaybackEvent::PlaylistChanged,
+            PlaybackEvent::TrackSynced,
+            PlaybackEvent::SeekSynced(position_ms),
+        ]
+    }
+
+    /// The first play of the staged track: load it on a player, where it stopped.
+    fn start_staged(&mut self) -> Vec<PlaybackEvent> {
+        let Some((id, position)) = self.staged.take() else {
+            return vec![];
+        };
+        if self.current_song_should_skip() {
+            return self.play_next_events(false);
+        }
+        self.is_playing = true;
+        self.seek_position.set(position as u64, true);
+        self.refresh_view();
+        let resume = (position > 0).then_some(PlaybackEvent::ResumeFrom(position));
+        resume
+            .into_iter()
+            .chain([PlaybackEvent::TrackChanged(id)])
+            .collect()
+    }
+
     fn toggle_play(&mut self) -> Option<bool> {
         if self.queue.current().is_some() {
             self.is_playing = !self.is_playing;
@@ -578,6 +633,7 @@ impl Default for PlaybackState {
             volume: -1.0,
             muted_volume: None,
             last_finished_track: None,
+            staged: None,
         }
     }
 }
@@ -630,6 +686,17 @@ pub enum PlaybackAction {
     },
     SwitchDevice(Device),
     SetAvailableDevices(Vec<ConnectDevice>),
+    /// Show the account's last track, paused, if nothing is there yet.
+    StageLastPlayed(Box<StagedPlay>),
+}
+
+/// The last track played, with the page of its album or playlist it is on.
+#[derive(Clone, Debug)]
+pub struct StagedPlay {
+    pub source: SongsSource,
+    pub page: Page<Track>,
+    pub track_id: String,
+    pub position_ms: u32,
 }
 
 pub fn load_context(
@@ -678,6 +745,8 @@ pub enum Device {
 pub enum PlaybackEvent {
     PlaybackPaused,
     PlaybackResumed,
+    /// The next `TrackChanged` starts there, not at the beginning.
+    ResumeFrom(u32),
     RepeatModeChanged(RepeatMode),
     RepeatSynced(RepeatMode),
     TrackSeeked(u32),
@@ -725,7 +794,40 @@ impl UpdatableState for PlaybackState {
 
     // Main "reducer" :)
     fn update_with(&mut self, action: Cow<Self::Action>) -> Vec<Self::Event> {
-        match action.into_owned() {
+        let action = action.into_owned();
+        // Anything that moves away from the staged track drops it
+        #[allow(deprecated)]
+        let moves = match &action {
+            PlaybackAction::LoadPagedSongs(source, _) => self.queue.source() != Some(source),
+            PlaybackAction::Load(_)
+            | PlaybackAction::PlayEntry(_)
+            | PlaybackAction::Next
+            | PlaybackAction::Previous
+            | PlaybackAction::TrackEnded
+            | PlaybackAction::Stop
+            | PlaybackAction::LoadSongs(_)
+            | PlaybackAction::LoadContextSongs(..)
+            | PlaybackAction::ReplaceQueue
+            | PlaybackAction::SyncRemoteState(_)
+            | PlaybackAction::SwitchDevice(_) => true,
+            _ => false,
+        };
+        if moves {
+            self.staged = None;
+        }
+        match action {
+            PlaybackAction::TogglePlay | PlaybackAction::Play
+                if self.staged.is_some() && self.staged_is_current() =>
+            {
+                self.start_staged()
+            }
+            PlaybackAction::Seek(pos) if self.staged.is_some() && self.staged_is_current() => {
+                // Not loaded on any player yet: remember where to start
+                self.staged = self.staged.take().map(|(id, _)| (id, pos));
+                self.seek_position.set(pos as u64, false);
+                vec![PlaybackEvent::SeekSynced(pos)]
+            }
+            PlaybackAction::StageLastPlayed(staged) => self.stage(*staged),
             PlaybackAction::TogglePlay => match self.toggle_play() {
                 Some(true) => vec![PlaybackEvent::PlaybackResumed],
                 Some(false) => vec![PlaybackEvent::PlaybackPaused],
@@ -969,6 +1071,72 @@ mod tests {
 
     fn load(state: &mut PlaybackState, tracks: Vec<Track>) {
         state.set_queue_with_source(None, tracks);
+    }
+
+    fn staged(ids: &[&str], track: &str, position_ms: u32) -> PlaybackAction {
+        PlaybackAction::StageLastPlayed(Box::new(StagedPlay {
+            source: SongsSource::Album("a".to_string()),
+            page: Page {
+                items: ids.iter().map(|id| song(id)).collect(),
+                offset: Some(0),
+                total: Some(ids.len()),
+                next_cursor: None,
+            },
+            track_id: track.to_string(),
+            position_ms,
+        }))
+    }
+
+    #[test]
+    fn test_last_played_is_shown_paused_and_resumes_where_it_stopped() {
+        let mut state = PlaybackState::default();
+        let events = state.act(staged(&["1", "2", "3"], "2", 61_000));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::TrackSynced)));
+        assert_eq!(state.current_song_id().as_deref(), Some("2"));
+        assert!(!state.is_playing());
+        assert_eq!(state.seek_position(), 61_000);
+
+        // The first play loads it on a player, from where it stopped
+        let events = state.act(PlaybackAction::TogglePlay);
+        assert!(matches!(
+            events.as_slice(),
+            [PlaybackEvent::ResumeFrom(61_000), PlaybackEvent::TrackChanged(id)] if id == "2"
+        ));
+        assert!(state.is_playing());
+        // After that, play/pause is the usual one
+        let events = state.act(PlaybackAction::TogglePlay);
+        assert!(matches!(events.as_slice(), [PlaybackEvent::PlaybackPaused]));
+    }
+
+    #[test]
+    fn test_last_played_seek_before_play_moves_the_start() {
+        let mut state = PlaybackState::default();
+        state.act(staged(&["1", "2"], "1", 5_000));
+        state.act(PlaybackAction::Seek(90_000));
+        let events = state.act(PlaybackAction::TogglePlay);
+        assert!(matches!(events[0], PlaybackEvent::ResumeFrom(90_000)));
+    }
+
+    #[test]
+    fn test_last_played_never_replaces_what_is_there() {
+        let mut state = PlaybackState::default();
+        load(&mut state, vec![song("x")]);
+        state.act(PlaybackAction::Load("x".to_string()));
+        assert!(state.act(staged(&["1", "2"], "2", 0)).is_empty());
+        assert_eq!(state.current_song_id().as_deref(), Some("x"));
+    }
+
+    #[test]
+    fn test_last_played_dropped_when_another_track_starts() {
+        let mut state = PlaybackState::default();
+        state.act(staged(&["1", "2"], "2", 30_000));
+        let events = state.act(PlaybackAction::Next);
+        assert!(!events
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::ResumeFrom(_))));
+        assert!(state.staged.is_none());
     }
 
     impl PlaybackState {

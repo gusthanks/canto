@@ -841,6 +841,45 @@ impl MusicProvider for SpotifyDomain {
         Ok(keys)
     }
 
+    async fn get_last_played(&self) -> Result<Option<LastPlayed>, DomainError> {
+        let config = self.config_or_err()?;
+        // What the account's player still holds (paused): the exact spot.
+        // With nothing held, Spotify answers 204 and this fails: fine
+        let now =
+            apis::player_api::get_information_about_the_users_current_playback(&config, None, None)
+                .await;
+        if let Ok(now) = now {
+            if now.is_playing == Some(true) {
+                // Playing somewhere: Canto follows that device instead
+                return Ok(None);
+            }
+            let track_id = now.item.as_deref().and_then(|item| match item {
+                sp::QueueObjectCurrentlyPlaying::Track(t) => t.id.clone(),
+                _ => None,
+            });
+            if let Some(track_id) = track_id {
+                return Ok(Some(LastPlayed {
+                    track_id,
+                    context_uri: now.context.as_ref().and_then(|c| c.uri.clone()),
+                    position_ms: now
+                        .progress_ms
+                        .and_then(|p| u32::try_from(p).ok())
+                        .unwrap_or(0),
+                }));
+            }
+        }
+        // Otherwise the history, which doesn't say where it stopped
+        let history = apis::player_api::get_recently_played(&config, Some(1), None, None).await?;
+        let last = history.items.unwrap_or_default().into_iter().next();
+        Ok(last.and_then(|item| {
+            Some(LastPlayed {
+                track_id: item.track.as_ref()?.id.clone()?,
+                context_uri: item.context.as_ref().and_then(|c| c.uri.clone()),
+                position_ms: 0,
+            })
+        }))
+    }
+
     async fn get_player_queue(&self) -> Result<Queue, DomainError> {
         let config = self.config_or_err()?;
         Ok(queue_from_object(
@@ -880,6 +919,7 @@ impl MusicProvider for SpotifyDomain {
         device_id: &str,
         context_uri: &str,
         offset: usize,
+        position_ms: Option<u32>,
     ) -> Result<(), DomainError> {
         let config = self.config_or_err()?;
         let mut offset_map = std::collections::HashMap::new();
@@ -888,7 +928,7 @@ impl MusicProvider for SpotifyDomain {
             context_uri: Some(context_uri.to_string()),
             uris: None,
             offset: Some(offset_map),
-            position_ms: None,
+            position_ms: position_ms.and_then(|p| i32::try_from(p).ok()),
         };
         Ok(apis::player_api::start_a_users_playback(&config, Some(device_id), Some(body)).await?)
     }
@@ -898,6 +938,7 @@ impl MusicProvider for SpotifyDomain {
         device_id: &str,
         uris: Vec<String>,
         offset: usize,
+        position_ms: Option<u32>,
     ) -> Result<(), DomainError> {
         let config = self.config_or_err()?;
         let mut offset_map = std::collections::HashMap::new();
@@ -906,7 +947,7 @@ impl MusicProvider for SpotifyDomain {
             context_uri: None,
             uris: Some(uris),
             offset: Some(offset_map),
-            position_ms: None,
+            position_ms: position_ms.and_then(|p| i32::try_from(p).ok()),
         };
         Ok(apis::player_api::start_a_users_playback(&config, Some(device_id), Some(body)).await?)
     }

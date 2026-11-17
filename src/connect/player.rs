@@ -37,10 +37,13 @@ pub enum ConnectCommand {
         source: SongsSource,
         offset: usize,
         song: String,
+        /// Start here instead of the beginning (the last track, reopened)
+        position_ms: Option<u32>,
     },
     PlayerLoad {
         songs: Vec<String>,
         offset: usize,
+        position_ms: Option<u32>,
     },
     PlayerResume,
     PlayerPause,
@@ -412,6 +415,7 @@ impl ConnectPlayer {
             source,
             offset,
             song,
+            position_ms,
         } = command
         else {
             panic!("Illegal call");
@@ -427,7 +431,7 @@ impl ConnectPlayer {
             let result = self
                 .retrying(&device_id, || {
                     self.api
-                        .player_play_in_context(&device_id, &context, offset)
+                        .player_play_in_context(&device_id, &context, offset, position_ms)
                 })
                 .await;
             self.fall_back_to_open_uri(&device_id, result, &song)
@@ -444,7 +448,12 @@ impl ConnectPlayer {
         current_state: &PlayerState,
         command: ConnectCommand,
     ) -> Result<(), DomainError> {
-        let ConnectCommand::PlayerLoad { songs, offset } = command else {
+        let ConnectCommand::PlayerLoad {
+            songs,
+            offset,
+            position_ms,
+        } = command
+        else {
             panic!("Illegal call");
         };
         let Some(target_id) = songs.get(offset) else {
@@ -464,7 +473,8 @@ impl ConnectPlayer {
                 .collect();
             let result = self
                 .retrying(&device_id, || {
-                    self.api.player_play_uris(&device_id, uris.clone(), offset)
+                    self.api
+                        .player_play_uris(&device_id, uris.clone(), offset, position_ms)
                 })
                 .await;
             self.fall_back_to_open_uri(&device_id, result, &target)

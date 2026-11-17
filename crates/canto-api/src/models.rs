@@ -328,6 +328,17 @@ pub struct PlayerState {
     pub device: Option<Device>,
 }
 
+/// The last track the account played, for showing it when Canto opens with
+/// nothing playing.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct LastPlayed {
+    pub track_id: String,
+    /// The album, playlist or Liked Songs it played from, as a Spotify URI.
+    pub context_uri: Option<String>,
+    /// Where it stopped, when Spotify still knows.
+    pub position_ms: u32,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Queue {
     pub currently_playing: Option<Track>,

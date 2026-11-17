@@ -213,6 +213,11 @@ pub trait MusicProvider: Send + Sync + 'static {
     async fn get_recent_contexts(&self) -> Result<Vec<String>, DomainError> {
         Ok(vec![])
     }
+    /// The track the account played last, while nothing plays now. `None`
+    /// when something is playing somewhere (Canto follows that instead).
+    async fn get_last_played(&self) -> Result<Option<LastPlayed>, DomainError> {
+        Ok(None)
+    }
 
     /// Moves playback to `device_id`; `play` keeps it playing there.
     async fn player_transfer(&self, device_id: &str, play: bool) -> Result<(), DomainError> {
@@ -224,12 +229,14 @@ pub trait MusicProvider: Send + Sync + 'static {
         device_id: &str,
         context_uri: &str,
         offset: usize,
+        position_ms: Option<u32>,
     ) -> Result<(), DomainError>;
     async fn player_play_uris(
         &self,
         device_id: &str,
         uris: Vec<String>,
         offset: usize,
+        position_ms: Option<u32>,
     ) -> Result<(), DomainError>;
     async fn player_pause(&self, device_id: &str) -> Result<(), DomainError>;
     async fn player_seek(&self, device_id: &str, position_ms: u32) -> Result<(), DomainError>;

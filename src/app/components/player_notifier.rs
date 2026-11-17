@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::ops::Deref;
 use std::rc::Rc;
 
@@ -51,6 +52,9 @@ pub struct PlayerNotifier {
     use_official_client: bool,
     // A switch to the official client is in flight; avoid duplicate requests.
     official_client_pending: bool,
+    // Where the next load starts (the last track, played again on reopening);
+    // taken by the first load that goes out
+    start_at: Cell<Option<u32>>,
 }
 
 impl PlayerNotifier {
@@ -71,6 +75,7 @@ impl PlayerNotifier {
             _dsp_settings: dsp_settings,
             use_official_client: account_needs_official_client(),
             official_client_pending: false,
+            start_at: Cell::new(None),
         }
     }
 
@@ -211,9 +216,14 @@ impl PlayerNotifier {
                         source,
                         offset,
                         song,
+                        position_ms: self.start_at.take(),
                     }),
                     Some(CurrentlyPlaying::Songs { songs, offset }) => {
-                        Some(ConnectCommand::PlayerLoad { songs, offset })
+                        Some(ConnectCommand::PlayerLoad {
+                            songs,
+                            offset,
+                            position_ms: self.start_at.take(),
+                        })
                     }
                     None => None,
                 }
@@ -305,8 +315,14 @@ impl PlayerNotifier {
             _ => None,
         };
 
+        let loads = matches!(command, Some(Command::PlayerLoad { .. }));
         if let Some(command) = command {
             self.send_command_to_local_player(command);
+        }
+        // Only a load takes it: on the official-client route the load comes
+        // later, as a Connect command, after other events pass through here
+        if let Some(position) = loads.then(|| self.start_at.take()).flatten() {
+            self.send_command_to_local_player(Command::PlayerSeek(position));
         }
     }
 
@@ -352,6 +368,10 @@ impl EventListener for PlayerNotifier {
             (_, AppEvent::LoginEvent(event)) => self.notify_login(event),
             (_, AppEvent::OfficialClientFailed) => {
                 self.official_client_pending = false;
+                self.start_at.set(None);
+            }
+            (_, AppEvent::PlaybackEvent(PlaybackEvent::ResumeFrom(position))) => {
+                self.start_at.set(Some(*position));
             }
             (_, AppEvent::OfficialClientRequested) => {
                 // Librespot can't decrypt audio for this account: remember it

@@ -163,6 +163,12 @@ impl ApiService {
         self.provider.get_recent_contexts().await
     }
 
+    /// The track played last, while nothing plays now.
+    pub async fn get_last_played(&self, load: Load) -> Result<Option<LastPlayed>, DomainError> {
+        let _slot = self.admit_read(load).await?;
+        self.provider.get_last_played().await
+    }
+
     /// Genius' explanations for lines of the track, matched to `lines`.
     pub async fn fetch_genius_line_annotations(
         &self,
@@ -1192,10 +1198,11 @@ impl ApiService {
         device_id: &str,
         context_uri: &str,
         offset: usize,
+        position_ms: Option<u32>,
     ) -> Result<(), DomainError> {
         let _lane = self.player_lane.enter().await;
         self.provider
-            .player_play_in_context(device_id, context_uri, offset)
+            .player_play_in_context(device_id, context_uri, offset, position_ms)
             .await
     }
 
@@ -1204,10 +1211,11 @@ impl ApiService {
         device_id: &str,
         uris: Vec<String>,
         offset: usize,
+        position_ms: Option<u32>,
     ) -> Result<(), DomainError> {
         let _lane = self.player_lane.enter().await;
         self.provider
-            .player_play_uris(device_id, uris, offset)
+            .player_play_uris(device_id, uris, offset, position_ms)
             .await
     }
 
