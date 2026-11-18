@@ -13,6 +13,10 @@
   <sub>Canto is a fork of <a href="https://github.com/Diegovsky/riff">Riff</a> by Diego Augusto and contributors (descended from Spot by Alexandre Trendel), released under the MIT license.</sub>
 </p>
 
+<p align="center">
+  <img src="data/screenshots/01-now-playing.png" alt="Canto playing Ivy by Frank Ocean, with the Now Playing panel open">
+</p>
+
 ---
 
 > [!NOTE]
@@ -22,8 +26,15 @@
 
 **Lyrics**
 - Synced lyrics from LRCLIB in the side panel or full screen over the blurred cover. The active line lights up word by word (with real word timing when LRCLIB has it, an estimate otherwise).
-- Click a line to jump there, nudge the timing live, and translate lyrics into your language.
-- **Genius** credits in the Now Playing panel: producers, writers and featured artists.
+- Click a line to jump there, nudge the timing live, and translate lyrics into your language, shown under each line.
+- **Genius** annotations: tap the mark next to a line to read what it means, right inside the lyrics.
+
+<p align="center">
+  <img src="data/screenshots/03-lyrics-fullscreen.png" width="49%" alt="Full-screen lyrics over the blurred album cover">
+  <img src="data/screenshots/08-lyrics-translated.png" width="49%" alt="Lyrics with a translation under each line">
+  <img src="data/screenshots/07-genius-annotation.png" width="49%" alt="A Genius annotation open on a lyrics line">
+  <img src="data/screenshots/02-lyrics-panel.png" width="49%" alt="Synced lyrics in the side panel">
+</p>
 
 **Looks that follow your desktop**
 - **Follow System** reads your Omarchy theme and changes with it, live. Built-in themes too: Neutral (Adwaita), Green, OLED Dark, Warm Vinyl and Purple Night.
@@ -31,16 +42,31 @@
 - A player bar you can customize: right-click it to pick which buttons show and in what order.
 
 **Listening**
-- Now Playing panel with a big cover, a lyrics preview, the next track and song credits. The title takes you to the album, the artists to their pages.
+- Now Playing panel with a big cover, a lyrics preview, the next track, how many times you played the song, album and artist (Last.fm), song credits and the song's story from **Genius**. The title takes you to the album, the artists to their pages.
 - Your Library as a list or a grid of covers, with pinned items, Recents and sorting, plus a collapsed sidebar that keeps only the covers.
 - Reopens on the track you closed it on, right where it stopped. Nothing plays until you press play.
 - Plays here or on any Spotify Connect device, such as a phone or a smart speaker. On launch it follows the device that is already playing.
 - Mini player window, track radio, a sleep timer, and **Your Stats** from Last.fm.
 - Scrobbling to Last.fm and ListenBrainz, counting only real listening time, with an offline queue.
 
+<p align="center">
+  <img src="data/screenshots/09-credits-and-plays.png" width="49%" alt="Your play counts from Last.fm and song credits from Genius">
+  <img src="data/screenshots/10-song-bio-genius.png" width="49%" alt="About This Song, the song's story from Genius">
+  <img src="data/screenshots/04-library-grid.png" width="49%" alt="Your Library as a grid of covers">
+  <img src="data/screenshots/11-your-stats.png" width="49%" alt="Your Stats from Last.fm">
+</p>
+<p align="center">
+  <img src="data/screenshots/12-mini-player.png" width="400" alt="The mini player">
+</p>
+
 **Keyboard first**
 - `Ctrl+K` command palette: navigation, themes, devices, sleep timer, track radio and search.
 - Media keys (MPRIS), shortcuts for everything below, and touch gestures.
+
+<p align="center">
+  <img src="data/screenshots/05-command-palette.png" width="49%" alt="The Ctrl+K command palette with album covers">
+  <img src="data/screenshots/06-preferences.png" width="49%" alt="Preferences">
+</p>
 
 **Sound** (when Canto plays audio itself)
 - Gapless playback, a 10-band equalizer with presets, stereo balance, mono and pitch shift.

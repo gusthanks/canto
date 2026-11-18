@@ -52,6 +52,44 @@
     <p>Canto is a fork of Riff by Diego Augusto and contributors, itself descended from Spot by Alexandre Trendel.</p>
   </description>
 
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/gusthanks/canto/main/data/screenshots/01-now-playing.png</image>
+      <caption>Now Playing panel with credits and lyrics preview</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/main/data/screenshots/03-lyrics-fullscreen.png</image>
+      <caption>Synced lyrics in full screen over the album cover</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/main/data/screenshots/08-lyrics-translated.png</image>
+      <caption>Lyrics translated line by line</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/main/data/screenshots/07-genius-annotation.png</image>
+      <caption>Genius annotations inside the lyrics</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/main/data/screenshots/09-credits-and-plays.png</image>
+      <caption>Play counts from Last.fm and credits from Genius</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/main/data/screenshots/04-library-grid.png</image>
+      <caption>Your Library as a grid of covers</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/main/data/screenshots/05-command-palette.png</image>
+      <caption>Command palette</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/main/data/screenshots/11-your-stats.png</image>
+      <caption>Your listening stats from Last.fm</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/main/data/screenshots/12-mini-player.png</image>
+      <caption>Mini player</caption>
+    </screenshot>
+  </screenshots>
   <releases>
     <release version="0.1.0" date="2026-11-18">
       <description>
