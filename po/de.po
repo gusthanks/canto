@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 12:18-0300\n"
+"POT-Creation-Date: 2026-11-18 12:31-0300\n"
 "PO-Revision-Date: 2025-07-09 09:28+0200\n"
 "Last-Translator: Sebastian Scherch\n"
 "Language: de\n"
@@ -307,7 +307,7 @@ msgstr "Künstler"
 
 #. translators: A playlist in the back/forward history menu, while its name is loading.
 #: src/app/components/labels.rs:184
-#: src/app/components/pages/details_playlist/model.rs:154
+#: src/app/components/pages/details_playlist/model.rs:155
 #: src/app/components/pages/saved_tracks/model.rs:63
 #: src/app/components/shell/command_palette/widget.rs:830
 #: src/app/components/shell/navigation_panel/model.rs:434
@@ -357,11 +357,11 @@ msgid "Releases"
 msgstr "Diskografie"
 
 #. translators: This notification is shown when the user emptied the description of a playlist, which cannot be removed once set.
-#: src/app/components/pages/details_playlist/model.rs:104
+#: src/app/components/pages/details_playlist/model.rs:105
 msgid "A playlist's description can't be removed, so it was kept."
 msgstr ""
 
-#: src/app/components/pages/details_playlist/model.rs:141
+#: src/app/components/pages/details_playlist/model.rs:142
 #: src/app/components/pages/saved_tracks/model.rs:75
 #, fuzzy, rust-format
 msgid "{} Track"
@@ -386,7 +386,7 @@ msgstr "Alle Playlists"
 #: src/app/components/shell/fullscreen_lyrics.rs:101
 #: src/app/components/shell/playback/playback_widget.blp:168
 #: src/app/components/shell/utility_panel/utility_panel.blp:49
-#: src/app/components/shell/playback/playback_widget.rs:354
+#: src/app/components/shell/playback/playback_widget.rs:355
 msgid "Lyrics"
 msgstr ""
 
@@ -411,23 +411,24 @@ msgid "Lyrics couldn't be found for this song."
 msgstr ""
 
 #. Translators: Heading of the lyrics timing part of the lyrics options popover.
-#: src/app/components/pages/lyrics/widget.rs:200
+#: src/app/components/pages/lyrics/widget.rs:201
 #: src/app/components/pages/lyrics/lyrics_page.blp:192
 msgid "Lyrics Timing"
 msgstr ""
 
+#. translators: Tooltip of the lyrics timing button while an offset is set. {} is like "+200 ms".
 #: src/app/components/pages/lyrics/widget.rs:205
 #, rust-format
 msgid "Lyrics Timing ({})"
 msgstr ""
 
 #. translators: Tooltip of the mark on a lyric line that Genius explains.
-#: src/app/components/pages/lyrics/widget.rs:407
+#: src/app/components/pages/lyrics/widget.rs:406
 msgid "What This Line Means"
 msgstr ""
 
 #. translators: First entry of the lyrics translation languages: the app's own language.
-#: src/app/components/pages/lyrics/widget.rs:436
+#: src/app/components/pages/lyrics/widget.rs:435
 msgid "App Language"
 msgstr ""
 
@@ -437,7 +438,7 @@ msgstr ""
 #: src/app/components/pages/queue/component.rs:58
 #: src/app/components/shell/playback/playback_widget.blp:188
 #: src/app/components/shell/utility_panel/utility_panel.blp:55
-#: src/app/components/shell/playback/playback_widget.rs:360
+#: src/app/components/shell/playback/playback_widget.rs:361
 msgid "Queue"
 msgstr ""
 
@@ -492,19 +493,19 @@ msgstr "Playlists werden hier angezeigt."
 msgid "Liked Songs"
 msgstr ""
 
-#: src/app/components/pages/search/search.rs:267
+#: src/app/components/pages/search/search.rs:268
 msgid "Show All"
 msgstr ""
 
 #. Translators: This refers to a number of tracks
-#: src/app/components/pages/search/search.rs:395
+#: src/app/components/pages/search/search.rs:396
 #: src/app/components/pages/details_album/release_details.blp:56
 #: src/app/components/pages/shortcuts/shortcuts.blp:104
 msgid "Tracks"
 msgstr "Titel"
 
 #. translators: This is a navigation panel entry to browse to followed artists.
-#: src/app/components/pages/search/search.rs:432
+#: src/app/components/pages/search/search.rs:433
 #: src/app/components/shell/command_palette/widget.rs:595
 #: src/app/components/shell/navigation/factory.rs:82
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:77
@@ -513,7 +514,7 @@ msgstr "Titel"
 msgid "Artists"
 msgstr "Künstler"
 
-#: src/app/components/pages/search/search.rs:442
+#: src/app/components/pages/search/search.rs:443
 #: src/app/components/shell/navigation_panel/navigation_panel.rs:416
 #: src/app/models/card_enums.rs:173
 #: src/app/components/pages/shortcuts/shortcuts.blp:94
@@ -521,7 +522,7 @@ msgid "Albums"
 msgstr "Alben"
 
 #. translators: This is a navigation panel entry that marks that the entries below are playlists.
-#: src/app/components/pages/search/search.rs:452
+#: src/app/components/pages/search/search.rs:453
 #: src/app/components/shell/command_palette/widget.rs:606
 #: src/app/components/shell/navigation/factory.rs:71
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:75
@@ -530,222 +531,222 @@ msgstr "Alben"
 msgid "Playlists"
 msgstr "Playlists"
 
-#: src/app/components/pages/settings/settings.rs:329
+#: src/app/components/pages/settings/settings.rs:328
 msgid "Unsupported due to legal restrictions."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:926
+#: src/app/components/pages/settings/settings.rs:924
 msgid "Experimental Features"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:928
+#: src/app/components/pages/settings/settings.rs:926
 msgid ""
 "These features are still in development and may be unstable or incomplete."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1068
+#: src/app/components/pages/settings/settings.rs:1066
 msgid "Couldn't save the key in the keyring"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1092
+#: src/app/components/pages/settings/settings.rs:1090
 msgid "Soloist API Key (saved; type a new one to replace it)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1094
+#: src/app/components/pages/settings/settings.rs:1092
 #: src/app/components/pages/settings/settings.blp:171
 msgid "Soloist API Key"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1166
-#: src/app/components/pages/settings/settings.rs:1188
+#: src/app/components/pages/settings/settings.rs:1164
+#: src/app/components/pages/settings/settings.rs:1186
 msgid "Step 1 opened in browser. Approve access, then click 2. Complete."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1168
+#: src/app/components/pages/settings/settings.rs:1166
 msgid ""
 "Last.fm no longer accepts this connection. Your plays are kept: click 1. "
 "Open Auth to connect again"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1175
-#: src/app/components/pages/settings/settings.rs:1279
+#: src/app/components/pages/settings/settings.rs:1173
+#: src/app/components/pages/settings/settings.rs:1277
 msgid "Connected to Last.fm"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1177
+#: src/app/components/pages/settings/settings.rs:1175
 msgid "Connected as"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1190
+#: src/app/components/pages/settings/settings.rs:1188
 msgid "Click 1. Open Auth to approve Canto in your browser"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1192
+#: src/app/components/pages/settings/settings.rs:1190
 #: src/app/components/pages/settings/settings.blp:548
 msgid "Enter API Key and Secret above, then connect your account"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1209
-#: src/app/components/pages/settings/settings.rs:1256
+#: src/app/components/pages/settings/settings.rs:1207
+#: src/app/components/pages/settings/settings.rs:1254
 msgid "Enter your Last.fm API Key and Secret first"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1235
+#: src/app/components/pages/settings/settings.rs:1233
 msgid ""
 "Could not start Last.fm authorization. Check API credentials and network."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1248
+#: src/app/components/pages/settings/settings.rs:1246
 msgid "Run Step 1 first to open browser authorization"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1281
+#: src/app/components/pages/settings/settings.rs:1279
 msgid "Connected to Last.fm as"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1288
+#: src/app/components/pages/settings/settings.rs:1286
 msgid ""
 "Last.fm authorization is not approved yet. Approve in browser, then try Step "
 "2 again."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1316
+#: src/app/components/pages/settings/settings.rs:1314
 msgid "Locked by a Family plan parental control and cannot be changed here."
 msgstr ""
 
 #. translators: Genius form field that should be left untouched.
-#: src/app/components/pages/settings/settings.rs:1446
+#: src/app/components/pages/settings/settings.rs:1444
 msgid "Keep the default"
 msgstr ""
 
 #. translators: Tooltip of the button copying a value for a form field.
-#: src/app/components/pages/settings/settings.rs:1455
+#: src/app/components/pages/settings/settings.rs:1453
 #, fuzzy
 msgid "Copy"
 msgstr "Link kopieren"
 
 #. translators: Toast after copying a value; {} is the value.
-#: src/app/components/pages/settings/settings.rs:1462
+#: src/app/components/pages/settings/settings.rs:1460
 #, rust-format
 msgid "Copied {}"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1484
+#: src/app/components/pages/settings/settings.rs:1482
 msgid ""
 "1. Click the button below to open the New API Client form on Genius (sign in "
 "if asked)."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1487
+#: src/app/components/pages/settings/settings.rs:1485
 msgid "2. Fill in the form like this, then click 'Save':"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1499
+#: src/app/components/pages/settings/settings.rs:1497
 msgid ""
 "3. On the next page, click 'Generate Access Token' and copy the Client "
 "Access Token. Canto doesn't need the Client ID or Client Secret."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1502
+#: src/app/components/pages/settings/settings.rs:1500
 msgid "4. Back in Canto, paste it into Client Access Token, under Genius."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1509
+#: src/app/components/pages/settings/settings.rs:1507
 #, fuzzy
 msgid "Open Genius"
 msgstr "Auf Spotify suchen."
 
-#: src/app/components/pages/settings/settings.rs:1517
-#: src/app/components/pages/settings/settings.rs:1610
+#: src/app/components/pages/settings/settings.rs:1515
+#: src/app/components/pages/settings/settings.rs:1608
 #: src/app/components/shell/window/close_dialog.rs:67
 msgid "Close"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1529
+#: src/app/components/pages/settings/settings.rs:1527
 msgid "How to Get a Genius Token"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1554
+#: src/app/components/pages/settings/settings.rs:1552
 msgid "How to Set Up Scrobbling"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1567
+#: src/app/components/pages/settings/settings.rs:1565
 msgid "Last.fm (API Key + Browser Auth)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1573
+#: src/app/components/pages/settings/settings.rs:1571
 msgid ""
 "1. Open last.fm/api/account/create, create an API application, and copy the "
 "API Key and Shared Secret into Canto."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1576
+#: src/app/components/pages/settings/settings.rs:1574
 msgid ""
 "2. Click '1. Open Auth' to open Last.fm in your browser and approve access "
 "for Canto."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1579
+#: src/app/components/pages/settings/settings.rs:1577
 msgid ""
 "3. Return to Canto and click '2. Complete' to store your persistent session "
 "key."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1582
+#: src/app/components/pages/settings/settings.rs:1580
 msgid "ListenBrainz (User Token)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1589
+#: src/app/components/pages/settings/settings.rs:1587
 msgid ""
 "Open listenbrainz.org/settings, copy your User Token, and paste it into "
 "ListenBrainz User Token."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1596
+#: src/app/components/pages/settings/settings.rs:1594
 msgid "Open Last.fm API"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1603
+#: src/app/components/pages/settings/settings.rs:1601
 msgid "Open ListenBrainz"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1629
+#: src/app/components/pages/settings/settings.rs:1627
 msgid "Not installed yet: Canto gets it from Spotify when you press play"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1631
+#: src/app/components/pages/settings/settings.rs:1629
 msgid ""
 "Not installed. Canto plays through the Spotify app hidden in the background."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1633
+#: src/app/components/pages/settings/settings.rs:1631
 msgid "Installed, waiting for a key"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1635
+#: src/app/components/pages/settings/settings.rs:1633
 msgid "Ready. It starts when you press play."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1637
+#: src/app/components/pages/settings/settings.rs:1635
 msgid ""
 "Running, not logged in yet: in Spotify on your phone, pick “Canto” in the "
 "device list once"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1639
+#: src/app/components/pages/settings/settings.rs:1637
 msgid "Running and playing through Canto"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1641
+#: src/app/components/pages/settings/settings.rs:1639
 msgid "Running and logged in"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1647
+#: src/app/components/pages/settings/settings.rs:1645
 msgid ""
 "This Soloist build has expired; Canto gets the new one when you press play"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1653
+#: src/app/components/pages/settings/settings.rs:1651
 #, rust-format
 msgid "This Soloist build stops working in {days} days"
 msgstr ""
@@ -833,7 +834,7 @@ msgid "Sleep Timer"
 msgstr ""
 
 #: src/app/components/shell/command_palette/widget.rs:548
-#: src/app/components/shell/playback/playback_widget.rs:367
+#: src/app/components/shell/playback/playback_widget.rs:368
 #, fuzzy
 msgid "Device"
 msgstr "Dieses Gerät"
@@ -913,7 +914,7 @@ msgstr ""
 #. Translators: Tooltip of the player bar button that opens the small player window.
 #: src/app/components/shell/command_palette/widget.rs:663
 #: src/app/components/shell/playback/playback_widget.blp:429
-#: src/app/components/shell/playback/playback_widget.rs:380
+#: src/app/components/shell/playback/playback_widget.rs:381
 msgid "Mini Player"
 msgstr ""
 
@@ -1483,7 +1484,7 @@ msgstr ""
 msgid "Add to Library"
 msgstr "In Bibliothek speichern"
 
-#: src/app/components/widgets/details_page/model.rs:375
+#: src/app/components/widgets/details_page/model.rs:376
 msgid "Link copied to clipboard"
 msgstr ""
 
@@ -1518,7 +1519,7 @@ msgstr ""
 
 #. translators: Header shown above the tracks of disc {} in a
 #. multi-disc album.
-#: src/app/components/widgets/track_list/track_list.rs:374
+#: src/app/components/widgets/track_list/track_list.rs:375
 #, rust-format
 msgid "Disc {}"
 msgstr ""
@@ -1554,7 +1555,7 @@ msgstr ""
 msgid "Compilations"
 msgstr ""
 
-#: src/app/mod.rs:274
+#: src/app/mod.rs:275
 #, fuzzy
 msgid "No track is currently playing"
 msgstr "Wiedergabe"
@@ -2573,14 +2574,14 @@ msgid "Mute / Unmute"
 msgstr ""
 
 #: src/app/components/shell/playback/playback_widget.blp:399
-#: src/app/components/shell/playback/playback_widget.rs:374
+#: src/app/components/shell/playback/playback_widget.rs:375
 msgid "Volume"
 msgstr ""
 
 #. Translators: Tooltip of the player bar button that opens the sleep timer, equalizer and audio options.
 #: src/app/components/shell/playback/playback_widget.blp:447
 #: src/app/components/widgets/details_page/header.blp:213
-#: src/app/components/shell/playback/playback_widget.rs:387
+#: src/app/components/shell/playback/playback_widget.rs:388
 msgid "More Options"
 msgstr ""
 
@@ -2615,7 +2616,7 @@ msgstr ""
 
 #. Translators: Tooltip of the player bar button that shows or hides the right side panel (Now Playing, Queue, Lyrics).
 #: src/app/components/shell/playback/playback_widget.blp:709
-#: src/app/components/shell/playback/playback_widget.rs:393
+#: src/app/components/shell/playback/playback_widget.rs:394
 msgid "Side Panel"
 msgstr ""
 
@@ -2808,17 +2809,17 @@ msgid "Riff and Spot Artists"
 msgstr ""
 
 #. translators: Heading of the popover that chooses which buttons the player bar shows.
-#: src/app/components/shell/playback/playback_widget.rs:403
+#: src/app/components/shell/playback/playback_widget.rs:404
 msgid "Show in the Bar"
 msgstr ""
 
 #. translators: Tooltip of the arrow that moves a button earlier in the player bar.
-#: src/app/components/shell/playback/playback_widget.rs:434
+#: src/app/components/shell/playback/playback_widget.rs:435
 msgid "Move Left"
 msgstr ""
 
 #. translators: Tooltip of the arrow that moves a button later in the player bar.
-#: src/app/components/shell/playback/playback_widget.rs:437
+#: src/app/components/shell/playback/playback_widget.rs:438
 #, fuzzy
 msgid "Move Right"
 msgstr "Hell"
