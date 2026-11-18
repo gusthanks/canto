@@ -1052,6 +1052,64 @@ impl ConnectPlayer {
         self.handle_other_command(new_id, command).await.is_ok()
     }
 
+    /// Moves playback to `device_id`. A sleeping speaker (an Alexa) answers
+    /// "not found" while it wakes, for a few seconds: ask again meanwhile.
+    async fn transfer_waking(&self, device_id: &str, play: bool) -> bool {
+        const WAITS_MS: [u64; 4] = [1_500, 2_000, 3_000, 4_000];
+        let mut result = self.api.player_transfer(device_id, play).await;
+        for (attempt, wait) in WAITS_MS.iter().copied().enumerate() {
+            if !matches!(result, Err(DomainError::NotFound { .. })) {
+                break;
+            }
+            if attempt == 0 {
+                self.send_actions([AppAction::ShowNotification(gettext(
+                    // translators: Shown while a sleeping Spotify Connect speaker (an Alexa) wakes up.
+                    "Waking up the speaker…",
+                ))]);
+            }
+            debug!("{device_id} asleep; asking again in {wait}ms");
+            tokio::time::sleep(Duration::from_millis(wait)).await;
+            self.mark_command();
+            result = self.api.player_transfer(device_id, play).await;
+        }
+        if let Err(err) = &result {
+            warn!("could not move playback to {device_id}: {err:?}");
+        }
+        result.is_ok()
+    }
+
+    /// Puts the device picker back on the device that still plays.
+    async fn switch_back_from(&self, failed_id: &str) {
+        let current = self.device_id.read().ok().and_then(|d| d.clone());
+        let devices = self
+            .api
+            .get_devices(load::transport())
+            .await
+            .unwrap_or_default();
+        let back = devices
+            .iter()
+            .find(|d| Some(&d.id) == current.as_ref() && d.id != failed_id)
+            .or_else(|| devices.iter().find(|d| d.is_active && d.id != failed_id))
+            .cloned();
+        let action = match back {
+            Some(device) => {
+                self.device_id
+                    .write()
+                    .ok()
+                    .map(|mut d| d.replace(device.id.clone()));
+                PlaybackAction::SwitchDevice(Device::Connect(device))
+            }
+            None => {
+                self.device_id.write().ok().map(|mut d| d.take());
+                PlaybackAction::SwitchDevice(Device::Local)
+            }
+        };
+        self.send_actions([
+            action.into(),
+            PlaybackAction::SetAvailableDevices(devices).into(),
+        ]);
+    }
+
     pub async fn handle_command(&self, command: ConnectCommand) -> Option<()> {
         let device_lost = match command {
             ConnectCommand::SetDevice(new_device_id) => {
@@ -1084,7 +1142,17 @@ impl ConnectPlayer {
                 // back the account's last session (another track) first
                 let own_idle_soloist = !was_playing && self.is_known_soloist(&new_device_id);
                 if !already_active && !own_idle_soloist {
-                    let _ = self.api.player_transfer(&new_device_id, was_playing).await;
+                    self.mark_command();
+                    if !self.transfer_waking(&new_device_id, was_playing).await {
+                        // Still asleep: the music stays where it was, and so
+                        // does the choice, instead of a switch that is not
+                        self.send_actions([AppAction::ShowNotification(gettext(
+                            // translators: Shown when a Spotify Connect speaker is asleep or unreachable.
+                            "Spotify Connect device is asleep or inactive. Start playback on the device first.",
+                        ))]);
+                        self.switch_back_from(&new_device_id).await;
+                        return Some(());
+                    }
                 }
                 self.device_id.write().ok()?.replace(new_device_id);
                 if own_idle_soloist {

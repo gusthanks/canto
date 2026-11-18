@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 12:31-0300\n"
+"POT-Creation-Date: 2026-11-18 12:48-0300\n"
 "Language: et\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -331,7 +331,7 @@ msgid "The playlist's cover could not be uploaded."
 msgstr ""
 
 #. translators: This notification is shown when Spotify throttles requests.
-#: src/app/components/mod.rs:247 src/connect/player.rs:1140
+#: src/app/components/mod.rs:247 src/connect/player.rs:1208
 msgid "Rate limited by Spotify. Please wait a moment and try again."
 msgstr ""
 
@@ -1571,8 +1571,13 @@ msgstr ""
 msgid "Getting the current Spotify Soloist…"
 msgstr ""
 
+#. translators: Shown while a sleeping Spotify Connect speaker (an Alexa) wakes up.
+#: src/connect/player.rs:1067
+msgid "Waking up the speaker…"
+msgstr ""
+
 #. translators: Shown when a Spotify Connect speaker is asleep or unreachable.
-#: src/connect/player.rs:1145
+#: src/connect/player.rs:1151 src/connect/player.rs:1213
 msgid ""
 "Spotify Connect device is asleep or inactive. Start playback on the device "
 "first."
