@@ -1,9 +1,8 @@
 name: canto-snapshots
 
+# Test builds only by hand (Actions > Run workflow): the weekly one published
+# a pre-release every Friday nobody asked for
 on:
-  schedule:
-    # Runs every Friday at midnight (00:00 UTC)
-    - cron: '0 0 * * 5'
   pull_request:
     branches: [main, development]
   workflow_dispatch:
@@ -36,7 +35,7 @@ jobs:
     name: "Create Snapshot Release"
     needs: [flatpak]
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
     steps:
