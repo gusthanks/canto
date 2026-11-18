@@ -1101,6 +1101,10 @@ impl ConnectPlayer {
                 self.use_official_client().await;
                 false
             }
+            ConnectCommand::PrepareSoloist => {
+                Self::prepare_soloist().await;
+                false
+            }
             ConnectCommand::PlayerStop => {
                 self.remote_playing.store(false, Ordering::Relaxed);
                 let device_id = self.device_id.write().ok()?.take();
@@ -1169,10 +1173,6 @@ fn compensate_connect_progress(
     if !is_playing {
         return progress_ms;
     }
-            ConnectCommand::PrepareSoloist => {
-                Self::prepare_soloist().await;
-                false
-            }
     let half_rtt_ms = (round_trip.as_millis() / 2).min(1500) as u32;
     let snapshot_age_ms = match (timestamp_ms, now_epoch_ms) {
         (Some(ts), Some(now)) if now >= ts && (now - ts) <= 10_000 => Some((now - ts) as u32),
