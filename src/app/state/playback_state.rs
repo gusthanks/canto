@@ -553,6 +553,7 @@ impl PlaybackState {
             PlaybackEvent::PlaylistChanged,
             PlaybackEvent::TrackSynced,
             PlaybackEvent::SeekSynced(position_ms),
+            PlaybackEvent::LastPlayedStaged,
         ]
     }
 
@@ -568,9 +569,13 @@ impl PlaybackState {
         self.seek_position.set(position as u64, true);
         self.refresh_view();
         let resume = (position > 0).then_some(PlaybackEvent::ResumeFrom(position));
+        // A track change puts the seek bar at 0; put it back on the spot
+        // right away instead of when the player answers, seconds later (18/11)
+        let spot = (position > 0).then_some(PlaybackEvent::SeekSynced(position));
         resume
             .into_iter()
             .chain([PlaybackEvent::TrackChanged(id)])
+            .chain(spot)
             .collect()
     }
 
@@ -747,6 +752,9 @@ pub enum PlaybackEvent {
     PlaybackResumed,
     /// The next `TrackChanged` starts there, not at the beginning.
     ResumeFrom(u32),
+    /// The last track is shown, ready to play: the player here can start
+    /// now, so the first play doesn't wait for it.
+    LastPlayedStaged,
     RepeatModeChanged(RepeatMode),
     RepeatSynced(RepeatMode),
     TrackSeeked(u32),
@@ -1102,7 +1110,11 @@ mod tests {
         let events = state.act(PlaybackAction::TogglePlay);
         assert!(matches!(
             events.as_slice(),
-            [PlaybackEvent::ResumeFrom(61_000), PlaybackEvent::TrackChanged(id)] if id == "2"
+            [
+                PlaybackEvent::ResumeFrom(61_000),
+                PlaybackEvent::TrackChanged(id),
+                PlaybackEvent::SeekSynced(61_000),
+            ] if id == "2"
         ));
         assert!(state.is_playing());
         // After that, play/pause is the usual one

@@ -33,6 +33,9 @@ pub enum ConnectCommand {
     SetDevice(String),
     /// Start (if needed) the hidden official client and play on it.
     UseOfficialClient,
+    /// Start Soloist in the background without playing or taking over any
+    /// device, so the first play is quick.
+    PrepareSoloist,
     PlayerLoadInContext {
         source: SongsSource,
         offset: usize,
@@ -690,6 +693,29 @@ impl ConnectPlayer {
         }
     }
 
+    /// Starts Soloist and lets it log in, nothing more: it only becomes a
+    /// device (and active) on the first play, through `use_soloist`, which
+    /// then finds it running. Quiet: no update and no notice here (18/11).
+    async fn prepare_soloist() {
+        if !soloist::is_enabled() || soloist::is_running() {
+            return;
+        }
+        if soloist::binary().is_none() || soloist::days_left().is_some_and(|d| d <= 0) {
+            return;
+        }
+        let Some(key) = canto_auth::soloist_key::load().await else {
+            return;
+        };
+        info!("starting Soloist ahead of the first play");
+        match tokio::task::spawn_blocking(move || soloist::spawn(&key, SOLOIST_INITIAL_VOLUME))
+            .await
+        {
+            Ok(Ok(())) => {}
+            Ok(Err(e)) => warn!("{e}"),
+            Err(e) => warn!("starting Soloist panicked: {e}"),
+        }
+    }
+
     /// Plays through Soloist (Spotify's own headless player) when it's on,
     /// installed and has a key, starting it if needed. Returns whether it
     /// took over; if not, the hidden Spotify app is the fallback.
@@ -1143,6 +1169,10 @@ fn compensate_connect_progress(
     if !is_playing {
         return progress_ms;
     }
+            ConnectCommand::PrepareSoloist => {
+                Self::prepare_soloist().await;
+                false
+            }
     let half_rtt_ms = (round_trip.as_millis() / 2).min(1500) as u32;
     let snapshot_age_ms = match (timestamp_ms, now_epoch_ms) {
         (Some(ts), Some(now)) if now >= ts && (now - ts) <= 10_000 => Some((now - ts) as u32),

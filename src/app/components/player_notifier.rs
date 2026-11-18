@@ -373,6 +373,9 @@ impl EventListener for PlayerNotifier {
             (_, AppEvent::PlaybackEvent(PlaybackEvent::ResumeFrom(position))) => {
                 self.start_at.set(Some(*position));
             }
+            (_, AppEvent::PlaybackEvent(PlaybackEvent::LastPlayedStaged)) => {
+                self.send_command_to_connect_player(ConnectCommand::PrepareSoloist);
+            }
             (_, AppEvent::OfficialClientRequested) => {
                 // Librespot can't decrypt audio for this account: remember it
                 // and hand playback to the official client from now on.
