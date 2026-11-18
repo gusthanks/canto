@@ -530,4 +530,50 @@ fn dump_now_panel_sample() {
         distinct_colors(window.upcast_ref(), name);
         window.destroy();
     }
+
+    // Section titles stay out of the grid (a FlowBox with a model ignores
+    // filter functions: the model itself must be filtered)
+    let titles = super::shell::navigation_panel::grid_titles_for_tests();
+    assert_eq!(titles.len(), 2, "only covers in the grid, got {:?}", titles);
+    assert!(
+        titles.iter().any(|t| t == "Matuê"),
+        "the artist is in the grid: {:?}",
+        titles
+    );
+
+    // "View As" > Grid: three covers side by side in the usual width
+    let grid = super::shell::navigation_panel::grid_sample_for_tests(cover.upcast_ref());
+    let window = gtk::Window::new();
+    window.set_default_size(264, 420);
+    window.set_child(Some(&grid));
+    window.present();
+    pump(1200);
+    fn find_flow(widget: &gtk::Widget) -> Option<gtk::FlowBox> {
+        if let Some(flow) = widget.downcast_ref::<gtk::FlowBox>() {
+            return Some(flow.clone());
+        }
+        let mut child = widget.first_child();
+        while let Some(w) = child {
+            if let Some(found) = find_flow(&w) {
+                return Some(found);
+            }
+            child = w.next_sibling();
+        }
+        None
+    }
+    let flow = find_flow(&grid).expect("the grid sample holds a FlowBox");
+    let first = flow.child_at_index(0).expect("a first cell");
+    let third = flow.child_at_index(2).expect("a third cell");
+    let (a, c) = (
+        first.compute_bounds(&flow).expect("first cell bounds"),
+        third.compute_bounds(&flow).expect("third cell bounds"),
+    );
+    assert!(
+        (a.y() - c.y()).abs() < 1.0,
+        "three covers fit in one row of the usual sidebar width (first at {}, third at {})",
+        a.y(),
+        c.y()
+    );
+    distinct_colors(window.upcast_ref(), "sidebar-grid-sample");
+    window.destroy();
 }

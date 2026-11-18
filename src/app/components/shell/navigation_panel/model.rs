@@ -79,6 +79,49 @@ impl LibrarySort {
     }
 }
 
+/// How "Your Library" is shown: rows, or a grid of covers.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum LibraryView {
+    #[default]
+    List,
+    Grid,
+}
+
+impl LibraryView {
+    pub const ALL: [LibraryView; 2] = [LibraryView::List, LibraryView::Grid];
+
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::List => "list",
+            Self::Grid => "grid",
+        }
+    }
+
+    pub fn from_key(key: &str) -> Self {
+        Self::ALL
+            .iter()
+            .copied()
+            .find(|v| v.key() == key)
+            .unwrap_or_default()
+    }
+
+    pub fn label(self) -> String {
+        match self {
+            // translators: "View As" option of Your Library: one item per row.
+            Self::List => gettext("List"),
+            // translators: "View As" option of Your Library: covers side by side.
+            Self::Grid => gettext("Grid"),
+        }
+    }
+
+    pub fn icon(self) -> &'static str {
+        match self {
+            Self::List => "view-list-symbolic",
+            Self::Grid => "view-grid-symbolic",
+        }
+    }
+}
+
 /// Which kind of item "Your Library" lists.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum LibraryFilter {
@@ -108,6 +151,7 @@ pub struct NavigationPanelModel {
     dispatcher: Dispatcher,
     filter: std::cell::Cell<LibraryFilter>,
     sort: std::cell::Cell<LibrarySort>,
+    view: std::cell::Cell<LibraryView>,
     query: std::cell::RefCell<String>,
     /// Library keys of what was played lately, newest first
     recents: std::cell::RefCell<Vec<String>>,
@@ -116,15 +160,15 @@ pub struct NavigationPanelModel {
 
 impl NavigationPanelModel {
     pub fn new(app_model: Rc<AppModel>, dispatcher: Dispatcher) -> Self {
-        let sort = LibrarySort::from_key(
-            &gtk::gio::Settings::new(canto_config::settings::SETTINGS)
-                .string(canto_config::settings::LIBRARY_SORT),
-        );
+        let settings = gtk::gio::Settings::new(canto_config::settings::SETTINGS);
+        let sort = LibrarySort::from_key(&settings.string(canto_config::settings::LIBRARY_SORT));
+        let view = LibraryView::from_key(&settings.string(canto_config::settings::LIBRARY_VIEW));
         Self {
             app_model,
             dispatcher,
             filter: Default::default(),
             sort: std::cell::Cell::new(sort),
+            view: std::cell::Cell::new(view),
             query: Default::default(),
             recents: Default::default(),
             recents_fetched: Default::default(),
@@ -139,6 +183,16 @@ impl NavigationPanelModel {
         self.sort.set(sort);
         let _ = gtk::gio::Settings::new(canto_config::settings::SETTINGS)
             .set_string(canto_config::settings::LIBRARY_SORT, sort.key());
+    }
+
+    pub fn view(&self) -> LibraryView {
+        self.view.get()
+    }
+
+    pub fn set_view(&self, view: LibraryView) {
+        self.view.set(view);
+        let _ = gtk::gio::Settings::new(canto_config::settings::SETTINGS)
+            .set_string(canto_config::settings::LIBRARY_VIEW, view.key());
     }
 
     pub fn set_query(&self, query: &str) {
@@ -981,5 +1035,20 @@ fn with_detail(kind: &str, detail: &str) -> String {
         kind.to_string()
     } else {
         format!("{kind} • {detail}")
+    }
+}
+
+#[cfg(test)]
+mod view_tests {
+    use super::LibraryView;
+
+    #[test]
+    fn library_view_keys_round_trip() {
+        for view in LibraryView::ALL {
+            assert_eq!(LibraryView::from_key(view.key()), view);
+        }
+        // Anything unknown falls back to the list
+        assert_eq!(LibraryView::from_key("mosaic"), LibraryView::List);
+        assert_eq!(LibraryView::default(), LibraryView::List);
     }
 }

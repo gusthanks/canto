@@ -396,6 +396,15 @@
       <summary>How Your Library is ordered</summary>
       <description>"recents", "recently-added", "alphabetical" or "creator".</description>
     </key>
+    <key name="library-view" type="s">
+      <choices>
+        <choice value="list"/>
+        <choice value="grid"/>
+      </choices>
+      <default>"list"</default>
+      <summary>How Your Library is shown</summary>
+      <description>"list" (one item per row) or "grid" (covers).</description>
+    </key>
     <key name="lyrics-translation-language" type="s">
       <default>"auto"</default>
       <summary>Language lyrics are translated into</summary>

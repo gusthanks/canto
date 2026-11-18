@@ -7,15 +7,21 @@ use std::rc::Rc;
 use super::{
     context_menu::build_context_menu,
     navigation_panel_row::{NavigationPanelRow, COVER_PX},
-    LibraryFilter, LibrarySort, NavigationPanelItem, NavigationPanelModel, LIBRARY_SECTION,
-    PINNED_SECTION, SAVED_PLAYLISTS_SECTION,
+    LibraryFilter, LibrarySort, LibraryView, NavigationPanelItem, NavigationPanelModel,
+    LIBRARY_SECTION, PINNED_SECTION, SAVED_PLAYLISTS_SECTION,
 };
 use crate::app::components::PlaylistDialog;
 use crate::app::state::{HomePage, PlaybackEvent, Route, Transition};
 use crate::app::{AppEvent, BrowserEvent, Component, EventListener};
 
+/// Side of a cover in the grid view: three side by side in the usual width.
+const GRID_COVER_PX: i32 = 72;
+
 pub struct NavigationPanel {
     listbox: gtk::ListBox,
+    /// The same items as covers ("View As" > Grid)
+    grid: gtk::FlowBox,
+    grid_items: gtk::FilterListModel,
     list_store: gio::ListStore,
     model: Rc<NavigationPanelModel>,
     _context_menu: gtk::PopoverMenu,
@@ -61,14 +67,32 @@ impl NavigationPanel {
             move |listbox, row| {
                 if let Some(row) = row.downcast_ref::<NavigationPanelRow>() {
                     if let Some(dest) = row.item().destination() {
-                        let split = listbox
-                            .ancestor(libadwaita::OverlaySplitView::static_type())
-                            .and_downcast::<libadwaita::OverlaySplitView>();
-                        if let Some(split) = split.filter(|s| s.is_collapsed()) {
-                            split.set_show_sidebar(false);
-                        }
+                        Self::close_overlay_sidebar(listbox.upcast_ref());
                         model.navigate(dest);
                     }
+                }
+            }
+        ));
+
+        // The grid lives next to the list, in the same scrolled area
+        let (grid, grid_items) = Self::make_grid(&list_store, &model);
+        if let Some(viewport) = listbox.parent().and_downcast::<gtk::Viewport>() {
+            let holder = gtk::Box::new(gtk::Orientation::Vertical, 0);
+            viewport.set_child(None::<&gtk::Widget>);
+            holder.append(&listbox);
+            holder.append(&grid);
+            viewport.set_child(Some(&holder));
+        }
+        grid.connect_child_activated(clone!(
+            #[weak]
+            model,
+            #[weak]
+            grid_items,
+            move |grid, child| {
+                let dest = Self::grid_item(&grid_items, child).and_then(|item| item.destination());
+                if let Some(dest) = dest {
+                    Self::close_overlay_sidebar(grid.upcast_ref());
+                    model.navigate(dest);
                 }
             }
         ));
@@ -93,12 +117,17 @@ impl NavigationPanel {
             sidebar.connect_css_classes_notify(clone!(
                 #[weak]
                 listbox,
+                #[weak]
+                grid,
+                #[weak]
+                model,
                 #[strong]
                 rail,
                 move |sidebar| {
                     let collapsed = sidebar.has_css_class("navigation-panel--rail");
                     if rail.replace(collapsed) != collapsed {
                         Self::set_scrollbar_rail(&listbox, collapsed);
+                        Self::apply_view(&listbox, &grid, model.view(), collapsed);
                         let mut child = listbox.first_child();
                         while let Some(row) = child {
                             Self::set_row_rail(&row, collapsed);
@@ -108,9 +137,10 @@ impl NavigationPanel {
                 }
             ));
         }
+        Self::apply_view(&listbox, &grid, model.view(), rail.get());
         context_menu.set_has_arrow(false);
 
-        let context_row: Rc<RefCell<Option<NavigationPanelRow>>> = Default::default();
+        let context_row: Rc<RefCell<Option<gtk::Widget>>> = Default::default();
 
         context_menu.connect_closed(clone!(
             #[strong]
@@ -122,24 +152,21 @@ impl NavigationPanel {
             }
         ));
 
-        let show_context_menu = clone!(
-            #[weak]
-            listbox,
+        // `area` is the list or the grid, where (x, y) is; `row` is lit
+        // while the menu is open
+        let open_menu = clone!(
             #[weak]
             model,
             #[weak]
             context_menu,
             #[strong]
             context_row,
-            move |x: f64, y: f64| {
-                let Some(row) = listbox.row_at_y(y as i32) else {
-                    return;
-                };
-                let Some(row) = row.downcast_ref::<NavigationPanelRow>() else {
-                    return;
-                };
-                let Some((prefix, actions, menu)) = row
-                    .item()
+            move |area: &gtk::Widget,
+                  row: &gtk::Widget,
+                  item: &NavigationPanelItem,
+                  x: f64,
+                  y: f64| {
+                let Some((prefix, actions, menu)) = item
                     .destination()
                     .and_then(|destination| build_context_menu(&destination, &model))
                 else {
@@ -152,9 +179,9 @@ impl NavigationPanel {
                 context_menu.insert_action_group(prefix, Some(&actions));
                 context_menu.set_menu_model(Some(&menu));
 
-                // Translate coordinates from listbox space to the popover parent (navigation panel Box) space
+                // Translate coordinates from the list's (or grid's) space to the popover parent (navigation panel Box) space
                 let popover_parent = context_menu.parent().unwrap();
-                let translated = listbox
+                let translated = area
                     .compute_point(
                         &popover_parent,
                         &gtk::graphene::Point::new(x as f32, y as f32),
@@ -163,6 +190,40 @@ impl NavigationPanel {
                 let rect = gdk::Rectangle::new(translated.x() as i32, translated.y() as i32, 1, 1);
                 context_menu.set_pointing_to(Some(&rect));
                 context_menu.popup();
+            }
+        );
+
+        let show_context_menu = clone!(
+            #[weak]
+            listbox,
+            #[strong]
+            open_menu,
+            move |x: f64, y: f64| {
+                let Some(row) = listbox
+                    .row_at_y(y as i32)
+                    .and_downcast::<NavigationPanelRow>()
+                else {
+                    return;
+                };
+                open_menu(listbox.upcast_ref(), row.upcast_ref(), &row.item(), x, y);
+            }
+        );
+
+        let show_grid_menu = clone!(
+            #[weak]
+            grid,
+            #[weak]
+            grid_items,
+            #[strong]
+            open_menu,
+            move |x: f64, y: f64| {
+                let Some(child) = grid.child_at_pos(x as i32, y as i32) else {
+                    return;
+                };
+                let Some(item) = Self::grid_item(&grid_items, &child) else {
+                    return;
+                };
+                open_menu(grid.upcast_ref(), child.upcast_ref(), &item, x, y);
             }
         );
 
@@ -211,6 +272,49 @@ impl NavigationPanel {
         ));
         listbox.add_controller(long_press);
 
+        // The same gestures on the grid
+        let grid_double_click = gtk::GestureClick::new();
+        grid_double_click.set_button(1);
+        grid_double_click.connect_pressed(clone!(
+            #[weak]
+            model,
+            #[weak]
+            grid,
+            #[weak]
+            grid_items,
+            move |_, n_press, x, y| {
+                if n_press != 2 {
+                    return;
+                }
+                let destination = grid
+                    .child_at_pos(x as i32, y as i32)
+                    .and_then(|child| Self::grid_item(&grid_items, &child))
+                    .and_then(|item| item.destination());
+                if let Some(dest) = destination {
+                    model.play_destination(dest);
+                }
+            }
+        ));
+        grid.add_controller(grid_double_click);
+
+        let grid_right_click = gtk::GestureClick::new();
+        grid_right_click.set_button(3);
+        grid_right_click.connect_pressed(clone!(
+            #[strong]
+            show_grid_menu,
+            move |_, _, x, y| show_grid_menu(x, y)
+        ));
+        grid.add_controller(grid_right_click);
+
+        let grid_long_press = gtk::GestureLongPress::new();
+        grid_long_press.set_touch_only(false);
+        grid_long_press.connect_pressed(clone!(
+            #[strong]
+            show_grid_menu,
+            move |_, x, y| show_grid_menu(x, y)
+        ));
+        grid.add_controller(grid_long_press);
+
         let scrolled_window = listbox
             .ancestor(gtk::ScrolledWindow::static_type())
             .and_downcast::<gtk::ScrolledWindow>()
@@ -226,11 +330,18 @@ impl NavigationPanel {
         ));
 
         model.apply_navigation_panel_items(&list_store);
-        Self::add_library_controls(&navigation_panel_box, &model, &list_store);
+        Self::add_library_controls(
+            &navigation_panel_box,
+            &model,
+            &list_store,
+            (&listbox, &grid, &rail),
+        );
         model.refresh_recents(&list_store);
 
         Self {
             listbox,
+            grid,
+            grid_items,
             list_store,
             model,
             _context_menu: context_menu,
@@ -270,6 +381,7 @@ impl NavigationPanel {
         panel_box: &gtk::Box,
         model: &Rc<NavigationPanelModel>,
         list_store: &gio::ListStore,
+        views: (&gtk::ListBox, &gtk::FlowBox, &Rc<Cell<bool>>),
     ) {
         let mut child = panel_box.first_child();
         let mut header = None;
@@ -338,7 +450,7 @@ impl NavigationPanel {
             filters.append(&button);
             buttons.borrow_mut().push((button, filter));
         }
-        let tools = Self::library_tools(model, list_store);
+        let tools = Self::library_tools(model, list_store, views);
         match list {
             Some(list) => {
                 panel_box.insert_child_after(&filters, list.prev_sibling().as_ref());
@@ -367,8 +479,13 @@ impl NavigationPanel {
         }
     }
 
-    /// A search in the library on the left, the sort order on the right.
-    fn library_tools(model: &Rc<NavigationPanelModel>, list_store: &gio::ListStore) -> gtk::Box {
+    /// A search in the library on the left, the sort order and the view
+    /// (list or grid) on the right.
+    fn library_tools(
+        model: &Rc<NavigationPanelModel>,
+        list_store: &gio::ListStore,
+        (listbox, grid, rail): (&gtk::ListBox, &gtk::FlowBox, &Rc<Cell<bool>>),
+    ) -> gtk::Box {
         let tools = gtk::Box::new(gtk::Orientation::Horizontal, 4);
         tools.add_css_class("library-tools");
 
@@ -423,7 +540,9 @@ impl NavigationPanel {
         let sort_label = gtk::Label::new(Some(&model.sort().label()));
         let sort_content = gtk::Box::new(gtk::Orientation::Horizontal, 6);
         sort_content.append(&sort_label);
-        sort_content.append(&gtk::Image::from_icon_name("view-list-symbolic"));
+        // Shows the chosen view, as in big music apps
+        let view_icon = gtk::Image::from_icon_name(model.view().icon());
+        sort_content.append(&view_icon);
         let sort_button = gtk::MenuButton::builder()
             .child(&sort_content)
             .valign(gtk::Align::Center)
@@ -478,6 +597,62 @@ impl NavigationPanel {
             ));
             options.append(&button);
         }
+
+        let separator = gtk::Separator::new(gtk::Orientation::Horizontal);
+        separator.set_margin_top(6);
+        separator.set_margin_bottom(6);
+        options.append(&separator);
+        // translators: Heading in Your Library's sort menu, above the list and grid buttons.
+        let view_heading = gtk::Label::new(Some(&gettext("View As")));
+        view_heading.set_xalign(0.0);
+        view_heading.add_css_class("dim-label");
+        view_heading.add_css_class("caption-heading");
+        view_heading.set_margin_start(8);
+        view_heading.set_margin_bottom(4);
+        options.append(&view_heading);
+        let views = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        views.add_css_class("linked");
+        views.set_halign(gtk::Align::Start);
+        views.set_margin_start(8);
+        views.set_margin_bottom(4);
+        let mut first: Option<gtk::ToggleButton> = None;
+        for view in LibraryView::ALL {
+            let button = gtk::ToggleButton::builder()
+                .icon_name(view.icon())
+                .tooltip_text(view.label())
+                .active(model.view() == view)
+                .build();
+            button.update_property(&[gtk::accessible::Property::Label(&view.label())]);
+            match &first {
+                Some(first) => button.set_group(Some(first)),
+                None => first = Some(button.clone()),
+            }
+            button.connect_toggled(clone!(
+                #[weak]
+                model,
+                #[weak]
+                view_icon,
+                #[weak]
+                listbox,
+                #[weak]
+                grid,
+                #[strong]
+                rail,
+                #[weak]
+                popover,
+                move |button| {
+                    if !button.is_active() || model.view() == view {
+                        return;
+                    }
+                    model.set_view(view);
+                    view_icon.set_icon_name(Some(view.icon()));
+                    Self::apply_view(&listbox, &grid, view, rail.get());
+                    popover.popdown();
+                }
+            ));
+            views.append(&button);
+        }
+        options.append(&views);
         popover.set_child(Some(&options));
         sort_button.set_popover(Some(&popover));
 
@@ -486,6 +661,158 @@ impl NavigationPanel {
         tools.append(&spacer);
         tools.append(&sort_button);
         tools
+    }
+
+    /// Hides the sidebar after a choice when it opened over the content.
+    fn close_overlay_sidebar(widget: &gtk::Widget) {
+        let split = widget
+            .ancestor(libadwaita::OverlaySplitView::static_type())
+            .and_downcast::<libadwaita::OverlaySplitView>();
+        if let Some(split) = split.filter(|s| s.is_collapsed()) {
+            split.set_show_sidebar(false);
+        }
+    }
+
+    /// List or grid. The collapsed sidebar is always a column of covers.
+    fn apply_view(listbox: &gtk::ListBox, grid: &gtk::FlowBox, view: LibraryView, rail: bool) {
+        let grid_on = view == LibraryView::Grid && !rail;
+        grid.set_visible(grid_on);
+        listbox.set_visible(!grid_on);
+    }
+
+    /// The grid and the items it shows: the list's items without the
+    /// section titles (a FlowBox with a model ignores filter functions, so
+    /// the model itself is filtered).
+    fn make_grid(
+        list_store: &gio::ListStore,
+        model: &Rc<NavigationPanelModel>,
+    ) -> (gtk::FlowBox, gtk::FilterListModel) {
+        let grid = Self::new_grid();
+        let grid_items = Self::covers_only(list_store);
+        let weak_model = Rc::downgrade(model);
+        grid.bind_model(Some(&grid_items), move |obj| {
+            let item = obj.downcast_ref::<NavigationPanelItem>().unwrap();
+            Self::make_tile(item, weak_model.upgrade().as_deref())
+        });
+        (grid, grid_items)
+    }
+
+    /// The list's items without the section titles.
+    fn covers_only(list_store: &gio::ListStore) -> gtk::FilterListModel {
+        let filter = gtk::CustomFilter::new(|obj| {
+            obj.downcast_ref::<NavigationPanelItem>()
+                .is_some_and(|item| item.navigatable())
+        });
+        gtk::FilterListModel::new(Some(list_store.clone()), Some(filter))
+    }
+
+    fn new_grid() -> gtk::FlowBox {
+        let grid = gtk::FlowBox::builder()
+            .selection_mode(gtk::SelectionMode::None)
+            .homogeneous(true)
+            .min_children_per_line(2)
+            .max_children_per_line(8)
+            .column_spacing(2)
+            .row_spacing(2)
+            .valign(gtk::Align::Start)
+            .visible(false)
+            .build();
+        grid.add_css_class("library-grid");
+        grid
+    }
+
+    /// The item a grid cell shows (cells follow the grid's items).
+    fn grid_item(
+        grid_items: &gtk::FilterListModel,
+        child: &gtk::FlowBoxChild,
+    ) -> Option<NavigationPanelItem> {
+        let index = child.index();
+        if index < 0 {
+            return None;
+        }
+        grid_items.item(index as u32).and_downcast()
+    }
+
+    /// A cover with the name and the kind under it.
+    fn make_tile(item: &NavigationPanelItem, model: Option<&NavigationPanelModel>) -> gtk::Widget {
+        let tile = gtk::Box::new(gtk::Orientation::Vertical, 6);
+        tile.add_css_class("library-tile");
+        tile.set_halign(gtk::Align::Center);
+        tile.set_tooltip_text(Some(item.title().as_str()));
+
+        let clip = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        clip.set_overflow(gtk::Overflow::Hidden);
+        clip.set_halign(gtk::Align::Start);
+        clip.add_css_class("navigation-row__cover");
+        let image = gtk::Image::new();
+        image.set_size_request(GRID_COVER_PX, GRID_COVER_PX);
+        let url = item.image();
+        if item.id() == "saved_tracks" {
+            image.set_icon_name(Some("canto-heart-filled-symbolic"));
+            image.set_pixel_size(28);
+            clip.add_css_class("navigation-row__liked");
+        } else if !url.is_empty() {
+            image.set_pixel_size(GRID_COVER_PX);
+            if item.round_cover() {
+                clip.add_css_class("navigation-row__cover--round");
+            }
+            if let Some(model) = model {
+                let scale = image.scale_factor().max(2);
+                model.load_cover(&image, &url, GRID_COVER_PX * scale);
+            }
+        } else {
+            image.set_icon_name(item.icon());
+            image.set_pixel_size(28);
+            clip.add_css_class("library-tile__placeholder");
+        }
+        clip.append(&image);
+        tile.append(&clip);
+
+        let title = gtk::Label::builder()
+            .label(item.title())
+            .xalign(0.0)
+            .ellipsize(gtk::pango::EllipsizeMode::End)
+            .max_width_chars(1)
+            .hexpand(true)
+            .build();
+        title.add_css_class("library-tile__title");
+        tile.append(&title);
+
+        let line = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        if item.pinned() {
+            let pin = gtk::Image::from_icon_name("view-pin-symbolic");
+            pin.set_pixel_size(12);
+            pin.add_css_class("navigation-row__pin");
+            line.append(&pin);
+        }
+        let subtitle = item.subtitle();
+        if !subtitle.is_empty() {
+            let label = gtk::Label::builder()
+                .label(subtitle.as_str())
+                .xalign(0.0)
+                .ellipsize(gtk::pango::EllipsizeMode::End)
+                .max_width_chars(1)
+                .hexpand(true)
+                .build();
+            label.add_css_class("caption");
+            label.add_css_class("dim-label");
+            line.append(&label);
+        }
+        tile.append(&line);
+
+        if let Some(model) = model {
+            Self::set_tile_playing(tile.upcast_ref(), model.is_playing_from(item));
+        }
+        tile.upcast()
+    }
+
+    /// The name in the accent color while its music plays.
+    fn set_tile_playing(tile: &gtk::Widget, playing: bool) {
+        if playing {
+            tile.add_css_class("library-tile--playing");
+        } else {
+            tile.remove_css_class("library-tile--playing");
+        }
     }
 
     fn make_navigatable(
@@ -610,6 +937,17 @@ impl NavigationPanel {
         while let Some(widget) = child {
             if let Some(row) = widget.downcast_ref::<NavigationPanelRow>() {
                 row.set_playing(self.model.is_playing_from(&row.item()));
+            }
+            child = widget.next_sibling();
+        }
+        let mut child = self.grid.first_child();
+        while let Some(widget) = child {
+            if let Some(cell) = widget.downcast_ref::<gtk::FlowBoxChild>() {
+                if let (Some(item), Some(tile)) =
+                    (Self::grid_item(&self.grid_items, cell), cell.child())
+                {
+                    Self::set_tile_playing(&tile, self.model.is_playing_from(&item));
+                }
             }
             child = widget.next_sibling();
         }
@@ -739,4 +1077,87 @@ pub(crate) fn sample_for_tests(cover: &gtk::gdk::Paintable, rail: bool) -> gtk::
     }
     sidebar.append(&listbox);
     sidebar.upcast()
+}
+
+/// "View As" > Grid with a few covers, to look at its rendering.
+#[cfg(test)]
+pub(crate) fn grid_sample_for_tests(cover: &gtk::gdk::Paintable) -> gtk::Widget {
+    use super::NavigationPanelDestination;
+    use crate::app::models::PlaylistSummary;
+
+    let grid = NavigationPanel::new_grid();
+    grid.set_visible(true);
+    let saved = NavigationPanelItem::from_destination(NavigationPanelDestination::SavedTracks);
+    saved.set_subtitle("Playlist".to_string());
+    grid.append(&NavigationPanel::make_tile(&saved, None));
+    let samples = [
+        ("Rap Nacional", "Playlist • gusthx", None),
+        ("XTRANHO", "Album • Niink", Some("album")),
+        ("Matuê", "Artist", Some("artist")),
+        (
+            "A very long playlist name that does not fit",
+            "Playlist • gusthx",
+            None,
+        ),
+        ("Discover Weekly", "Playlist • Spotify", None),
+    ];
+    for (i, (title, subtitle, kind)) in samples.iter().enumerate() {
+        let destination = match kind {
+            Some("album") => NavigationPanelDestination::Album {
+                id: i.to_string(),
+                title: title.to_string(),
+            },
+            Some(_) => NavigationPanelDestination::Artist {
+                id: i.to_string(),
+                title: title.to_string(),
+            },
+            None => NavigationPanelDestination::Playlist(PlaylistSummary {
+                id: i.to_string(),
+                title: title.to_string(),
+            }),
+        };
+        let item = NavigationPanelItem::from_destination(destination);
+        item.set_image("https://example.com/cover.jpg");
+        item.set_subtitle(subtitle.to_string());
+        item.set_pinned(i == 0);
+        let tile = NavigationPanel::make_tile(&item, None);
+        NavigationPanel::set_tile_playing(&tile, i == 1);
+        if let Some(image) = tile
+            .first_child()
+            .and_then(|clip| clip.first_child())
+            .and_downcast::<gtk::Image>()
+        {
+            image.set_paintable(Some(cover));
+        }
+        grid.append(&tile);
+    }
+    let scrolled = gtk::ScrolledWindow::new();
+    scrolled.set_hscrollbar_policy(gtk::PolicyType::Never);
+    scrolled.set_child(Some(&grid));
+    scrolled.upcast()
+}
+
+/// Titles of the grid's items for a list with section titles in it.
+#[cfg(test)]
+pub(crate) fn grid_titles_for_tests() -> Vec<String> {
+    use super::NavigationPanelDestination;
+
+    let store = gio::ListStore::new::<NavigationPanelItem>();
+    store.append(&NavigationPanelItem::pinned_section());
+    store.append(&NavigationPanelItem::from_destination(
+        NavigationPanelDestination::SavedTracks,
+    ));
+    store.append(&NavigationPanelItem::library_section());
+    store.append(&NavigationPanelItem::from_destination(
+        NavigationPanelDestination::Artist {
+            id: "1".to_string(),
+            title: "Matuê".to_string(),
+        },
+    ));
+    store.append(&NavigationPanelItem::playlists_section());
+    let items = NavigationPanel::covers_only(&store);
+    (0..items.n_items())
+        .filter_map(|i| items.item(i).and_downcast::<NavigationPanelItem>())
+        .map(|item| item.title().to_string())
+        .collect()
 }

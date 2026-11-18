@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: canto\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-17 17:16-0300\n"
+"POT-Creation-Date: 2026-11-18 08:48-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -190,8 +190,8 @@ msgstr ""
 #. translators: An album in the back/forward history menu, while its name is loading.
 #: src/app/components/labels.rs:95 src/app/components/labels.rs:180
 #: src/app/components/shell/command_palette/widget.rs:828
-#: src/app/components/shell/navigation_panel/model.rs:359
-#: src/app/components/shell/navigation_panel/model.rs:828
+#: src/app/components/shell/navigation_panel/model.rs:413
+#: src/app/components/shell/navigation_panel/model.rs:882
 #: src/app/components/pages/settings/settings.blp:291
 msgid "Album"
 msgstr ""
@@ -286,8 +286,8 @@ msgstr ""
 #. translators: An artist in the back/forward history menu, while their name is loading.
 #: src/app/components/labels.rs:182
 #: src/app/components/shell/command_palette/widget.rs:829
-#: src/app/components/shell/navigation_panel/model.rs:361
-#: src/app/components/shell/navigation_panel/model.rs:853
+#: src/app/components/shell/navigation_panel/model.rs:415
+#: src/app/components/shell/navigation_panel/model.rs:907
 msgid "Artist"
 msgstr ""
 
@@ -296,8 +296,8 @@ msgstr ""
 #: src/app/components/pages/details_playlist/model.rs:154
 #: src/app/components/pages/saved_tracks/model.rs:63
 #: src/app/components/shell/command_palette/widget.rs:830
-#: src/app/components/shell/navigation_panel/model.rs:380
-#: src/app/components/shell/navigation_panel/model.rs:771
+#: src/app/components/shell/navigation_panel/model.rs:434
+#: src/app/components/shell/navigation_panel/model.rs:825
 msgid "Playlist"
 msgstr ""
 
@@ -320,7 +320,7 @@ msgid "The playlist's cover could not be uploaded."
 msgstr ""
 
 #. translators: This notification is shown when Spotify throttles requests.
-#: src/app/components/mod.rs:247 src/connect/player.rs:1100
+#: src/app/components/mod.rs:247 src/connect/player.rs:1178
 msgid "Rate limited by Spotify. Please wait a moment and try again."
 msgstr ""
 
@@ -465,7 +465,7 @@ msgstr ""
 #. translators: This is a navigation panel entry to browse to the songs the user liked (the heart).
 #: src/app/components/pages/saved_tracks/model.rs:59
 #: src/app/components/shell/command_palette/widget.rs:584
-#: src/app/components/shell/navigation_panel/model.rs:497
+#: src/app/components/shell/navigation_panel/model.rs:551
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:73
 msgid "Liked Songs"
 msgstr ""
@@ -486,13 +486,13 @@ msgstr ""
 #: src/app/components/shell/command_palette/widget.rs:595
 #: src/app/components/shell/navigation/factory.rs:82
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:77
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:308
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:418
 #: src/app/components/pages/shortcuts/shortcuts.blp:89
 msgid "Artists"
 msgstr ""
 
 #: src/app/components/pages/search/search.rs:442
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:307
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:417
 #: src/app/models/card_enums.rs:173
 #: src/app/components/pages/shortcuts/shortcuts.blp:94
 msgid "Albums"
@@ -503,7 +503,7 @@ msgstr ""
 #: src/app/components/shell/command_palette/widget.rs:606
 #: src/app/components/shell/navigation/factory.rs:71
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:75
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:306
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:416
 #: src/app/components/pages/shortcuts/shortcuts.blp:99
 msgid "Playlists"
 msgstr ""
@@ -1322,27 +1322,37 @@ msgstr ""
 msgid "Creator"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:362
+#. translators: "View As" option of Your Library: one item per row.
+#: src/app/components/shell/navigation_panel/model.rs:111
+msgid "List"
+msgstr ""
+
+#. translators: "View As" option of Your Library: covers side by side.
+#: src/app/components/shell/navigation_panel/model.rs:113
+msgid "Grid"
+msgstr ""
+
+#: src/app/components/shell/navigation_panel/model.rs:416
 msgid "Song"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:424
+#: src/app/components/shell/navigation_panel/model.rs:478
 msgid "Unnamed Playlist"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:864
+#: src/app/components/shell/navigation_panel/model.rs:918
 msgid "Pinned Playlist"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:865
+#: src/app/components/shell/navigation_panel/model.rs:919
 msgid "Pinned Album"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:866
+#: src/app/components/shell/navigation_panel/model.rs:920
 msgid "Pinned Artist"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:867
+#: src/app/components/shell/navigation_panel/model.rs:921
 msgid "Pinned Track"
 msgstr ""
 
@@ -1355,22 +1365,27 @@ msgid "Pinned"
 msgstr ""
 
 #. Translators: title of the dialog that creates a new playlist
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:245
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:548
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:354
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:864
 #: src/app/components/widgets/playlist_dialog/playlist_dialog.blp:7
 msgid "New Playlist"
 msgstr ""
 
 #. translators: Tooltip and placeholder of the search inside Your Library.
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:376
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:491
 msgid "Search in Your Library"
 msgstr ""
 
 #. translators: Tooltip of the button that picks how Your Library is ordered.
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:431
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:437
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:548
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:554
 #: src/app/components/widgets/card_list/card_view_menu.blp:57
 msgid "Sort By"
+msgstr ""
+
+#. translators: Heading in Your Library's sort menu, above the list and grid buttons.
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:604
+msgid "View As"
 msgstr ""
 
 #: src/app/components/shell/window/close_dialog.rs:12
@@ -1475,28 +1490,33 @@ msgstr ""
 msgid "No track is currently playing"
 msgstr ""
 
-#: src/connect/player.rs:127
+#: src/connect/player.rs:130
 msgid "Connection to device lost!"
 msgstr ""
 
-#: src/connect/player.rs:657 src/connect/player.rs:990
+#: src/connect/player.rs:667 src/connect/player.rs:1000
 msgid "Starting Spotify in the background…"
 msgstr ""
 
-#: src/connect/player.rs:664
+#: src/connect/player.rs:674
 msgid "Could not start the Spotify app. Is it installed?"
 msgstr ""
 
-#: src/connect/player.rs:676
+#: src/connect/player.rs:686
 msgid "The Spotify app did not show up as a device. Try again in a moment."
 msgstr ""
 
-#: src/connect/player.rs:698
+#: src/connect/player.rs:708
 msgid "Getting the current Spotify Soloist…"
 msgstr ""
 
+#. translators: Shown while a sleeping Spotify Connect speaker (an Alexa) wakes up.
+#: src/connect/player.rs:1041
+msgid "Waking up the speaker…"
+msgstr ""
+
 #. translators: Shown when a Spotify Connect speaker is asleep or unreachable.
-#: src/connect/player.rs:1105
+#: src/connect/player.rs:1125 src/connect/player.rs:1183
 msgid ""
 "Spotify Connect device is asleep or inactive. Start playback on the device "
 "first."

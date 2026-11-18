@@ -536,6 +536,40 @@ row.navigation-row--playing label:not(.dim-label) {
   color: @accent_color;
 }
 
+/* "View As" > Grid */
+.library-grid {
+  padding: 2px 4px 8px 4px;
+}
+
+.library-grid > flowboxchild {
+  padding: 5px;
+  border-radius: 8px;
+}
+
+.library-grid > flowboxchild:hover {
+  background: alpha(currentColor, 0.07);
+}
+
+.library-tile .navigation-row__cover {
+  border-radius: 6px;
+}
+
+.library-tile .navigation-row__cover--round {
+  border-radius: 999px;
+}
+
+.library-tile__placeholder {
+  background: alpha(currentColor, 0.08);
+}
+
+.library-tile__title {
+  font-weight: 600;
+}
+
+.library-tile--playing label:not(.dim-label) {
+  color: @accent_color;
+}
+
 /* Bigger icons in the window's top bar and on the playback bar */
 .top-bar button image,
 .top-bar menubutton image {
