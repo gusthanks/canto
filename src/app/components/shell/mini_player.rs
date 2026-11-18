@@ -149,7 +149,7 @@ fn build_layout() -> (View, [gtk::Button; 2]) {
     window.set_hide_on_close(true);
     window.add_css_class("mini-player");
 
-    let cover = gtk::Image::from_icon_name("emblem-music-symbolic");
+    let cover = gtk::Image::from_icon_name("audio-x-generic-symbolic");
     cover.set_pixel_size(COVER_PX);
     let cover_clip = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     cover_clip.set_overflow(gtk::Overflow::Hidden);
@@ -253,7 +253,7 @@ fn update_view(view: &View, app_model: &AppModel) {
     let Some(song) = song else {
         view.title.set_text(&gettext("Nothing Playing"));
         view.artist.set_text("");
-        view.cover.set_icon_name(Some("emblem-music-symbolic"));
+        view.cover.set_icon_name(Some("audio-x-generic-symbolic"));
         return;
     };
     view.title.set_text(&song.title);
@@ -264,7 +264,7 @@ fn update_view(view: &View, app_model: &AppModel) {
         .filter(|url| !is_resource_url(url))
         .map(str::to_owned);
     let Some(url) = url else {
-        view.cover.set_icon_name(Some("emblem-music-symbolic"));
+        view.cover.set_icon_name(Some("audio-x-generic-symbolic"));
         return;
     };
     let api = app_model.api();

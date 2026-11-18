@@ -72,7 +72,9 @@ builtin=$(printf '%s\n' \
 bundled=$(grep -oE 'alias="[A-Za-z0-9._-]+-symbolic\.svg"' "$GRESOURCE" \
     | sed -E 's/^alias="(.*)\.svg"$/\1/' | sort -u)
 
-app_icons=$(find "$DATA_DIR/hicolor" -path '*/apps/*' -name '*.svg' -exec basename {} .svg \; \
+# The app icon ships as PNG sizes (and a symbolic SVG)
+app_icons=$(find "$DATA_DIR/hicolor" -path '*/apps/*' \( -name '*.svg' -o -name '*.png' \) \
+        -exec basename {} \; | sed -E 's/\.(svg|png)$//' \
     | sort -u)
 
 needed=$(comm -23 <(echo "$all_used") <(echo "$builtin"))

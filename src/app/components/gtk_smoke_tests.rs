@@ -32,7 +32,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     icon_theme.add_resource_path("/io/github/gusthanks/Canto/icons");
     assert!(
         icon_theme.has_icon("canto-genius-symbolic"),
-        "canto-genius-symbolic icon must resolve via resource icon path"
+        "the Genius icon must resolve via the resource icon path"
     );
     for icon in [
         "alarm-symbolic",
