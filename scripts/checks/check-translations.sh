@@ -39,7 +39,7 @@ echo "=== Plain gettext calls ==="
 QUALIFIED=$(grep -rnE 'gettextrs::n?gettext\(' src --include=*.rs || true)
 if [[ -n "$QUALIFIED" ]]; then
     echo "Call gettext()/ngettext() unqualified (use gettextrs::gettext;):"
-    echo "$QUALIFIED" | sed 's/^/  /'
+    while IFS= read -r line; do echo "  $line"; done <<< "$QUALIFIED"
     echo "FAIL"
     exit 1
 fi
