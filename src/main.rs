@@ -22,6 +22,7 @@ mod connect;
 mod dbus;
 mod inhibitor;
 mod player;
+mod session_log;
 mod settings;
 
 use crate::app::components::expose_custom_widgets;
@@ -319,8 +320,8 @@ fn move_old_cache_in(cache: &std::path::Path) {
 }
 
 fn setup_gtk(settings: &settings::CantoSettings) {
-    // Setup logging
-    env_logger::init();
+    // Setup logging (also kept on disk, see session_log)
+    session_log::init();
     move_old_cache();
 
     // Set application and program names so desktop environment and window manager identify Canto
