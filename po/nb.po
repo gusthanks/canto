@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 08:48-0300\n"
+"POT-Creation-Date: 2026-11-18 12:18-0300\n"
 "Language: nb\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -331,7 +331,7 @@ msgid "The playlist's cover could not be uploaded."
 msgstr ""
 
 #. translators: This notification is shown when Spotify throttles requests.
-#: src/app/components/mod.rs:247 src/connect/player.rs:1178
+#: src/app/components/mod.rs:247 src/connect/player.rs:1140
 msgid "Rate limited by Spotify. Please wait a moment and try again."
 msgstr ""
 
@@ -501,13 +501,13 @@ msgstr "Spor"
 #: src/app/components/shell/command_palette/widget.rs:595
 #: src/app/components/shell/navigation/factory.rs:82
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:77
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:418
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:417
 #: src/app/components/pages/shortcuts/shortcuts.blp:89
 msgid "Artists"
 msgstr "Artister"
 
 #: src/app/components/pages/search/search.rs:442
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:417
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:416
 #: src/app/models/card_enums.rs:173
 #: src/app/components/pages/shortcuts/shortcuts.blp:94
 msgid "Albums"
@@ -518,7 +518,7 @@ msgstr "Album"
 #: src/app/components/shell/command_palette/widget.rs:606
 #: src/app/components/shell/navigation/factory.rs:71
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:75
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:416
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:415
 #: src/app/components/pages/shortcuts/shortcuts.blp:99
 msgid "Playlists"
 msgstr "Spillelister"
@@ -1419,27 +1419,27 @@ msgid "Pinned"
 msgstr ""
 
 #. Translators: title of the dialog that creates a new playlist
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:354
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:864
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:353
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:883
 #: src/app/components/widgets/playlist_dialog/playlist_dialog.blp:7
 msgid "New Playlist"
 msgstr ""
 
 #. translators: Tooltip and placeholder of the search inside Your Library.
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:491
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:490
 #, fuzzy
 msgid "Search in Your Library"
 msgstr "Bibliotek"
 
 #. translators: Tooltip of the button that picks how Your Library is ordered.
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:548
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:554
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:547
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:553
 #: src/app/components/widgets/card_list/card_view_menu.blp:57
 msgid "Sort By"
 msgstr ""
 
 #. translators: Heading in Your Library's sort menu, above the list and grid buttons.
-#: src/app/components/shell/navigation_panel/navigation_panel.rs:604
+#: src/app/components/shell/navigation_panel/navigation_panel.rs:603
 #, fuzzy
 msgid "View As"
 msgstr "Vis album"
@@ -1550,33 +1550,28 @@ msgstr ""
 msgid "No track is currently playing"
 msgstr "Nå spiller"
 
-#: src/connect/player.rs:130
+#: src/connect/player.rs:133
 msgid "Connection to device lost!"
 msgstr ""
 
-#: src/connect/player.rs:667 src/connect/player.rs:1000
+#: src/connect/player.rs:670 src/connect/player.rs:1026
 msgid "Starting Spotify in the background…"
 msgstr ""
 
-#: src/connect/player.rs:674
+#: src/connect/player.rs:677
 msgid "Could not start the Spotify app. Is it installed?"
 msgstr ""
 
-#: src/connect/player.rs:686
+#: src/connect/player.rs:689
 msgid "The Spotify app did not show up as a device. Try again in a moment."
 msgstr ""
 
-#: src/connect/player.rs:708
+#: src/connect/player.rs:734
 msgid "Getting the current Spotify Soloist…"
 msgstr ""
 
-#. translators: Shown while a sleeping Spotify Connect speaker (an Alexa) wakes up.
-#: src/connect/player.rs:1041
-msgid "Waking up the speaker…"
-msgstr ""
-
 #. translators: Shown when a Spotify Connect speaker is asleep or unreachable.
-#: src/connect/player.rs:1125 src/connect/player.rs:1183
+#: src/connect/player.rs:1145
 msgid ""
 "Spotify Connect device is asleep or inactive. Start playback on the device "
 "first."
