@@ -1,4 +1,4 @@
-//! Opt-in Visual & Audio Bridge for external visualizers (e.g. Chaosphere).
+//! Opt-in Visual & Audio Bridge for external visualizers.
 //!
 //! Strictly dormant when `visual-bridge-enabled` is `false` (default):
 //! zero timers, zero disk I/O, and zero audio-thread metering cost.

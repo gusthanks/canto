@@ -29,7 +29,7 @@
 - **Resilient Track Radio & Smart Queue Continuation:** Launches queues of similar tracks from any track menu, the playback bar, or `Ctrl+K`, with automatic top-tracks and catalog search fallback if `/v1/recommendations` is restricted for newer Spotify apps.
 - **Scrobbling (Last.fm & ListenBrainz):** Tracks active listening time (immune to pauses and Spotify Connect poll ticks) with Now Playing updates and a bounded 500-item persistent offline retry queue.
 - **Sleep Timer:** Discreet timer in the player bar (`Off`, `End of current track`, `15`, `30`, `45`, or `60 min`) that cleanly pauses local or Spotify Connect playback.
-- **Opt-in Visual & Audio Bridge:** Optional lock-free RMS/peak meter and atomic `$XDG_RUNTIME_DIR/canto/state.json` output for external visualizers such as Chaosphere (strictly zero runtime overhead when disabled).
+- **Opt-in Visual & Audio Bridge:** Optional lock-free RMS/peak meter and atomic `$XDG_RUNTIME_DIR/canto/state.json` output for external visualizers (strictly zero runtime overhead when disabled).
 - **Modular Provider Architecture:** Decoupled `MusicProvider` capability abstractions ready for additional backends (see [docs/providers-architecture.md](docs/providers-architecture.md)).
 
 ## Keyboard Shortcuts

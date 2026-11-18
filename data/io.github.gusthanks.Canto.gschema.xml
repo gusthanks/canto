@@ -478,7 +478,7 @@
     <key name="visual-bridge-enabled" type="b">
       <default>false</default>
       <summary>Enable visual bridge</summary>
-      <description>Opt-in runtime JSON state and lock-free audio energy output for external visualizers such as Chaosphere.</description>
+      <description>Opt-in runtime JSON state and lock-free audio energy output for external visualizers.</description>
     </key>
     <key name="migrated-from-riff" type="b">
       <default>false</default>

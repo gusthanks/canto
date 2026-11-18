@@ -2431,10 +2431,10 @@ msgstr "Ponte Visual (Visualizadores Externos)"
 #: src/app/components/pages/settings/settings.blp:582
 msgid ""
 "Opt-in lightweight local state and audio RMS/peak output for external 3D "
-"visualizers such as Chaosphere."
+"visualizers."
 msgstr ""
 "Saída local leve e opcional de estado e níveis RMS/pico de áudio para "
-"visualizadores 3D como o Chaosphere."
+"visualizadores 3D."
 
 #: src/app/components/pages/settings/settings.blp:585
 msgid "Enable Visual Bridge"
