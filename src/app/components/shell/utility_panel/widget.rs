@@ -22,6 +22,8 @@ mod imp {
         #[template_child]
         pub now_tab: TemplateChild<gtk::ToggleButton>,
         #[template_child]
+        pub now_indicator: TemplateChild<gtk::Box>,
+        #[template_child]
         pub queue_tab: TemplateChild<gtk::ToggleButton>,
         #[template_child]
         pub lyrics_tab: TemplateChild<gtk::ToggleButton>,
@@ -140,6 +142,16 @@ impl UtilityPanelWidget {
 
     pub fn set_content(&self, content: Option<&gtk::Widget>, _title: &str) {
         self.set_pages(None, content, None);
+    }
+
+    /// The Now Playing tab's bars move while music plays.
+    pub fn set_now_playing(&self, playing: bool) {
+        let indicator = &self.imp().now_indicator;
+        if playing {
+            indicator.remove_css_class("utility-panel__now-indicator--idle");
+        } else {
+            indicator.add_css_class("utility-panel__now-indicator--idle");
+        }
     }
 
     pub fn connect_selection_cancel<F: Fn() + 'static>(&self, f: F) {

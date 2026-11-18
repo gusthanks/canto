@@ -36,6 +36,12 @@
   background-color: @accent_color;
 }
 
+/* The theme pads scales 12px on each side: too far from the speaker icon */
+.volume-slider {
+  padding-left: 6px;
+  padding-right: 8px;
+}
+
 .volume-slider trough,
 .volume-slider highlight {
   border-radius: 9999px;

@@ -297,5 +297,15 @@ impl EventListener for PanelManager {
         {
             self.sync_selection();
         }
+        if let AppEvent::PlaybackEvent(
+            PlaybackEvent::PlaybackPaused
+            | PlaybackEvent::PlaybackResumed
+            | PlaybackEvent::PlaybackStopped
+            | PlaybackEvent::TrackChanged(_),
+        ) = event
+        {
+            let playing = self.app_model.get_state().playback.is_playing();
+            self.panels.panel.set_now_playing(playing);
+        }
     }
 }

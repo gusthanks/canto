@@ -61,6 +61,10 @@ impl UtilityPanel {
         self.widget.connect_select_all(f);
     }
 
+    pub fn set_now_playing(&self, playing: bool) {
+        self.widget.set_now_playing(playing);
+    }
+
     pub fn is_open(&self) -> bool {
         self.split.shows_sidebar()
     }

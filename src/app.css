@@ -144,6 +144,18 @@ stack.transitioning scrollbar {
   animation: playing 1s steps(17) infinite;
 }
 
+/* Now Playing tab of the side panel: still bars in the text color while
+   paused, moving bars in the accent color while music plays */
+.utility-panel__now-indicator--idle {
+  animation: none;
+  color: inherit;
+  background-image: -gtk-icontheme("playback-3-symbolic");
+}
+
+.utility-panel__tabs > button {
+  min-width: 44px;
+}
+
 .now-playing__idle,
 .now-playing--idle .now-playing__playing {
   opacity: 0;

@@ -80,6 +80,12 @@ impl LyricsPage {
     }
 
     fn setup_controls(&self) {
+        let weak_model = Rc::downgrade(&self.app_model);
+        self.widget.connect_open_genius(move |button| {
+            if let Some(model) = weak_model.upgrade() {
+                open_genius_page(button, &model);
+            }
+        });
         self.widget
             .set_word_by_word(self.settings.string(LYRICS_HIGHLIGHT) != "line");
         self.widget
@@ -537,6 +543,43 @@ fn apply_lyrics_to_widget(
             true,
         );
     }
+}
+
+/// Opens the playing song's page on Genius (where its lyrics can be read,
+/// fixed or added), or a Genius search when there's no token or no match.
+fn open_genius_page(button: &gtk::Button, app_model: &Rc<AppModel>) {
+    let Some(track) = app_model.get_state().playback.current_song() else {
+        return;
+    };
+    let api = app_model.api();
+    let artist = track.artists_name();
+    let title = track.title.clone();
+    let track_id = track.rri.id.clone();
+    let search = api.genius_search_url(&artist, &title);
+    let token = gio::Settings::new(SETTINGS)
+        .string(canto_config::settings::GENIUS_ACCESS_TOKEN)
+        .trim()
+        .to_string();
+    if token.is_empty() {
+        crate::app::components::open_external_url(button, &search);
+        return;
+    }
+    let button = button.clone();
+    glib::spawn_future_local(async move {
+        // Cached after the first look-up (the credits card makes the same one)
+        let url = match api
+            .fetch_genius_track_info(&track_id, &artist, &title, &token)
+            .await
+        {
+            Ok(info) if !info.url.is_empty() => info.url,
+            Ok(_) => search,
+            Err(e) => {
+                warn!("Genius page look-up failed: {e}");
+                search
+            }
+        };
+        crate::app::components::open_external_url(&button, &url);
+    });
 }
 
 /// Marks the lines Genius explains (with a Genius token).

@@ -80,15 +80,33 @@ template $LyricsPageWidget : Adw.Bin {
             "compact",
           ]
 
-          child: Button reload_empty_button {
+          child: Box {
+            orientation: vertical;
             halign: center;
-            visible: false;
-            /* Translators: Button to retry fetching lyrics from LRCLIB. */
-            label: _("Reload Lyrics");
+            spacing: 12;
 
-            styles [
-              "pill",
-            ]
+            Button reload_empty_button {
+              halign: center;
+              visible: false;
+              /* Translators: Button to retry fetching lyrics from LRCLIB. */
+              label: _("Reload Lyrics");
+
+              styles [
+                "pill",
+              ]
+            }
+
+            Button genius_empty_button {
+              halign: center;
+              visible: false;
+              /* Translators: Button under "No Lyrics Available": opens the song's page on Genius, where its lyrics can be read or added. */
+              label: _("Search on Genius");
+
+              styles [
+                "pill",
+                "flat",
+              ]
+            }
           };
         };
       }
@@ -107,6 +125,17 @@ template $LyricsPageWidget : Adw.Bin {
       Button reload_button {
         icon-name: "view-refresh-symbolic";
         tooltip-text: _("Reload lyrics");
+
+        styles [
+          "flat",
+          "circular",
+        ]
+      }
+
+      Button genius_button {
+        icon-name: "canto-genius-symbolic";
+        /* Translators: Tooltip of the lyrics button that opens the song's page on Genius (to read or fix its lyrics). */
+        tooltip-text: _("Open on Genius");
 
         styles [
           "flat",

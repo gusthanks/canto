@@ -36,23 +36,38 @@ template $UtilityPanelWidget : Adw.Bin {
 
           styles [
             "linked",
+            "utility-panel__tabs",
           ]
 
           ToggleButton now_tab {
             /* Translators: Tab label for the current track in utility panel. */
-            label: _("Now Playing");
+            tooltip-text: _("Now Playing");
             active: true;
+
+            // Bars that move while music plays, still while paused
+            child: Box now_indicator {
+              halign: center;
+              valign: center;
+
+              styles [
+                "playback-indicator",
+                "utility-panel__now-indicator",
+                "utility-panel__now-indicator--idle",
+              ]
+            };
           }
 
           ToggleButton lyrics_tab {
             /* Translators: Tab label for lyrics in utility panel. */
-            label: _("Lyrics");
+            tooltip-text: _("Lyrics");
+            icon-name: "canto-lyrics-symbolic";
             group: now_tab;
           }
 
           ToggleButton queue_tab {
             /* Translators: Tab label for the queue in utility panel. */
-            label: _("Queue");
+            tooltip-text: _("Queue");
+            icon-name: "canto-queue-symbolic";
             group: now_tab;
           }
         };
