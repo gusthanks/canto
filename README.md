@@ -5,7 +5,8 @@
 <h1 align="center">Canto</h1>
 
 <p align="center">
-  Canto is a minimal GTK4 and libadwaita music client that puts your library, synced lyrics, and listening flow front and center without visual clutter.
+  A Spotify client for the Linux desktop, built with GTK4 and libadwaita.<br>
+  Your library, synced lyrics and the song you're on, without visual clutter.
 </p>
 
 <p align="center">
@@ -15,40 +16,59 @@
 ---
 
 > [!NOTE]
-> Requires a Spotify Premium account for playback. Some accounts may encounter Spotify's proprietary PlayPlay DRM restriction on local playback; Spotify Connect control remains available.
+> Canto is an unofficial client, not affiliated with or endorsed by Spotify. It needs a **Spotify Premium** account.
 
-## Features
+## What Canto does
 
-- **Minimalist Native Interface:** GTK4 and libadwaita layout with responsive side/bottom utility panels, live color themes, and optional subtle background tinting sampled from album artwork.
-- **Omarchy Live Theme Integration:** Automatically watches the active Omarchy desktop theme palette and applies changes live without restarting. Also includes curated built-in themes: Neutral (Adwaita), Spotify Green, OLED Dark, Warm Vinyl, and Purple Night.
-- **Built-in DSP Engine:** Gapless playback with a 10-band equalizer (plus quick presets), stereo balance/pan, mono fold-down, and pitch shift.
-- **Now Playing Side Panel:** Big cover, title linking to the album, artists linking to their pages, a like button, a live lyrics preview tinted with the cover color, the next track in the queue, and **Genius** credits (producers, writers, featured artists).
-- **Synced Lyrics:** Real-time synced lyrics via LRCLIB with clickable line seeking and `-100 ms` / `+100 ms` live offset adjustment, in the side panel or full screen over the blurred cover. The active line lights up word by word (an estimate: LRCLIB times lines, not words).
-- **Library Sidebar:** Playlist, album and artist covers, and a collapsed mode that keeps only the covers.
-- **`Ctrl+K` Command Palette:** Keyboard-first quick launcher for navigation, theme switching, Spotify Connect device transfer, Sleep Timer presets, Track Radio, and debounced catalog search.
-- **Resilient Track Radio & Smart Queue Continuation:** Launches queues of similar tracks from any track menu, the playback bar, or `Ctrl+K`, with automatic top-tracks and catalog search fallback if `/v1/recommendations` is restricted for newer Spotify apps.
-- **Scrobbling (Last.fm & ListenBrainz):** Tracks active listening time (immune to pauses and Spotify Connect poll ticks) with Now Playing updates and a bounded 500-item persistent offline retry queue.
-- **Sleep Timer:** Discreet timer in the player bar (`Off`, `End of current track`, `15`, `30`, `45`, or `60 min`) that cleanly pauses local or Spotify Connect playback.
-- **Opt-in Visual & Audio Bridge:** Optional lock-free RMS/peak meter and atomic `$XDG_RUNTIME_DIR/canto/state.json` output for external visualizers (strictly zero runtime overhead when disabled).
-- **Modular Provider Architecture:** Decoupled `MusicProvider` capability abstractions ready for additional backends (see [docs/providers-architecture.md](docs/providers-architecture.md)).
+**Lyrics**
+- Synced lyrics from LRCLIB in the side panel or full screen over the blurred cover. The active line lights up word by word (with real word timing when LRCLIB has it, an estimate otherwise).
+- Click a line to jump there, nudge the timing live, and translate lyrics into your language.
+- **Genius** credits in the Now Playing panel: producers, writers and featured artists.
+
+**Looks that follow your desktop**
+- **Follow System** reads your Omarchy theme and changes with it, live. Built-in themes too: Neutral (Adwaita), Green, OLED Dark, Warm Vinyl and Purple Night.
+- Optional background tint taken from the album cover.
+- A player bar you can customize: right-click it to pick which buttons show and in what order.
+
+**Listening**
+- Now Playing panel with a big cover, a lyrics preview, the next track and song credits. The title takes you to the album, the artists to their pages.
+- Your Library as a list or a grid of covers, with pinned items, Recents and sorting, plus a collapsed sidebar that keeps only the covers.
+- Reopens on the track you closed it on, right where it stopped. Nothing plays until you press play.
+- Plays here or on any Spotify Connect device, such as a phone or a smart speaker. On launch it follows the device that is already playing.
+- Mini player window, track radio, a sleep timer, and **Your Stats** from Last.fm.
+- Scrobbling to Last.fm and ListenBrainz, counting only real listening time, with an offline queue.
+
+**Keyboard first**
+- `Ctrl+K` command palette: navigation, themes, devices, sleep timer, track radio and search.
+- Media keys (MPRIS), shortcuts for everything below, and touch gestures.
+
+**Sound** (when Canto plays audio itself)
+- Gapless playback, a 10-band equalizer with presets, stereo balance, mono and pitch shift.
+
+**For tinkerers**
+- Optional visual bridge: a lock-free level meter and an atomic `$XDG_RUNTIME_DIR/canto/state.json` for external visualizers (zero cost when off).
+- Music providers sit behind a `MusicProvider` abstraction (see [docs/providers-architecture.md](docs/providers-architecture.md)).
 
 ## Keyboard Shortcuts
 
 | Shortcut | Action |
 | --- | --- |
-| `Ctrl+K` | Open Command Palette |
-| `Ctrl+F` | Search catalog |
-| `Ctrl+,` | Open Preferences |
-| `Ctrl+?` | Show Keyboard Shortcuts |
+| `Ctrl+K` | Command palette |
+| `Ctrl+F` | Search |
 | `Space` | Play / Pause |
 | `Ctrl+[` / `Ctrl+]` | Previous / Next track |
-| `Ctrl+Left` / `Ctrl+Right` | Seek backward / forward 5s |
+| `Ctrl+Left` / `Ctrl+Right` | Seek backward / forward |
 | `Ctrl+Up` / `Ctrl+Down` | Volume up / down |
-| `Ctrl+M` | Mute / Unmute |
-| `Ctrl+S` / `Ctrl+R` | Toggle Shuffle / Repeat |
-| `Alt+1` .. `Alt+5` | Switch home views |
+| `Ctrl+M` | Mute |
+| `Ctrl+S` / `Ctrl+R` | Shuffle / Repeat |
+| `Alt+Left` / `Alt+Right` | Back / Forward |
+| `Alt+1` .. `Alt+5` | Now Playing, Artists, Albums, Playlists, Tracks |
 | `F9` | Toggle sidebar |
-| `Ctrl+Shift+D` | Toggle Developer Tools menu (debug builds) |
+| `F10` | Main menu |
+| `Ctrl+,` | Preferences |
+| `Ctrl+?` | Keyboard shortcuts |
+| `Ctrl+Q` | Quit |
+| `Ctrl+Shift+D` | Developer tools (debug builds) |
 
 ## Hyprland Tip: Silent Spotify Connect Background Mode
 
@@ -78,11 +98,21 @@ o.window({ title = "^Canto Mini Player$" }, {
 
 ## BYOK API Setup Tutorials
 
-Canto works out of the box for Spotify browsing, LRCLIB synced lyrics, and zero-key Genius web search links. All extra integrations below are Bring-Your-Own-Key (BYOK): tokens stay local in your GSettings / keyring and are never sent anywhere except their respective official APIs.
+Canto works out of the box for browsing your library, LRCLIB synced lyrics, and Genius search links. Everything below is Bring-Your-Own-Key (BYOK): keys stay on your computer (GSettings / keyring) and are only sent to their own official APIs.
+
+### 0. Spotify Soloist (playback)
+
+Some accounts can't play audio inside Canto itself (Spotify's DRM blocks it). For those, Canto plays through **Spotify Soloist**, Spotify's official windowless player for Linux (x86_64), which Canto downloads and keeps up to date on its own. Soloist needs a free developer key:
+
+1. Follow Spotify's guide at [developer.spotify.com/documentation/soloist](https://developer.spotify.com/documentation/soloist) to create the key (Premium account).
+2. Paste it into **Preferences -> Spotify Soloist -> Soloist API Key** and turn on **Play Through Soloist**.
+
+Without a key, Canto falls back to the official Spotify app running hidden in the background (it must be installed).
+
 
 ### 1. Spotify OAuth & Connect
 
-Canto uses Spotify's OAuth 2.0 PKCE flow (`crates/riff-auth/src/oauth2.rs`) and listens on the exact local redirect URI:
+Canto uses Spotify's OAuth 2.0 PKCE flow (`crates/canto-auth/src/oauth2.rs`) and listens on the exact local redirect URI:
 
 ```text
 http://127.0.0.1:8898/login
@@ -92,7 +122,7 @@ Default builds ship with an OAuth Client ID (`782ae96ea60f4cdf986a766049607005`)
 
 1. Open the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and click **Create app**.
 2. Under **Redirect URIs**, add `http://127.0.0.1:8898/login` and select **Web API**.
-3. Copy your **Client ID** into `CLIENT_ID` in `crates/riff-auth/src/oauth2.rs` and rebuild.
+3. Copy your **Client ID** into `CLIENT_ID` in `crates/canto-auth/src/oauth2.rs` and rebuild.
 4. Launch Canto and click **Log in with Spotify**. Approve in your browser and it will redirect back to `127.0.0.1:8898/login` automatically.
 
 Note: Spotify restricted `/v1/recommendations` and `/v1/artists/{id}/related-artists` for many newer Client IDs starting in November 2024. Canto detects 403/404 responses automatically and builds Track Radio from artist top tracks and catalog searches with deduplication.
@@ -133,7 +163,10 @@ Canto tracks active listening duration only (ignoring pauses and duplicate Conne
 
 You can enable Last.fm, ListenBrainz, or both simultaneously.
 
-## Building from Source
+## Installing
+
+There are no packages yet. Build from source:
+
 
 ```sh
 ./scripts/setup-dev.sh    # install system build dependencies
@@ -141,7 +174,7 @@ You can enable Last.fm, ListenBrainz, or both simultaneously.
 ./scripts/build.sh test   # run workspace tests and Meson checks
 ```
 
-For production installation into `~/.local`:
+To install into `~/.local`:
 
 ```sh
 ./scripts/build.sh release --install
@@ -152,7 +185,7 @@ See the [Development Guide](doc/Development.md) for architecture notes, feature 
 ## Acknowledgements
 
 - [Riff](https://github.com/Diegovsky/riff) by Diego Augusto and contributors, and [Spot](https://github.com/xou816/spot) by Alexandre Trendel, which Canto is forked from (MIT).
-- [ytm-rs](https://github.com/grapedjuice/ytm-rs) by grapedjuice and contributors, studied as a reference for future lyrics and audio features. Canto does not include ytm-rs code.
+- [ytm-rs](https://github.com/grapedjuice/ytm-rs) by grapedjuice and contributors, studied as a reference. Canto does not include ytm-rs code.
 
 ## Code of Conduct
 
