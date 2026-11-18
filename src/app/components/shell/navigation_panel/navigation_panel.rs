@@ -77,11 +77,8 @@ impl NavigationPanel {
         // The grid lives next to the list, in the same scrolled area
         let (grid, grid_items) = Self::make_grid(&list_store, &model);
         if let Some(viewport) = listbox.parent().and_downcast::<gtk::Viewport>() {
-            let holder = gtk::Box::new(gtk::Orientation::Vertical, 0);
             viewport.set_child(None::<&gtk::Widget>);
-            holder.append(&listbox);
-            holder.append(&grid);
-            viewport.set_child(Some(&holder));
+            viewport.set_child(Some(&Self::hold_list_and_grid(&listbox, &grid)));
         }
         grid.connect_child_activated(clone!(
             #[weak]
@@ -697,6 +694,17 @@ impl NavigationPanel {
         (grid, grid_items)
     }
 
+    /// One box for the list and the grid. It must fill the sidebar's height
+    /// itself: with the list hidden, nothing else stretches the scrolled area
+    /// and the grid got cut after one row (18/11).
+    fn hold_list_and_grid(listbox: &gtk::ListBox, grid: &gtk::FlowBox) -> gtk::Box {
+        let holder = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        holder.set_vexpand(true);
+        holder.append(listbox);
+        holder.append(grid);
+        holder
+    }
+
     /// The list's items without the section titles.
     fn covers_only(list_store: &gio::ListStore) -> gtk::FilterListModel {
         let filter = gtk::CustomFilter::new(|obj| {
@@ -1131,10 +1139,18 @@ pub(crate) fn grid_sample_for_tests(cover: &gtk::gdk::Paintable) -> gtk::Widget 
         }
         grid.append(&tile);
     }
+    // Built like the app's sidebar: a heading over a scrolled area whose
+    // list is hidden while the grid shows
+    let listbox = gtk::ListBox::new();
+    listbox.set_vexpand(true);
+    listbox.set_visible(false);
     let scrolled = gtk::ScrolledWindow::new();
     scrolled.set_hscrollbar_policy(gtk::PolicyType::Never);
-    scrolled.set_child(Some(&grid));
-    scrolled.upcast()
+    scrolled.set_child(Some(&NavigationPanel::hold_list_and_grid(&listbox, &grid)));
+    let sidebar = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    sidebar.append(&gtk::Label::new(Some("Your Library")));
+    sidebar.append(&scrolled);
+    sidebar.upcast()
 }
 
 /// Titles of the grid's items for a list with section titles in it.

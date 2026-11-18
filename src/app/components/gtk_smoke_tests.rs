@@ -564,6 +564,20 @@ fn dump_now_panel_sample() {
     let flow = find_flow(&grid).expect("the grid sample holds a FlowBox");
     let first = flow.child_at_index(0).expect("a first cell");
     let third = flow.child_at_index(2).expect("a third cell");
+    // The scrolled area fills the window, so the second row shows whole
+    let scrolled = flow
+        .ancestor(gtk::ScrolledWindow::static_type())
+        .expect("the grid scrolls");
+    let fourth = flow.child_at_index(3).expect("a fourth cell");
+    let row2 = fourth
+        .compute_bounds(&scrolled)
+        .expect("fourth cell bounds");
+    assert!(
+        scrolled.height() > 300 && row2.y() + row2.height() <= scrolled.height() as f32,
+        "the grid's area fills the sidebar (area {} tall, second row ends at {})",
+        scrolled.height(),
+        row2.y() + row2.height()
+    );
     let (a, c) = (
         first.compute_bounds(&flow).expect("first cell bounds"),
         third.compute_bounds(&flow).expect("third cell bounds"),
