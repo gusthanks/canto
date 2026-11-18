@@ -1,3 +1,4 @@
+use gettextrs::gettext;
 use gio::prelude::SettingsExt;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
@@ -351,46 +352,46 @@ mod imp {
                     "lyrics",
                     PLAYER_BAR_LYRICS,
                     self.lyrics_slot.get().upcast(),
-                    gettextrs::gettext("Lyrics"),
+                    gettext("Lyrics"),
                 ),
                 (
                     "queue",
                     PLAYER_BAR_QUEUE,
                     self.queue_slot.get().upcast(),
-                    gettextrs::gettext("Queue"),
+                    gettext("Queue"),
                 ),
                 // translators: Checkbox in "Customize Bar": the button that picks where the sound plays.
                 (
                     "device",
                     PLAYER_BAR_DEVICE,
                     self.device_slot.get().upcast(),
-                    gettextrs::gettext("Device"),
+                    gettext("Device"),
                 ),
                 // translators: Checkbox in "Customize Bar": the volume slider.
                 (
                     "volume",
                     PLAYER_BAR_VOLUME,
                     self.volume_slot.get().upcast(),
-                    gettextrs::gettext("Volume"),
+                    gettext("Volume"),
                 ),
                 (
                     "mini-player",
                     PLAYER_BAR_MINI_PLAYER,
                     self.mini_player_slot.get().upcast(),
-                    gettextrs::gettext("Mini Player"),
+                    gettext("Mini Player"),
                 ),
                 // The gear has no key: it is always there, as the way back
                 (
                     "more",
                     "",
                     self.eq_button.get().upcast(),
-                    gettextrs::gettext("More Options"),
+                    gettext("More Options"),
                 ),
                 (
                     "side-panel",
                     PLAYER_BAR_SIDE_PANEL,
                     self.side_panel_slot.get().upcast(),
-                    gettextrs::gettext("Side Panel"),
+                    gettext("Side Panel"),
                 ),
             ];
 
@@ -400,7 +401,7 @@ mod imp {
             list.set_margin_start(6);
             list.set_margin_end(6);
             // translators: Heading of the popover that chooses which buttons the player bar shows.
-            let title = gtk::Label::new(Some(&gettextrs::gettext("Show in the Bar")));
+            let title = gtk::Label::new(Some(&gettext("Show in the Bar")));
             title.set_xalign(0.0);
             title.set_margin_start(6);
             title.set_margin_bottom(4);
@@ -431,10 +432,10 @@ mod imp {
                 }
                 let up = gtk::Button::from_icon_name("pan-up-symbolic");
                 // translators: Tooltip of the arrow that moves a button earlier in the player bar.
-                up.set_tooltip_text(Some(&gettextrs::gettext("Move Left")));
+                up.set_tooltip_text(Some(&gettext("Move Left")));
                 let down = gtk::Button::from_icon_name("pan-down-symbolic");
                 // translators: Tooltip of the arrow that moves a button later in the player bar.
-                down.set_tooltip_text(Some(&gettextrs::gettext("Move Right")));
+                down.set_tooltip_text(Some(&gettext("Move Right")));
                 for arrow in [&up, &down] {
                     arrow.add_css_class("flat");
                     arrow.add_css_class("circular");

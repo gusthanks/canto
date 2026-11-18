@@ -4,6 +4,7 @@ use crate::settings::{CantoSettings, StateTracker};
 use canto_auth::{SessionTokens, TokenStore};
 use canto_config::feature_flags::FeatureFlag;
 use futures::channel::mpsc::UnboundedSender;
+use gettextrs::gettext;
 use gio::prelude::*;
 use glib::object::Cast;
 use std::cell::RefCell;
@@ -270,7 +271,7 @@ impl App {
             if let Some(track) = radio_model.get_state().playback.current_song() {
                 start_track_radio(&radio_model, &radio_disp, track);
             } else {
-                radio_disp.dispatch(AppAction::ShowNotification(gettextrs::gettext(
+                radio_disp.dispatch(AppAction::ShowNotification(gettext(
                     "No track is currently playing",
                 )));
             }

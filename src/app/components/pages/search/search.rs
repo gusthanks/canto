@@ -1,3 +1,4 @@
+use gettextrs::gettext;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::CompositeTemplate;
@@ -264,7 +265,7 @@ fn make_section_header(text: &str, filter: SearchType, model: &Rc<SearchResultsM
     row.append(&label);
 
     let show_all_btn = gtk::Button::builder()
-        .label(&gettextrs::gettext("Show All"))
+        .label(&gettext("Show All"))
         .halign(gtk::Align::End)
         .valign(gtk::Align::Center)
         .has_frame(false)
@@ -392,7 +393,7 @@ impl SearchResults {
 
         let track_card_list = build_section(
             &all_box,
-            &gettextrs::gettext("Tracks"),
+            &gettext("Tracks"),
             SearchType::Tracks,
             &track_section,
             &model,
@@ -429,7 +430,7 @@ impl SearchResults {
 
         let artist_card_list = build_section(
             &all_box,
-            &gettextrs::gettext("Artists"),
+            &gettext("Artists"),
             SearchType::Artists,
             &artist_section,
             &model,
@@ -439,7 +440,7 @@ impl SearchResults {
 
         let album_card_list = build_section(
             &all_box,
-            &gettextrs::gettext("Albums"),
+            &gettext("Albums"),
             SearchType::Albums,
             &album_section,
             &model,
@@ -449,7 +450,7 @@ impl SearchResults {
 
         let playlist_card_list = build_section(
             &all_box,
-            &gettextrs::gettext("Playlists"),
+            &gettext("Playlists"),
             SearchType::Playlists,
             &playlist_section,
             &model,

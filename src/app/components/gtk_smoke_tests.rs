@@ -214,16 +214,36 @@ fn assert_scrollbar_stays_put() {
         );
         (b.x(), b.width(), s.x(), s.width())
     };
+    // The same reading three times in a row, 100 ms apart (up to 5 s): on a
+    // busy machine one fixed wait sometimes read the fresh window's layout
+    // (a 24 px bar off the overlay) and failed though nothing grew (18/11)
+    let settled = |tag: &str| {
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        let mut last = measure(tag);
+        let mut same = 0;
+        while same < 3 && std::time::Instant::now() < deadline {
+            pump(100);
+            let now = measure(tag);
+            same = if now == last { same + 1 } else { 0 };
+            last = now;
+        }
+        last
+    };
     // One pass of the pointer first: before any, a fresh window still
     // reports the size libadwaita gives a bar without overlay
     bar.add_css_class("hovering");
     pump(500);
     bar.remove_css_class("hovering");
     pump(800);
-    let idle = measure("idle");
+    // libadwaita adds overlay-indicator a moment after mapping
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    while !bar.has_css_class("overlay-indicator") && std::time::Instant::now() < deadline {
+        pump(10);
+    }
+    let idle = settled("idle");
     bar.add_css_class("hovering");
     pump(800);
-    let hover = measure("hover");
+    let hover = settled("hover");
     assert_eq!(idle, hover, "the scrollbar moves or grows on hover");
     window.destroy();
 }

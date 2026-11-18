@@ -1,3 +1,4 @@
+use gettextrs::gettext;
 use gio::SimpleActionGroup;
 use gtk::prelude::*;
 use std::cell::{Cell, RefCell};
@@ -371,7 +372,7 @@ fn should_load_more(
 fn disc_header_text(disc: u32) -> String {
     // translators: Header shown above the tracks of disc {} in a
     // multi-disc album.
-    labels::fill(gettextrs::gettext("Disc {}"), &[&disc.to_string()])
+    labels::fill(gettext("Disc {}"), &[&disc.to_string()])
 }
 
 /// Disc edges (rounded card corners) are part of the entry so a change in

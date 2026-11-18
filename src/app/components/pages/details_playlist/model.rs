@@ -4,6 +4,7 @@
 // back (the playlist may have been deleted or is inaccessible).
 
 use gettextrs::gettext;
+use gettextrs::ngettext;
 use std::ops::Deref;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -138,7 +139,7 @@ impl PageModel for PlaylistDetailsModel {
 
     fn get_subtitle_detail(&self) -> Option<String> {
         let count = self.get_playlist_info()?.total_tracks?;
-        let text = gettextrs::ngettext("{} Track", "{} Tracks", count);
+        let text = ngettext("{} Track", "{} Tracks", count);
         Some(labels::fill(text, &[&count.to_string()]))
     }
 

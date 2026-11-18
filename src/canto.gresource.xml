@@ -79,7 +79,6 @@
   </gresource>
   <gresource prefix="/io/github/gusthanks/Canto/icons/scalable/actions/">
     <file compressed="true" preprocess="xml-stripblanks" alias="now-playing-symbolic.svg">../data/hicolor/symbolic/actions/now-playing-symbolic.svg</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="queue-symbolic.svg">../data/hicolor/symbolic/actions/queue-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="drawer-handle-symbolic.svg">../data/hicolor/symbolic/actions/drawer-handle-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="go-home-symbolic.svg">../data/hicolor/symbolic/actions/go-home-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="view-restore-symbolic.svg">../data/hicolor/symbolic/actions/view-restore-symbolic.svg</file>
@@ -87,7 +86,6 @@
     <file compressed="true" preprocess="xml-stripblanks" alias="library-music-symbolic.svg">../data/hicolor/symbolic/actions/library-music-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="search-filters-symbolic.svg">../data/hicolor/symbolic/actions/search-filters-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="view-pin-outline-symbolic.svg">../data/hicolor/symbolic/actions/view-pin-outline-symbolic.svg</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="paper-sheet-symbolic.svg">../data/hicolor/symbolic/actions/paper-sheet-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-genius-symbolic.svg">../data/hicolor/symbolic/actions/canto-genius-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-lastfm-symbolic.svg">../data/hicolor/symbolic/actions/canto-lastfm-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="alarm-symbolic.svg">../data/hicolor/symbolic/actions/alarm-symbolic.svg</file>
@@ -103,14 +101,6 @@
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-device-phone-symbolic.svg">../data/hicolor/symbolic/actions/canto-device-phone-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-device-tv-symbolic.svg">../data/hicolor/symbolic/actions/canto-device-tv-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-more-symbolic.svg">../data/hicolor/symbolic/actions/canto-more-symbolic.svg</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="go-previous-symbolic.svg">../data/hicolor/symbolic/actions/go-previous-symbolic.svg</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="go-next-symbolic.svg">../data/hicolor/symbolic/actions/go-next-symbolic.svg</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="pan-start-symbolic.svg">../data/hicolor/symbolic/actions/pan-start-symbolic.svg</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="pan-end-symbolic.svg">../data/hicolor/symbolic/actions/pan-end-symbolic.svg</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="pan-down-symbolic.svg">../data/hicolor/symbolic/actions/pan-down-symbolic.svg</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="pan-up-symbolic.svg">../data/hicolor/symbolic/actions/pan-up-symbolic.svg</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="go-down-symbolic.svg">../data/hicolor/symbolic/actions/go-down-symbolic.svg</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="go-up-symbolic.svg">../data/hicolor/symbolic/actions/go-up-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-back-symbolic.svg">../data/hicolor/symbolic/actions/canto-back-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-forward-symbolic.svg">../data/hicolor/symbolic/actions/canto-forward-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-library-symbolic.svg">../data/hicolor/symbolic/actions/canto-library-symbolic.svg</file>
@@ -129,9 +119,6 @@
     <file compressed="true" preprocess="xml-stripblanks" alias="media-playlist-shuffle-symbolic.svg">../data/hicolor/symbolic/actions/media-playlist-shuffle-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="media-skip-backward-symbolic.svg">../data/hicolor/symbolic/actions/media-skip-backward-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="media-skip-forward-symbolic.svg">../data/hicolor/symbolic/actions/media-skip-forward-symbolic.svg</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="multimedia-volume-control-symbolic.svg">../data/hicolor/symbolic/actions/multimedia-volume-control-symbolic.svg</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="non-starred-symbolic.svg">../data/hicolor/symbolic/actions/non-starred-symbolic.svg</file>
-    <file compressed="true" preprocess="xml-stripblanks" alias="starred-symbolic.svg">../data/hicolor/symbolic/actions/starred-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="phone-symbolic.svg">../data/hicolor/symbolic/actions/phone-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="preferences-other-symbolic.svg">../data/hicolor/symbolic/actions/preferences-other-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="sidebar-show-symbolic.svg">../data/hicolor/symbolic/actions/sidebar-show-symbolic.svg</file>

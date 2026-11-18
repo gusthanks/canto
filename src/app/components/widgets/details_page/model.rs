@@ -1,3 +1,4 @@
+use gettextrs::gettext;
 use std::cell::Ref;
 use std::collections::HashSet;
 use std::ops::Deref;
@@ -371,7 +372,7 @@ impl DetailsPageModel {
     pub fn share_link(&self, link: &str) {
         crate::app::components::copy_link_to_clipboard(link);
         self.dispatcher
-            .dispatch(AppAction::ShowNotification(gettextrs::gettext(
+            .dispatch(AppAction::ShowNotification(gettext(
                 "Link copied to clipboard",
             )));
     }

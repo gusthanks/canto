@@ -1,3 +1,4 @@
+use gettextrs::gettext;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib, CompositeTemplate};
@@ -197,13 +198,11 @@ impl LyricsPageWidget {
         let sync = &self.imp().sync_button;
         if offset_ms == 0 {
             sync.remove_css_class("lyric-sync-button--shifted");
-            sync.set_tooltip_text(Some(&gettextrs::gettext("Lyrics Timing")));
+            sync.set_tooltip_text(Some(&gettext("Lyrics Timing")));
         } else {
             sync.add_css_class("lyric-sync-button--shifted");
             // translators: Tooltip of the lyrics timing button while an offset is set. {} is like "+200 ms".
-            sync.set_tooltip_text(Some(
-                &gettextrs::gettext("Lyrics Timing ({})").replace("{}", &text),
-            ));
+            sync.set_tooltip_text(Some(&gettext("Lyrics Timing ({})").replace("{}", &text)));
         }
     }
 
@@ -404,7 +403,7 @@ impl LyricsPageWidget {
             mark.set_valign(gtk::Align::Center);
             mark.add_css_class("lyric-annotation");
             // translators: Tooltip of the mark on a lyric line that Genius explains.
-            mark.set_tooltip_text(Some(&gettextrs::gettext("What This Line Means")));
+            mark.set_tooltip_text(Some(&gettext("What This Line Means")));
             mark.set_cursor_from_name(Some("pointer"));
             let click = gtk::GestureClick::new();
             click.connect_pressed(glib::clone!(
@@ -433,7 +432,7 @@ impl LyricsPageWidget {
         list.add_css_class("navigation-sidebar");
         let mut codes = vec!["auto"];
         // translators: First entry of the lyrics translation languages: the app's own language.
-        let mut names = vec![gettextrs::gettext("App Language")];
+        let mut names = vec![gettext("App Language")];
         for (code, name) in TRANSLATION_LANGUAGES {
             codes.push(code);
             names.push(name.to_string());

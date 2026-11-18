@@ -325,9 +325,7 @@ impl SettingsDialog {
             if item.position() == LOSSLESS_INDEX {
                 label.add_css_class("dim-label");
                 warning.set_visible(true);
-                row.set_tooltip_text(Some(&gettextrs::gettext(
-                    "Unsupported due to legal restrictions.",
-                )));
+                row.set_tooltip_text(Some(&gettext("Unsupported due to legal restrictions.")));
                 // Prevent the entry from being chosen from the dropdown.
                 item.set_selectable(false);
                 item.set_activatable(false);
@@ -923,8 +921,8 @@ impl SettingsDialog {
     fn bind_feature_flags(&self) {
         let settings = gio::Settings::new(SETTINGS);
         let group = libadwaita::PreferencesGroup::new();
-        group.set_title(&gettextrs::gettext("Experimental Features"));
-        group.set_description(Some(&gettextrs::gettext(
+        group.set_title(&gettext("Experimental Features"));
+        group.set_description(Some(&gettext(
             "These features are still in development and may be unstable or incomplete.",
         )));
 
@@ -1312,7 +1310,7 @@ impl SettingsDialog {
         if locked {
             switch.set_active(true);
             switch.set_sensitive(false);
-            switch.set_tooltip_text(Some(&gettextrs::gettext(
+            switch.set_tooltip_text(Some(&gettext(
                 "Locked by a Family plan parental control and cannot be changed here.",
             )));
         } else {

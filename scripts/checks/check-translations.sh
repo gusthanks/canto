@@ -33,6 +33,19 @@ fi
 echo "PASS"
 
 echo ""
+echo "=== Plain gettext calls ==="
+# Older xgettext (the CI's) misses path-qualified calls like
+# gettextrs::gettext("..."): import the function and call it plainly
+QUALIFIED=$(grep -rnE 'gettextrs::n?gettext\(' src --include=*.rs || true)
+if [[ -n "$QUALIFIED" ]]; then
+    echo "Call gettext()/ngettext() unqualified (use gettextrs::gettext;):"
+    echo "$QUALIFIED" | sed 's/^/  /'
+    echo "FAIL"
+    exit 1
+fi
+echo "PASS"
+echo ""
+
 echo "=== canto.pot ==="
 xgettext --package-name=canto --from-code=UTF-8 --add-comments \
     --keyword=_ --keyword=N_ --keyword=C_:1c,2 --keyword=NC_:1c,2 \
