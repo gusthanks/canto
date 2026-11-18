@@ -66,15 +66,39 @@ impl MainWindow {
         window.connect_default_width_notify(Self::save_window_geometry);
         window.connect_maximized_notify(Self::save_window_geometry);
 
-        window.connect_unrealize(|_| {
-            debug!("saving geometry");
-            WINDOW_GEOMETRY.with(|g| g.borrow().save());
-        });
+        window.connect_unrealize(clone!(
+            #[weak]
+            app_model,
+            move |_| {
+                debug!("saving geometry");
+                WINDOW_GEOMETRY.with(|g| g.borrow().save());
+                Self::keep_last_played(&app_model);
+            }
+        ));
 
         Self {
             initial_window_geometry,
             window,
             logged_in: Cell::new(false),
+        }
+    }
+
+    /// Keeps the open track and its spot for the next start: Spotify forgets
+    /// them once Canto's player stops.
+    fn keep_last_played(app_model: &AppModel) {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+        let line = {
+            let state = app_model.get_state();
+            crate::app::components::last_played_line(&state.playback, now)
+        };
+        if let Some(line) = line {
+            debug!("keeping the last track: {}", line.replace('\t', " "));
+            let settings = gio::Settings::new(SETTINGS);
+            let _ = settings.set_string(canto_config::settings::LAST_PLAYED, &line);
+            gio::Settings::sync();
         }
     }
 

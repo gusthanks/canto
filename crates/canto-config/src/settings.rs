@@ -156,6 +156,8 @@ mod player_bar_order_tests {
 pub const LYRICS_TRANSLATION: &str = "lyrics-translation";
 pub const LIBRARY_SORT: &str = "library-sort";
 pub const LIBRARY_VIEW: &str = "library-view";
+/// The track open when Canto closed: id, context URI, position and when.
+pub const LAST_PLAYED: &str = "last-played";
 pub const LYRICS_TRANSLATION_LANGUAGE: &str = "lyrics-translation-language";
 pub const GOOGLE_TRANSLATE_API_KEY: &str = "google-translate-api-key";
 pub const GENIUS_ACCESS_TOKEN: &str = "genius-access-token";

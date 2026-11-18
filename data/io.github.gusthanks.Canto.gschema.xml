@@ -405,6 +405,11 @@
       <summary>How Your Library is shown</summary>
       <description>"list" (one item per row) or "grid" (covers).</description>
     </key>
+    <key name="last-played" type="s">
+      <default>''</default>
+      <summary>The track open when Canto closed</summary>
+      <description>Track id, album or playlist URI, position in ms and the time it was saved, separated by tabs. Spotify forgets the spot once Canto's player stops, so Canto keeps it.</description>
+    </key>
     <key name="lyrics-translation-language" type="s">
       <default>"auto"</default>
       <summary>Language lyrics are translated into</summary>

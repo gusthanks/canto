@@ -30,7 +30,7 @@ mod player_notifier;
 pub use player_notifier::PlayerNotifier;
 
 mod queue_loader;
-pub use queue_loader::{fetch_queue_page, queue_source_tracks, QueueLoader};
+pub use queue_loader::{fetch_queue_page, last_played_line, queue_source_tracks, QueueLoader};
 
 mod constants;
 pub use constants::*;

@@ -865,6 +865,7 @@ impl MusicProvider for SpotifyDomain {
                         .progress_ms
                         .and_then(|p| u32::try_from(p).ok())
                         .unwrap_or(0),
+                    played_at: None,
                 }));
             }
         }
@@ -876,6 +877,7 @@ impl MusicProvider for SpotifyDomain {
                 track_id: item.track.as_ref()?.id.clone()?,
                 context_uri: item.context.as_ref().and_then(|c| c.uri.clone()),
                 position_ms: 0,
+                played_at: item.played_at.clone(),
             })
         }))
     }

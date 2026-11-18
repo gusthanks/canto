@@ -337,6 +337,9 @@ pub struct LastPlayed {
     pub context_uri: Option<String>,
     /// Where it stopped, when Spotify still knows.
     pub position_ms: u32,
+    /// When it played, if it came from the history (RFC 3339); none when
+    /// Spotify's player still holds it.
+    pub played_at: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
