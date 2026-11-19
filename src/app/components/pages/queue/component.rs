@@ -211,7 +211,10 @@ impl RecentlyPlayed {
         });
     }
 
-    fn show(&self, played: Vec<canto_api::models::PlayedTrack>) {
+    fn show(&self, mut played: Vec<canto_api::models::PlayedTrack>) {
+        // Spotify answers newest first; the list reads like a timeline that
+        // flows into Now Playing, so the newest goes last
+        played.reverse();
         if played.is_empty() {
             self.tracks.borrow_mut().clear();
             // translators: Shown in Recently Played, above the queue, when the account has no history yet.

@@ -45,6 +45,10 @@ mod imp {
         pub queue_list: RefCell<Option<gtk::Widget>>,
         pub extra_margin_x: Cell<i32>,
         pub selection_bar_hidden: Cell<bool>,
+        /// Recently Played keeps its scroll at the bottom (the newest song,
+        /// next to Now Playing) while its rows are being laid out.
+        pub recent_stick_to_end: Cell<bool>,
+        pub recent_stick_generation: Cell<u32>,
     }
 
     #[glib::object_subclass]
@@ -74,8 +78,19 @@ mod imp {
                 .connect_reveal_child_notify(move |revealer| {
                     if let Some(obj) = obj.upgrade() {
                         obj.show_recent_expanded(revealer.reveals_child());
+                        if revealer.reveals_child() {
+                            obj.scroll_recent_to_end();
+                        }
                     }
                 });
+            // The list's height is only known once it's laid out: follow it
+            // to the end until then.
+            let obj = self.obj().downgrade();
+            self.recent_scroller.vadjustment().connect_changed(move |adj| {
+                if obj.upgrade().is_some_and(|obj| obj.imp().recent_stick_to_end.get()) {
+                    adj.set_value(adj.upper() - adj.page_size());
+                }
+            });
             self.obj().show_recent_expanded(false);
         }
     }
@@ -230,8 +245,29 @@ impl QueuePageWidget {
         imp.recent_stack.set_visible_child_name("status");
     }
 
-    /// Fills the list with `rows`, newest first; returns each row's cover
-    /// image, for the caller to load.
+    /// Shows the end of Recently Played, the newest song, and keeps it there
+    /// while the list settles.
+    fn scroll_recent_to_end(&self) {
+        let imp = self.imp();
+        let generation = imp.recent_stick_generation.get().wrapping_add(1);
+        imp.recent_stick_generation.set(generation);
+        imp.recent_stick_to_end.set(true);
+        let adj = imp.recent_scroller.vadjustment();
+        adj.set_value(adj.upper() - adj.page_size());
+        let obj = self.downgrade();
+        glib::timeout_add_local_once(std::time::Duration::from_millis(600), move || {
+            if let Some(obj) = obj.upgrade() {
+                let imp = obj.imp();
+                if imp.recent_stick_generation.get() == generation {
+                    imp.recent_stick_to_end.set(false);
+                }
+            }
+        });
+    }
+
+    /// Fills the list with `rows`, oldest first (the newest ends up next to
+    /// Now Playing, below); returns each row's cover image, for the caller to
+    /// load.
     pub fn show_recent_rows(&self, rows: &[RecentRow]) -> Vec<gtk::Image> {
         let imp = self.imp();
         imp.recent_list.remove_all();
@@ -243,8 +279,8 @@ impl QueuePageWidget {
                 cover
             })
             .collect();
-        imp.recent_scroller.vadjustment().set_value(0.0);
         imp.recent_stack.set_visible_child_name("list");
+        self.scroll_recent_to_end();
         covers
     }
 }
