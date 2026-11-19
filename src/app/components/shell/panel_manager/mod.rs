@@ -301,6 +301,9 @@ impl EventListener for PanelManager {
             PlaybackEvent::PlaybackPaused
             | PlaybackEvent::PlaybackResumed
             | PlaybackEvent::PlaybackStopped
+            | PlaybackEvent::PlayStateSynced(_)
+            | PlaybackEvent::TrackSynced
+            | PlaybackEvent::SwitchedDevice(_)
             | PlaybackEvent::TrackChanged(_),
         ) = event
         {

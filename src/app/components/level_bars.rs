@@ -349,11 +349,19 @@ impl LevelBarsListener {
 impl EventListener for LevelBarsListener {
     fn on_event(&mut self, event: &AppEvent) {
         match event {
-            AppEvent::PlaybackEvent(PlaybackEvent::TrackChanged(_)) => self.sync(true),
+            // New song or new device: the stream may be a new one
+            AppEvent::PlaybackEvent(
+                PlaybackEvent::TrackChanged(_)
+                | PlaybackEvent::TrackSynced
+                | PlaybackEvent::SwitchedDevice(_),
+            ) => self.sync(true),
+            // "Synced" = the state came from the player (another device,
+            // a device switch, Canto opening on a song already playing)
             AppEvent::PlaybackEvent(
                 PlaybackEvent::PlaybackPaused
                 | PlaybackEvent::PlaybackResumed
-                | PlaybackEvent::PlaybackStopped,
+                | PlaybackEvent::PlaybackStopped
+                | PlaybackEvent::PlayStateSynced(_),
             ) => self.sync(false),
             _ => {}
         }
@@ -448,15 +456,13 @@ fn pick_stream(inputs: &serde_json::Value, own_pid: u32) -> Option<u32> {
                 .iter()
                 .any(|p| binary.contains(p) || name.contains(p))
     };
-    let mut candidates: Vec<&serde_json::Value> = inputs
+    // Only a stream that is playing: a corked (paused) one is silence, and
+    // while the music is on another device the bars should keep moving
+    inputs
         .as_array()?
         .iter()
-        .filter(|input| ours(input))
-        .collect();
-    // A playing stream before a corked (paused) one
-    candidates.sort_by_key(|input| input["corked"].as_bool().unwrap_or(false));
-    candidates
-        .first()
+        .filter(|input| ours(input) && !input["corked"].as_bool().unwrap_or(false))
+        .next()
         .and_then(|input| input["index"].as_u64())
         .map(|i| i as u32)
 }
@@ -682,6 +688,12 @@ mod tests {
                             "application.process.id": "42"}},
         ]);
         assert_eq!(pick_stream(&inputs, 42), Some(9));
+        let only_paused = serde_json::json!([
+            {"index": 7, "corked": true,
+             "properties": {"application.name": "Spotify", "application.process.binary": "soloist",
+                            "application.process.id": "77"}},
+        ]);
+        assert_eq!(pick_stream(&only_paused, 42), None);
         let soloist = serde_json::json!([
             {"index": 5, "corked": false,
              "properties": {"application.name": "spotify-soloist", "application.process.binary": "soloist",
