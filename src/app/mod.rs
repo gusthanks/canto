@@ -55,6 +55,8 @@ pub struct App {
     player_command_sender: UnboundedSender<Command>,
     theme_engine: Rc<theme::ThemeEngine>,
     sleep_timer: Rc<SleepTimerController>,
+    // Likes and unlikes, mirrored as loves on Last.fm
+    lastfm_love: LastFmLove,
     _live_settings: gio::Settings,
 }
 
@@ -137,6 +139,7 @@ impl App {
             App::make_inhibitor(&builder, Rc::clone(&model)),
         ];
 
+        let lastfm_love = LastFmLove::new(Rc::clone(&model));
         Self {
             settings,
             builder,
@@ -147,6 +150,7 @@ impl App {
             player_command_sender,
             theme_engine,
             sleep_timer,
+            lastfm_love,
             _live_settings: live_settings,
         }
     }
@@ -444,6 +448,8 @@ impl App {
     // Main handler called in a loop
     fn handle(&mut self, action: AppAction) {
         let starting = matches!(&action, &AppAction::Start);
+        // Before the state takes it: an unlike only names the song's id
+        self.lastfm_love.before(&action);
 
         // Update the state based on an incoming action
         // and obtain events representing what that mutation entailed...

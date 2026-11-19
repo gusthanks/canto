@@ -159,6 +159,8 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
         dump_now_panel_sample();
         dump_info_tab_samples(about, stats);
     }
+    assert_lastfm_love_switch();
+    assert_recently_played();
     for icon in ["canto-heart-symbolic", "canto-heart-filled-symbolic"] {
         assert!(icon_theme.has_icon(icon), "{} must resolve", icon);
     }
@@ -322,6 +324,127 @@ fn assert_lyrics_options() {
     window.destroy();
 }
 
+/// The "Love on Last.fm" switch shows in Integrations only once Last.fm is
+/// connected, and starts on.
+fn assert_lastfm_love_switch() {
+    use canto_config::settings::{LASTFM_SESSION_KEY, LASTFM_USERNAME, SETTINGS};
+    libadwaita::StyleManager::default().set_color_scheme(libadwaita::ColorScheme::ForceDark);
+    let gsettings = gio::Settings::new(SETTINGS);
+    let love_row = |dialog: &SettingsDialog| dialog.lastfm_love_row();
+    let _ = gsettings.set_string(LASTFM_SESSION_KEY, "");
+    let dialog = SettingsDialog::new();
+    assert!(
+        !love_row(&dialog).is_visible(),
+        "hidden until Last.fm is connected"
+    );
+    drop(dialog);
+
+    let _ = gsettings.set_string(LASTFM_SESSION_KEY, "sample-session");
+    let _ = gsettings.set_string(LASTFM_USERNAME, "gusthanks");
+    let dialog = SettingsDialog::new();
+    let row = love_row(&dialog);
+    assert!(row.is_visible(), "shown once Last.fm is connected");
+    assert!(row.is_active(), "on by default");
+    if std::env::var_os("CANTO_TEST_DUMP_DIR").is_some() {
+        libadwaita::prelude::PreferencesDialogExt::set_visible_page_name(&dialog, "integrations");
+        // A dialog shows only over an Adwaita window
+        let window = libadwaita::Window::new();
+        window.set_default_size(720, 1000);
+        window.present();
+        libadwaita::prelude::AdwDialogExt::present(&dialog, Some(&window));
+        pump(1500);
+        // Down to the Last.fm rows
+        let mut scrolled = row.parent();
+        while let Some(w) = scrolled.clone() {
+            if let Some(s) = w.downcast_ref::<gtk::ScrolledWindow>() {
+                if let Some(point) = row.compute_point(s, &gtk::graphene::Point::new(0.0, 0.0)) {
+                    let adj = s.vadjustment();
+                    adj.set_value(adj.value() + point.y() as f64 - 420.0);
+                }
+                break;
+            }
+            scrolled = w.parent();
+        }
+        pump(800);
+        distinct_colors(window.upcast_ref(), "settings-lastfm-love-sample");
+        libadwaita::prelude::AdwDialogExt::force_close(&dialog);
+        window.destroy();
+    }
+    let _ = gsettings.set_string(LASTFM_SESSION_KEY, "");
+    let _ = gsettings.set_string(LASTFM_USERNAME, "");
+}
+
+/// Recently Played sits folded above the queue; unfolded, it lists songs
+/// with their covers.
+fn assert_recently_played() {
+    use super::{QueuePageWidget, RecentRow};
+    libadwaita::StyleManager::default().set_color_scheme(libadwaita::ColorScheme::ForceDark);
+    let page = QueuePageWidget::default();
+    assert!(!page.is_recent_expanded(), "folded at first");
+    let queue = gtk::Label::new(Some("(the queue)"));
+    queue.set_vexpand(true);
+    page.set_queue_list(&queue);
+    page.set_queue_empty(false);
+    page.set_recent_expanded(true);
+    let rows: Vec<RecentRow> = [
+        ("TODOS ESSES MANOS", "Niink, Jotapê · Just now"),
+        ("Tô Aqui", "Niink · 4 min ago"),
+        ("Conexões de Máfia", "Matuê, Rich the Kid · 12 min ago"),
+        ("Quer Voar", "Matuê · 1 h ago"),
+        ("Kenny G", "Matuê · 3 h ago"),
+        ("Vampiro", "Matuê, Teto, WIU · 1 day ago"),
+        ("M4", "Teto, Matuê · 2 days ago"),
+        ("Groupies", "Teto · 3 days ago"),
+    ]
+    .iter()
+    .map(|(title, subtitle)| RecentRow {
+        title: title.to_string(),
+        subtitle: subtitle.to_string(),
+    })
+    .collect();
+    let covers = page.show_recent_rows(&rows);
+    assert_eq!(covers.len(), rows.len());
+    page.show_recent_message("Songs you play will show up here.");
+    page.show_recent_rows(&rows[..1]);
+    let covers = page.show_recent_rows(&rows);
+    assert_eq!(covers.len(), rows.len(), "a new list replaces the old one");
+    if std::env::var_os("CANTO_TEST_DUMP_DIR").is_some() {
+        for (i, cover) in covers.iter().enumerate() {
+            let (w, h) = (64usize, 64usize);
+            let mut data = Vec::with_capacity(w * h * 4);
+            for y in 0..h {
+                for x in 0..w {
+                    let shade = (i * 28) as u8;
+                    data.extend_from_slice(&[
+                        200u8.saturating_sub(shade) / 2 + x as u8,
+                        40 + shade / 2,
+                        60 + (y as u8),
+                        255,
+                    ]);
+                }
+            }
+            let texture = gtk::gdk::MemoryTexture::new(
+                w as i32,
+                h as i32,
+                gtk::gdk::MemoryFormat::R8g8b8a8,
+                &glib::Bytes::from_owned(data),
+                w * 4,
+            );
+            cover.set_paintable(Some(&texture));
+        }
+        let window = gtk::Window::new();
+        window.set_default_size(380, 720);
+        window.set_child(Some(&page));
+        window.present();
+        pump(1500);
+        distinct_colors(window.upcast_ref(), "queue-recently-played-sample");
+        page.set_recent_expanded(false);
+        pump(800);
+        distinct_colors(window.upcast_ref(), "queue-recently-played-folded-sample");
+        window.destroy();
+    }
+}
+
 /// Number of distinct opaque-ish colors `widget` renders (rough content check).
 fn distinct_colors(widget: &gtk::Widget, tag: &str) -> usize {
     let (w, h) = (widget.width(), widget.height());
@@ -453,6 +576,30 @@ fn dump_now_panel_sample() {
     main.present();
     pump(1500);
     distinct_colors(main.upcast_ref(), "main-window-sample");
+    // With the side panel open: its tabs under the top bar, beside the page.
+    // A window of its own, opened before it shows: a slide-in started on
+    // screen may never finish on the headless display
+    {
+        let builder = gtk::Builder::from_resource("/io/github/gusthanks/Canto/window.ui");
+        let window: libadwaita::ApplicationWindow = builder.object("window").unwrap();
+        let header: super::AppHeaderBar = builder.object("app_header").unwrap();
+        header.set_history_slot(&builder.object("top_history").unwrap());
+        header.place_history_buttons(true);
+        // Fixed widths, so before/after renders line up (the headless
+        // screen is 1024px wide whatever the window asks)
+        let navigation: libadwaita::OverlaySplitView = builder.object("navigation_split").unwrap();
+        navigation.set_min_sidebar_width(200.0);
+        navigation.set_max_sidebar_width(200.0);
+        let utility: libadwaita::OverlaySplitView = builder.object("utility_split").unwrap();
+        utility.set_min_sidebar_width(300.0);
+        utility.set_max_sidebar_width(300.0);
+        utility.set_show_sidebar(true);
+        window.set_default_size(1024, 640);
+        window.present();
+        pump(1500);
+        distinct_colors(window.upcast_ref(), "main-window-panel-sample");
+        window.destroy();
+    }
     // Narrow, laid out by the real window layout: the sidebar squeezed to
     // its rail of covers, the search pill a round button
     let _layout = super::WindowLayout::new(&builder);

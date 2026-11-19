@@ -171,6 +171,8 @@ pub const LASTFM_SESSION_KEY: &str = "lastfm-session-key";
 /// API key changed); cleared when it accepts a scrobble or on reconnecting.
 pub const LASTFM_SESSION_REJECTED: &str = "lastfm-session-rejected";
 pub const LASTFM_USERNAME: &str = "lastfm-username";
+/// Liking a song in Canto loves it on Last.fm (and unliking unloves it).
+pub const LASTFM_LOVE_ON_LIKE: &str = "lastfm-love-on-like";
 pub const LISTENBRAINZ_TOKEN: &str = "listenbrainz-token";
 pub const SMART_QUEUE_CONTINUATION: &str = "smart-queue-continuation";
 pub const VISUAL_BRIDGE_ENABLED: &str = "visual-bridge-enabled";

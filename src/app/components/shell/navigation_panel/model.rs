@@ -6,7 +6,7 @@ use tokio::sync::oneshot;
 use super::{NavigationPanelDestination, NavigationPanelItem};
 use crate::app::components::{
     dispatch_api_call, dispatch_api_call_many, dispatch_api_read, dispatch_api_read_many,
-    queue_source_tracks, upload_playlist_cover, PlaylistForm, Saved,
+    play_in_album_actions, queue_source_tracks, upload_playlist_cover, PlaylistForm, Saved,
 };
 use crate::app::models::{CardModel, PlaylistSummary};
 use crate::app::playlist_actions::unfollow_and_unpin_playlist;
@@ -705,30 +705,7 @@ impl NavigationPanelModel {
         let api = self.app_model.api();
         dispatch_api_read_many(&self.dispatcher, move |tag| async move {
             let track = api.get_track(&id, tag).await?;
-            let album_id = track.album.as_ref().map(|a| a.rri.id.clone());
-            let mut actions: Vec<AppAction> = vec![PlaybackAction::SetShuffled(false).into()];
-            match album_id {
-                Some(album_id) => {
-                    let batch = api
-                        .get_album_tracks(&album_id, 0, CONTEXT_PAGE_SIZE, tag)
-                        .await?;
-                    let source = SongsSource::Album(album_id);
-                    let name = track.album.as_ref().map(|album| album.name.clone());
-                    let load = if batch.items.iter().any(|t| t.rri.id == id) {
-                        PlaybackAction::LoadPagedSongs(source.clone(), batch)
-                    } else {
-                        PlaybackAction::LoadContextSongs(source.clone(), vec![track])
-                    };
-                    actions.push(PlaybackAction::ReplaceQueue.into());
-                    actions.extend(load_context(source, name, load));
-                }
-                None => {
-                    #[allow(deprecated)]
-                    actions.push(PlaybackAction::LoadSongs(vec![track]).into());
-                }
-            }
-            actions.push(PlaybackAction::Load(id).into());
-            Ok(actions)
+            play_in_album_actions(&api, track, tag).await
         });
     }
 

@@ -841,6 +841,14 @@ impl MusicProvider for SpotifyDomain {
         Ok(keys)
     }
 
+    async fn get_recently_played(&self, limit: usize) -> Result<Vec<PlayedTrack>, DomainError> {
+        let config = self.config_or_err()?;
+        let limit = limit.clamp(1, 50) as i32;
+        let history =
+            apis::player_api::get_recently_played(&config, Some(limit), None, None).await?;
+        Ok(played_tracks_from_history(&history))
+    }
+
     async fn get_last_played(&self) -> Result<Option<LastPlayed>, DomainError> {
         let config = self.config_or_err()?;
         // What the account's player still holds (paused): the exact spot.

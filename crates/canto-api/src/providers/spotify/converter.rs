@@ -185,6 +185,24 @@ pub(super) fn track_from_object(t: &sp::TrackObject) -> Option<Track> {
     })
 }
 
+/// The listening history's songs, newest first, as Spotify lists them.
+/// Items without a song (or a song without an id) are left out.
+pub(super) fn played_tracks_from_history(
+    history: &sp::CursorPagingPlayHistoryObject,
+) -> Vec<PlayedTrack> {
+    history
+        .items
+        .iter()
+        .flatten()
+        .filter_map(|item| {
+            Some(PlayedTrack {
+                track: track_from_object(item.track.as_deref()?)?,
+                played_at: item.played_at.clone(),
+            })
+        })
+        .collect()
+}
+
 pub(super) fn track_from_playlist_item(item: &sp::PlaylistTrackObject) -> Track {
     match item.track.as_deref() {
         Some(sp::PlaylistTrackObjectTrack::Track(t)) => {
@@ -643,6 +661,38 @@ mod tests {
         assert_eq!(track.title, "Checkpoint");
         assert!(track.rri.id.is_empty());
         assert!(!track.playable);
+    }
+
+    #[test]
+    fn listening_history_keeps_order_and_play_times() {
+        let json = r#"{"items":[
+            {"played_at":"2026-11-18T22:10:00.000Z","track":{"id":"t1","name":"TODOS ESSES MANOS",
+             "artists":[{"id":"a1","name":"Niink"}],
+             "album":{"album_type":"album","external_urls":{},"href":null,"id":"al1",
+              "images":[],"name":"ESSÊNCIA DE RISCO","release_date":null,
+              "release_date_precision":null,"type":"album","uri":null,"artists":[]},
+             "duration_ms":180000}},
+            {"played_at":"2026-11-18T22:00:00.000Z","track":{"id":null,"name":"Local"}},
+            {"played_at":"2026-11-18T21:55:00.000Z"},
+            {"played_at":"2026-11-18T21:50:00.000Z","track":{"id":"t2","name":"Tô Aqui",
+             "artists":[{"id":"a1","name":"Niink"}]}}
+        ]}"#;
+        let history: sp::CursorPagingPlayHistoryObject = serde_json::from_str(json).unwrap();
+        let played = played_tracks_from_history(&history);
+        let ids: Vec<&str> = played.iter().map(|p| p.track.rri.id.as_str()).collect();
+        assert_eq!(ids, ["t1", "t2"]);
+        assert_eq!(played[0].track.title, "TODOS ESSES MANOS");
+        assert_eq!(
+            played[0].played_at.as_deref(),
+            Some("2026-11-18T22:10:00.000Z")
+        );
+        assert_eq!(
+            played[0].track.album.as_ref().map(|a| a.rri.id.as_str()),
+            Some("al1")
+        );
+        assert!(played[1].track.album.is_none());
+        let empty: sp::CursorPagingPlayHistoryObject = serde_json::from_str("{}").unwrap();
+        assert!(played_tracks_from_history(&empty).is_empty());
     }
 
     #[test]

@@ -455,6 +455,11 @@
       <summary>Last.fm session key</summary>
       <description>Session key obtained after authorizing Canto with Last.fm.</description>
     </key>
+    <key name="lastfm-love-on-like" type="b">
+      <default>true</default>
+      <summary>Love on Last.fm when you like a song</summary>
+      <description>When Last.fm is connected, liking a song in Canto loves it on Last.fm, and removing it from your liked songs unloves it.</description>
+    </key>
     <key name="lastfm-session-rejected" type="b">
       <default>false</default>
       <summary>Last.fm refused the saved connection</summary>

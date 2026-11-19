@@ -185,6 +185,22 @@ impl ApiService {
         self.provider.get_last_played().await
     }
 
+    /// The songs the account played lately, newest first, marked liked or
+    /// not. Not cached: the history changes with every song.
+    pub async fn get_recently_played(
+        &self,
+        limit: usize,
+        load: Load,
+    ) -> Result<Vec<PlayedTrack>, DomainError> {
+        let mut played = {
+            let _slot = self.admit_read(load).await?;
+            self.provider.get_recently_played(limit).await?
+        };
+        self.annotate_saved(played.iter_mut().map(|p| &mut p.track).collect(), load)
+            .await;
+        Ok(played)
+    }
+
     /// Genius' explanations for lines of the track, matched to `lines`.
     pub async fn fetch_genius_line_annotations(
         &self,

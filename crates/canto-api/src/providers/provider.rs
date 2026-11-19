@@ -218,6 +218,11 @@ pub trait MusicProvider: Send + Sync + 'static {
     async fn get_last_played(&self) -> Result<Option<LastPlayed>, DomainError> {
         Ok(None)
     }
+    /// The songs the account played lately, newest first (at most `limit`).
+    async fn get_recently_played(&self, limit: usize) -> Result<Vec<PlayedTrack>, DomainError> {
+        let _ = limit;
+        Ok(vec![])
+    }
 
     /// Moves playback to `device_id`; `play` keeps it playing there.
     async fn player_transfer(&self, device_id: &str, play: bool) -> Result<(), DomainError> {

@@ -761,6 +761,62 @@ impl LastFmClient {
 
         post_signed(client, &owned, api_secret).await.map(|_| ())
     }
+
+    /// Submit `track.love` (`love`) or `track.unlove`: the heart on the
+    /// user's Last.fm profile. Nothing is sent without an artist and title.
+    pub async fn set_loved(
+        client: &reqwest::Client,
+        api_key: &str,
+        api_secret: &str,
+        session_key: &str,
+        artist: &str,
+        title: &str,
+        love: bool,
+    ) -> Result<(), DomainError> {
+        let api_key = api_key.trim();
+        let api_secret = api_secret.trim();
+        let session_key = session_key.trim();
+        if api_key.is_empty() || api_secret.is_empty() || session_key.is_empty() {
+            return Err(DomainError::NoToken);
+        }
+        let (artist, title) = (artist.trim(), title.trim());
+        if artist.is_empty() || title.is_empty() {
+            return Ok(());
+        }
+        let params = love_params(api_key, session_key, artist, title, love);
+        post_signed(client, &params, api_secret).await.map(|_| ())
+    }
+}
+
+/// The unsigned parameters of `track.love` / `track.unlove`.
+fn love_params<'a>(
+    api_key: &'a str,
+    session_key: &'a str,
+    artist: &'a str,
+    title: &'a str,
+    love: bool,
+) -> Vec<(&'a str, &'a str)> {
+    let method = if love { "track.love" } else { "track.unlove" };
+    vec![
+        ("api_key", api_key),
+        ("artist", artist),
+        ("method", method),
+        ("sk", session_key),
+        ("track", title),
+    ]
+}
+
+/// The form body of a signed write call: the parameters, their `api_sig`
+/// and `format=json` (the secret itself is never sent).
+fn signed_body(params: &[(&str, &str)], api_secret: &str) -> String {
+    let sig = sign_lastfm_params(params, api_secret);
+    let mut serializer = url::form_urlencoded::Serializer::new(String::new());
+    for &(k, v) in params {
+        serializer.append_pair(k, v);
+    }
+    serializer.append_pair("api_sig", &sig);
+    serializer.append_pair("format", "json");
+    serializer.finish()
 }
 
 async fn post_signed(
@@ -768,16 +824,7 @@ async fn post_signed(
     params: &[(&str, &str)],
     api_secret: &str,
 ) -> Result<Value, DomainError> {
-    let sig = sign_lastfm_params(params, api_secret);
-    let body = {
-        let mut serializer = url::form_urlencoded::Serializer::new(String::new());
-        for &(k, v) in params {
-            serializer.append_pair(k, v);
-        }
-        serializer.append_pair("api_sig", &sig);
-        serializer.append_pair("format", "json");
-        serializer.finish()
-    };
+    let body = signed_body(params, api_secret);
 
     let response = client
         .post(LASTFM_API_ROOT)
@@ -859,6 +906,55 @@ fn lastfm_error(code: u64, message: String, http_status: u16) -> DomainError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn love_and_unlove_are_signed_write_calls() {
+        let love = love_params("KEY", "SESSION", "Niink", "Tô Aqui", true);
+        assert_eq!(
+            sign_lastfm_params(&love, "SECRET"),
+            "683927e62cd7546a1946e8c1c5edbad6"
+        );
+        let unlove = love_params("KEY", "SESSION", "Niink", "Tô Aqui", false);
+        assert!(unlove.contains(&("method", "track.unlove")));
+        assert_eq!(
+            sign_lastfm_params(&unlove, "SECRET"),
+            "d09a94d356df758d734d4b1e6421fd5a"
+        );
+
+        let body = signed_body(&love, "SECRET");
+        let pairs: Vec<(String, String)> = url::form_urlencoded::parse(body.as_bytes())
+            .into_owned()
+            .collect();
+        let get = |k: &str| {
+            pairs
+                .iter()
+                .find(|(key, _)| key == k)
+                .map(|(_, v)| v.as_str())
+        };
+        assert_eq!(get("method"), Some("track.love"));
+        assert_eq!(get("artist"), Some("Niink"));
+        assert_eq!(get("track"), Some("Tô Aqui"));
+        assert_eq!(get("sk"), Some("SESSION"));
+        assert_eq!(get("api_key"), Some("KEY"));
+        assert_eq!(get("api_sig"), Some("683927e62cd7546a1946e8c1c5edbad6"));
+        assert_eq!(get("format"), Some("json"));
+        assert!(!body.contains("SECRET"), "the secret never leaves Canto");
+    }
+
+    #[tokio::test]
+    async fn love_without_a_session_sends_nothing() {
+        let client = reqwest::Client::new();
+        let err = LastFmClient::set_loved(&client, "KEY", "SECRET", " ", "Niink", "Song", true)
+            .await
+            .unwrap_err();
+        assert!(matches!(err, DomainError::NoToken));
+        // No artist: nothing to love, and no request either
+        assert!(
+            LastFmClient::set_loved(&client, "KEY", "SECRET", "SESSION", "", "Song", true)
+                .await
+                .is_ok()
+        );
+    }
 
     #[test]
     fn a_refused_connection_is_told_apart_from_a_bad_scrobble() {

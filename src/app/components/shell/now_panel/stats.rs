@@ -14,11 +14,10 @@ use super::info_page::{
 use super::{card, format_count, heading, number_columns, playcount_columns, HEART_FILLED_ICON};
 use crate::app::components::EventListener;
 use crate::app::models::TrackExt;
-use crate::app::components::dispatch_api_read_many;
+use crate::app::components::{dispatch_api_read_many, play_in_album_actions};
 use crate::app::models::SearchType;
-use crate::app::state::{load_context, BrowserAction, PlaybackAction, PlaybackEvent, Route};
-use crate::app::{AppAction, AppEvent, AppModel, Dispatcher, SongsSource};
-use canto_core::play_queue::CONTEXT_PAGE_SIZE;
+use crate::app::state::{BrowserAction, PlaybackEvent, Route};
+use crate::app::{AppEvent, AppModel, Dispatcher};
 use canto_api::scrobbler::{LastFmClient, TrackInsights};
 use canto_config::settings::{LASTFM_API_KEY, LASTFM_USERNAME, SETTINGS};
 
@@ -232,29 +231,7 @@ fn open_pick(app_model: &AppModel, dispatcher: &Dispatcher, pick: Pick) {
                         BrowserAction::Search(fallback).into(),
                     ]);
                 };
-                let id = track.rri.id.clone();
-                let mut actions: Vec<AppAction> = vec![PlaybackAction::SetShuffled(false).into()];
-                match track.album.as_ref().map(|a| (a.rri.id.clone(), a.name.clone())) {
-                    Some((album_id, album_name)) => {
-                        let batch = api
-                            .get_album_tracks(&album_id, 0, CONTEXT_PAGE_SIZE, tag)
-                            .await?;
-                        let source = SongsSource::Album(album_id);
-                        let load = if batch.items.iter().any(|t| t.rri.id == id) {
-                            PlaybackAction::LoadPagedSongs(source.clone(), batch)
-                        } else {
-                            PlaybackAction::LoadContextSongs(source.clone(), vec![track])
-                        };
-                        actions.push(PlaybackAction::ReplaceQueue.into());
-                        actions.extend(load_context(source, Some(album_name), load));
-                    }
-                    None => {
-                        #[allow(deprecated)]
-                        actions.push(PlaybackAction::LoadSongs(vec![track]).into());
-                    }
-                }
-                actions.push(PlaybackAction::Load(id).into());
-                Ok(actions)
+                play_in_album_actions(&api, track, tag).await
             });
         }
         Pick::Artist(name) => {

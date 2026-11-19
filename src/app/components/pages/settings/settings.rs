@@ -19,10 +19,10 @@ use super::PitchWidget;
 use super::SettingsModel;
 
 use canto_config::settings::{
-    GENIUS_ACCESS_TOKEN, LASTFM_API_KEY, LASTFM_API_SECRET, LASTFM_SESSION_KEY,
-    LASTFM_SESSION_REJECTED, LASTFM_USERNAME, LISTENBRAINZ_TOKEN, RESTART_REQUIRED_KEYS,
-    SCROBBLE_ENABLED, SCROBBLE_RESPECT_REMOTE, SETTINGS, SMART_QUEUE_CONTINUATION,
-    VISUAL_BRIDGE_ENABLED,
+    GENIUS_ACCESS_TOKEN, LASTFM_API_KEY, LASTFM_API_SECRET, LASTFM_LOVE_ON_LIKE,
+    LASTFM_SESSION_KEY, LASTFM_SESSION_REJECTED, LASTFM_USERNAME, LISTENBRAINZ_TOKEN,
+    RESTART_REQUIRED_KEYS, SCROBBLE_ENABLED, SCROBBLE_RESPECT_REMOTE, SETTINGS,
+    SMART_QUEUE_CONTINUATION, VISUAL_BRIDGE_ENABLED,
 };
 
 mod imp {
@@ -195,6 +195,9 @@ mod imp {
         pub lastfm_disconnect_btn: TemplateChild<gtk::Button>,
 
         #[template_child]
+        pub lastfm_love_switch: TemplateChild<libadwaita::SwitchRow>,
+
+        #[template_child]
         pub listenbrainz_token_entry: TemplateChild<libadwaita::PasswordEntryRow>,
 
         #[template_child]
@@ -236,6 +239,11 @@ impl Default for SettingsDialog {
 }
 
 impl SettingsDialog {
+    #[cfg(test)]
+    pub fn lastfm_love_row(&self) -> libadwaita::SwitchRow {
+        self.imp().lastfm_love_switch.get()
+    }
+
     pub fn new() -> Self {
         let dialog: Self = glib::Object::new();
 
@@ -900,6 +908,9 @@ impl SettingsDialog {
             .bind(LASTFM_API_KEY, &*widget.lastfm_api_key_entry, "text")
             .build();
         settings
+            .bind(LASTFM_LOVE_ON_LIKE, &*widget.lastfm_love_switch, "active")
+            .build();
+        settings
             .bind(LASTFM_API_SECRET, &*widget.lastfm_api_secret_entry, "text")
             .build();
         settings
@@ -1157,6 +1168,8 @@ impl SettingsDialog {
         let has_creds = !api_key.trim().is_empty() && !api_secret.trim().is_empty();
         let has_session = !session_key.trim().is_empty();
         let has_pending = imp.lastfm_pending_token.borrow().is_some();
+        // Loving needs the account connected
+        imp.lastfm_love_switch.set_visible(has_session);
 
         if has_session && settings.boolean(LASTFM_SESSION_REJECTED) {
             // Last.fm refused the saved connection: lead through connecting again

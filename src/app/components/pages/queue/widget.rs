@@ -22,6 +22,22 @@ mod imp {
         #[template_child]
         pub select_all: TemplateChild<gtk::Button>,
         #[template_child]
+        pub recent_section: TemplateChild<gtk::Box>,
+        #[template_child]
+        pub recent_toggle: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub recent_chevron: TemplateChild<gtk::Image>,
+        #[template_child]
+        pub recent_revealer: TemplateChild<gtk::Revealer>,
+        #[template_child]
+        pub recent_stack: TemplateChild<gtk::Stack>,
+        #[template_child]
+        pub recent_scroller: TemplateChild<gtk::ScrolledWindow>,
+        #[template_child]
+        pub recent_list: TemplateChild<gtk::ListBox>,
+        #[template_child]
+        pub recent_status: TemplateChild<gtk::Label>,
+        #[template_child]
         pub queue_stack: TemplateChild<gtk::Stack>,
         #[template_child]
         pub queue_scroller: TemplateChild<gtk::ScrolledWindow>,
@@ -46,7 +62,23 @@ mod imp {
         }
     }
 
-    impl ObjectImpl for QueuePageWidget {}
+    impl ObjectImpl for QueuePageWidget {
+        fn constructed(&self) {
+            self.parent_constructed();
+            let revealer = self.recent_revealer.get();
+            self.recent_toggle.connect_clicked(move |_| {
+                revealer.set_reveal_child(!revealer.reveals_child());
+            });
+            let obj = self.obj().downgrade();
+            self.recent_revealer
+                .connect_reveal_child_notify(move |revealer| {
+                    if let Some(obj) = obj.upgrade() {
+                        obj.show_recent_expanded(revealer.reveals_child());
+                    }
+                });
+            self.obj().show_recent_expanded(false);
+        }
+    }
     impl WidgetImpl for QueuePageWidget {}
     impl BinImpl for QueuePageWidget {}
 }
@@ -58,6 +90,16 @@ glib::wrapper! {
 }
 
 const LIST_MARGIN: i32 = 12;
+/// The size of a cover in the Recently Played list.
+pub const RECENT_COVER_PX: i32 = 36;
+
+/// One song of the Recently Played list, as shown.
+#[derive(Clone, Debug, Default)]
+pub struct RecentRow {
+    pub title: String,
+    /// Artists, and when it played.
+    pub subtitle: String,
+}
 
 impl Default for QueuePageWidget {
     fn default() -> Self {
@@ -100,6 +142,8 @@ impl QueuePageWidget {
         let imp = self.imp();
         imp.selection_bar
             .set_visible(selected.is_some() && !imp.selection_bar_hidden.get());
+        // Selecting picks songs of the queue: Recently Played steps aside
+        imp.recent_section.set_visible(selected.is_none());
         let Some(count) = selected else {
             return;
         };
@@ -136,4 +180,105 @@ impl QueuePageWidget {
         list.set_margin_start(margin_x);
         list.set_margin_end(margin_x);
     }
+
+    /// Whether Recently Played is unfolded.
+    pub fn is_recent_expanded(&self) -> bool {
+        self.imp().recent_revealer.reveals_child()
+    }
+
+    #[cfg(test)]
+    pub fn set_recent_expanded(&self, expanded: bool) {
+        self.imp().recent_revealer.set_reveal_child(expanded);
+    }
+
+    /// Calls `f` with the new state when Recently Played folds or unfolds.
+    pub fn connect_recent_toggled<F: Fn(bool) + 'static>(&self, f: F) {
+        self.imp()
+            .recent_revealer
+            .connect_reveal_child_notify(move |revealer| f(revealer.reveals_child()));
+    }
+
+    /// Calls `f` with the position of the Recently Played song clicked.
+    pub fn connect_recent_activated<F: Fn(usize) + 'static>(&self, f: F) {
+        self.imp().recent_list.connect_row_activated(move |_, row| {
+            let index = row.index();
+            if index >= 0 {
+                f(index as usize);
+            }
+        });
+    }
+
+    fn show_recent_expanded(&self, expanded: bool) {
+        let imp = self.imp();
+        imp.recent_chevron.set_icon_name(Some(if expanded {
+            "pan-down-symbolic"
+        } else {
+            "pan-end-symbolic"
+        }));
+        imp.recent_toggle
+            .update_state(&[gtk::accessible::State::Expanded(Some(expanded))]);
+    }
+
+    pub fn show_recent_loading(&self) {
+        self.imp().recent_stack.set_visible_child_name("loading");
+    }
+
+    /// A short line in place of the list (nothing played, or an error).
+    pub fn show_recent_message(&self, text: &str) {
+        let imp = self.imp();
+        imp.recent_status.set_label(text);
+        imp.recent_stack.set_visible_child_name("status");
+    }
+
+    /// Fills the list with `rows`, newest first; returns each row's cover
+    /// image, for the caller to load.
+    pub fn show_recent_rows(&self, rows: &[RecentRow]) -> Vec<gtk::Image> {
+        let imp = self.imp();
+        imp.recent_list.remove_all();
+        let covers = rows
+            .iter()
+            .map(|row| {
+                let (widget, cover) = recent_row(row);
+                imp.recent_list.append(&widget);
+                cover
+            })
+            .collect();
+        imp.recent_scroller.vadjustment().set_value(0.0);
+        imp.recent_stack.set_visible_child_name("list");
+        covers
+    }
+}
+
+fn recent_row(row: &RecentRow) -> (gtk::ListBoxRow, gtk::Image) {
+    let cover = gtk::Image::new();
+    cover.set_pixel_size(RECENT_COVER_PX);
+    cover.set_size_request(RECENT_COVER_PX, RECENT_COVER_PX);
+    cover.set_overflow(gtk::Overflow::Hidden);
+    cover.add_css_class("queue-page__recent-cover");
+
+    let title = gtk::Label::new(Some(&row.title));
+    title.set_xalign(0.0);
+    title.set_ellipsize(gtk::pango::EllipsizeMode::End);
+
+    let subtitle = gtk::Label::new(Some(&row.subtitle));
+    subtitle.set_xalign(0.0);
+    subtitle.set_ellipsize(gtk::pango::EllipsizeMode::End);
+    subtitle.add_css_class("caption");
+    subtitle.add_css_class("dim-label");
+
+    let texts = gtk::Box::new(gtk::Orientation::Vertical, 2);
+    texts.set_valign(gtk::Align::Center);
+    texts.set_hexpand(true);
+    texts.append(&title);
+    texts.append(&subtitle);
+
+    let line = gtk::Box::new(gtk::Orientation::Horizontal, 10);
+    line.append(&cover);
+    line.append(&texts);
+
+    let widget = gtk::ListBoxRow::new();
+    widget.set_child(Some(&line));
+    widget.set_tooltip_text(Some(&format!("{} · {}", row.title, row.subtitle)));
+    widget.add_css_class("queue-page__recent-row");
+    (widget, cover)
 }

@@ -205,6 +205,30 @@ bottom-sheet.bottom-sheet--padded > sheet {
   padding-bottom: 11px;
 }
 
+/* Recently Played, folded above the queue */
+.queue-page__recent-toggle {
+  margin: 0 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+.queue-page__recent-list {
+  padding: 0 12px 6px 12px;
+}
+
+.queue-page__recent-list > row {
+  padding: 4px 6px;
+}
+
+.queue-page__recent-cover {
+  border-radius: 4px;
+  background-color: alpha(currentColor, 0.08);
+}
+
+.queue-page__recent-separator {
+  margin: 6px 12px 0 12px;
+}
+
 /* Lyrics page styling */
 .lyrics-page__content {
   background-color: transparent;

@@ -35,6 +35,105 @@ template $QueuePageWidget : Adw.Bin {
       }
     }
 
+    // The songs played lately, folded above the queue
+    Box recent_section {
+      orientation: vertical;
+
+      styles [
+        "queue-page__recent",
+      ]
+
+      Button recent_toggle {
+        focus-on-click: false;
+
+        styles [
+          "flat",
+          "queue-page__recent-toggle",
+        ]
+
+        child: Box {
+          spacing: 8;
+
+          Label {
+            /* Translators: Header above the queue in the side panel; clicking it shows or hides the songs played lately. */
+            label: _("Recently Played");
+            xalign: 0;
+            hexpand: true;
+            ellipsize: end;
+
+            styles [
+              "heading",
+            ]
+          }
+
+          Image recent_chevron {
+            icon-name: "pan-end-symbolic";
+          }
+        };
+      }
+
+      Revealer recent_revealer {
+        transition-type: slide_down;
+
+        child: Stack recent_stack {
+          vhomogeneous: false;
+          hhomogeneous: false;
+
+          StackPage {
+            name: "loading";
+
+            child: Adw.Spinner {
+              height-request: 32;
+              margin-top: 8;
+              margin-bottom: 8;
+            };
+          }
+
+          StackPage {
+            name: "list";
+
+            child: ScrolledWindow recent_scroller {
+              hscrollbar-policy: never;
+              propagate-natural-height: true;
+              max-content-height: 280;
+
+              child: ListBox recent_list {
+                selection-mode: none;
+
+                styles [
+                  "navigation-sidebar",
+                  "queue-page__recent-list",
+                ]
+              };
+            };
+          }
+
+          StackPage {
+            name: "status";
+
+            child: Label recent_status {
+              wrap: true;
+              justify: center;
+              margin-top: 8;
+              margin-bottom: 12;
+              margin-start: 12;
+              margin-end: 12;
+
+              styles [
+                "dim-label",
+              ]
+            };
+          }
+        };
+      }
+
+      Separator {
+        styles [
+          "queue-page__recent-separator",
+        ]
+      }
+    }
+
     Stack queue_stack {
       vexpand: true;
 

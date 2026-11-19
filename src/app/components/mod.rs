@@ -45,6 +45,12 @@ pub use clipboard_link::{copy_link_to_clipboard, is_app_copied_link};
 pub mod scrobbler;
 pub use scrobbler::ScrobblerController;
 
+pub mod lastfm_love;
+pub use lastfm_love::LastFmLove;
+
+mod play_in_album;
+pub use play_in_album::play_in_album_actions;
+
 pub mod sleep_timer;
 pub use sleep_timer::{
     SleepTimerController, SleepTimerListener, SleepTimerMode, SleepTimerSnapshot,

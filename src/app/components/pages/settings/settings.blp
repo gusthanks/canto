@@ -572,6 +572,14 @@ template $SettingsWindow : Adw.PreferencesDialog {
         }
       }
 
+      Adw.SwitchRow lastfm_love_switch {
+        /* Translators: Switch in Preferences > Integrations, shown once Last.fm is connected. "Love" is Last.fm's heart on a song. */
+        title: _("Love on Last.fm When You Like a Song");
+        /* Translators: Subtitle of the "Love on Last.fm When You Like a Song" switch. */
+        subtitle: _("Removing a song from your liked songs unloves it too");
+        visible: false;
+      }
+
       Adw.PasswordEntryRow listenbrainz_token_entry {
         title: _("ListenBrainz User Token");
       }

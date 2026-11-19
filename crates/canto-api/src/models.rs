@@ -342,6 +342,14 @@ pub struct LastPlayed {
     pub played_at: Option<String>,
 }
 
+/// A song from the account's listening history.
+#[derive(Clone, Debug, PartialEq)]
+pub struct PlayedTrack {
+    pub track: Track,
+    /// When it played (RFC 3339), as Spotify reports it.
+    pub played_at: Option<String>,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Queue {
     pub currently_playing: Option<Track>,
