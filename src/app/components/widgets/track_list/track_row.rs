@@ -13,6 +13,7 @@ use gtk::subclass::prelude::*;
 use gtk::CompositeTemplate;
 use libadwaita::prelude::*;
 
+use crate::app::components::level_bars::{self, LevelBars};
 use crate::app::components::utils::{add_hover_class, decode_px, set_css_class, set_missing_art};
 use crate::app::components::{
     display_add_css_provider, labels, SubtitleLinksBox, PLAYLIST_PICKER_MENU_ID,
@@ -113,6 +114,8 @@ mod imp {
         #[template_child]
         pub song_cover: TemplateChild<gtk::Image>,
         #[template_child]
+        pub song_icon: TemplateChild<gtk::Box>,
+        #[template_child]
         pub song_checkbox: TemplateChild<gtk::CheckButton>,
         #[template_child]
         pub title_artist_box: TemplateChild<gtk::Box>,
@@ -143,6 +146,8 @@ mod imp {
 
         pub(super) row_key: RefCell<Option<String>>,
         pub(super) draggable: Cell<bool>,
+        /// The playing mark: bars that move with the music.
+        pub(super) level_bars: RefCell<Option<LevelBars>>,
     }
 
     #[glib::object_subclass]
@@ -181,7 +186,12 @@ mod imp {
             let obj = self.obj();
             let on: bool = value.get().expect("boolean property");
             match pspec.name() {
-                "playing" => set_css_class(&*obj, PLAYING_CLASS, on),
+                "playing" => {
+                    set_css_class(&*obj, PLAYING_CLASS, on);
+                    if let Some(bars) = self.level_bars.borrow().as_ref() {
+                        bars.set_active(on);
+                    }
+                }
                 "selected" => self.song_checkbox.set_active(on),
                 "liked" => {
                     set_css_class(&*obj, LIKED_CLASS, on);
@@ -223,6 +233,8 @@ mod imp {
             self.playable.set(true);
             self.card.set_height_request(ROW_HEIGHT_PX);
             self.song_cover.set_pixel_size(COVER_SIZE);
+            self.level_bars
+                .replace(Some(level_bars::fill(&self.song_icon, false)));
             self.obj().setup();
         }
     }
@@ -493,6 +505,9 @@ impl TrackRow {
         imp.row_key.replace(None);
         for class in [imp::PLAYING_CLASS, imp::LIKED_CLASS, imp::UNPLAYABLE_CLASS] {
             self.remove_css_class(class);
+        }
+        if let Some(bars) = imp.level_bars.borrow().as_ref() {
+            bars.set_active(false);
         }
         self.set_tooltip_text(None);
         imp.song_checkbox.set_active(false);

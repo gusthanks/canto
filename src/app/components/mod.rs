@@ -56,6 +56,9 @@ pub use track_radio::{start_track_radio, SmartQueueController};
 pub mod visual_bridge;
 pub use visual_bridge::VisualBridge;
 
+pub mod level_bars;
+pub use level_bars::LevelBarsListener;
+
 #[cfg(test)]
 mod gtk_smoke_tests;
 

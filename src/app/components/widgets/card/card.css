@@ -78,7 +78,4 @@ overlay-split-view .card--round .card {
   margin: 17px;
 }
 
-.card--paused .card__playing {
-  animation: none;
-  background-image: -gtk-icontheme("playback-paused-symbolic");
-}
+/* Paused: the bars inside lie flat (level_bars.rs) */

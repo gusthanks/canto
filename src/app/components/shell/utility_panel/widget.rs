@@ -63,6 +63,7 @@ mod imp {
     impl ObjectImpl for UtilityPanelWidget {
         fn constructed(&self) {
             self.parent_constructed();
+            crate::app::components::level_bars::fill(&self.now_indicator, true).set_active(true);
             // The player bar's side panel button already hides the panel, so
             // this arrow only shows when that button is taken off the bar.
             // The binding keeps its own reference to the settings.

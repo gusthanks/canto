@@ -155,6 +155,8 @@ fn assert_card_playing_badge_shows_bars() {
     badge.add_css_class("card__playing");
     badge.set_halign(gtk::Align::Start);
     badge.set_valign(gtk::Align::Start);
+    // As CardWidget::set_playing fills it
+    crate::app::components::level_bars::fill(&badge, false).set_active(true);
     let host = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     host.set_size_request(48, 48);
     host.append(&badge);

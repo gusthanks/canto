@@ -335,7 +335,11 @@ impl CardWidget {
     }
 
     pub fn set_playing(&self, playing: Option<bool>) {
-        self.imp().playing_indicator.set_visible(playing.is_some());
+        let indicator = &self.imp().playing_indicator;
+        if playing.is_some() && indicator.first_child().is_none() {
+            crate::app::components::level_bars::fill(indicator, false).set_active(true);
+        }
+        indicator.set_visible(playing.is_some());
         set_css_class(self, "card--paused", playing == Some(false));
     }
 

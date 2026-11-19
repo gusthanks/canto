@@ -132,6 +132,7 @@ impl App {
                 Rc::clone(&theme_engine),
                 level_meter,
             )),
+            Box::new(LevelBarsListener::new(Rc::clone(&model))),
             App::make_dbus(Rc::clone(&model), sender.clone()),
             App::make_inhibitor(&builder, Rc::clone(&model)),
         ];

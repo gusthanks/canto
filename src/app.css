@@ -135,21 +135,14 @@ stack.transitioning scrollbar {
   min-width: 16px;
   min-height: 16px;
   color: @accent_bg_color;
-  /* Painted as a background on a plain box: since GTK 4.24, GtkSpinner draws
-     its own built-in paintable and the CSS icon below never shows. */
-  background-image: -gtk-icontheme("playback-0-symbolic");
-  background-size: 16px 16px;
-  background-position: center;
-  background-repeat: no-repeat;
-  animation: playing 1s steps(17) infinite;
+  /* The bars inside are drawn live (level_bars.rs): they move with the
+     sound, or on their own when the music plays on another device. */
 }
 
 /* Now Playing tab of the side panel: still bars in the text color while
    paused, moving bars in the accent color while music plays */
 .utility-panel__now-indicator--idle {
-  animation: none;
   color: inherit;
-  background-image: -gtk-icontheme("playback-3-symbolic");
 }
 
 .utility-panel__tabs > button {
