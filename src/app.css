@@ -614,11 +614,6 @@ button.info-pill {
   font-weight: 600;
 }
 
-.info-flow > flowboxchild {
-  padding: 0;
-  background: none;
-}
-
 .info-row {
   padding: 6px 8px;
   margin: 0 -8px;

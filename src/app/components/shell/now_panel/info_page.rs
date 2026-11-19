@@ -160,28 +160,23 @@ pub(super) fn caption(text: &str) -> gtk::Label {
     label
 }
 
-/// Widgets laid out as words, wrapping onto more lines as needed.
-pub(super) fn flow(children: Vec<gtk::Widget>) -> gtk::FlowBox {
-    let flow = gtk::FlowBox::new();
-    flow.set_selection_mode(gtk::SelectionMode::None);
-    flow.set_homogeneous(false);
-    flow.set_max_children_per_line(30);
-    flow.set_row_spacing(6);
-    flow.set_column_spacing(6);
+/// Widgets laid out as words, wrapping onto more lines as needed. A wrap
+/// box, not a flow box: a flow box lines its children up in columns, which
+/// left gaps after short chips.
+pub(super) fn flow(children: Vec<gtk::Widget>) -> libadwaita::WrapBox {
+    let flow = libadwaita::WrapBox::new();
+    flow.set_child_spacing(6);
+    flow.set_line_spacing(6);
     flow.set_hexpand(true);
     flow.add_css_class("info-flow");
     for child in children {
-        child.set_halign(gtk::Align::Start);
         flow.append(&child);
-        if let Some(wrapper) = child.parent() {
-            wrapper.set_focusable(false);
-        }
     }
     flow
 }
 
 /// Tags as small rounded labels.
-pub(super) fn chips(tags: &[String]) -> gtk::FlowBox {
+pub(super) fn chips(tags: &[String]) -> libadwaita::WrapBox {
     flow(
         tags.iter()
             .map(|tag| {
@@ -232,6 +227,22 @@ pub(super) fn search_row(
     query: String,
     on_search: &OnSearch,
 ) -> gtk::Button {
+    let on_search = Rc::clone(on_search);
+    // translators: Tooltip of a song or artist in the About and Stats tabs.
+    action_row(rank, name, detail, trailing, &gettext("Search in Canto"), move || {
+        on_search(query.clone())
+    })
+}
+
+/// Same row as `search_row`, doing something else on click.
+pub(super) fn action_row(
+    rank: Option<usize>,
+    name: &str,
+    detail: Option<&str>,
+    trailing: Option<&str>,
+    tooltip: &str,
+    on_click: impl Fn() + 'static,
+) -> gtk::Button {
     let line = gtk::Box::new(gtk::Orientation::Horizontal, 10);
     if let Some(rank) = rank {
         let number = gtk::Label::new(Some(&rank.to_string()));
@@ -268,9 +279,7 @@ pub(super) fn search_row(
     button.set_child(Some(&line));
     button.add_css_class("flat");
     button.add_css_class("info-row");
-    // translators: Tooltip of a song or artist in the About and Stats tabs.
-    button.set_tooltip_text(Some(&gettext("Search in Canto")));
-    let on_search = Rc::clone(on_search);
-    button.connect_clicked(move |_| on_search(query.clone()));
+    button.set_tooltip_text(Some(tooltip));
+    button.connect_clicked(move |_| on_click());
     button
 }

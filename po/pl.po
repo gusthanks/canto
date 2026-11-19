@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 22:02-0300\n"
+"POT-Creation-Date: 2026-11-18 23:34-0300\n"
 "Language: pl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -150,6 +150,8 @@ msgstr "Nie masz zapisanych playlist."
 #. translators: This is part of a contextual menu attached to a playlist in the sidebar; this entry starts playing the playlist from the first track.
 #: src/app/components/labels.rs:74
 #: src/app/components/shell/playback/playback_controls.rs:71
+#: src/app/components/shell/now_panel/stats.rs:420
+#: src/app/components/shell/now_panel/stats.rs:444
 #: src/app/components/shell/mini_player.rs:171
 #: src/app/components/shell/mini_player.rs:245
 #: src/app/components/widgets/details_page/header.rs:250
@@ -1070,12 +1072,12 @@ msgid "All Time"
 msgstr ""
 
 #: src/app/components/shell/stats_dialog.rs:174
-#: src/app/components/shell/now_panel/stats.rs:180
+#: src/app/components/shell/now_panel/stats.rs:284
 msgid "Link Last.fm to See Your Stats"
 msgstr ""
 
 #: src/app/components/shell/stats_dialog.rs:176
-#: src/app/components/shell/now_panel/stats.rs:181
+#: src/app/components/shell/now_panel/stats.rs:285
 msgid "Add your Last.fm username and API key in Preferences → Integrations."
 msgstr ""
 
@@ -1084,7 +1086,7 @@ msgid "Couldn't Load Your Stats"
 msgstr ""
 
 #: src/app/components/shell/stats_dialog.rs:200
-#: src/app/components/shell/now_panel/stats.rs:169
+#: src/app/components/shell/now_panel/stats.rs:170
 msgid "Last.fm didn't answer. Try again in a moment."
 msgstr ""
 
@@ -1211,14 +1213,14 @@ msgstr "Albumy"
 
 #. translators: Side panel view of the current track, when nothing plays.
 #: src/app/components/shell/now_panel/mod.rs:364
-#: src/app/components/shell/now_panel/info_page.rs:89
+#: src/app/components/shell/now_panel/info_page.rs:90
 #: src/app/components/shell/mini_player.rs:254
 #, fuzzy
 msgid "Nothing Playing"
 msgstr "Aktualnie odtwarzane"
 
 #: src/app/components/shell/now_panel/mod.rs:365
-#: src/app/components/shell/now_panel/info_page.rs:90
+#: src/app/components/shell/now_panel/info_page.rs:91
 msgid "Play something and it shows up here."
 msgstr ""
 
@@ -1235,7 +1237,7 @@ msgid "Show Queue"
 msgstr "Dodaj do kolejki"
 
 #: src/app/components/shell/now_panel/mod.rs:446
-#: src/app/components/shell/now_panel/stats.rs:220
+#: src/app/components/shell/now_panel/stats.rs:324
 #, fuzzy
 msgid "Your Plays"
 msgstr "Biblioteka"
@@ -1472,25 +1474,25 @@ msgid "Also known as {}"
 msgstr ""
 
 #. translators: Title in the Stats tab when Last.fm doesn't know the playing song.
-#: src/app/components/shell/now_panel/stats.rs:153
+#: src/app/components/shell/now_panel/stats.rs:154
 msgid "Not on Last.fm"
 msgstr ""
 
-#: src/app/components/shell/now_panel/stats.rs:154
+#: src/app/components/shell/now_panel/stats.rs:155
 msgid "Last.fm doesn't know this song yet."
 msgstr ""
 
 #. translators: Title in the Stats tab when Last.fm can't be reached.
-#: src/app/components/shell/now_panel/stats.rs:168
+#: src/app/components/shell/now_panel/stats.rs:169
 msgid "Couldn't Reach Last.fm"
 msgstr ""
 
-#: src/app/components/shell/now_panel/stats.rs:182
+#: src/app/components/shell/now_panel/stats.rs:286
 msgid "Set Up Last.fm"
 msgstr ""
 
 #. translators: Stats tab, the user's Last.fm profile. {count} is a number, {year} like 2019.
-#: src/app/components/shell/now_panel/stats.rs:197
+#: src/app/components/shell/now_panel/stats.rs:301
 #, rust-format
 msgid "{count} scrobble since {year}"
 msgid_plural "{count} scrobbles since {year}"
@@ -1499,7 +1501,7 @@ msgstr[1] ""
 msgstr[2] ""
 msgstr[3] ""
 
-#: src/app/components/shell/now_panel/stats.rs:203
+#: src/app/components/shell/now_panel/stats.rs:307
 #, rust-format
 msgid "{count} scrobble"
 msgid_plural "{count} scrobbles"
@@ -1509,98 +1511,103 @@ msgstr[2] ""
 msgstr[3] ""
 
 #. translators: Stats tab: the user marked the playing song as loved on Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:230
+#: src/app/components/shell/now_panel/stats.rs:334
 msgid "You loved this song on Last.fm"
 msgstr ""
 
 #. translators: Stats tab button: opens the user's top 10 artists, albums and songs.
-#: src/app/components/shell/now_panel/stats.rs:237
+#: src/app/components/shell/now_panel/stats.rs:341
 msgid "See Your Top 10"
 msgstr ""
 
 #. translators: Under a number in the Stats tab: people who played the song on Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:246
-#: src/app/components/shell/now_panel/stats.rs:251
+#: src/app/components/shell/now_panel/stats.rs:350
+#: src/app/components/shell/now_panel/stats.rs:355
 msgid "listeners"
 msgstr ""
 
 #. translators: Under a number in the Stats tab: times the song was played on Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:248
-#: src/app/components/shell/now_panel/stats.rs:252
+#: src/app/components/shell/now_panel/stats.rs:352
+#: src/app/components/shell/now_panel/stats.rs:356
 msgid "plays"
 msgstr ""
 
 #. translators: Heading of the Stats tab's card with everyone's plays on Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:257
+#: src/app/components/shell/now_panel/stats.rs:361
 msgid "On Last.fm"
 msgstr ""
 
 #. translators: Stats tab: over the playing song's numbers.
-#: src/app/components/shell/now_panel/stats.rs:259
+#: src/app/components/shell/now_panel/stats.rs:363
 msgid "This Song"
 msgstr ""
 
-#: src/app/components/shell/now_panel/stats.rs:266
+#: src/app/components/shell/now_panel/stats.rs:370
 msgid "Open on Last.fm"
 msgstr ""
 
 #. translators: Heading of the Stats tab's genre-like tags from Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:274
+#: src/app/components/shell/now_panel/stats.rs:378
 msgid "Tags"
 msgstr ""
 
 #. translators: Stats tab: over the album's description from Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:288
+#: src/app/components/shell/now_panel/stats.rs:392
 #, fuzzy
 msgid "About the Album"
 msgstr "Albumy"
 
 #. translators: Stats tab: where the artist's bio comes from.
-#: src/app/components/shell/now_panel/stats.rs:292
+#: src/app/components/shell/now_panel/stats.rs:396
 msgid "From Last.fm"
 msgstr ""
 
-#: src/app/components/shell/now_panel/stats.rs:294
+#: src/app/components/shell/now_panel/stats.rs:398
 msgid "Read More on Last.fm"
 msgstr ""
 
 #. translators: Heading in the Stats tab: the artist's most played songs on Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:302
+#: src/app/components/shell/now_panel/stats.rs:406
 msgid "Most Played Worldwide"
 msgstr ""
 
 #. translators: Heading in the Stats tab: songs like the playing one, from Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:322
+#: src/app/components/shell/now_panel/stats.rs:431
 msgid "Similar Songs"
 msgstr ""
 
 #. translators: Heading in the Stats tab: artists like the playing one, from Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:345
+#: src/app/components/shell/now_panel/stats.rs:455
 #, fuzzy
 msgid "Similar Artists"
 msgstr "Artyści"
 
-#. translators: Tooltip of a song or artist in the About and Stats tabs.
-#: src/app/components/shell/now_panel/stats.rs:354
-#: src/app/components/shell/now_panel/info_page.rs:273
-msgid "Search in Canto"
-msgstr ""
+#. translators: Tooltip of a similar artist in the Stats tab: opens the artist's page.
+#: src/app/components/shell/now_panel/stats.rs:465
+#, fuzzy
+msgid "Open Artist"
+msgstr "Artyści"
 
 #: src/app/components/shell/now_panel/info_page.rs:140
 #, fuzzy
 msgid "Opens in your browser"
 msgstr "Zachowane piosenki"
 
-#: src/app/components/shell/now_panel/info_page.rs:206
-#: src/app/components/shell/now_panel/info_page.rs:218
+#: src/app/components/shell/now_panel/info_page.rs:200
+#: src/app/components/shell/now_panel/info_page.rs:212
 #, fuzzy
 msgid "Show More"
 msgstr "Dodaj do kolejki"
 
-#: src/app/components/shell/now_panel/info_page.rs:216
+#: src/app/components/shell/now_panel/info_page.rs:210
 #, fuzzy
 msgid "Show Less"
 msgstr "Aktualnie odtwarzane"
+
+#. translators: Tooltip of a song or artist in the About and Stats tabs.
+#: src/app/components/shell/now_panel/info_page.rs:232
+msgid "Search in Canto"
+msgstr ""
 
 #. translators: Tooltip of the button leaving full-screen lyrics.
 #: src/app/components/shell/fullscreen_lyrics.rs:173

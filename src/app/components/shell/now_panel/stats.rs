@@ -8,14 +8,17 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::info_page::{
-    caption, chips, flow, folding_text, link_button, pill_button, search_row, setup_button,
-    InfoPage, OnSearch,
+    action_row, caption, chips, flow, folding_text, link_button, pill_button, setup_button,
+    InfoPage,
 };
 use super::{card, format_count, heading, number_columns, playcount_columns, HEART_FILLED_ICON};
 use crate::app::components::EventListener;
 use crate::app::models::TrackExt;
-use crate::app::state::{BrowserAction, PlaybackEvent, Route};
-use crate::app::{AppEvent, AppModel, Dispatcher};
+use crate::app::components::dispatch_api_read_many;
+use crate::app::models::SearchType;
+use crate::app::state::{load_context, BrowserAction, PlaybackAction, PlaybackEvent, Route};
+use crate::app::{AppAction, AppEvent, AppModel, Dispatcher, SongsSource};
+use canto_core::play_queue::CONTEXT_PAGE_SIZE;
 use canto_api::scrobbler::{LastFmClient, TrackInsights};
 use canto_config::settings::{LASTFM_API_KEY, LASTFM_USERNAME, SETTINGS};
 
@@ -25,17 +28,15 @@ pub struct StatsPanel {
     page: Rc<InfoPage>,
     app_model: Rc<AppModel>,
     settings: gio::Settings,
-    on_search: OnSearch,
+    on_search: OnPick,
     /// The track shown (or loading)
     loaded_for: Rc<RefCell<Option<String>>>,
 }
 
 impl StatsPanel {
     pub fn new(app_model: Rc<AppModel>, dispatcher: Dispatcher) -> Self {
-        let on_search: OnSearch = Rc::new(move |query: String| {
-            dispatcher.dispatch(BrowserAction::Navigate(Route::Search).into());
-            dispatcher.dispatch(BrowserAction::Search(query).into());
-        });
+        let api_model = Rc::clone(&app_model);
+        let on_search: OnPick = Rc::new(move |pick: Pick| open_pick(&api_model, &dispatcher, pick));
         let panel = Self {
             page: Rc::new(InfoPage::new("stats-panel")),
             app_model,
@@ -103,7 +104,7 @@ fn load(
     app_model: &Rc<AppModel>,
     settings: &gio::Settings,
     loaded_for: &Rc<RefCell<Option<String>>>,
-    on_search: &OnSearch,
+    on_search: &OnPick,
 ) {
     let Some(track) = app_model.get_state().playback.current_song() else {
         page.show_nothing_playing();
@@ -174,6 +175,109 @@ fn load(
     });
 }
 
+/// Something picked in the tab: a song plays at once (in its album, like a
+/// click on a song anywhere in Canto), an artist opens the artist's page.
+#[derive(Clone, Debug, PartialEq)]
+enum Pick {
+    Song { name: String, artist: Option<String> },
+    Artist(String),
+}
+
+type OnPick = Rc<dyn Fn(Pick)>;
+
+/// Spotify's search query for a song: by field when the artist is known.
+fn song_query(name: &str, artist: Option<&str>) -> String {
+    let clean = |s: &str| s.replace('"', " ");
+    match artist.filter(|a| !a.trim().is_empty()) {
+        Some(by) => format!("track:\"{}\" artist:\"{}\"", clean(name), clean(by)),
+        None => name.to_string(),
+    }
+}
+
+/// The best of Spotify's answers: the same name (any case) first, else the
+/// first one.
+fn best_match<'a, T>(items: &'a [T], name: &str, name_of: impl Fn(&T) -> &str) -> Option<&'a T> {
+    let wanted = name.trim().to_lowercase();
+    items
+        .iter()
+        .find(|item| name_of(item).trim().to_lowercase() == wanted)
+        .or_else(|| items.first())
+}
+
+fn open_pick(app_model: &AppModel, dispatcher: &Dispatcher, pick: Pick) {
+    let api = app_model.api();
+    match pick {
+        Pick::Song { name, artist } => {
+            let fallback = match &artist {
+                Some(by) => format!("{name} {by}"),
+                None => name.clone(),
+            };
+            dispatch_api_read_many(dispatcher, move |tag| async move {
+                let mut found = api
+                    .search_scoped(&song_query(&name, artist.as_deref()), SearchType::Tracks.into(), 0, 5, tag)
+                    .await?
+                    .tracks
+                    .items;
+                if found.is_empty() && artist.is_some() {
+                    found = api
+                        .search_scoped(&fallback, SearchType::Tracks.into(), 0, 5, tag)
+                        .await?
+                        .tracks
+                        .items;
+                }
+                let Some(track) = best_match(&found, &name, |t| t.title.as_str()).cloned() else {
+                    // Not on Spotify: show the search instead
+                    return Ok(vec![
+                        BrowserAction::Navigate(Route::Search).into(),
+                        BrowserAction::Search(fallback).into(),
+                    ]);
+                };
+                let id = track.rri.id.clone();
+                let mut actions: Vec<AppAction> = vec![PlaybackAction::SetShuffled(false).into()];
+                match track.album.as_ref().map(|a| (a.rri.id.clone(), a.name.clone())) {
+                    Some((album_id, album_name)) => {
+                        let batch = api
+                            .get_album_tracks(&album_id, 0, CONTEXT_PAGE_SIZE, tag)
+                            .await?;
+                        let source = SongsSource::Album(album_id);
+                        let load = if batch.items.iter().any(|t| t.rri.id == id) {
+                            PlaybackAction::LoadPagedSongs(source.clone(), batch)
+                        } else {
+                            PlaybackAction::LoadContextSongs(source.clone(), vec![track])
+                        };
+                        actions.push(PlaybackAction::ReplaceQueue.into());
+                        actions.extend(load_context(source, Some(album_name), load));
+                    }
+                    None => {
+                        #[allow(deprecated)]
+                        actions.push(PlaybackAction::LoadSongs(vec![track]).into());
+                    }
+                }
+                actions.push(PlaybackAction::Load(id).into());
+                Ok(actions)
+            });
+        }
+        Pick::Artist(name) => {
+            dispatch_api_read_many(dispatcher, move |tag| async move {
+                let found = api
+                    .search_scoped(&name, SearchType::Artists.into(), 0, 5, tag)
+                    .await?
+                    .artists
+                    .items;
+                Ok(match best_match(&found, &name, |a| a.name.as_str()) {
+                    Some(artist) => vec![
+                        BrowserAction::Navigate(Route::Artist(artist.rri.id.clone())).into(),
+                    ],
+                    None => vec![
+                        BrowserAction::Navigate(Route::Search).into(),
+                        BrowserAction::Search(name).into(),
+                    ],
+                })
+            });
+        }
+    }
+}
+
 fn show_not_set_up(page: &InfoPage) {
     page.show_status(
         ICON,
@@ -209,7 +313,7 @@ fn render(
     artist: &str,
     insights: &TrackInsights,
     has_user: bool,
-    on_search: &OnSearch,
+    on_search: &OnPick,
 ) {
     page.clear();
     let content = &page.content;
@@ -303,13 +407,18 @@ fn render(
         let list = gtk::Box::new(gtk::Orientation::Vertical, 0);
         for (i, item) in insights.top_tracks.iter().enumerate() {
             let plays = (item.plays > 0).then(|| format_count(item.plays));
-            list.append(&search_row(
+            let pick = Pick::Song {
+                name: item.name.clone(),
+                artist: Some(artist.to_string()),
+            };
+            let on_pick = Rc::clone(on_search);
+            list.append(&action_row(
                 Some(i + 1),
                 &item.name,
                 None,
                 plays.as_deref(),
-                format!("{} {}", item.name, artist),
-                on_search,
+                &gettext("Play"),
+                move || on_pick(pick.clone()),
             ));
         }
         top.append(&list);
@@ -322,17 +431,18 @@ fn render(
         similar.append(&heading(&gettext("Similar Songs")));
         let list = gtk::Box::new(gtk::Orientation::Vertical, 0);
         for item in &insights.similar_tracks {
-            let query = match &item.artist {
-                Some(by) => format!("{} {}", item.name, by),
-                None => item.name.clone(),
+            let pick = Pick::Song {
+                name: item.name.clone(),
+                artist: item.artist.clone(),
             };
-            list.append(&search_row(
+            let on_pick = Rc::clone(on_search);
+            list.append(&action_row(
                 None,
                 &item.name,
                 item.artist.as_deref(),
                 None,
-                query,
-                on_search,
+                &gettext("Play"),
+                move || on_pick(pick.clone()),
             ));
         }
         similar.append(&list);
@@ -349,9 +459,10 @@ fn render(
                 .iter()
                 .map(|name| {
                     let on_search = Rc::clone(on_search);
-                    let query = name.clone();
-                    let button = pill_button(name, move |_| on_search(query.clone()));
-                    button.set_tooltip_text(Some(&gettext("Search in Canto")));
+                    let pick = Pick::Artist(name.clone());
+                    let button = pill_button(name, move |_| on_search(pick.clone()));
+                    // translators: Tooltip of a similar artist in the Stats tab: opens the artist's page.
+                    button.set_tooltip_text(Some(&gettext("Open Artist")));
                     button.upcast()
                 })
                 .collect(),
@@ -404,7 +515,7 @@ pub(crate) fn sample_for_tests() -> gtk::Widget {
         scrobbles: Some(122_741),
         registered: Some(1_548_544_192),
     };
-    let on_search: OnSearch = Rc::new(|_| {});
+    let on_search: OnPick = Rc::new(|_| {});
     render(&page, "Frank Ocean", &insights, true, &on_search);
     page.stack.clone().upcast()
 }
@@ -412,6 +523,26 @@ pub(crate) fn sample_for_tests() -> gtk::Widget {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn song_query_asks_by_field_when_the_artist_is_known() {
+        assert_eq!(
+            song_query("Ivy", Some("Frank Ocean")),
+            "track:\"Ivy\" artist:\"Frank Ocean\""
+        );
+        assert_eq!(song_query("Say \"Hi\"", Some("A")), "track:\"Say  Hi \" artist:\"A\"");
+        assert_eq!(song_query("Ivy", None), "Ivy");
+        assert_eq!(song_query("Ivy", Some(" ")), "Ivy");
+    }
+
+    #[test]
+    fn best_match_prefers_the_same_name() {
+        let names = ["Ivy (Live)", "ivy", "Ivy Remix"];
+        assert_eq!(best_match(&names, "Ivy", |n: &&str| *n), Some(&"ivy"));
+        assert_eq!(best_match(&names, "Nights", |n: &&str| *n), Some(&"Ivy (Live)"));
+        let none: [&str; 0] = [];
+        assert_eq!(best_match(&none, "Ivy", |n: &&str| *n), None);
+    }
 
     #[test]
     fn profile_line_has_the_year_when_known() {
