@@ -198,6 +198,8 @@ bottom-sheet.bottom-sheet--padded > sheet {
 }
 
 .utility-panel__header {
+  /* Room above the tabs, like the page's own top bar */
+  padding-top: 6px;
   padding-bottom: 6px;
 }
 
@@ -687,7 +689,9 @@ button.info-pill {
 }
 
 /* Rounded cards: the library, the page and the side panel float over the
-   same color as the top and bottom bars, with room between them */
+   same color as the top and bottom bars, with room between them. One gap,
+   8px, on every side: under the top bar, between cards, at the window's
+   edges and above the bottom bar */
 overlay-split-view.canto-cards {
   background-color: @headerbar_bg_color;
 }
@@ -702,7 +706,7 @@ overlay-split-view.canto-cards > .content-pane {
 overlay-split-view.canto-cards overlay-split-view.canto-cards > .sidebar-pane,
 overlay-split-view.canto-cards overlay-split-view.canto-cards > .content-pane,
 overlay-split-view.canto-cards > .sidebar-pane.end {
-  margin: 0 4px 8px 4px;
+  margin: 8px 4px 8px 4px;
   border-radius: 10px;
   background-color: @view_bg_color;
 }
