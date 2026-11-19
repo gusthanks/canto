@@ -70,6 +70,20 @@ template $UtilityPanelWidget : Adw.Bin {
             icon-name: "canto-queue-symbolic";
             group: now_tab;
           }
+
+          ToggleButton about_tab {
+            /* Translators: Tab label for what Genius knows about the current song (credits, bio, artist) in utility panel. */
+            tooltip-text: _("About");
+            icon-name: "canto-genius-symbolic";
+            group: now_tab;
+          }
+
+          ToggleButton stats_tab {
+            /* Translators: Tab label for the current song's Last.fm numbers (plays, listeners, tags) in utility panel. */
+            tooltip-text: _("Stats");
+            icon-name: "canto-stats-symbolic";
+            group: now_tab;
+          }
         };
 
         [end]
@@ -141,6 +155,22 @@ template $UtilityPanelWidget : Adw.Bin {
           name: "lyrics";
 
           child: Adw.Bin lyrics_content {
+            vexpand: true;
+          };
+        }
+
+        StackPage {
+          name: "about";
+
+          child: Adw.Bin about_content {
+            vexpand: true;
+          };
+        }
+
+        StackPage {
+          name: "stats";
+
+          child: Adw.Bin stats_content {
             vexpand: true;
           };
         }

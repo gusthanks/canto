@@ -28,6 +28,10 @@ mod imp {
         #[template_child]
         pub lyrics_tab: TemplateChild<gtk::ToggleButton>,
         #[template_child]
+        pub about_tab: TemplateChild<gtk::ToggleButton>,
+        #[template_child]
+        pub stats_tab: TemplateChild<gtk::ToggleButton>,
+        #[template_child]
         pub selection_header: TemplateChild<libadwaita::HeaderBar>,
         #[template_child]
         pub selection_title: TemplateChild<libadwaita::WindowTitle>,
@@ -43,6 +47,10 @@ mod imp {
         pub queue_content: TemplateChild<libadwaita::Bin>,
         #[template_child]
         pub lyrics_content: TemplateChild<libadwaita::Bin>,
+        #[template_child]
+        pub about_content: TemplateChild<libadwaita::Bin>,
+        #[template_child]
+        pub stats_content: TemplateChild<libadwaita::Bin>,
     }
 
     #[glib::object_subclass]
@@ -93,12 +101,14 @@ impl UtilityPanelWidget {
         &self.imp().resize_handle
     }
 
-    fn tabs(&self) -> [(&'static str, gtk::ToggleButton); 3] {
+    fn tabs(&self) -> [(&'static str, gtk::ToggleButton); 5] {
         let imp = self.imp();
         [
             ("now", imp.now_tab.get()),
             ("queue", imp.queue_tab.get()),
             ("lyrics", imp.lyrics_tab.get()),
+            ("about", imp.about_tab.get()),
+            ("stats", imp.stats_tab.get()),
         ]
     }
 
@@ -114,26 +124,21 @@ impl UtilityPanelWidget {
         }
     }
 
-    pub fn set_pages(
-        &self,
-        now: Option<&gtk::Widget>,
-        queue: Option<&gtk::Widget>,
-        lyrics: Option<&gtk::Widget>,
-    ) {
+    pub fn set_pages(&self, pages: &PanelPages) {
         let imp = self.imp();
-        imp.now_content.set_child(now);
-        imp.queue_content.set_child(queue);
-        imp.lyrics_content.set_child(lyrics);
-        imp.now_tab.set_visible(now.is_some());
-        imp.queue_tab.set_visible(queue.is_some());
-        imp.lyrics_tab.set_visible(lyrics.is_some());
+        imp.now_content.set_child(pages.now.as_ref());
+        imp.queue_content.set_child(pages.queue.as_ref());
+        imp.lyrics_content.set_child(pages.lyrics.as_ref());
+        imp.about_content.set_child(pages.about.as_ref());
+        imp.stats_content.set_child(pages.stats.as_ref());
+        imp.now_tab.set_visible(pages.now.is_some());
+        imp.queue_tab.set_visible(pages.queue.is_some());
+        imp.lyrics_tab.set_visible(pages.lyrics.is_some());
+        imp.about_tab.set_visible(pages.about.is_some());
+        imp.stats_tab.set_visible(pages.stats.is_some());
         // Off a tab that went away
         let shown = self.active_tab();
-        let available = |name: &str| match name {
-            "now" => now.is_some(),
-            "queue" => queue.is_some(),
-            _ => lyrics.is_some(),
-        };
+        let available = |name: &str| pages.has(name);
         if !available(shown) {
             if let Some((name, _)) = self.tabs().iter().find(|(name, _)| available(name)) {
                 self.show_tab(name);
@@ -142,7 +147,10 @@ impl UtilityPanelWidget {
     }
 
     pub fn set_content(&self, content: Option<&gtk::Widget>, _title: &str) {
-        self.set_pages(None, content, None);
+        self.set_pages(&PanelPages {
+            queue: content.cloned(),
+            ..Default::default()
+        });
     }
 
     /// The Now Playing tab's bars move while music plays.
@@ -190,6 +198,8 @@ impl UtilityPanelWidget {
         match self.imp().panel_stack.visible_child_name().as_deref() {
             Some("queue") => "queue",
             Some("lyrics") => "lyrics",
+            Some("about") => "about",
+            Some("stats") => "stats",
             _ => "now",
         }
     }
@@ -199,6 +209,36 @@ impl UtilityPanelWidget {
             button.set_active(true);
             self.imp().panel_stack.set_visible_child_name(name);
         }
+    }
+}
+
+/// What each tab of the side panel shows; `None` hides the tab.
+#[derive(Clone, Debug, Default)]
+pub struct PanelPages {
+    pub now: Option<gtk::Widget>,
+    pub queue: Option<gtk::Widget>,
+    pub lyrics: Option<gtk::Widget>,
+    pub about: Option<gtk::Widget>,
+    pub stats: Option<gtk::Widget>,
+}
+
+impl PanelPages {
+    /// Whether the tab named `name` has a page.
+    pub fn has(&self, name: &str) -> bool {
+        match name {
+            "now" => self.now.is_some(),
+            "queue" => self.queue.is_some(),
+            "lyrics" => self.lyrics.is_some(),
+            "about" => self.about.is_some(),
+            "stats" => self.stats.is_some(),
+            _ => false,
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        ["now", "queue", "lyrics", "about", "stats"]
+            .iter()
+            .all(|name| !self.has(name))
     }
 }
 

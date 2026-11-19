@@ -27,6 +27,8 @@ enum PaletteAction {
     ShowNowPlaying,
     ToggleQueue,
     ToggleLyrics,
+    ShowAbout,
+    ShowStats,
     FullscreenLyrics,
     MiniPlayer,
     ListeningStats,
@@ -649,6 +651,32 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         action: PaletteAction::ToggleLyrics,
     });
     entries.push(PaletteEntry {
+        // translators: Command palette entry: opens the side panel's About tab.
+        title: gettext("About This Song"),
+        // translators: Subtitle of the "About This Song" command palette entry.
+        subtitle: gettext("Credits, story and artist, from Genius"),
+        category: action_cat.clone(),
+        icon_name: "canto-genius-symbolic",
+        shortcut_hint: None,
+        keywords: "about song credits producers writers genius artist bio samples".into(),
+        cover_url: None,
+        round_cover: false,
+        action: PaletteAction::ShowAbout,
+    });
+    entries.push(PaletteEntry {
+        // translators: Command palette entry: opens the side panel's Stats tab.
+        title: gettext("Song Stats"),
+        // translators: Subtitle of the "Song Stats" command palette entry.
+        subtitle: gettext("Plays, listeners and tags, from Last.fm"),
+        category: action_cat.clone(),
+        icon_name: "canto-stats-symbolic",
+        shortcut_hint: None,
+        keywords: "stats statistics plays scrobbles listeners tags similar lastfm last.fm".into(),
+        cover_url: None,
+        round_cover: false,
+        action: PaletteAction::ShowStats,
+    });
+    entries.push(PaletteEntry {
         title: gettext("Full-Screen Lyrics"),
         subtitle: gettext("Show the lyrics big, over the cover"),
         category: action_cat.clone(),
@@ -963,6 +991,12 @@ fn execute_action(runtime: &PaletteRuntime, action: PaletteAction) {
         }
         PaletteAction::ToggleLyrics => {
             let _ = WidgetExt::activate_action(&runtime.window, "win.show-lyrics", None);
+        }
+        PaletteAction::ShowAbout => {
+            let _ = WidgetExt::activate_action(&runtime.window, "win.show-about", None);
+        }
+        PaletteAction::ShowStats => {
+            let _ = WidgetExt::activate_action(&runtime.window, "win.show-stats", None);
         }
         PaletteAction::StartTrackRadio(track) => {
             start_track_radio(&runtime.app_model, &runtime.dispatcher, track);

@@ -16,7 +16,14 @@ use crate::app::models::{Track, TrackExt};
 use crate::app::state::PlaybackEvent;
 use crate::app::{load, AppAction, AppEvent, AppModel, BrowserAction, BrowserEvent, Dispatcher};
 use canto_api::models::is_resource_url;
-use canto_api::{GeniusBioStatus, GeniusTrackInfo, Lyrics};
+use canto_api::{GeniusTrackInfo, Lyrics};
+
+mod about;
+mod info_page;
+mod stats;
+
+pub use about::AboutPanel;
+pub use stats::StatsPanel;
 use canto_config::settings::{GENIUS_ACCESS_TOKEN, LYRICS_OFFSET_MS, SETTINGS};
 
 /// Lines shown in the lyrics preview card.
@@ -226,6 +233,28 @@ fn card(classes: &[&str]) -> gtk::Box {
     card
 }
 
+/// Numbers side by side, each with what it counts under it ("12 / this
+/// song"). `None` when none of the numbers is known.
+fn number_columns(columns: Vec<(Option<u64>, String)>) -> Option<gtk::Box> {
+    let body = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    body.set_homogeneous(true);
+    let mut any = false;
+    for (count, what) in columns {
+        let Some(count) = count else { continue };
+        any = true;
+        let column = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let number = gtk::Label::new(Some(&format_count(count)));
+        number.set_halign(gtk::Align::Start);
+        number.add_css_class("now-panel__stat-number");
+        let label = wrapping_label(&["dim-label", "caption"]);
+        label.set_text(&what);
+        column.append(&number);
+        column.append(&label);
+        body.append(&column);
+    }
+    any.then_some(body)
+}
+
 /// Makes a whole card clickable, running `action` (a window action).
 fn make_card_activate(card: &gtk::Box, action: &'static str, tooltip: &str) {
     card.set_cursor_from_name(Some("pointer"));
@@ -415,27 +444,21 @@ impl Widgets {
         // translators: Heading of the card with how many times the user played the track, its album and artist (from Last.fm).
         let stats_card = card(&["now-panel__stats"]);
         stats_card.append(&heading(&gettext("Your Plays")));
-        let stats_body = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-        stats_body.set_homogeneous(true);
+        let stats_body = gtk::Box::new(gtk::Orientation::Vertical, 0);
         stats_card.append(&stats_body);
         stats_card.set_visible(false);
-        // A click opens the full stats
-        // translators: Tooltip of the "Your Plays" card in the Now Playing panel.
-        stats_card.set_tooltip_text(Some(&gettext("See Your Stats")));
-        stats_card.set_cursor_from_name(Some("pointer"));
-        let open_stats = gtk::GestureClick::new();
-        open_stats.connect_released(|gesture, _, _, _| {
-            if let Some(widget) = gesture.widget() {
-                let _ = widget.activate_action("win.listening-stats", None);
-            }
-        });
-        stats_card.add_controller(open_stats);
+        // A click opens the Stats tab, with everything Last.fm knows
+        // translators: Tooltip of the "Your Plays" card in the Now Playing panel: it opens the Stats tab.
+        make_card_activate(&stats_card, "win.show-stats", &gettext("Show Song Stats"));
         content.append(&stats_card);
 
         let credits_card = card(&["now-panel__credits"]);
         credits_card.append(&heading(&gettext("Credits")));
         let credits_body = gtk::Box::new(gtk::Orientation::Vertical, 8);
         credits_card.append(&credits_body);
+        // A click opens the About tab, with the full credits and the story
+        // translators: Tooltip of the Credits card in the Now Playing panel: it opens the About tab.
+        make_card_activate(&credits_card, "win.show-about", &gettext("Show About This Song"));
         content.append(&credits_card);
 
         let clamp = libadwaita::Clamp::new();
@@ -471,28 +494,11 @@ impl Widgets {
         while let Some(child) = self.stats_body.first_child() {
             self.stats_body.remove(&child);
         }
-        let columns = [
-            (counts.track, gettext("this song")),
-            (counts.album, gettext("this album")),
-            (counts.artist, gettext("this artist")),
-        ];
-        let mut any = false;
-        for (count, what) in columns {
-            let Some(count) = count else { continue };
-            any = true;
-            let column = gtk::Box::new(gtk::Orientation::Vertical, 0);
-            let number = gtk::Label::new(Some(&format_count(count)));
-            number.set_halign(gtk::Align::Start);
-            number.add_css_class("now-panel__stat-number");
-            let label = gtk::Label::new(Some(&what));
-            label.set_halign(gtk::Align::Start);
-            label.add_css_class("dim-label");
-            label.add_css_class("caption");
-            column.append(&number);
-            column.append(&label);
-            self.stats_body.append(&column);
+        let columns = playcount_columns(counts);
+        self.stats_card.set_visible(columns.is_some());
+        if let Some(columns) = columns {
+            self.stats_body.append(&columns);
         }
-        self.stats_card.set_visible(any);
     }
 
     fn clear_credits(&self) {
@@ -530,56 +536,8 @@ impl Widgets {
         self.credits_body.append(&button);
     }
 
-    /// The Genius song bio: its first paragraph with "Show More", links
-    /// clickable, and where it comes from and whether Genius reviewed it.
-    fn credits_bio(&self, info: &GeniusTrackInfo) {
-        let full = match (&info.description_markup, &info.description) {
-            (Some(markup), _) => markup.clone(),
-            (None, Some(plain)) => glib::markup_escape_text(plain).to_string(),
-            (None, None) => return,
-        };
-        let folded = folded_bio(&full);
-        let row = gtk::Box::new(gtk::Orientation::Vertical, 2);
-        row.set_margin_top(4);
-        let name_label = wrapping_label(&["caption", "dim-label"]);
-        // translators: Heading of the Genius song bio in the Credits card.
-        name_label.set_text(&gettext("About This Song"));
-        let text = wrapping_label(&["body"]);
-        text.set_markup(folded.as_deref().unwrap_or(&full));
-        text.set_selectable(true);
-        let source = wrapping_label(&["caption", "dim-label"]);
-        source.set_text(&match info.description_status {
-            Some(GeniusBioStatus::Unreviewed) => gettext("Song bio from Genius · Unreviewed"),
-            Some(GeniusBioStatus::Reviewed) => gettext("Song bio from Genius · Reviewed by Genius"),
-            Some(GeniusBioStatus::Verified) => {
-                gettext("Song bio from Genius · Verified by the artist")
-            }
-            None => gettext("Song bio from Genius"),
-        });
-        row.append(&name_label);
-        row.append(&text);
-        if let Some(folded) = folded {
-            let more = gtk::Button::with_label(&gettext("Show More"));
-            more.add_css_class("flat");
-            more.add_css_class("small");
-            more.set_halign(gtk::Align::Start);
-            let expanded = std::cell::Cell::new(false);
-            more.connect_clicked(move |button| {
-                let open = !expanded.get();
-                expanded.set(open);
-                text.set_markup(if open { &full } else { &folded });
-                button.set_label(&if open {
-                    gettext("Show Less")
-                } else {
-                    gettext("Show More")
-                });
-            });
-            row.append(&more);
-        }
-        row.append(&source);
-        self.credits_body.append(&row);
-    }
-
+    /// A summary of who made the track: the full credits, the song's story
+    /// and the artist are in the About tab, which a click on the card opens.
     fn show_credits(&self, track: &Track, info: &GeniusTrackInfo) {
         self.clear_credits();
         let mut any = false;
@@ -591,23 +549,11 @@ impl Widgets {
         for (name, values) in [
             (gettext("Producer(s)"), &info.producers),
             (gettext("Writer(s)"), &info.writers),
-            (gettext("Featured Artists"), &info.featured_artists),
         ] {
             if !values.is_empty() {
                 self.credits_row(&name, &values.join(", "));
                 any = true;
             }
-        }
-        if let Some(date) = info.release_date.as_deref().filter(|d| !d.is_empty()) {
-            self.credits_row(&gettext("Release Date"), date);
-        }
-        for rel in info.relationships.iter().filter(|r| !r.tracks.is_empty()) {
-            self.credits_row(&rel.label, &rel.tracks.join("\n"));
-            any = true;
-        }
-        if info.description.as_deref().is_some_and(|d| !d.is_empty()) {
-            self.credits_bio(info);
-            any = true;
         }
         if !any {
             let label = wrapping_label(&["dim-label", "caption"]);
@@ -616,16 +562,16 @@ impl Widgets {
             ));
             self.credits_body.append(&label);
         }
-        let url = info.url.clone();
-        self.credits_button(
-            &if info.is_exact_match {
-                gettext("Open on Genius")
-            } else {
-                gettext("Search on Genius")
-            },
-            move |button| crate::app::components::open_external_url(button, &url),
-        );
     }
+}
+
+/// The user's plays of the track, its album and its artist, as columns.
+fn playcount_columns(counts: &canto_api::scrobbler::Playcounts) -> Option<gtk::Box> {
+    number_columns(vec![
+        (counts.track, gettext("this song")),
+        (counts.album, gettext("this album")),
+        (counts.artist, gettext("this artist")),
+    ])
 }
 
 pub struct NowPanel {
@@ -1102,6 +1048,11 @@ impl EventListener for NowPanel {
 pub(crate) fn widgets_for_tests() -> gtk::Widget {
     Widgets::build().stack.upcast()
 }
+
+#[cfg(test)]
+pub(crate) use about::sample_for_tests as about_sample_for_tests;
+#[cfg(test)]
+pub(crate) use stats::sample_for_tests as stats_sample_for_tests;
 
 /// The panel filled with a sample track, to look at its rendering.
 #[cfg(test)]

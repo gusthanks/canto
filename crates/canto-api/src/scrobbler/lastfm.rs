@@ -169,6 +169,221 @@ fn top_items(value: &Value, root: &str, key: &str) -> (Vec<TopItem>, Option<u64>
     (items, total)
 }
 
+/// What Last.fm knows about the playing track, its album and its artist.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct TrackInsights {
+    /// The user's own plays (empty without a user name)
+    pub playcounts: Playcounts,
+    /// Whether the user loved the track on Last.fm
+    pub loved: Option<bool>,
+    pub track_listeners: Option<u64>,
+    pub track_plays: Option<u64>,
+    pub artist_listeners: Option<u64>,
+    pub artist_plays: Option<u64>,
+    /// Genre-like tags of the track, album and artist, most relevant first
+    pub tags: Vec<String>,
+    /// The artist's bio, as plain text
+    pub artist_bio: Option<String>,
+    /// The album's wiki text, as plain text
+    pub album_wiki: Option<String>,
+    pub similar_artists: Vec<String>,
+    /// Similar tracks (`name` and `artist`)
+    pub similar_tracks: Vec<TopItem>,
+    /// The artist's most played tracks worldwide (`plays` is everyone's)
+    pub top_tracks: Vec<TopItem>,
+    pub artist_url: Option<String>,
+    pub track_url: Option<String>,
+    /// The user's total scrobbles
+    pub scrobbles: Option<u64>,
+    /// When the user joined Last.fm (Unix seconds)
+    pub registered: Option<i64>,
+}
+
+impl TrackInsights {
+    /// Whether there's anything to show.
+    pub fn is_empty(&self) -> bool {
+        *self
+            == Self {
+                scrobbles: self.scrobbles,
+                registered: self.registered,
+                ..Default::default()
+            }
+    }
+}
+
+/// Parameters of an `*.getInfo` call, the same for the play counts and the
+/// insights so both share the memoized answer.
+fn info_params(
+    method: &'static str,
+    api_key: &str,
+    username: &str,
+    extra: Vec<(&'static str, String)>,
+) -> Vec<(&'static str, String)> {
+    let mut params = vec![
+        ("method", method.to_string()),
+        ("api_key", api_key.to_string()),
+    ];
+    if !username.is_empty() {
+        params.push(("username", username.to_string()));
+    }
+    params.push(("autocorrect", "1".to_string()));
+    params.push(("format", "json".to_string()));
+    params.extend(extra);
+    params
+}
+
+/// Read-only answers kept for a few minutes, so the Now Playing card and the
+/// Stats tab don't ask twice for the same track. Memory only.
+const MEMO_TTL: Duration = Duration::from_secs(5 * 60);
+const MEMO_MAX: usize = 48;
+type Memo = std::sync::Mutex<Vec<(String, std::time::Instant, Value)>>;
+static MEMO: std::sync::OnceLock<Memo> = std::sync::OnceLock::new();
+
+async fn get_memoized(
+    client: &reqwest::Client,
+    params: &[(&'static str, String)],
+) -> Result<Value, DomainError> {
+    let url = url::Url::parse_with_params(LASTFM_API_ROOT, params)
+        .map_err(|e| DomainError::Parse(e.to_string()))?;
+    let key = url.as_str().to_string();
+    let memo = MEMO.get_or_init(Default::default);
+    if let Ok(mut entries) = memo.lock() {
+        entries.retain(|(_, at, _)| at.elapsed() < MEMO_TTL);
+        if let Some((_, _, value)) = entries.iter().find(|(k, _, _)| *k == key) {
+            return Ok(value.clone());
+        }
+    }
+    let response = client
+        .get(url)
+        .header(reqwest::header::USER_AGENT, LASTFM_USER_AGENT)
+        .timeout(Duration::from_secs(12))
+        .send()
+        .await
+        .map_err(|e| DomainError::Network(e.without_url().to_string()))?;
+    let value = parse_lastfm_response(response).await?;
+    if let Ok(mut entries) = memo.lock() {
+        if entries.len() >= MEMO_MAX {
+            entries.remove(0);
+        }
+        entries.push((key, std::time::Instant::now(), value.clone()));
+    }
+    Ok(value)
+}
+
+/// A Last.fm wiki or bio as plain text, without its "Read more on Last.fm"
+/// link and license line. `None` when what's left is too short to be about
+/// the music (track wikis are often notes about scrobbling glitches).
+pub fn clean_lastfm_wiki(text: &str) -> Option<String> {
+    let text = match text.find("<a href=\"https://www.last.fm") {
+        Some(i) => &text[..i],
+        None => text,
+    };
+    let text = match text.find("User-contributed text is available") {
+        Some(i) => &text[..i],
+        None => text,
+    };
+    let mut plain = String::with_capacity(text.len());
+    let mut in_tag = false;
+    for c in text.chars() {
+        match c {
+            '<' => in_tag = true,
+            '>' if in_tag => in_tag = false,
+            _ if !in_tag => plain.push(c),
+            _ => {}
+        }
+    }
+    let plain = plain
+        .replace("&amp;", "&")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">");
+    let paragraphs: Vec<String> = plain
+        .split("\n\n")
+        .map(|p| p.split_whitespace().collect::<Vec<_>>().join(" "))
+        .filter(|p| !p.is_empty())
+        .collect();
+    let out = paragraphs.join("\n\n");
+    (out.chars().count() >= 80).then_some(out)
+}
+
+/// Names in `value[root][key][*].name`, at most `max`.
+fn names_in(value: Option<&Value>, path: &str, max: usize) -> Vec<String> {
+    value
+        .and_then(|v| v.pointer(path))
+        .and_then(Value::as_array)
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|i| i.get("name")?.as_str())
+                .map(str::trim)
+                .filter(|n| !n.is_empty())
+                .take(max)
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Builds [`TrackInsights`] from the answers of `track.getInfo`,
+/// `artist.getInfo`, `album.getInfo`, `track.getSimilar`,
+/// `artist.getTopTracks` and `user.getInfo` (any may be missing).
+pub fn parse_track_insights(
+    track: Option<&Value>,
+    artist: Option<&Value>,
+    album: Option<&Value>,
+    similar: Option<&Value>,
+    top: Option<&Value>,
+    user: Option<&Value>,
+) -> TrackInsights {
+    let at = |value: Option<&Value>, path: &str| value.and_then(|v| v.pointer(path)).cloned();
+    let text = |value: Option<&Value>, path: &str| {
+        at(value, path)
+            .and_then(|v| v.as_str().map(str::to_string))
+            .filter(|s| !s.trim().is_empty())
+    };
+    let mut tags: Vec<String> = Vec::new();
+    for tag in names_in(track, "/track/toptags/tag", 8)
+        .into_iter()
+        .chain(names_in(album, "/album/tags/tag", 8))
+        .chain(names_in(artist, "/artist/tags/tag", 8))
+    {
+        let tag = tag.to_lowercase();
+        if !tags.contains(&tag) {
+            tags.push(tag);
+        }
+    }
+    tags.truncate(8);
+    let (similar_tracks, _) = similar.map_or((vec![], None), |v| {
+        top_items(v, "similartracks", "track")
+    });
+    let (top_tracks, _) = top.map_or((vec![], None), |v| top_items(v, "toptracks", "track"));
+    TrackInsights {
+        playcounts: Playcounts {
+            track: count(at(track, "/track/userplaycount").as_ref()),
+            album: count(at(album, "/album/userplaycount").as_ref()),
+            artist: count(at(artist, "/artist/stats/userplaycount").as_ref()),
+        },
+        loved: count(at(track, "/track/userloved").as_ref()).map(|n| n > 0),
+        track_listeners: count(at(track, "/track/listeners").as_ref()),
+        track_plays: count(at(track, "/track/playcount").as_ref()),
+        artist_listeners: count(at(artist, "/artist/stats/listeners").as_ref()),
+        artist_plays: count(at(artist, "/artist/stats/playcount").as_ref()),
+        tags,
+        artist_bio: text(artist, "/artist/bio/summary").and_then(|t| clean_lastfm_wiki(&t)),
+        album_wiki: text(album, "/album/wiki/summary").and_then(|t| clean_lastfm_wiki(&t)),
+        similar_artists: names_in(artist, "/artist/similar/artist", 8),
+        similar_tracks: similar_tracks.into_iter().take(8).collect(),
+        top_tracks: top_tracks.into_iter().take(5).collect(),
+        artist_url: text(artist, "/artist/url"),
+        track_url: text(track, "/track/url"),
+        scrobbles: count(at(user, "/user/playcount").as_ref()),
+        registered: count(at(user, "/user/registered/unixtime").as_ref())
+            .or_else(|| count(at(user, "/user/registered/#text").as_ref()))
+            .map(|t| t as i64),
+    }
+}
+
 impl LastFmClient {
     /// The user's top artists, tracks and albums in `period`
     /// (`user.getTopArtists`, `user.getTopTracks`, `user.getTopAlbums`).
@@ -225,6 +440,87 @@ impl LastFmClient {
         })
     }
 
+    /// Everything Last.fm says about the playing track, its album and artist
+    /// (read-only calls; `username` may be empty, which leaves out the
+    /// user's own numbers).
+    pub async fn track_insights(
+        api_key: &str,
+        username: &str,
+        artist: &str,
+        track: &str,
+        album: Option<&str>,
+    ) -> Result<TrackInsights, DomainError> {
+        static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+        let client = CLIENT.get_or_init(reqwest::Client::new).clone();
+        let (api_key, username) = (api_key.trim(), username.trim());
+        if api_key.is_empty() {
+            return Err(DomainError::NoToken);
+        }
+        let client = &client;
+        let get = |method: &'static str, extra: Vec<(&'static str, String)>| {
+            let params = info_params(method, api_key, username, extra);
+            async move { get_memoized(client, &params).await }
+        };
+        let artist_s = artist.to_string();
+        let track_s = track.to_string();
+        let track_info = get(
+            "track.getInfo",
+            vec![("artist", artist_s.clone()), ("track", track_s.clone())],
+        );
+        let artist_info = get("artist.getInfo", vec![("artist", artist_s.clone())]);
+        let album_info = async {
+            match album {
+                Some(album) if !album.trim().is_empty() => Some(
+                    get(
+                        "album.getInfo",
+                        vec![("artist", artist_s.clone()), ("album", album.to_string())],
+                    )
+                    .await,
+                ),
+                _ => None,
+            }
+        };
+        let similar = get(
+            "track.getSimilar",
+            vec![
+                ("artist", artist_s.clone()),
+                ("track", track_s.clone()),
+                ("limit", "8".to_string()),
+            ],
+        );
+        let top = get(
+            "artist.getTopTracks",
+            vec![("artist", artist_s.clone()), ("limit", "5".to_string())],
+        );
+        let user = async {
+            if username.is_empty() {
+                return None;
+            }
+            let params = vec![
+                ("method", "user.getInfo".to_string()),
+                ("api_key", api_key.to_string()),
+                ("user", username.to_string()),
+                ("format", "json".to_string()),
+            ];
+            Some(get_memoized(client, &params).await)
+        };
+        let (track_info, artist_info, album_info, similar, top, user) =
+            futures::join!(track_info, artist_info, album_info, similar, top, user);
+        // Nothing at all came back: say why (no network, a refused key...)
+        let (track_info, artist_info) = match (track_info, artist_info) {
+            (Err(_), Err(e)) => return Err(e),
+            (track, artist) => (track.ok(), artist.ok()),
+        };
+        Ok(parse_track_insights(
+            track_info.as_ref(),
+            artist_info.as_ref(),
+            album_info.and_then(Result::ok).as_ref(),
+            similar.ok().as_ref(),
+            top.ok().as_ref(),
+            user.and_then(Result::ok).as_ref(),
+        ))
+    }
+
     /// [`Self::playcounts`] with a shared HTTP client.
     pub async fn user_playcounts(
         api_key: &str,
@@ -253,26 +549,8 @@ impl LastFmClient {
             return Err(DomainError::NoToken);
         }
         let get = |method: &'static str, extra: Vec<(&'static str, String)>| {
-            let mut params = vec![
-                ("method", method.to_string()),
-                ("api_key", api_key.to_string()),
-                ("username", username.to_string()),
-                ("autocorrect", "1".to_string()),
-                ("format", "json".to_string()),
-            ];
-            params.extend(extra);
-            async move {
-                let url = url::Url::parse_with_params(LASTFM_API_ROOT, &params)
-                    .map_err(|e| DomainError::Parse(e.to_string()))?;
-                let response = client
-                    .get(url)
-                    .header(reqwest::header::USER_AGENT, LASTFM_USER_AGENT)
-                    .timeout(Duration::from_secs(12))
-                    .send()
-                    .await
-                    .map_err(|e| DomainError::Network(e.without_url().to_string()))?;
-                parse_lastfm_response(response).await
-            }
+            let params = info_params(method, api_key, username, extra);
+            async move { get_memoized(client, &params).await }
         };
         let artist_s = artist.to_string();
         let track_info = get(
@@ -643,6 +921,94 @@ mod tests {
             "sec",
         );
         assert_eq!(a, b);
+    }
+
+    #[test]
+    fn insights_read_world_numbers_tags_bio_similar_and_profile() {
+        let track: Value = serde_json::from_str(
+            r##"{"track":{"name":"Pink + White","url":"https://www.last.fm/music/Frank+Ocean/_/Pink+++White",
+            "listeners":"5434","playcount":"16748","userplaycount":"12","userloved":"1",
+            "toptags":{"tag":[{"name":"RnB"}]},
+            "wiki":{"summary":"A glitch with scrobblers"}}}"##,
+        )
+        .unwrap();
+        let artist: Value = serde_json::from_str(
+            r##"{"artist":{"name":"Frank Ocean","url":"https://www.last.fm/music/Frank+Ocean",
+            "stats":{"listeners":"4472285","playcount":"815125124","userplaycount":"2529"},
+            "similar":{"artist":[{"name":"Daniel Caesar"},{"name":"SZA"}]},
+            "tags":{"tag":[{"name":"rnb"},{"name":"soul"}]},
+            "bio":{"summary":"Christopher Edwin Breaux, professionally known as Frank Ocean, is an American singer &amp; songwriter. <a href=\"https://www.last.fm/music/Frank+Ocean\">Read more on Last.fm</a>"}}}"##,
+        )
+        .unwrap();
+        let album: Value = serde_json::from_str(
+            r##"{"album":{"userplaycount":1832,"tags":{"tag":[{"name":"soul"},{"name":"2016"}]}}}"##,
+        )
+        .unwrap();
+        let similar: Value = serde_json::from_str(
+            r##"{"similartracks":{"track":[{"name":"Nikes","playcount":22058623,"artist":{"name":"Frank Ocean"},
+            "image":[{"#text":"https://x/2a96cbd8b46e442fc41c2b86b821562f.png","size":"large"}]}]}}"##,
+        )
+        .unwrap();
+        let top: Value = serde_json::from_str(
+            r##"{"toptracks":{"track":[{"name":"Pink + White","playcount":"62021220","artist":{"name":"Frank Ocean"}}]}}"##,
+        )
+        .unwrap();
+        let user: Value = serde_json::from_str(
+            r##"{"user":{"playcount":"122741","registered":{"unixtime":"1548544192","#text":1548544192}}}"##,
+        )
+        .unwrap();
+        let info = parse_track_insights(
+            Some(&track),
+            Some(&artist),
+            Some(&album),
+            Some(&similar),
+            Some(&top),
+            Some(&user),
+        );
+        assert_eq!(
+            info.playcounts,
+            Playcounts {
+                track: Some(12),
+                album: Some(1832),
+                artist: Some(2529)
+            }
+        );
+        assert_eq!(info.loved, Some(true));
+        assert_eq!(info.track_listeners, Some(5434));
+        assert_eq!(info.artist_plays, Some(815125124));
+        assert_eq!(info.tags, vec!["rnb", "soul", "2016"]);
+        let bio = info.artist_bio.clone().unwrap();
+        assert!(bio.ends_with("singer & songwriter."), "{}", bio);
+        assert_eq!(info.album_wiki, None);
+        assert_eq!(info.similar_artists, vec!["Daniel Caesar", "SZA"]);
+        assert_eq!(info.similar_tracks[0].name, "Nikes");
+        assert_eq!(info.similar_tracks[0].artist.as_deref(), Some("Frank Ocean"));
+        assert_eq!(info.similar_tracks[0].image, None);
+        assert_eq!(info.top_tracks[0].plays, 62021220);
+        assert_eq!(info.scrobbles, Some(122741));
+        assert_eq!(info.registered, Some(1548544192));
+        assert!(!info.is_empty());
+        assert!(parse_track_insights(None, None, None, None, None, Some(&user)).is_empty());
+    }
+
+    #[test]
+    fn short_or_link_only_wikis_are_dropped() {
+        assert_eq!(clean_lastfm_wiki("A glitch with scrobblers"), None);
+        assert_eq!(
+            clean_lastfm_wiki(r#" <a href="https://www.last.fm/music/X">Read more on Last.fm</a>"#),
+            None
+        );
+        let long = "Blonde is the second album by American singer Frank Ocean. It was released on August 20, 2016.\n\nSecond paragraph.";
+        assert_eq!(clean_lastfm_wiki(long).as_deref(), Some(long));
+    }
+
+    #[test]
+    fn info_params_leave_out_an_empty_user() {
+        let with = info_params("track.getInfo", "k", "me", vec![("track", "t".into())]);
+        assert!(with.iter().any(|(k, v)| *k == "username" && v == "me"));
+        let without = info_params("track.getInfo", "k", "", vec![]);
+        assert!(!without.iter().any(|(k, _)| *k == "username"));
+        assert_eq!(without.last().map(|(k, _)| *k), Some("format"));
     }
 
     #[test]

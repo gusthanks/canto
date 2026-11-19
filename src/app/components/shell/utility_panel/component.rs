@@ -1,7 +1,7 @@
 use gtk::prelude::*;
 use std::rc::Rc;
 
-use super::UtilityPanelWidget;
+use super::{PanelPages, UtilityPanelWidget};
 use crate::app::components::WindowLayout;
 
 /// The panel beside the content, at the window's end. Whatever it shows is
@@ -26,18 +26,13 @@ impl UtilityPanel {
             split,
             layout,
         };
-        panel.set_pages(None, None, None);
+        panel.set_pages(&PanelPages::default());
         panel
     }
 
-    pub fn set_pages(
-        &self,
-        now: Option<&gtk::Widget>,
-        queue: Option<&gtk::Widget>,
-        lyrics: Option<&gtk::Widget>,
-    ) {
-        self.widget.set_pages(now, queue, lyrics);
-        let has_content = now.is_some() || queue.is_some() || lyrics.is_some();
+    pub fn set_pages(&self, pages: &PanelPages) {
+        self.widget.set_pages(pages);
+        let has_content = !pages.is_empty();
         self.split.set_sidebar(has_content.then_some(&self.widget));
         self.widget
             .resize_handle()
@@ -46,7 +41,10 @@ impl UtilityPanel {
 
     #[allow(dead_code)]
     pub fn set_content(&self, content: Option<&gtk::Widget>, _title: &str) {
-        self.set_pages(None, content, None);
+        self.set_pages(&PanelPages {
+            queue: content.cloned(),
+            ..Default::default()
+        });
     }
 
     pub fn set_selection(&self, selected: Option<usize>, all_selected: bool) {

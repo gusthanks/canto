@@ -39,6 +39,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
         "canto-equalizer-symbolic",
         "canto-lyrics-symbolic",
         "canto-queue-symbolic",
+        "canto-stats-symbolic",
         "canto-mini-player-symbolic",
         "canto-more-symbolic",
         "canto-library-symbolic",
@@ -132,8 +133,31 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     // The Now Playing side panel builds, with its heart icons available.
     let now_panel = super::shell::now_panel::widgets_for_tests();
     drop(now_panel);
+    // The About and Stats tabs build with every card filled
+    let about = super::shell::now_panel::about_sample_for_tests();
+    let stats = super::shell::now_panel::stats_sample_for_tests();
+    for (tab, cards) in [(&about, 7), (&stats, 7)] {
+        let stack = tab.downcast_ref::<gtk::Stack>().unwrap();
+        assert_eq!(stack.visible_child_name().as_deref(), Some("content"));
+        fn find(widget: &gtk::Widget, class: &str) -> Option<gtk::Widget> {
+            if widget.has_css_class(class) {
+                return Some(widget.clone());
+            }
+            let mut child = widget.first_child();
+            while let Some(c) = child {
+                if let Some(found) = find(&c, class) {
+                    return Some(found);
+                }
+                child = c.next_sibling();
+            }
+            None
+        }
+        let content = find(tab, "info-page__content").expect("info page content");
+        assert_eq!(content.observe_children().n_items(), cards);
+    }
     if std::env::var_os("CANTO_TEST_DUMP_DIR").is_some() {
         dump_now_panel_sample();
+        dump_info_tab_samples(about, stats);
     }
     for icon in ["canto-heart-symbolic", "canto-heart-filled-symbolic"] {
         assert!(icon_theme.has_icon(icon), "{} must resolve", icon);
@@ -337,6 +361,36 @@ fn pump(ms: u64) {
     while std::time::Instant::now() < end {
         ctx.iteration(false);
         std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+}
+
+/// Renders the About and Stats tabs with sample data into CANTO_TEST_DUMP_DIR.
+fn dump_info_tab_samples(about: gtk::Widget, stats: gtk::Widget) {
+    libadwaita::StyleManager::default().set_color_scheme(libadwaita::ColorScheme::ForceDark);
+    for (tab, name) in [(about, "about-tab-sample"), (stats, "stats-tab-sample")] {
+        let window = gtk::Window::new();
+        window.set_default_size(380, 1700);
+        window.set_child(Some(&tab));
+        window.present();
+        pump(1500);
+        distinct_colors(window.upcast_ref(), name);
+        // And scrolled to the end, for the cards under the fold
+        let mut scrollers = vec![tab.clone()];
+        while let Some(widget) = scrollers.pop() {
+            if let Some(scroller) = widget.downcast_ref::<gtk::ScrolledWindow>() {
+                let adj = scroller.vadjustment();
+                adj.set_value(adj.upper() - adj.page_size());
+                break;
+            }
+            let mut child = widget.first_child();
+            while let Some(c) = child {
+                child = c.next_sibling();
+                scrollers.push(c);
+            }
+        }
+        pump(500);
+        distinct_colors(window.upcast_ref(), &format!("{name}-end"));
+        window.destroy();
     }
 }
 

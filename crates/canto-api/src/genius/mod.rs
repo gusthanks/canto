@@ -24,7 +24,50 @@ pub struct GeniusRelationship {
     pub tracks: Vec<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+/// A credit beyond producers and writers ("Mastering Engineer", "Label",
+/// "Additional Vocals"...): Genius's role name and who did it.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GeniusCredit {
+    pub role: String,
+    pub names: Vec<String>,
+}
+
+/// A translation of the lyrics made by Genius users: only its link.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GeniusTranslation {
+    /// Language code, like "pt"
+    pub language: String,
+    /// What the translation calls itself ("Tradução em Português"), or the code
+    pub label: String,
+    pub url: String,
+}
+
+/// How much the song's Genius page is read and worked on.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GeniusSongStats {
+    pub pageviews: Option<u64>,
+    pub contributors: Option<u64>,
+    /// Reviewed explanations of lines
+    pub annotations: Option<u64>,
+    pub unreviewed_annotations: Option<u64>,
+}
+
+/// An artist on Genius (`GET /artists/{id}`).
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GeniusArtistInfo {
+    pub id: u64,
+    pub name: String,
+    pub url: String,
+    pub description: Option<String>,
+    /// The description as Pango markup, like [`GeniusTrackInfo::description_markup`]
+    pub description_markup: Option<String>,
+    pub alternate_names: Vec<String>,
+    /// (kind, url): "website", "instagram", "youtube"...
+    pub links: Vec<(String, String)>,
+    pub followers: Option<u64>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GeniusTrackInfo {
     pub song_id: Option<u64>,
     pub url: String,
@@ -44,6 +87,18 @@ pub struct GeniusTrackInfo {
     /// separated by a blank line.
     #[serde(default)]
     pub description_markup: Option<String>,
+    /// Every other credit, in Genius's order
+    #[serde(default)]
+    pub credits: Vec<GeniusCredit>,
+    #[serde(default)]
+    pub recording_location: Option<String>,
+    #[serde(default)]
+    pub translations: Vec<GeniusTranslation>,
+    #[serde(default)]
+    pub stats: GeniusSongStats,
+    /// The main artist's Genius id, for [`fetch_genius_artist_info`]
+    #[serde(default)]
+    pub artist_id: Option<u64>,
 }
 
 /// Genius's HTML (a song bio) as Pango markup: links (absolute, http or
@@ -378,10 +433,10 @@ pub fn build_genius_search_url(artist: &str, title: &str) -> String {
 
 pub fn genius_cache_key(track_id: &str, artist: &str, title: &str) -> String {
     if !track_id.trim().is_empty() {
-        format!("genius_song_v2_{}", track_id.trim())
+        format!("genius_song_v3_{}", track_id.trim())
     } else {
         format!(
-            "genius_song_v2_{}_{}",
+            "genius_song_v3_{}_{}",
             normalize_for_match(artist),
             normalize_for_match(title)
         )
@@ -564,19 +619,8 @@ async fn write_cache(cache: Option<&DiskCache>, key: &str, info: &GeniusTrackInf
 
 fn empty_fallback(fallback_url: String) -> GeniusTrackInfo {
     GeniusTrackInfo {
-        song_id: None,
         url: fallback_url,
-        is_exact_match: false,
-        full_title: None,
-        album: None,
-        release_date: None,
-        featured_artists: Vec::new(),
-        producers: Vec::new(),
-        writers: Vec::new(),
-        relationships: Vec::new(),
-        description: None,
-        description_status: None,
-        description_markup: None,
+        ..Default::default()
     }
 }
 
@@ -786,6 +830,23 @@ pub fn parse_genius_song_response(
         .map(|html| genius_html_to_markup(&html))
         .filter(|markup| !markup.is_empty());
 
+    let credits = extract_credits(song.get("custom_performances"));
+    let recording_location = non_empty_str(song.get("recording_location"));
+    let translations = extract_translations(song.get("translation_songs"));
+    let stats = song
+        .get("stats")
+        .map(|s| GeniusSongStats {
+            pageviews: s.get("pageviews").and_then(Value::as_u64),
+            contributors: s.get("contributors").and_then(Value::as_u64),
+            annotations: s.get("accepted_annotations").and_then(Value::as_u64),
+            unreviewed_annotations: s.get("unreviewed_annotations").and_then(Value::as_u64),
+        })
+        .unwrap_or_default();
+    let artist_id = song
+        .get("primary_artist")
+        .and_then(|a| a.get("id"))
+        .and_then(Value::as_u64);
+
     GeniusTrackInfo {
         song_id: Some(song_id),
         url,
@@ -800,7 +861,205 @@ pub fn parse_genius_song_response(
         description,
         description_status,
         description_markup,
+        credits,
+        recording_location,
+        translations,
+        stats,
+        artist_id,
     }
+}
+
+/// `custom_performances`: every credit Genius has beyond the main ones.
+fn extract_credits(val: Option<&Value>) -> Vec<GeniusCredit> {
+    let Some(arr) = val.and_then(Value::as_array) else {
+        return Vec::new();
+    };
+    arr.iter()
+        .filter_map(|item| {
+            let role = non_empty_str(item.get("label"))?;
+            let names = extract_artist_names(item.get("artists"));
+            (!names.is_empty()).then_some(GeniusCredit { role, names })
+        })
+        .collect()
+}
+
+/// `translation_songs`: links to the lyrics translated by Genius users.
+fn extract_translations(val: Option<&Value>) -> Vec<GeniusTranslation> {
+    let Some(arr) = val.and_then(Value::as_array) else {
+        return Vec::new();
+    };
+    let mut out: Vec<GeniusTranslation> = Vec::new();
+    for item in arr {
+        let Some(url) = non_empty_str(item.get("url")).filter(|u| u.starts_with("https://"))
+        else {
+            continue;
+        };
+        if out.iter().any(|t| t.url == url) {
+            continue;
+        }
+        let language = non_empty_str(item.get("language")).unwrap_or_default();
+        // "Artist - Song (Tradução em Português)": the part in parentheses
+        let label = non_empty_str(item.get("title"))
+            .and_then(|title| {
+                let title = title.trim_end();
+                let inner = title.strip_suffix(')')?;
+                let open = inner.rfind('(')?;
+                let label = inner[open + 1..].trim();
+                (!label.is_empty()).then(|| label.to_string())
+            })
+            .unwrap_or_else(|| language.to_uppercase());
+        if label.is_empty() {
+            continue;
+        }
+        out.push(GeniusTranslation {
+            language,
+            label,
+            url,
+        });
+    }
+    out
+}
+
+/// The order artist links are shown in; unknown kinds come after.
+const LINK_ORDER: &[&str] = &[
+    "website",
+    "instagram",
+    "twitter",
+    "facebook",
+    "youtube",
+    "tiktok",
+    "soundcloud",
+    "spotify",
+    "apple_music",
+    "tidal",
+    "deezer",
+    "amazon_music",
+    "shazam",
+];
+
+/// The link for a social account, which Genius sends as a name or a URL.
+fn social_url(kind: &str, value: &str) -> Option<String> {
+    let value = value.trim().trim_start_matches('@');
+    if value.is_empty() {
+        return None;
+    }
+    if value.starts_with("https://") || value.starts_with("http://") {
+        return Some(value.to_string());
+    }
+    if value.contains('/') || value.contains(' ') {
+        return None;
+    }
+    let base = match kind {
+        "instagram" => "https://www.instagram.com/",
+        "twitter" => "https://x.com/",
+        "facebook" => "https://www.facebook.com/",
+        _ => return None,
+    };
+    Some(format!("{base}{value}"))
+}
+
+/// Parse `GET /artists/{id}?text_format=plain,html`.
+pub fn parse_genius_artist_response(value: &Value) -> Option<GeniusArtistInfo> {
+    let artist = value.pointer("/response/artist")?;
+    let id = artist.get("id").and_then(Value::as_u64)?;
+    let name = non_empty_str(artist.get("name"))?;
+    let url = non_empty_str(artist.get("url")).unwrap_or_default();
+    let description = artist
+        .get("description")
+        .and_then(|d| non_empty_str(d.get("plain")))
+        .filter(|text| text != "?");
+    let description_markup = description
+        .as_ref()
+        .and_then(|_| non_empty_str(artist.get("description").and_then(|d| d.get("html"))))
+        .map(|html| genius_html_to_markup(&html))
+        .filter(|markup| !markup.is_empty());
+    let mut alternate_names: Vec<String> = Vec::new();
+    for alias in artist
+        .get("alternate_names")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        if let Some(alias) = non_empty_str(Some(alias)) {
+            if alias != name && !alternate_names.contains(&alias) {
+                alternate_names.push(alias);
+            }
+        }
+    }
+    let mut links: Vec<(String, String)> = Vec::new();
+    let mut add = |kind: &str, value: &str| {
+        if links.iter().any(|(k, _)| k == kind) {
+            return;
+        }
+        if let Some(url) = social_url(kind, value) {
+            links.push((kind.to_string(), url));
+        }
+    };
+    if let Some(social) = artist.get("social_links").and_then(Value::as_object) {
+        for (kind, value) in social {
+            if let Some(value) = value.as_str() {
+                add(kind, value);
+            }
+        }
+    }
+    for (kind, key) in [
+        ("instagram", "instagram_name"),
+        ("twitter", "twitter_name"),
+        ("facebook", "facebook_name"),
+    ] {
+        if let Some(value) = artist.get(key).and_then(Value::as_str) {
+            add(kind, value);
+        }
+    }
+    links.sort_by_key(|(kind, _)| {
+        LINK_ORDER
+            .iter()
+            .position(|k| k == kind)
+            .unwrap_or(LINK_ORDER.len())
+    });
+    Some(GeniusArtistInfo {
+        id,
+        name,
+        url,
+        description,
+        description_markup,
+        alternate_names,
+        links,
+        followers: artist.get("followers_count").and_then(Value::as_u64),
+    })
+}
+
+/// The artist's Genius page: bio, other names and links. Cached on disk.
+pub async fn fetch_genius_artist_info(
+    client: &reqwest::Client,
+    cache: Option<&DiskCache>,
+    artist_id: u64,
+    token: &str,
+) -> Result<Option<GeniusArtistInfo>, DomainError> {
+    let token = token.trim();
+    if token.is_empty() {
+        return Ok(None);
+    }
+    let key = format!("genius_artist_v1_{artist_id}");
+    if let Some(disk) = cache {
+        if let Some(entry) = disk.read(&key).await {
+            if matches!(entry.state, EntryState::Fresh) {
+                if let Ok(cached) = serde_json::from_slice::<Option<GeniusArtistInfo>>(&entry.data)
+                {
+                    return Ok(cached);
+                }
+            }
+        }
+    }
+    let url = format!("{GENIUS_API_BASE}/artists/{artist_id}?text_format=plain,html");
+    let value = get_genius_json(client, &url, token).await?;
+    let info = parse_genius_artist_response(&value);
+    if let Some(disk) = cache {
+        if let Ok(bytes) = serde_json::to_vec(&info) {
+            disk.write(&key, &bytes, GENIUS_CACHE_TTL, None).await;
+        }
+    }
+    Ok(info)
 }
 
 fn non_empty_str(val: Option<&Value>) -> Option<String> {
@@ -835,8 +1094,12 @@ fn extract_relationships(val: Option<&Value>) -> Vec<GeniusRelationship> {
         ("sampled_in", "Sampled in"),
         ("interpolates", "Interpolates"),
         ("interpolated_by", "Interpolated in"),
+        ("cover_of", "Cover of"),
         ("covered_by", "Covered by"),
-        ("covers", "Cover of"),
+        ("remix_of", "Remix of"),
+        ("remixed_by", "Remixed by"),
+        ("live_version_of", "Live version of"),
+        ("performed_live_as", "Performed live as"),
     ];
 
     let mut out = Vec::new();
@@ -1011,6 +1274,105 @@ mod tests {
             Some("A critique of greed written in 7/4 time.")
         );
         assert_eq!(info.description_status, Some(GeniusBioStatus::Unreviewed));
+    }
+
+    #[test]
+    fn parses_full_credits_translations_stats_and_more_relationships() {
+        let json = serde_json::json!({
+            "response": {
+                "song": {
+                    "url": "https://genius.com/Frank-ocean-pink-white-lyrics",
+                    "recording_location": "Abbey Road Studios",
+                    "primary_artist": { "id": 1985, "name": "Frank Ocean" },
+                    "stats": {
+                        "pageviews": 2555469,
+                        "contributors": 270,
+                        "accepted_annotations": 13,
+                        "unreviewed_annotations": 1,
+                        "hot": false
+                    },
+                    "custom_performances": [
+                        { "label": "Mastering Engineer", "artists": [{ "name": "MIKE DEAN" }] },
+                        { "label": "Additional Vocals", "artists": [{ "name": "Beyonc\u{e9}" }] },
+                        { "label": "Empty", "artists": [] }
+                    ],
+                    "song_relationships": [
+                        { "relationship_type": "cover_of", "songs": [{ "full_title": "A by B" }] },
+                        { "relationship_type": "remixed_by", "songs": [{ "title": "A (Remix)" }] },
+                        { "relationship_type": "translations", "songs": [{ "title": "skip" }] }
+                    ],
+                    "translation_songs": [
+                        {
+                            "language": "pt",
+                            "title": "Frank Ocean - Pink + White (Tradu\u{e7}\u{e3}o em Portugu\u{ea}s)",
+                            "url": "https://genius.com/pt-pink-white"
+                        },
+                        { "language": "es", "title": "No parentheses", "url": "https://genius.com/es" },
+                        { "language": "fr", "title": "x", "url": "javascript:alert(1)" }
+                    ]
+                }
+            }
+        });
+        let info = parse_genius_song_response(&json, 2842078, "https://genius.com/search".into());
+        assert_eq!(info.recording_location.as_deref(), Some("Abbey Road Studios"));
+        assert_eq!(info.artist_id, Some(1985));
+        assert_eq!(info.stats.pageviews, Some(2555469));
+        assert_eq!(info.stats.contributors, Some(270));
+        assert_eq!(info.stats.annotations, Some(13));
+        assert_eq!(info.credits.len(), 2, "a role with nobody is dropped");
+        assert_eq!(info.credits[0].role, "Mastering Engineer");
+        assert_eq!(info.credits[1].names, vec!["Beyonc\u{e9}"]);
+        let kinds: Vec<&str> = info.relationships.iter().map(|r| r.kind.as_str()).collect();
+        assert_eq!(kinds, vec!["cover_of", "remixed_by"]);
+        assert_eq!(info.translations.len(), 2, "only https links");
+        assert_eq!(info.translations[0].label, "Tradu\u{e7}\u{e3}o em Portugu\u{ea}s");
+        assert_eq!(info.translations[1].label, "ES");
+    }
+
+    #[test]
+    fn old_cached_song_info_still_loads() {
+        let old = r#"{"song_id":1,"url":"u","is_exact_match":true,"full_title":null,
+            "album":null,"release_date":null,"featured_artists":[],"producers":["P"],
+            "writers":[],"relationships":[],"description":null}"#;
+        let info: GeniusTrackInfo = serde_json::from_str(old).unwrap();
+        assert_eq!(info.producers, vec!["P"]);
+        assert!(info.credits.is_empty());
+        assert_eq!(info.stats, GeniusSongStats::default());
+    }
+
+    #[test]
+    fn parses_an_artist_with_bio_names_and_links() {
+        let json = serde_json::json!({
+            "response": {
+                "artist": {
+                    "id": 1985,
+                    "name": "Frank Ocean",
+                    "url": "https://genius.com/artists/Frank-ocean",
+                    "description": { "plain": "Singer.", "html": "<p>Singer.</p>" },
+                    "alternate_names": ["Lonny Breaux", "Frank Ocean", "Lonny Breaux", ""],
+                    "instagram_name": "blonded",
+                    "twitter_name": null,
+                    "facebook_name": "",
+                    "followers_count": 7606,
+                    "social_links": {
+                        "youtube": "https://www.youtube.com/channel/x",
+                        "website": "https://blonded.co/",
+                        "facebook": "",
+                        "instagram": "blonded"
+                    }
+                }
+            }
+        });
+        let artist = parse_genius_artist_response(&json).unwrap();
+        assert_eq!(artist.id, 1985);
+        assert_eq!(artist.description.as_deref(), Some("Singer."));
+        assert!(artist.description_markup.is_some());
+        assert_eq!(artist.alternate_names, vec!["Lonny Breaux"]);
+        assert_eq!(artist.followers, Some(7606));
+        let kinds: Vec<&str> = artist.links.iter().map(|(k, _)| k.as_str()).collect();
+        assert_eq!(kinds, vec!["website", "instagram", "youtube"]);
+        assert_eq!(artist.links[1].1, "https://www.instagram.com/blonded");
+        assert!(parse_genius_artist_response(&serde_json::json!({})).is_none());
     }
 
     #[test]

@@ -38,7 +38,7 @@ pub mod panel_manager;
 pub use panel_manager::*;
 
 pub mod now_panel;
-pub use now_panel::NowPanel;
+pub use now_panel::{AboutPanel, NowPanel, StatsPanel};
 
 pub mod fullscreen_lyrics;
 pub use fullscreen_lyrics::FullscreenLyrics;

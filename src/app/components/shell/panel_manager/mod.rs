@@ -3,8 +3,8 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use crate::app::components::{
-    AppHeaderBar, BottomSheet, Component, EventListener, FullscreenLyrics, LyricsPage, MiniPlayer,
-    NowPanel, QueuePage, QueuePageWidget, UtilityPanel,
+    AboutPanel, AppHeaderBar, BottomSheet, Component, EventListener, FullscreenLyrics, LyricsPage,
+    MiniPlayer, NowPanel, PanelPages, QueuePage, QueuePageWidget, StatsPanel, UtilityPanel,
 };
 use crate::app::state::PlaybackEvent;
 use crate::app::{AppAction, AppEvent, AppModel, Dispatcher};
@@ -14,6 +14,8 @@ const TOGGLE_ACTION: &str = "utility-panel";
 const SHOW_QUEUE_ACTION: &str = "show-queue";
 const SHOW_LYRICS_ACTION: &str = "show-lyrics";
 const SHOW_NOW_PLAYING_ACTION: &str = "show-now-playing";
+const SHOW_ABOUT_ACTION: &str = "show-about";
+const SHOW_STATS_ACTION: &str = "show-stats";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Placement {
@@ -35,6 +37,8 @@ struct Panels {
     now: gtk::Widget,
     queue: gtk::Widget,
     lyrics: gtk::Widget,
+    about: gtk::Widget,
+    stats: gtk::Widget,
     panel: UtilityPanel,
     sheet: BottomSheet,
     app_header: AppHeaderBar,
@@ -64,7 +68,8 @@ impl Panels {
             .set_utility_panel_beside(self.panel.is_open());
     }
 
-    /// Whether the side panel holds `tab` ("now", "queue" or "lyrics"). The
+    /// Whether the side panel holds `tab` ("now", "queue", "lyrics", "about"
+    /// or "stats"). The
     /// queue is in the bottom sheet instead when that's where it's placed.
     fn panel_has(&self, tab: &str) -> bool {
         tab != "queue" || self.placement.get() == Some(Placement::Side)
@@ -99,12 +104,12 @@ impl Panels {
         match self.placement.get() {
             Some(Placement::Side) => {
                 self.panel.set_selection(None, false);
-                self.panel.set_pages(None, None, None);
+                self.panel.set_pages(&PanelPages::default());
             }
             Some(Placement::Sheet) => {
                 self.sheet.set_selecting(false);
                 self.sheet.set_page(None);
-                self.panel.set_pages(None, None, None);
+                self.panel.set_pages(&PanelPages::default());
             }
             None => {}
         }
@@ -112,17 +117,17 @@ impl Panels {
         if let Some(page) = self.queue.downcast_ref::<QueuePageWidget>() {
             page.set_selection_bar_hidden(placement == Placement::Side);
         }
-        match placement {
-            Placement::Side => {
-                self.panel
-                    .set_pages(Some(&self.now), Some(&self.queue), Some(&self.lyrics))
-            }
-            Placement::Sheet => {
-                self.sheet.set_page(self.queue.downcast_ref());
-                self.panel
-                    .set_pages(Some(&self.now), None, Some(&self.lyrics));
-            }
+        let pages = PanelPages {
+            now: Some(self.now.clone()),
+            queue: (placement == Placement::Side).then(|| self.queue.clone()),
+            lyrics: Some(self.lyrics.clone()),
+            about: Some(self.about.clone()),
+            stats: Some(self.stats.clone()),
+        };
+        if placement == Placement::Sheet {
+            self.sheet.set_page(self.queue.downcast_ref());
         }
+        self.panel.set_pages(&pages);
         let open = self.is_open();
         if self.action.state().and_then(|s| s.get::<bool>()) != Some(open) {
             self.action.set_state(&open.to_variant());
@@ -137,6 +142,8 @@ pub struct PanelManager {
     mini: MiniPlayer,
     queue: QueuePage,
     lyrics: LyricsPage,
+    about: AboutPanel,
+    stats: StatsPanel,
     panels: Rc<Panels>,
     app_model: Rc<AppModel>,
     _settings: gio::Settings,
@@ -154,6 +161,8 @@ impl PanelManager {
         let queue = QueuePage::new(app_model.clone(), dispatcher.clone());
         let lyrics = LyricsPage::new(app_model.clone(), dispatcher.clone());
         let now = NowPanel::new(app_model.clone(), dispatcher.clone());
+        let about = AboutPanel::new(app_model.clone());
+        let stats = StatsPanel::new(app_model.clone(), dispatcher.clone());
         let fullscreen = FullscreenLyrics::new(window, app_model.clone(), dispatcher.clone());
         let mini = MiniPlayer::new(window, app_model.clone(), dispatcher.clone());
         panel.connect_selection_cancel(clone!(
@@ -170,6 +179,8 @@ impl PanelManager {
             now: now.widget().clone(),
             queue: queue.widget().clone().upcast(),
             lyrics: lyrics.widget().clone().upcast(),
+            about: about.widget().clone(),
+            stats: stats.widget().clone(),
             panel,
             sheet,
             app_header,
@@ -193,6 +204,8 @@ impl PanelManager {
             mini,
             queue,
             lyrics,
+            about,
+            stats,
             panels,
             app_model,
             _settings: settings,
@@ -241,6 +254,17 @@ impl PanelManager {
             }
         });
         window.add_action(&show_now);
+
+        for (name, tab) in [(SHOW_ABOUT_ACTION, "about"), (SHOW_STATS_ACTION, "stats")] {
+            let show = gio::SimpleAction::new(name, None);
+            let panels_weak = Rc::downgrade(&self.panels);
+            show.connect_activate(move |_, _| {
+                if let Some(panels) = panels_weak.upgrade() {
+                    panels.toggle_view(tab);
+                }
+            });
+            window.add_action(&show);
+        }
 
         let panels = Rc::downgrade(&self.panels);
         let app_model = self.app_model.clone();
@@ -292,6 +316,8 @@ impl EventListener for PanelManager {
         self.mini.on_event(event);
         self.queue.on_event(event);
         self.lyrics.on_event(event);
+        self.about.on_event(event);
+        self.stats.on_event(event);
         if let AppEvent::SelectionEvent(_)
         | AppEvent::PlaybackEvent(PlaybackEvent::PlaylistChanged) = event
         {

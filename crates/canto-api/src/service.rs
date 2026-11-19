@@ -158,6 +158,22 @@ impl ApiService {
         .await
     }
 
+    /// The main artist's Genius page (bio, other names, links), when the
+    /// song was found there.
+    pub async fn fetch_genius_artist_info(
+        &self,
+        artist_id: u64,
+        token: &str,
+    ) -> Result<Option<crate::GeniusArtistInfo>, DomainError> {
+        crate::genius::fetch_genius_artist_info(
+            &self.http_client,
+            Some(&self.api_disk),
+            artist_id,
+            token,
+        )
+        .await
+    }
+
     /// What the user played lately, newest first, as library keys.
     pub async fn get_recent_contexts(&self) -> Result<Vec<String>, DomainError> {
         self.provider.get_recent_contexts().await

@@ -599,6 +599,35 @@ row.navigation-row--playing label:not(.dim-label) {
   font-weight: 800;
 }
 
+/* The side panel's About and Stats tabs */
+.info-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background-color: alpha(currentColor, 0.1);
+  font-size: 0.9em;
+}
+
+button.info-pill {
+  min-height: 0;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.info-flow > flowboxchild {
+  padding: 0;
+  background: none;
+}
+
+.info-row {
+  padding: 6px 8px;
+  margin: 0 -8px;
+}
+
+.stats-panel__loved {
+  color: @accent_color;
+}
+
 /* Genius mark at the end of a lyric line, and its explanation under it */
 .lyric-annotation {
   -gtk-icon-size: 16px;
