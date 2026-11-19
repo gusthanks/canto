@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img src="data/screenshots/01-now-playing.png" alt="Canto playing Ivy by Frank Ocean, with the Now Playing panel open">
+  <img src="data/screenshots/01-now-playing.png" alt="Canto playing Blinding Lights by The Weeknd, with the Now Playing panel open">
 </p>
 
 ---
