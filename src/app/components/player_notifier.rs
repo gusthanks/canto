@@ -386,7 +386,17 @@ impl EventListener for PlayerNotifier {
                 }
                 self.request_official_client();
             }
-            (_, AppEvent::PlaybackEvent(PlaybackEvent::SwitchedDevice(d))) => self.switch_device(d),
+            (_, AppEvent::PlaybackEvent(PlaybackEvent::SwitchedDevice(d))) => {
+                // Following another device (Alexa, phone) when Canto opens:
+                // start Soloist in the background too, or this computer is
+                // missing from the device list (it only lists running players)
+                if let Device::Connect(connect) = d {
+                    if self.use_official_client && !crate::connect::plays_here(&connect.label) {
+                        self.send_command_to_connect_player(ConnectCommand::PrepareSoloist);
+                    }
+                }
+                self.switch_device(d)
+            }
             (Device::Local, AppEvent::PlaybackEvent(event)) => self.route_local_event(event),
             (Device::Local, AppEvent::SettingsEvent(SettingsEvent::PlayerSettingsChanged)) => {
                 self.send_command_to_local_player(Command::ReloadSettings)
