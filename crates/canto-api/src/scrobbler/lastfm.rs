@@ -354,9 +354,8 @@ pub fn parse_track_insights(
         }
     }
     tags.truncate(8);
-    let (similar_tracks, _) = similar.map_or((vec![], None), |v| {
-        top_items(v, "similartracks", "track")
-    });
+    let (similar_tracks, _) =
+        similar.map_or((vec![], None), |v| top_items(v, "similartracks", "track"));
     let (top_tracks, _) = top.map_or((vec![], None), |v| top_items(v, "toptracks", "track"));
     TrackInsights {
         playcounts: Playcounts {
@@ -1078,7 +1077,10 @@ mod tests {
         assert_eq!(info.album_wiki, None);
         assert_eq!(info.similar_artists, vec!["Daniel Caesar", "SZA"]);
         assert_eq!(info.similar_tracks[0].name, "Nikes");
-        assert_eq!(info.similar_tracks[0].artist.as_deref(), Some("Frank Ocean"));
+        assert_eq!(
+            info.similar_tracks[0].artist.as_deref(),
+            Some("Frank Ocean")
+        );
         assert_eq!(info.similar_tracks[0].image, None);
         assert_eq!(info.top_tracks[0].plays, 62021220);
         assert_eq!(info.scrobbles, Some(122741));

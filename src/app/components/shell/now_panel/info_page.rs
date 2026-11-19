@@ -229,9 +229,14 @@ pub(super) fn search_row(
 ) -> gtk::Button {
     let on_search = Rc::clone(on_search);
     // translators: Tooltip of a song or artist in the About and Stats tabs.
-    action_row(rank, name, detail, trailing, &gettext("Search in Canto"), move || {
-        on_search(query.clone())
-    })
+    action_row(
+        rank,
+        name,
+        detail,
+        trailing,
+        &gettext("Search in Canto"),
+        move || on_search(query.clone()),
+    )
 }
 
 /// Same row as `search_row`, doing something else on click.

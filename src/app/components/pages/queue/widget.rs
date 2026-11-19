@@ -86,11 +86,16 @@ mod imp {
             // The list's height is only known once it's laid out: follow it
             // to the end until then.
             let obj = self.obj().downgrade();
-            self.recent_scroller.vadjustment().connect_changed(move |adj| {
-                if obj.upgrade().is_some_and(|obj| obj.imp().recent_stick_to_end.get()) {
-                    adj.set_value(adj.upper() - adj.page_size());
-                }
-            });
+            self.recent_scroller
+                .vadjustment()
+                .connect_changed(move |adj| {
+                    if obj
+                        .upgrade()
+                        .is_some_and(|obj| obj.imp().recent_stick_to_end.get())
+                    {
+                        adj.set_value(adj.upper() - adj.page_size());
+                    }
+                });
             self.obj().show_recent_expanded(false);
         }
     }

@@ -418,9 +418,7 @@ fn render_artist(page: &InfoPage, artist: &GeniusArtistInfo) {
 /// The tab filled with a sample song, to look at its rendering.
 #[cfg(test)]
 pub(crate) fn sample_for_tests() -> gtk::Widget {
-    use canto_api::{
-        GeniusCredit, GeniusRelationship, GeniusSongStats, GeniusTranslation,
-    };
+    use canto_api::{GeniusCredit, GeniusRelationship, GeniusSongStats, GeniusTranslation};
     let page = InfoPage::new("about-panel");
     let info = GeniusTrackInfo {
         song_id: Some(1),
@@ -524,6 +522,9 @@ mod tests {
 
     #[test]
     fn unknown_relationships_keep_genius_wording() {
-        assert_eq!(relationship_label("something_new", "Something"), "Something");
+        assert_eq!(
+            relationship_label("something_new", "Something"),
+            "Something"
+        );
     }
 }

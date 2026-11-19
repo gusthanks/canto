@@ -23,8 +23,8 @@ mod info_page;
 mod stats;
 
 pub use about::AboutPanel;
-pub use stats::StatsPanel;
 use canto_config::settings::{GENIUS_ACCESS_TOKEN, LYRICS_OFFSET_MS, SETTINGS};
+pub use stats::StatsPanel;
 
 /// Lines shown in the lyrics preview card.
 const PREVIEW_LINES: usize = 4;
@@ -458,7 +458,11 @@ impl Widgets {
         credits_card.append(&credits_body);
         // A click opens the About tab, with the full credits and the story
         // translators: Tooltip of the Credits card in the Now Playing panel: it opens the About tab.
-        make_card_activate(&credits_card, "win.show-about", &gettext("Show About This Song"));
+        make_card_activate(
+            &credits_card,
+            "win.show-about",
+            &gettext("Show About This Song"),
+        );
         content.append(&credits_card);
 
         let clamp = libadwaita::Clamp::new();

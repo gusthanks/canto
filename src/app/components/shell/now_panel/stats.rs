@@ -13,9 +13,9 @@ use super::info_page::{
 };
 use super::{card, format_count, heading, number_columns, playcount_columns, HEART_FILLED_ICON};
 use crate::app::components::EventListener;
-use crate::app::models::TrackExt;
 use crate::app::components::{dispatch_api_read_many, play_in_album_actions};
 use crate::app::models::SearchType;
+use crate::app::models::TrackExt;
 use crate::app::state::{BrowserAction, PlaybackEvent, Route};
 use crate::app::{AppEvent, AppModel, Dispatcher};
 use canto_api::scrobbler::{LastFmClient, TrackInsights};
@@ -178,7 +178,10 @@ fn load(
 /// click on a song anywhere in Canto), an artist opens the artist's page.
 #[derive(Clone, Debug, PartialEq)]
 enum Pick {
-    Song { name: String, artist: Option<String> },
+    Song {
+        name: String,
+        artist: Option<String>,
+    },
     Artist(String),
 }
 
@@ -213,7 +216,13 @@ fn open_pick(app_model: &AppModel, dispatcher: &Dispatcher, pick: Pick) {
             };
             dispatch_api_read_many(dispatcher, move |tag| async move {
                 let mut found = api
-                    .search_scoped(&song_query(&name, artist.as_deref()), SearchType::Tracks.into(), 0, 5, tag)
+                    .search_scoped(
+                        &song_query(&name, artist.as_deref()),
+                        SearchType::Tracks.into(),
+                        0,
+                        5,
+                        tag,
+                    )
                     .await?
                     .tracks
                     .items;
@@ -242,9 +251,9 @@ fn open_pick(app_model: &AppModel, dispatcher: &Dispatcher, pick: Pick) {
                     .artists
                     .items;
                 Ok(match best_match(&found, &name, |a| a.name.as_str()) {
-                    Some(artist) => vec![
-                        BrowserAction::Navigate(Route::Artist(artist.rri.id.clone())).into(),
-                    ],
+                    Some(artist) => {
+                        vec![BrowserAction::Navigate(Route::Artist(artist.rri.id.clone())).into()]
+                    }
                     None => vec![
                         BrowserAction::Navigate(Route::Search).into(),
                         BrowserAction::Search(name).into(),
@@ -308,7 +317,9 @@ fn render(
             heart.add_css_class("stats-panel__loved");
             loved.append(&heart);
             // translators: Stats tab: the user marked the playing song as loved on Last.fm.
-            loved.append(&gtk::Label::new(Some(&gettext("You loved this song on Last.fm"))));
+            loved.append(&gtk::Label::new(Some(&gettext(
+                "You loved this song on Last.fm",
+            ))));
             yours.append(&loved);
         }
         if let Some(line) = profile_line(insights.scrobbles, insights.registered) {
@@ -337,7 +348,10 @@ fn render(
         // translators: Heading of the Stats tab's card with everyone's plays on Last.fm.
         world.append(&heading(&gettext("On Last.fm")));
         // translators: Stats tab: over the playing song's numbers.
-        for (what, numbers) in [(gettext("This Song"), song_numbers), (artist.to_string(), artist_numbers)] {
+        for (what, numbers) in [
+            (gettext("This Song"), song_numbers),
+            (artist.to_string(), artist_numbers),
+        ] {
             if let Some(numbers) = numbers {
                 world.append(&caption(&what));
                 world.append(&numbers);
@@ -507,7 +521,10 @@ mod tests {
             song_query("Ivy", Some("Frank Ocean")),
             "track:\"Ivy\" artist:\"Frank Ocean\""
         );
-        assert_eq!(song_query("Say \"Hi\"", Some("A")), "track:\"Say  Hi \" artist:\"A\"");
+        assert_eq!(
+            song_query("Say \"Hi\"", Some("A")),
+            "track:\"Say  Hi \" artist:\"A\""
+        );
         assert_eq!(song_query("Ivy", None), "Ivy");
         assert_eq!(song_query("Ivy", Some(" ")), "Ivy");
     }
@@ -516,7 +533,10 @@ mod tests {
     fn best_match_prefers_the_same_name() {
         let names = ["Ivy (Live)", "ivy", "Ivy Remix"];
         assert_eq!(best_match(&names, "Ivy", |n: &&str| *n), Some(&"ivy"));
-        assert_eq!(best_match(&names, "Nights", |n: &&str| *n), Some(&"Ivy (Live)"));
+        assert_eq!(
+            best_match(&names, "Nights", |n: &&str| *n),
+            Some(&"Ivy (Live)")
+        );
         let none: [&str; 0] = [];
         assert_eq!(best_match(&none, "Ivy", |n: &&str| *n), None);
     }

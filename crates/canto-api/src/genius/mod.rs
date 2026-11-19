@@ -890,8 +890,7 @@ fn extract_translations(val: Option<&Value>) -> Vec<GeniusTranslation> {
     };
     let mut out: Vec<GeniusTranslation> = Vec::new();
     for item in arr {
-        let Some(url) = non_empty_str(item.get("url")).filter(|u| u.starts_with("https://"))
-        else {
+        let Some(url) = non_empty_str(item.get("url")).filter(|u| u.starts_with("https://")) else {
             continue;
         };
         if out.iter().any(|t| t.url == url) {
@@ -1314,7 +1313,10 @@ mod tests {
             }
         });
         let info = parse_genius_song_response(&json, 2842078, "https://genius.com/search".into());
-        assert_eq!(info.recording_location.as_deref(), Some("Abbey Road Studios"));
+        assert_eq!(
+            info.recording_location.as_deref(),
+            Some("Abbey Road Studios")
+        );
         assert_eq!(info.artist_id, Some(1985));
         assert_eq!(info.stats.pageviews, Some(2555469));
         assert_eq!(info.stats.contributors, Some(270));
@@ -1325,7 +1327,10 @@ mod tests {
         let kinds: Vec<&str> = info.relationships.iter().map(|r| r.kind.as_str()).collect();
         assert_eq!(kinds, vec!["cover_of", "remixed_by"]);
         assert_eq!(info.translations.len(), 2, "only https links");
-        assert_eq!(info.translations[0].label, "Tradu\u{e7}\u{e3}o em Portugu\u{ea}s");
+        assert_eq!(
+            info.translations[0].label,
+            "Tradu\u{e7}\u{e3}o em Portugu\u{ea}s"
+        );
         assert_eq!(info.translations[1].label, "ES");
     }
 

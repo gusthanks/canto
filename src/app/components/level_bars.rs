@@ -203,7 +203,11 @@ mod imp {
             for i in 0..BARS {
                 // Same grid as the old icons: bars sit on y = 14, 2 to 13 tall
                 let tall = if paused {
-                    if self.rest_shape.get() { REST_SHAPE[i] } else { 2.0 }
+                    if self.rest_shape.get() {
+                        REST_SHAPE[i]
+                    } else {
+                        2.0
+                    }
                 } else {
                     2.0 + levels[i].clamp(0.0, 1.0) * 11.0
                 };
@@ -467,12 +471,7 @@ fn pick_stream(inputs: &serde_json::Value, own_pid: u32) -> Option<u32> {
         .map(|i| i as u32)
 }
 
-fn read_stream(
-    index: u32,
-    stop: &AtomicBool,
-    child_slot: &Mutex<Option<Child>>,
-    shared: &Shared,
-) {
+fn read_stream(index: u32, stop: &AtomicBool, child_slot: &Mutex<Option<Child>>, shared: &Shared) {
     let spawned = Command::new("parec")
         .arg(format!("--monitor-stream={index}"))
         .args([
