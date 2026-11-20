@@ -559,12 +559,11 @@ impl PlaybackWidget {
         self.imp().device_selector.clone()
     }
 
-    pub fn set_track(&self, title: &str, has_album: bool, artists_markup: &str) {
+    /// Markups from `now_panel::title_markup` and `now_panel::artists_markup`.
+    pub fn set_track(&self, title_markup: &str, artists_markup: &str) {
         let widget = self.imp();
         widget.now_playing.set_visible(true);
-        widget
-            .now_playing
-            .set_track(title, has_album, artists_markup);
+        widget.now_playing.set_track(title_markup, artists_markup);
         widget.now_playing_button.set_visible(true);
     }
 

@@ -3,7 +3,7 @@ use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 
-use crate::app::components::now_panel::{show_like_state, title_markup};
+use crate::app::components::now_panel::{remember_label_links, show_like_state};
 use crate::app::components::utils::set_missing_art;
 
 mod imp {
@@ -78,6 +78,7 @@ impl PlaybackInfoWidget {
     pub fn connect_link_activated<F: Fn(&str) + Clone + 'static>(&self, f: F) {
         let imp = self.imp();
         for label in [&*imp.song_title, &*imp.song_artist] {
+            remember_label_links(label);
             let f = f.clone();
             label.connect_activate_link(move |_, uri| {
                 f(uri);
@@ -94,12 +95,10 @@ impl PlaybackInfoWidget {
         show_like_state(&self.imp().like_button, liked);
     }
 
-    /// `artists_markup` comes from `now_panel::artists_markup`.
-    pub fn set_track(&self, title: &str, has_album: bool, artists_markup: &str) {
+    /// Markups from `now_panel::title_markup` and `now_panel::artists_markup`.
+    pub fn set_track(&self, title_markup: &str, artists_markup: &str) {
         let widget = self.imp();
-        widget
-            .song_title
-            .set_markup(&title_markup(title, has_album));
+        widget.song_title.set_markup(title_markup);
         widget.song_artist.set_markup(artists_markup);
         widget.song_title.remove_css_class("dim-label");
         widget.song_info_box.set_visible(true);

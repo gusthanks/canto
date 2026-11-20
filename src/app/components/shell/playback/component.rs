@@ -15,7 +15,7 @@ use canto_config::settings::SETTINGS;
 
 use super::playback_widget::PlaybackWidget;
 use crate::app::components::now_panel::{
-    artists_markup, current_track_liked, follow_track_link, toggle_current_track_like,
+    artists_markup, current_track_liked, follow_track_link, title_markup, toggle_current_track_like,
 };
 
 pub struct PlaybackModel {
@@ -207,8 +207,10 @@ impl PlaybackControl {
 
     fn update_current_info(&self) {
         if let Some(song) = self.model.current_song() {
-            self.widget
-                .set_track(&song.title, song.album.is_some(), &artists_markup(&song));
+            self.widget.set_track(
+                &title_markup(&song.title, &song.rri.id, song.album.is_some()),
+                &artists_markup(&song),
+            );
             self.widget.set_liked(self.model.liked());
             self.widget.set_song_duration(Some(song.duration_ms as f64));
             if let Some(url) = song.art.best_for_width(120) {

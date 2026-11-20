@@ -9,17 +9,31 @@
 //! simple and correct place to keep this shared state.
 
 use std::cell::RefCell;
+use std::collections::VecDeque;
 
 use gdk::prelude::*;
 
+/// How many of the links Canto put on the clipboard it remembers.
+const REMEMBERED_LINKS: usize = 8;
+
 thread_local! {
-    static LAST_APP_COPIED_LINK: RefCell<Option<String>> = const { RefCell::new(None) };
+    static APP_COPIED_LINKS: RefCell<VecDeque<String>> = const { RefCell::new(VecDeque::new()) };
 }
 
-/// Record a link that Canto just wrote to the clipboard.
+/// Record a link that Canto just wrote to the clipboard, or that a label's
+/// own menu may copy ("Copy Link Address"). A few are kept: a link opened
+/// from a label menu without copying it must not make Canto forget the one
+/// it really copied before.
 pub fn remember_app_copied_link(link: &str) {
     let link = link.trim().to_string();
-    LAST_APP_COPIED_LINK.with(|last| *last.borrow_mut() = Some(link));
+    APP_COPIED_LINKS.with(|links| {
+        let mut links = links.borrow_mut();
+        links.retain(|known| known != &link);
+        links.push_back(link);
+        while links.len() > REMEMBERED_LINKS {
+            links.pop_front();
+        }
+    });
 }
 
 /// Copy a link to the clipboard and record it as app-copied, so the clipboard
@@ -32,10 +46,10 @@ pub fn copy_link_to_clipboard(link: &str) {
     remember_app_copied_link(link);
 }
 
-/// Whether the given clipboard text is (still) the last link Canto copied.
+/// Whether the given clipboard text is one of the last links Canto copied.
 pub fn is_app_copied_link(text: &str) -> bool {
     let text = text.trim();
-    LAST_APP_COPIED_LINK.with(|last| last.borrow().as_deref() == Some(text))
+    APP_COPIED_LINKS.with(|links| links.borrow().iter().any(|known| known == text))
 }
 
 #[cfg(test)]
@@ -59,5 +73,18 @@ mod tests {
         assert!(!is_app_copied_link(
             "https://open.spotify.com/track/bbb_non_matching"
         ));
+    }
+
+    #[test]
+    fn test_a_few_links_are_remembered() {
+        let copied = "https://open.spotify.com/track/copied_from_a_menu";
+        remember_app_copied_link(copied);
+        // Then a title's link right-clicked (it may be copied, or not)
+        remember_app_copied_link("https://open.spotify.com/track/right_clicked");
+        assert!(is_app_copied_link(copied));
+        for i in 0..REMEMBERED_LINKS {
+            remember_app_copied_link(&format!("https://open.spotify.com/track/later_{i}"));
+        }
+        assert!(!is_app_copied_link(copied), "only the last few are kept");
     }
 }

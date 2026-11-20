@@ -1416,9 +1416,8 @@ fn dump_now_panel_sample() {
 
     let bar: super::shell::playback::PlaybackWidget = glib::Object::new();
     bar.set_track(
-        "TODOS ESSES MANOS",
-        true,
-        "<a href=\"artist:1\">Niink</a>, <a href=\"artist:2\">Jotapê</a>, <a href=\"artist:3\">Supernova Ent</a>",
+        &super::now_panel::title_markup("TODOS ESSES MANOS", "1", true),
+        "<a href=\"https://open.spotify.com/artist/1\">Niink</a>, <a href=\"https://open.spotify.com/artist/2\">Jotapê</a>, <a href=\"https://open.spotify.com/artist/3\">Supernova Ent</a>",
     );
     bar.set_liked(Some(false));
     let window = gtk::Window::new();

@@ -11,7 +11,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::app::components::utils::Clock;
-use crate::app::components::{dispatch_api_call, labels, EventListener};
+use crate::app::components::{dispatch_api_call, labels, remember_app_copied_link, EventListener};
 use crate::app::models::{Track, TrackExt};
 use crate::app::state::PlaybackEvent;
 use crate::app::{load, AppAction, AppEvent, AppModel, BrowserAction, BrowserEvent, Dispatcher};
@@ -38,18 +38,28 @@ const NEXT_COVER_PX: i32 = 96;
 pub const HEART_ICON: &str = "canto-heart-symbolic";
 pub const HEART_FILLED_ICON: &str = "canto-heart-filled-symbolic";
 
+/// Spotify's web address of a track or an artist. The links of the title
+/// and artist labels carry it, so the label menu's "Copy Link Address"
+/// copies a real link (20/11: it copied the word "album").
+pub fn spotify_web_url(kind: &str, id: &str) -> String {
+    format!("https://open.spotify.com/{kind}/{id}")
+}
+
 /// Markup for a track title that links to its album (plain without one).
-pub fn title_markup(title: &str, has_album: bool) -> String {
+/// The link is the song's own address (what "Copy Link Address" copies); a
+/// click opens its album in the app.
+pub fn title_markup(title: &str, track_id: &str, has_album: bool) -> String {
     let title = glib::markup_escape_text(title);
-    if has_album {
+    if has_album && !track_id.is_empty() {
         let tip = glib::markup_escape_text(&gettext("Go to Album"));
-        format!("<a href=\"album\" title=\"{tip}\">{title}</a>")
+        let url = glib::markup_escape_text(&spotify_web_url("track", track_id));
+        format!("<a href=\"{url}\" title=\"{tip}\">{title}</a>")
     } else {
         title.to_string()
     }
 }
 
-/// Markup for the artists of a track, each linking to its page ("artist:ID").
+/// Markup for the artists of a track, each linking to its page.
 pub fn artists_markup(track: &Track) -> String {
     track
         .artists
@@ -59,11 +69,30 @@ pub fn artists_markup(track: &Track) -> String {
             if artist.rri.id.is_empty() {
                 name.to_string()
             } else {
-                format!("<a href=\"artist:{}\">{name}</a>", artist.rri.id)
+                let url = glib::markup_escape_text(&spotify_web_url("artist", &artist.rri.id));
+                format!("<a href=\"{url}\">{name}</a>")
             }
         })
         .collect::<Vec<_>>()
         .join(", ")
+}
+
+/// A right-click on a title or artist link opens the label's own menu,
+/// whose "Copy Link Address" copies that link: it's remembered as copied by
+/// Canto, so the clipboard watcher doesn't offer to open it when Canto comes
+/// back to the front.
+pub fn remember_label_links(label: &gtk::Label) {
+    let gesture = gtk::GestureClick::new();
+    gesture.set_button(gtk::gdk::BUTTON_SECONDARY);
+    // Before the label's own menu opens; the press is left to it
+    gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
+    let weak = label.downgrade();
+    gesture.connect_pressed(move |_, _, _, _| {
+        if let Some(uri) = weak.upgrade().and_then(|label| label.current_uri()) {
+            remember_app_copied_link(&uri);
+        }
+    });
+    label.add_controller(gesture);
 }
 
 /// What a link in a title or artist label points to.
@@ -73,12 +102,18 @@ pub enum TrackLink {
 }
 
 pub fn parse_track_link(uri: &str) -> Option<TrackLink> {
-    if uri == "album" {
-        Some(TrackLink::Album)
-    } else {
-        uri.strip_prefix("artist:")
-            .filter(|id| !id.is_empty())
-            .map(|id| TrackLink::Artist(id.to_string()))
+    let (kind, id) = uri
+        .strip_prefix("https://open.spotify.com/")?
+        .split_once('/')?;
+    let id = id.split(['?', '#']).next().unwrap_or_default();
+    if id.is_empty() {
+        return None;
+    }
+    match kind {
+        // The title: its album
+        "track" => Some(TrackLink::Album),
+        "artist" => Some(TrackLink::Artist(id.to_string())),
+        _ => None,
     }
 }
 
@@ -620,6 +655,7 @@ impl NowPanel {
     fn wire(&self) {
         let w = &self.widgets;
         for label in [&w.title, &w.artists] {
+            remember_label_links(label);
             label.connect_activate_link(clone!(
                 #[weak(rename_to = app_model)]
                 self.app_model,
@@ -703,8 +739,11 @@ impl NowPanel {
             return;
         };
         w.stack.set_visible_child_name("content");
-        w.title
-            .set_markup(&title_markup(&song.title, song.album.is_some()));
+        w.title.set_markup(&title_markup(
+            &song.title,
+            &song.rri.id,
+            song.album.is_some(),
+        ));
         w.artists.set_markup(&artists_markup(&song));
         self.update_like();
         self.load_cover(&song);
@@ -1105,9 +1144,10 @@ pub(crate) fn sample_for_tests(cover: &gtk::gdk::Texture) -> gtk::Widget {
     let w = Widgets::build();
     w.stack.set_visible_child_name("content");
     w.cover.set_paintable(Some(cover));
-    w.title.set_markup(&title_markup("TODOS ESSES MANOS", true));
+    w.title
+        .set_markup(&title_markup("TODOS ESSES MANOS", "1", true));
     w.artists.set_markup(
-        "<a href=\"artist:1\">Niink</a>, <a href=\"artist:2\">Jotapê</a>, <a href=\"artist:3\">Supernova Ent</a>",
+        "<a href=\"https://open.spotify.com/artist/1\">Niink</a>, <a href=\"https://open.spotify.com/artist/2\">Jotapê</a>, <a href=\"https://open.spotify.com/artist/3\">Supernova Ent</a>",
     );
     show_like_state(&w.like, Some(true));
     let lines = [
@@ -1170,20 +1210,33 @@ mod tests {
 
     #[test]
     fn links_point_to_album_and_artists() {
-        assert!(matches!(parse_track_link("album"), Some(TrackLink::Album)));
+        // A click on the title opens its album, on an artist that artist
         assert!(matches!(
-            parse_track_link("artist:42"),
+            parse_track_link("https://open.spotify.com/track/7"),
+            Some(TrackLink::Album)
+        ));
+        assert!(matches!(
+            parse_track_link("https://open.spotify.com/artist/42"),
             Some(TrackLink::Artist(id)) if id == "42"
         ));
-        assert!(parse_track_link("artist:").is_none());
+        assert!(matches!(
+            parse_track_link("https://open.spotify.com/artist/42?si=x"),
+            Some(TrackLink::Artist(id)) if id == "42"
+        ));
+        assert!(parse_track_link("https://open.spotify.com/artist/").is_none());
+        assert!(parse_track_link("https://open.spotify.com/show/1").is_none());
         assert!(parse_track_link("https://example.com").is_none());
+        assert!(parse_track_link("album").is_none());
+        // "Copy Link Address" copies real links: the song's from its title
+        // (20/11: it copied the word "album"), the artist's from its name
         assert_eq!(
-            title_markup("Rock & Roll", true),
+            title_markup("Rock & Roll", "7", true),
             format!(
-                "<a href=\"album\" title=\"{}\">Rock &amp; Roll</a>",
+                "<a href=\"https://open.spotify.com/track/7\" title=\"{}\">Rock &amp; Roll</a>",
                 gettext("Go to Album")
             )
         );
-        assert_eq!(title_markup("<x>", false), "&lt;x&gt;");
+        assert_eq!(title_markup("<x>", "7", false), "&lt;x&gt;");
+        assert_eq!(title_markup("No id", "", true), "No id");
     }
 }

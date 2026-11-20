@@ -40,7 +40,7 @@ pub mod utils;
 pub mod labels;
 
 pub mod clipboard_link;
-pub use clipboard_link::{copy_link_to_clipboard, is_app_copied_link};
+pub use clipboard_link::{copy_link_to_clipboard, is_app_copied_link, remember_app_copied_link};
 
 pub mod scrobbler;
 pub use scrobbler::ScrobblerController;
