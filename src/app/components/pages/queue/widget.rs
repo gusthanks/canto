@@ -47,10 +47,11 @@ mod imp {
         pub queue_list: RefCell<Option<gtk::Widget>>,
         pub extra_margin_x: Cell<i32>,
         pub selection_bar_hidden: Cell<bool>,
-        /// Recently Played keeps its scroll at the bottom (the newest song,
-        /// next to Now Playing) while its rows are being laid out.
-        pub recent_stick_to_end: Cell<bool>,
-        pub recent_stick_generation: Cell<u32>,
+        /// Recently Played follows its end (the newest song, next to Now
+        /// Playing) as its rows are laid out: from when it's filled or
+        /// unfolded until a scroll by hand moves away from the end, and
+        /// again once one comes back to it.
+        pub recent_at_end: Cell<bool>,
         /// A move to the end is waiting for the current layout to finish.
         pub recent_end_queued: Cell<bool>,
         /// The heart at the end of each Recently Played row, in row order.
@@ -91,21 +92,30 @@ mod imp {
                         }
                     }
                 });
-            // The list's height is only known once it's laid out: follow it
-            // to the end until then. Not from inside "changed" itself: it
-            // fires while the list is being laid out, and a scroll asked for
-            // then is kept but never drawn, so the list opened at its oldest
-            // songs and only jumped down on the first scroll (20/11)
+            // The list's height is only known once it's laid out, and it
+            // grows as rows come: while it's at its end, keep it there. Not
+            // from inside "changed" itself: it fires while the list is being
+            // laid out, and a scroll asked for then is kept but never drawn,
+            // so the list opened at its oldest songs and only jumped down on
+            // the first scroll (20/11). No time limit either: on a busy
+            // machine the layout came after it ran out
+            let adjustment = self.recent_scroller.vadjustment();
             let obj = self.obj().downgrade();
-            self.recent_scroller
-                .vadjustment()
-                .connect_changed(move |_| {
-                    if let Some(obj) = obj.upgrade() {
-                        if obj.imp().recent_stick_to_end.get() {
-                            obj.queue_recent_end();
-                        }
+            adjustment.connect_changed(move |_| {
+                if let Some(obj) = obj.upgrade() {
+                    if obj.imp().recent_at_end.get() {
+                        obj.queue_recent_end();
                     }
-                });
+                }
+            });
+            // A scroll by hand away from the end lets the list stay put
+            let obj = self.obj().downgrade();
+            adjustment.connect_value_changed(move |adjustment| {
+                if let Some(obj) = obj.upgrade() {
+                    let end = adjustment.upper() - adjustment.page_size();
+                    obj.imp().recent_at_end.set(adjustment.value() >= end - 1.0);
+                }
+            });
             self.obj().show_recent_expanded(false);
         }
     }
@@ -278,20 +288,8 @@ impl QueuePageWidget {
     /// Shows the end of Recently Played, the newest song, and keeps it there
     /// while the list settles.
     fn scroll_recent_to_end(&self) {
-        let imp = self.imp();
-        let generation = imp.recent_stick_generation.get().wrapping_add(1);
-        imp.recent_stick_generation.set(generation);
-        imp.recent_stick_to_end.set(true);
+        self.imp().recent_at_end.set(true);
         self.queue_recent_end();
-        let obj = self.downgrade();
-        glib::timeout_add_local_once(std::time::Duration::from_millis(600), move || {
-            if let Some(obj) = obj.upgrade() {
-                let imp = obj.imp();
-                if imp.recent_stick_generation.get() == generation {
-                    imp.recent_stick_to_end.set(false);
-                }
-            }
-        });
     }
 
     /// Scrolls Recently Played to its end once the layout under way is over

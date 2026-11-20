@@ -1035,6 +1035,25 @@ fn assert_recently_played_opens_at_newest() {
             pump(10);
         }
         pump(300);
+        // What the scroll went through, so a failure explains itself
+        let started = std::time::Instant::now();
+        let timeline = std::rc::Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+        let adjustment = page.recent_rows_for_tests().0.vadjustment();
+        let note = |what: &'static str| {
+            let timeline = timeline.clone();
+            move |adj: &gtk::Adjustment| {
+                timeline.borrow_mut().push(format!(
+                    "{} ms {}: value {} upper {} page {}",
+                    started.elapsed().as_millis(),
+                    what,
+                    adj.value(),
+                    adj.upper(),
+                    adj.page_size()
+                ));
+            }
+        };
+        adjustment.connect_changed(note("changed"));
+        adjustment.connect_value_changed(note("value-changed"));
         if rows_first {
             page.show_recent_rows(&rows);
             pump(300);
@@ -1045,9 +1064,24 @@ fn assert_recently_played_opens_at_newest() {
             pump(400);
             page.show_recent_rows(&rows);
         }
-        // Past the unfolding and the 600 ms the list is held at its end
-        pump(1500);
+        // Frames come slowly on Broadway: wait (up to 5 s) for the newest
+        // row to be drawn in view. Without the fix it never is
         let (scroller, list_rows) = page.recent_rows_for_tests();
+        let in_view = || {
+            let last = list_rows.last()?.compute_bounds(&scroller)?;
+            let height = scroller.height() as f32;
+            Some(height > 0.0 && last.y() >= -1.0 && last.y() + last.height() <= height + 1.0)
+        };
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        pump(300);
+        while in_view() != Some(true) && std::time::Instant::now() < deadline {
+            pump(50);
+        }
+        eprintln!(
+            "recently played (rows first: {}): settled after {} ms",
+            rows_first,
+            started.elapsed().as_millis()
+        );
         assert_eq!(list_rows.len(), rows.len());
         let height = scroller.height() as f32;
         assert!(
@@ -1070,8 +1104,10 @@ fn assert_recently_played_opens_at_newest() {
         assert!(
             last.y() >= -1.0 && last.y() + last.height() <= height + 1.0,
             "the newest song must be in view when Recently Played opens \
-             (rows first: {rows_first}; it is drawn at y={} in a {height} px list)",
-            last.y()
+             (rows first: {rows_first}; it is drawn at y={} in a {height} px list); \
+             the scroll went:\n{}",
+            last.y(),
+            timeline.borrow().join("\n")
         );
         assert!(
             first.y() < 0.0,
