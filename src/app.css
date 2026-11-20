@@ -231,6 +231,20 @@ bottom-sheet.bottom-sheet--padded > sheet {
   margin: 6px 12px 0 12px;
 }
 
+/* The heart at the end of a Recently Played row: it shows on hover (or
+   keyboard focus) and stays once liked. Faded rather than hidden, so the
+   title never shifts when it appears */
+.queue-page__recent-like {
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.queue-page__recent-list > row:hover .queue-page__recent-like,
+.queue-page__recent-list > row:focus-within .queue-page__recent-like,
+.queue-page__recent-like.heart--liked {
+  opacity: 1;
+}
+
 /* Lyrics page styling */
 .lyrics-page__content {
   background-color: transparent;

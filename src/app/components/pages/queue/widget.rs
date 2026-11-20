@@ -4,13 +4,15 @@ use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 use libadwaita::subclass::prelude::*;
 use std::cell::{Cell, RefCell};
+use std::rc::Rc;
 
 use crate::app::components::labels;
+use crate::app::components::now_panel::show_like_state;
 
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default, CompositeTemplate)]
+    #[derive(Default, CompositeTemplate)]
     #[template(resource = "/io/github/gusthanks/Canto/components/queue_page.ui")]
     pub struct QueuePageWidget {
         #[template_child]
@@ -51,6 +53,10 @@ mod imp {
         pub recent_stick_generation: Cell<u32>,
         /// A move to the end is waiting for the current layout to finish.
         pub recent_end_queued: Cell<bool>,
+        /// The heart at the end of each Recently Played row, in row order.
+        pub recent_hearts: RefCell<Vec<gtk::Button>>,
+        /// Called with the row's position when its heart is clicked.
+        pub recent_like: RefCell<Option<Rc<dyn Fn(usize)>>>,
     }
 
     #[glib::object_subclass]
@@ -121,6 +127,8 @@ pub struct RecentRow {
     pub title: String,
     /// Artists, and when it played.
     pub subtitle: String,
+    /// In the saved tracks: a full heart that stays on.
+    pub liked: bool,
 }
 
 impl Default for QueuePageWidget {
@@ -220,6 +228,19 @@ impl QueuePageWidget {
             .connect_reveal_child_notify(move |revealer| f(revealer.reveals_child()));
     }
 
+    /// Calls `f` with the position of the Recently Played song whose heart
+    /// was clicked.
+    pub fn connect_recent_like<F: Fn(usize) + 'static>(&self, f: F) {
+        self.imp().recent_like.replace(Some(Rc::new(f)));
+    }
+
+    /// Shows each row's heart full or empty, in row order.
+    pub fn set_recent_liked(&self, liked: &[bool]) {
+        for (heart, liked) in self.imp().recent_hearts.borrow().iter().zip(liked) {
+            show_like_state(heart, Some(*liked));
+        }
+    }
+
     /// Calls `f` with the position of the Recently Played song clicked.
     pub fn connect_recent_activated<F: Fn(usize) + 'static>(&self, f: F) {
         self.imp().recent_list.connect_row_activated(move |_, row| {
@@ -314,21 +335,36 @@ impl QueuePageWidget {
     pub fn show_recent_rows(&self, rows: &[RecentRow]) -> Vec<gtk::Image> {
         let imp = self.imp();
         imp.recent_list.remove_all();
+        let mut hearts = Vec::with_capacity(rows.len());
         let covers = rows
             .iter()
             .map(|row| {
-                let (widget, cover) = recent_row(row);
+                let (widget, cover, heart) = recent_row(row);
+                let obj = self.downgrade();
+                let list_row = widget.downgrade();
+                heart.connect_clicked(move |_| {
+                    let (Some(obj), Some(list_row)) = (obj.upgrade(), list_row.upgrade()) else {
+                        return;
+                    };
+                    let index = list_row.index();
+                    let like = obj.imp().recent_like.borrow().clone();
+                    if let (Some(like), true) = (like, index >= 0) {
+                        like(index as usize);
+                    }
+                });
                 imp.recent_list.append(&widget);
+                hearts.push(heart);
                 cover
             })
             .collect();
+        imp.recent_hearts.replace(hearts);
         imp.recent_stack.set_visible_child_name("list");
         self.scroll_recent_to_end();
         covers
     }
 }
 
-fn recent_row(row: &RecentRow) -> (gtk::ListBoxRow, gtk::Image) {
+fn recent_row(row: &RecentRow) -> (gtk::ListBoxRow, gtk::Image, gtk::Button) {
     let cover = gtk::Image::new();
     cover.set_pixel_size(RECENT_COVER_PX);
     cover.set_size_request(RECENT_COVER_PX, RECENT_COVER_PX);
@@ -351,13 +387,25 @@ fn recent_row(row: &RecentRow) -> (gtk::ListBoxRow, gtk::Image) {
     texts.append(&title);
     texts.append(&subtitle);
 
+    // Like a song that played before without going back to it. Shown on
+    // hover and kept on once liked, as in the track lists
+    let heart = gtk::Button::new();
+    heart.set_has_frame(false);
+    heart.set_valign(gtk::Align::Center);
+    heart.set_focus_on_click(false);
+    for class in ["circular", "flat", "heart-button", "queue-page__recent-like"] {
+        heart.add_css_class(class);
+    }
+    show_like_state(&heart, Some(row.liked));
+
     let line = gtk::Box::new(gtk::Orientation::Horizontal, 10);
     line.append(&cover);
     line.append(&texts);
+    line.append(&heart);
 
     let widget = gtk::ListBoxRow::new();
     widget.set_child(Some(&line));
     widget.set_tooltip_text(Some(&format!("{} · {}", row.title, row.subtitle)));
     widget.add_css_class("queue-page__recent-row");
-    (widget, cover)
+    (widget, cover, heart)
 }

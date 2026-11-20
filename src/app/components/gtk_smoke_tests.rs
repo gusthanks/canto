@@ -905,13 +905,17 @@ fn assert_recently_played() {
         ("Groupies", "Teto · 3 days ago"),
     ]
     .iter()
-    .map(|(title, subtitle)| RecentRow {
+    .enumerate()
+    .map(|(i, (title, subtitle))| RecentRow {
         title: title.to_string(),
         subtitle: subtitle.to_string(),
+        // Two liked songs: their hearts stay on (the sample shows them)
+        liked: i == 2 || i == 5,
     })
     .collect();
     let covers = page.show_recent_rows(&rows);
     assert_eq!(covers.len(), rows.len());
+    assert_recent_hearts(&page, &rows);
     page.show_recent_message("Songs you play will show up here.");
     page.show_recent_rows(&rows[..1]);
     let covers = page.show_recent_rows(&rows);
@@ -951,6 +955,49 @@ fn assert_recently_played() {
         distinct_colors(window.upcast_ref(), "queue-recently-played-folded-sample");
         window.destroy();
     }
+}
+
+/// Each Recently Played row ends with a heart: full for a liked song, and a
+/// click names that row (20/11: liking songs that played before).
+fn assert_recent_hearts(page: &super::QueuePageWidget, rows: &[super::RecentRow]) {
+    let (_, list_rows) = page.recent_rows_for_tests();
+    let hearts: Vec<gtk::Button> = list_rows
+        .iter()
+        .map(|row| {
+            with_class(row.upcast_ref(), "queue-page__recent-like")
+                .into_iter()
+                .next()
+                .and_downcast::<gtk::Button>()
+                .expect("every Recently Played row has a heart")
+        })
+        .collect();
+    for (heart, row) in hearts.iter().zip(rows) {
+        let icon = heart.icon_name().map(|i| i.to_string()).unwrap_or_default();
+        let want = if row.liked {
+            "canto-heart-filled-symbolic"
+        } else {
+            "canto-heart-symbolic"
+        };
+        assert_eq!(icon, want, "heart of {}", row.title);
+        assert_eq!(heart.has_css_class("heart--liked"), row.liked);
+    }
+    let clicked = std::rc::Rc::new(std::cell::Cell::new(None));
+    let seen = clicked.clone();
+    page.connect_recent_like(move |index| seen.set(Some(index)));
+    hearts[3].emit_clicked();
+    assert_eq!(clicked.get(), Some(3), "the heart names its own row");
+    // A like made anywhere shows on every row of that song
+    let mut liked: Vec<bool> = rows.iter().map(|r| r.liked).collect();
+    liked[3] = true;
+    page.set_recent_liked(&liked);
+    assert_eq!(
+        hearts[3].icon_name().as_deref(),
+        Some("canto-heart-filled-symbolic")
+    );
+    assert!(hearts[3].has_css_class("heart--liked"));
+    liked[3] = false;
+    page.set_recent_liked(&liked);
+    assert!(!hearts[3].has_css_class("heart--liked"));
 }
 
 /// Unfolded, Recently Played shows its newest song (the last row, next to

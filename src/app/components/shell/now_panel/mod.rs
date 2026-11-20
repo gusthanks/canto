@@ -120,6 +120,12 @@ pub fn toggle_current_track_like(app_model: &AppModel, dispatcher: &Dispatcher) 
         return;
     };
     let liked = current_track_liked(app_model).unwrap_or(false);
+    toggle_track_like(app_model, dispatcher, song, liked);
+}
+
+/// Saves `song` (`liked` false) or removes it from the saved tracks (`liked`
+/// true). Last.fm follows a save on its own, when its love is on.
+pub fn toggle_track_like(app_model: &AppModel, dispatcher: &Dispatcher, song: Track, liked: bool) {
     let id = song.rri.id.clone();
     let api = app_model.api();
     if liked {

@@ -5,13 +5,14 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use super::{QueuePageWidget, RecentRow, RECENT_COVER_PX};
+use crate::app::components::now_panel::toggle_track_like;
 use crate::app::components::{
     dispatch_api_read_many, labels, play_in_album_actions, Component, EventListener, QueueList,
     QueueListModel,
 };
 use crate::app::models::{Track, TrackExt};
-use crate::app::state::PlaybackEvent;
-use crate::app::{load, AppEvent, AppModel, Dispatcher};
+use crate::app::state::{liked_statuses, PlaybackEvent};
+use crate::app::{load, AppEvent, AppModel, BrowserAction, BrowserEvent, Dispatcher};
 use canto_api::models::is_resource_url;
 
 /// How many songs Recently Played lists (Spotify keeps 50).
@@ -106,6 +107,9 @@ impl EventListener for QueuePage {
         if let AppEvent::PlaybackEvent(PlaybackEvent::TrackChanged(_)) = event {
             self.recent.track_changed();
         }
+        if let AppEvent::BrowserEvent(BrowserEvent::SavedTracksUpdated) = event {
+            self.recent.refresh_likes();
+        }
     }
 }
 
@@ -148,6 +152,12 @@ impl RecentlyPlayed {
         widget.connect_recent_activated(move |index| {
             if let Some(recent) = weak.upgrade() {
                 recent.play(index);
+            }
+        });
+        let weak = Rc::downgrade(&recent);
+        widget.connect_recent_like(move |index| {
+            if let Some(recent) = weak.upgrade() {
+                recent.toggle_like(index);
             }
         });
         recent
@@ -222,10 +232,22 @@ impl RecentlyPlayed {
             self.widget.show_recent_message(&text);
             return;
         }
+        // Spotify said which of these are saved: the rest of the app learns
+        // it too (a later like or unlike elsewhere is not overridden)
+        let tracks: Vec<Track> = played.iter().map(|p| p.track.clone()).collect();
+        let statuses: Vec<(String, bool)> = liked_statuses(&tracks).collect();
+        if !statuses.is_empty() {
+            self.dispatcher
+                .dispatch(BrowserAction::SetTracksLikedStatus(statuses).into());
+        }
         let now = glib::DateTime::now_utc().map(|d| d.to_unix()).unwrap_or(0);
         let rows: Vec<RecentRow> = played
             .iter()
             .map(|p| RecentRow {
+                liked: p
+                    .track
+                    .saved
+                    .unwrap_or_else(|| self.is_liked(&p.track.rri.id)),
                 title: p.track.title.clone(),
                 subtitle: recent_subtitle(
                     &p.track.artists_name(),
@@ -260,6 +282,36 @@ impl RecentlyPlayed {
                 image.set_paintable(Some(&texture));
             }
         });
+    }
+
+    /// Whether the app knows the song as saved.
+    fn is_liked(&self, id: &str) -> bool {
+        self.app_model
+            .get_state()
+            .browser
+            .home_state()
+            .is_some_and(|home| home.is_track_liked(id))
+    }
+
+    /// The hearts follow a like or unlike made anywhere (the same song twice
+    /// in the list changes twice).
+    fn refresh_likes(&self) {
+        let liked: Vec<bool> = self
+            .tracks
+            .borrow()
+            .iter()
+            .map(|track| self.is_liked(&track.rri.id))
+            .collect();
+        self.widget.set_recent_liked(&liked);
+    }
+
+    /// Saves the song, or removes it from the saved tracks.
+    fn toggle_like(&self, index: usize) {
+        let Some(track) = self.tracks.borrow().get(index).cloned() else {
+            return;
+        };
+        let liked = self.is_liked(&track.rri.id);
+        toggle_track_like(&self.app_model, &self.dispatcher, track, liked);
     }
 
     /// Plays the song from its album, as picking it anywhere else does.
