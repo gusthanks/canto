@@ -1075,7 +1075,8 @@ fn assert_recently_played_opens_at_newest() {
         );
         assert!(
             first.y() < 0.0,
-            "the oldest songs scroll out above (rows first: {rows_first})"
+            "the oldest songs scroll out above (rows first: {})",
+            rows_first
         );
         window.destroy();
     }
