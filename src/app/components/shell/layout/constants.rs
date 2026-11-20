@@ -8,11 +8,21 @@ pub const MOBILE_WIDTH_SP: f64 = 550.0;
 /// Under this window width, the utility panel floats over the content as a
 /// drawer instead of squeezing it. 1100 = the panel's default 360 (its third
 /// of the window caps it only under 1080) + the library's rail 72 + the
-/// gaps between the cards 12 + a content card of 656. Inside its 24 px
-/// paddings that keeps an album's header beside its cover (`max-width:
-/// 510sp`, header.blp) and the album column of track rows
-/// (`HIDE_ALBUM_AT_PX` 600, track_row.rs).
+/// gaps between the cards 12 + a content card of 656
+/// (`DOCKED_CONTENT_MIN_WIDTH_SP`).
 pub const UTILITY_DOCK_MIN_WIDTH_SP: f64 = 1100.0;
+
+/// With the utility panel beside it, the least the content card keeps: a
+/// full library that would leave it less shrinks to its rail of covers.
+/// Inside its 24 px paddings, 656 keeps an album's header beside its cover
+/// (`max-width: 510sp`, header.blp) and the album column of track rows
+/// (`HIDE_ALBUM_AT_PX` 600, track_row.rs).
+pub const DOCKED_CONTENT_MIN_WIDTH_SP: f64 = 656.0;
+
+/// What the gaps around the content card take from the window beside both
+/// side panels (`.canto-cards` in app.css): 4 on each side of the card and
+/// 4 before the utility panel. The panels' own gaps are inside their widths.
+pub const CONTENT_CARD_GAPS: i32 = 12;
 
 /// What the utility panel's drawer leaves uncovered: the rail and a strip
 /// of the content.

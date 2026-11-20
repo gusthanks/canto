@@ -1563,8 +1563,9 @@ fn dump_now_panel_sample() {
 /// The widths the shell checks lay the main window out at, and whether the
 /// side panel is open: half (572) and all (1200) of a 1920 px screen at
 /// scale 1.6, each side of 1100 (under it the panel floats as a drawer) and
-/// of 550 (at it or less the panel fills the window).
-const SHELL_SHOTS: [(i32, bool); 10] = [
+/// of 550 (at it or less the panel fills the window), and 1366, where the
+/// full library leaves the page beside the panel 656 or more.
+const SHELL_SHOTS: [(i32, bool); 11] = [
     (550, true),
     (572, false),
     (572, true),
@@ -1574,6 +1575,7 @@ const SHELL_SHOTS: [(i32, bool); 10] = [
     (1099, true),
     (1100, true),
     (1200, true),
+    (1366, true),
     (1920, true),
 ];
 
@@ -1810,8 +1812,9 @@ fn shoot_shell(shell: &Shell, width: i32, open: bool) -> ShellShot {
 
 /// Under 1100 px the side panel floats over the page as a drawer (at most
 /// 360 wide, leaving 96 of the window uncovered) and the page keeps the
-/// whole width; from 1100 up it sits beside the page as before; at 550 or
-/// less it fills the window, as before.
+/// whole width; from 1100 up it sits beside the page as before, with the
+/// library on its rail of covers where the full library would leave the
+/// page card under 656 px; at 550 or less it fills the window, as before.
 fn assert_drawer_layout() {
     let style = libadwaita::StyleManager::default();
     let scheme = style.color_scheme();
@@ -1830,9 +1833,6 @@ fn assert_drawer_layout() {
         shell.window.destroy();
         shots.push(shot);
     }
-    assert_drawer_follows_resizes();
-    gtk_settings.set_gtk_enable_animations(animations);
-    style.set_color_scheme(scheme);
     for s in &shots {
         eprintln!(
             "layout {}: side panel {} {} (shown {}, max {}), library {}{}, page card {}, page split {} of {}",
@@ -1848,6 +1848,10 @@ fn assert_drawer_layout() {
             s.window_split
         );
     }
+    assert_drawer_follows_resizes();
+    assert_library_rails_beside_panel();
+    gtk_settings.set_gtk_enable_animations(animations);
+    style.set_color_scheme(scheme);
     // What the side panel leaves to the page, first
     for s in &shots {
         if s.width > 550 && s.width < 1100 {
@@ -1861,10 +1865,28 @@ fn assert_drawer_layout() {
             );
         } else if s.width >= 1100 {
             assert!(
-                s.page_card >= 401,
-                "{}: the page card is {} px beside the side panel",
+                s.page_card >= 656,
+                "{}: the page card is {} px beside the side panel and a library of {}{}",
                 s.tag(),
-                s.page_card
+                s.page_card,
+                s.library,
+                if s.rail { " (rail)" } else { "" }
+            );
+            // With the full library it would be 446 at 1100 and 546 at
+            // 1200, but 712 at 1366
+            let rail = [1100, 1200].contains(&s.width);
+            let library = if rail {
+                s.library == 60
+            } else {
+                s.library > 200
+            };
+            assert!(
+                s.rail == rail && library,
+                "{}: beside the side panel the library is {} px{}, not {}",
+                s.tag(),
+                s.library,
+                if s.rail { " (rail)" } else { "" },
+                if rail { "its rail of covers" } else { "full" }
             );
         }
     }
@@ -1987,5 +2009,141 @@ fn assert_drawer_follows_resizes() {
         floating.collapsed && floating.library > 0,
         "narrowed to 1050, the side panel floats and the library hidden for it comes back: {:?}",
         floating
+    );
+}
+
+/// With the side panel beside the page (1100 px and up), a full library that
+/// would leave the page card under 656 px shrinks to its rail of covers on
+/// its own, and comes back when the panel closes or the window grows enough,
+/// without touching the saved choice (navigation-rail). The library icon on
+/// that rail brings the full library back beside the panel until the panel
+/// closes; a library collapsed by hand stays on its rail.
+fn assert_library_rails_beside_panel() {
+    let settings = gio::Settings::new(canto_config::settings::SETTINGS);
+    let saved = || settings.boolean(canto_config::settings::NAVIGATION_RAIL);
+    let saved_at_start = saved();
+    let shell = render_shell(1366, true);
+    let resize = |width: i32| {
+        shell.frame.set_size_request(width, 621);
+        shoot_shell(&shell, width, true)
+    };
+    let panel_open = |open: bool| {
+        shell.panel.set_open(open);
+        shoot_shell(&shell, 1200, open)
+    };
+    // The rail's library icon, and the full library's collapse button
+    let library_button = || {
+        WidgetExt::activate_action(&shell.window, "win.sidebar-rail", None)
+            .expect("the library's rail action");
+    };
+    let wide = shoot_shell(&shell, 1366, true);
+    let narrowed = resize(1200);
+    let widened = resize(1366);
+    let squeezed = resize(1200);
+    let closed = panel_open(false);
+    let reopened = panel_open(true);
+    library_button();
+    let by_hand = shoot_shell(&shell, 1200, true);
+    let saved_by_hand = saved();
+    distinct_colors(&shell.frame, "layout-1200-open-library-by-hand");
+    let by_hand_closed = panel_open(false);
+    let by_hand_reopened = panel_open(true);
+    // Expanded by hand, then collapsed with its own button: that rail is the
+    // user's, and saved
+    library_button();
+    library_button();
+    let chosen = shoot_shell(&shell, 1200, true);
+    let saved_chosen = saved();
+    let chosen_closed = panel_open(false);
+    // The full library again, as the other checks expect
+    library_button();
+    let saved_at_end = saved();
+    shell.window.destroy();
+
+    let steps = [
+        ("1366", &wide),
+        ("narrowed to 1200", &narrowed),
+        ("widened to 1366", &widened),
+        ("narrowed to 1200 again", &squeezed),
+        ("side panel closed", &closed),
+        ("side panel reopened", &reopened),
+        ("library icon", &by_hand),
+        ("expanded, side panel closed", &by_hand_closed),
+        ("expanded, side panel reopened", &by_hand_reopened),
+        ("collapsed by hand", &chosen),
+        ("collapsed by hand, side panel closed", &chosen_closed),
+    ];
+    for (step, s) in steps.iter() {
+        eprintln!(
+            "layout library, {} at {}: side panel {} {} (shown {}), library {}{}, page card {}",
+            step,
+            s.width,
+            s.mode(),
+            s.panel_card,
+            s.panel_shown,
+            s.library,
+            if s.rail { " (rail)" } else { "" },
+            s.page_card
+        );
+    }
+    eprintln!(
+        "layout library, saved rail: {} at start, {} after the library icon, {} collapsed by hand, {} at the end",
+        saved_at_start, saved_by_hand, saved_chosen, saved_at_end
+    );
+    let full = |s: &ShellShot| !s.rail && s.library > 200;
+    let rail = |s: &ShellShot| s.rail && s.library == 60;
+    let docked = |s: &ShellShot| !s.collapsed && s.panel_shown;
+    for (step, s, want_rail) in [
+        ("1366", &wide, false),
+        ("narrowed to 1200", &narrowed, true),
+        ("widened to 1366", &widened, false),
+        ("narrowed to 1200 again", &squeezed, true),
+        ("side panel reopened", &reopened, true),
+    ]
+    .iter()
+    {
+        let s: &ShellShot = s;
+        let library = if *want_rail { rail(s) } else { full(s) };
+        assert!(
+            docked(s) && library && s.page_card >= 656,
+            "{}: beside the side panel the library is {} and the page card at least 656: {:?}",
+            step,
+            if *want_rail {
+                "its rail of covers"
+            } else {
+                "full"
+            },
+            s
+        );
+    }
+    assert!(
+        !closed.panel_shown && full(&closed),
+        "side panel closed: the full library comes back: {:?}",
+        closed
+    );
+    assert!(
+        docked(&by_hand) && full(&by_hand),
+        "the library icon brings the full library back beside the side panel: {:?}",
+        by_hand
+    );
+    assert!(
+        full(&by_hand_closed) && docked(&by_hand_reopened) && rail(&by_hand_reopened),
+        "expanded by hand, the library stays full until the side panel closes, and shrinks again when it reopens: {:?} then {:?}",
+        by_hand_closed,
+        by_hand_reopened
+    );
+    assert!(
+        rail(&chosen) && rail(&chosen_closed),
+        "collapsed by hand, the library stays on its rail when the side panel closes: {:?} then {:?}",
+        chosen,
+        chosen_closed
+    );
+    assert!(
+        !saved_at_start && !saved_by_hand && saved_chosen && !saved_at_end,
+        "only the user's own collapse is saved (navigation-rail): {} at start, {} after the library icon, {} collapsed by hand, {} at the end",
+        saved_at_start,
+        saved_by_hand,
+        saved_chosen,
+        saved_at_end
     );
 }

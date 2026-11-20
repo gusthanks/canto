@@ -153,11 +153,24 @@ impl Panel {
         if self.is_rail() {
             return NAVIGATION_RAIL_WIDTH;
         }
-        let mut width = self.width.get();
-        if let Some(share) = self.share.get().filter(|_| window_width > 0) {
-            width = width.min((share * f64::from(window_width)) as i32);
+        self.shown_width_for(self.wanted_width(window_width), window_width)
+    }
+
+    /// Its width as the full sidebar beside the content and the other side
+    /// panel, even while it is on its rail.
+    pub fn full_width_beside(&self, window_width: i32) -> i32 {
+        self.size
+            .shown_width(self.wanted_width(window_width), window_width)
+            .max(self.full_least_width())
+    }
+
+    /// As set, or its share of the window when that is less.
+    fn wanted_width(&self, window_width: i32) -> i32 {
+        let width = self.width.get();
+        match self.share.get().filter(|_| window_width > 0) {
+            Some(share) => width.min((share * f64::from(window_width)) as i32),
+            None => width,
         }
-        self.shown_width_for(width, window_width)
     }
 
     pub fn shown_width_for(&self, width: i32, window_width: i32) -> i32 {

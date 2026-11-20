@@ -8,6 +8,12 @@
 //!   window's width. Narrowing the window under it closes the panel, and
 //!   widening it back brings the panel back beside the content.
 //! - At `MOBILE_WIDTH_SP` or less, both collapse and fill the window when open.
+//! - Too narrow for the full library beside the content, the library shrinks
+//!   to its rail of covers. So it does beside the utility panel when the full
+//!   library would leave the content card under `DOCKED_CONTENT_MIN_WIDTH_SP`,
+//!   until the panel closes or the window grows (the library icon brings it
+//!   back beside the panel until then). Neither is saved: the user's own
+//!   choice of rail comes back.
 //! - Without room for both beside the content panel, the one opened last
 //!   stays: narrowing the window closes the utility panel first, and widening
 //!   it brings it back.
@@ -62,6 +68,66 @@ fn utility_mode(window_width: i32, mobile_width: i32, dock_width: i32) -> Utilit
     }
 }
 
+/// Why the library shrinks to its rail of covers on its own (never saved).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum AutoRail {
+    /// The window is too narrow for the full library beside the content
+    Narrow,
+    /// Beside the utility panel, the full library would leave the content
+    /// card under `DOCKED_CONTENT_MIN_WIDTH_SP`
+    BesidePanel,
+}
+
+/// The widths (px) the library's rail is decided from.
+#[derive(Clone, Copy, Debug)]
+struct LibraryFit {
+    window: i32,
+    /// At `MOBILE_WIDTH_SP` or less
+    mobile: bool,
+    /// The least the content takes
+    content_min: i32,
+    /// The least the full library takes
+    library_least: i32,
+    /// While the utility panel sits open beside the content: the full
+    /// library's width there and the panel's
+    beside_panel: Option<(i32, i32)>,
+    /// The least the content card keeps beside the utility panel
+    docked_content_min: i32,
+}
+
+impl LibraryFit {
+    fn full_fits(&self) -> bool {
+        self.window - self.library_least >= self.content_min
+    }
+
+    fn rail_fits(&self) -> bool {
+        self.window - NAVIGATION_RAIL_WIDTH >= self.content_min
+    }
+
+    /// Beside the utility panel, the full library would leave the content
+    /// card narrower than it keeps there.
+    fn squeezed_by_panel(&self) -> bool {
+        self.beside_panel.is_some_and(|(library, panel)| {
+            self.window - panel - library - CONTENT_CARD_GAPS < self.docked_content_min
+        })
+    }
+
+    /// Whether, and why, the library shrinks to its rail on its own: not
+    /// when the user chose the rail (it is on it already), nor for the
+    /// utility panel once the user expanded it by hand beside the panel.
+    fn auto_rail(&self, rail_chosen: bool, expanded_by_hand: bool) -> Option<AutoRail> {
+        if self.mobile || rail_chosen || !self.rail_fits() {
+            None
+        } else if !self.full_fits() {
+            Some(AutoRail::Narrow)
+        } else if self.squeezed_by_panel() && !expanded_by_hand {
+            Some(AutoRail::BesidePanel)
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 enum Which {
     Navigation,
@@ -78,6 +144,12 @@ pub struct WindowLayout {
     collapsing_navigation: Rc<Cell<bool>>,
     /// The full sidebar is open over the content of a narrow window
     navigation_overlay: Cell<bool>,
+    /// Why the library is on its rail without the user choosing it
+    auto_rail: Cell<Option<AutoRail>>,
+    /// The user expanded the library while the utility panel beside the
+    /// content had it on its rail: it stays full until the panel stops
+    /// squeezing it (closed, or a wider window)
+    expanded_by_hand: Cell<bool>,
     fitted_width: Cell<i32>,
     fitted_header_width: Cell<i32>,
     rail: RailWidgets,
@@ -132,6 +204,8 @@ impl WindowLayout {
             hid_navigation: Cell::new(false),
             collapsing_navigation: Rc::new(Cell::new(false)),
             navigation_overlay: Cell::new(false),
+            auto_rail: Cell::new(None),
+            expanded_by_hand: Cell::new(false),
             fitted_width: Cell::new(0),
             fitted_header_width: Cell::new(0),
             rail,
@@ -227,6 +301,8 @@ impl WindowLayout {
                 };
                 action.set_state(&rail.to_variant());
                 let _ = settings.set_boolean(canto_config::settings::NAVIGATION_RAIL, rail);
+                // Expanded by hand, it stays full beside the utility panel too
+                layout.expanded_by_hand.set(!rail);
                 layout.navigation.set_rail(rail);
                 layout.apply_rail();
                 layout.fit();
@@ -236,10 +312,18 @@ impl WindowLayout {
             #[weak]
             layout,
             move |action, _| {
-                // Squeezed to the rail by a narrow window: the library icon
-                // opens the full sidebar over the content for a moment
                 if layout.navigation.is_rail() && !layout.navigation.rail_chosen() {
-                    layout.open_navigation_overlay();
+                    if layout.auto_rail.get() == Some(AutoRail::BesidePanel) {
+                        // On its rail for the utility panel: the library icon
+                        // brings the full library back beside the panel
+                        layout.expanded_by_hand.set(true);
+                        layout.fit();
+                    } else {
+                        // Squeezed to the rail by a narrow window: the library
+                        // icon opens the full sidebar over the content for a
+                        // moment
+                        layout.open_navigation_overlay();
+                    }
                     return;
                 }
                 let rail = action
@@ -465,25 +549,46 @@ impl WindowLayout {
         self.apply();
     }
 
+    /// What decides the library's rail in a window this wide, as things are.
+    fn library_fit(&self, window_width: i32) -> LibraryFit {
+        LibraryFit {
+            window: window_width,
+            mobile: window_width <= sp_to_px(MOBILE_WIDTH_SP),
+            content_min: self.content_min_width(),
+            library_least: self.navigation.full_least_width(),
+            beside_panel: self.utility_beside().then(|| {
+                (
+                    self.navigation.full_width_beside(window_width),
+                    self.utility.shown_width(window_width),
+                )
+            }),
+            docked_content_min: sp_to_px(DOCKED_CONTENT_MIN_WIDTH_SP),
+        }
+    }
+
     fn collapse_navigation_to_fit(&self) {
         let window_width = self.window_width();
         if window_width <= 0 || self.navigation_overlay.get() {
             return;
         }
-        let mobile = window_width <= sp_to_px(MOBILE_WIDTH_SP);
-        let content = self.content_min_width();
-        let full_fits = window_width - self.navigation.full_least_width() >= content;
-        let rail_fits = window_width - NAVIGATION_RAIL_WIDTH >= content;
-        // Too narrow for the full sidebar: covers only, like big music apps,
-        // before hiding it altogether
-        let auto = !mobile && !full_fits && rail_fits && !self.navigation.rail_chosen();
-        self.navigation.set_auto_rail(auto);
+        let fit = self.library_fit(window_width);
+        // The utility panel closed or the window grew: a library expanded
+        // by hand beside the panel shrinks again the next time it squeezes
+        if !fit.squeezed_by_panel() {
+            self.expanded_by_hand.set(false);
+        }
+        // Too narrow for the full sidebar, or for it and a roomy page beside
+        // the utility panel: covers only, like big music apps, before hiding
+        // it altogether
+        let auto = fit.auto_rail(self.navigation.rail_chosen(), self.expanded_by_hand.get());
+        self.auto_rail.set(auto);
+        self.navigation.set_auto_rail(auto.is_some());
         self.apply_rail();
-        let collapse = mobile
-            || if self.navigation.rail_chosen() || auto {
-                !rail_fits
+        let collapse = fit.mobile
+            || if self.navigation.rail_chosen() || auto.is_some() {
+                !fit.rail_fits()
             } else {
-                !full_fits
+                !fit.full_fits()
             };
         let split = &self.navigation.split;
         let collapsing = &self.collapsing_navigation;
@@ -752,5 +857,74 @@ mod tests {
         for width in [550, 360] {
             assert_eq!(mode(width), UtilityMode::FullWindow, "at {}", width);
         }
+    }
+
+    /// A window `window` px wide with the full library 280 wide (its least
+    /// 270) and, when `panel` is given, the utility panel that wide beside
+    /// the content.
+    fn library_fit(window: i32, panel: Option<i32>) -> LibraryFit {
+        LibraryFit {
+            window,
+            mobile: window <= 550,
+            content_min: 401,
+            library_least: 270,
+            beside_panel: panel.map(|panel| (280, panel)),
+            docked_content_min: 656,
+        }
+    }
+
+    #[test]
+    fn library_shrinks_to_its_rail_beside_the_side_panel() {
+        let auto = |window, panel| library_fit(window, panel).auto_rail(false, false);
+        // Beside the side panel (360) the full library would leave the page
+        // card 448 at 1100, 548 at 1200 (Gus's full screen) and 655 at 1307:
+        // its rail of covers leaves 656, 756 and 863
+        for window in [1100, 1200, 1307] {
+            assert_eq!(
+                auto(window, Some(360)),
+                Some(AutoRail::BesidePanel),
+                "at {}",
+                window
+            );
+        }
+        // 656 at 1308, 714 at 1366, 1268 at 1920: the full library stays
+        for window in [1308, 1366, 1920] {
+            assert_eq!(auto(window, Some(360)), None, "at {}", window);
+        }
+        // A wider side panel squeezes the page in a wider window too
+        assert_eq!(auto(1366, Some(600)), Some(AutoRail::BesidePanel));
+        // Closed, or floating over the page as a drawer, the panel takes no
+        // room from the page
+        for window in [1920, 1200, 1100, 1099, 960, 673] {
+            assert_eq!(auto(window, None), None, "at {}", window);
+            assert!(!library_fit(window, None).squeezed_by_panel());
+        }
+        assert!(library_fit(1200, Some(360)).squeezed_by_panel());
+        assert!(!library_fit(1366, Some(360)).squeezed_by_panel());
+    }
+
+    #[test]
+    fn the_users_own_rail_choice_wins() {
+        let fit = library_fit(1200, Some(360));
+        // Left alone, the side panel shrinks the library to its rail here
+        assert_eq!(fit.auto_rail(false, false), Some(AutoRail::BesidePanel));
+        // A rail the user chose is on already, and saved: nothing to add
+        assert_eq!(fit.auto_rail(true, false), None);
+        // Expanded by hand beside the panel, the library stays full
+        assert_eq!(fit.auto_rail(false, true), None);
+        // Narrow windows are as before: the rail from 551 to 670 here (the
+        // library icon then opens the full library over the page), hidden
+        // at 550 or less, whatever the hand did beside the panel
+        for window in [551, 600, 670] {
+            assert_eq!(
+                library_fit(window, None).auto_rail(false, true),
+                Some(AutoRail::Narrow),
+                "at {}",
+                window
+            );
+        }
+        assert_eq!(library_fit(671, None).auto_rail(false, false), None);
+        assert_eq!(library_fit(550, None).auto_rail(false, false), None);
+        assert_eq!(library_fit(600, None).auto_rail(true, false), None);
     }
 }
