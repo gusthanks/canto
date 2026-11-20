@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 00:10-0300\n"
+"POT-Creation-Date: 2026-11-20 14:07-0300\n"
 "Language: pt-br\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -54,7 +54,7 @@ msgstr "Músicas Curtidas"
 #. translators: Header above the tracks the user added to the play queue, on the queue page.
 #. translators: Heading of the card showing the track that plays next.
 #: src/app/components/labels.rs:29
-#: src/app/components/shell/now_panel/mod.rs:416
+#: src/app/components/shell/now_panel/mod.rs:418
 msgid "Next in Queue"
 msgstr "A seguir na fila"
 
@@ -148,8 +148,8 @@ msgstr "Você não tem listas de reprodução salvas."
 #. translators: This is part of a contextual menu attached to a playlist in the sidebar; this entry starts playing the playlist from the first track.
 #: src/app/components/labels.rs:74
 #: src/app/components/shell/playback/playback_controls.rs:71
-#: src/app/components/shell/now_panel/stats.rs:397
-#: src/app/components/shell/now_panel/stats.rs:421
+#: src/app/components/shell/now_panel/stats.rs:411
+#: src/app/components/shell/now_panel/stats.rs:435
 #: src/app/components/shell/mini_player.rs:171
 #: src/app/components/shell/mini_player.rs:245
 #: src/app/components/widgets/details_page/header.rs:250
@@ -373,9 +373,10 @@ msgstr "Todas as listas de reprodução"
 #. translators: Title of the full-screen lyrics window.
 #. Translators: Tooltip of the player bar button that shows or hides synced lyrics.
 #. Translators: Tab label for lyrics in utility panel.
-#: src/app/components/pages/lyrics/component.rs:72
-#: src/app/components/shell/now_panel/mod.rs:401
+#: src/app/components/pages/lyrics/component.rs:89
+#: src/app/components/shell/now_panel/mod.rs:403
 #: src/app/components/shell/fullscreen_lyrics.rs:101
+#: src/app/components/pages/settings/settings.blp:509
 #: src/app/components/shell/playback/playback_widget.blp:168
 #: src/app/components/shell/utility_panel/utility_panel.blp:62
 #: src/app/components/shell/playback/playback_widget.rs:355
@@ -383,45 +384,57 @@ msgid "Lyrics"
 msgstr "Letra"
 
 #. translators: Short text displayed instead of a track title when nothing plays
-#: src/app/components/pages/lyrics/component.rs:393
-#: src/app/components/pages/lyrics/component.rs:759
+#: src/app/components/pages/lyrics/component.rs:461
+#: src/app/components/pages/lyrics/component.rs:851
 #: src/app/components/shell/playback/playback_info.rs:114
 #: src/app/components/shell/fullscreen_lyrics.rs:212
 msgid "No Track Playing"
 msgstr "Nenhuma faixa tocando"
 
 #. Translators: Shown when no lyrics are found.
-#: src/app/components/pages/lyrics/component.rs:541
-#: src/app/components/pages/lyrics/lyrics_page.blp:76
+#: src/app/components/pages/lyrics/component.rs:629
+#: src/app/components/pages/lyrics/lyrics_page.blp:95
 msgid "No Lyrics Available"
 msgstr "Letra indisponível"
 
-#: src/app/components/pages/lyrics/component.rs:542
-#: src/app/components/pages/lyrics/lyrics_page.blp:77
+#: src/app/components/pages/lyrics/component.rs:630
+#: src/app/components/pages/lyrics/lyrics_page.blp:96
 msgid "Lyrics couldn't be found for this song."
 msgstr "Não foi possível encontrar a letra desta música."
 
 #. Translators: Heading of the lyrics timing part of the lyrics options popover.
-#: src/app/components/pages/lyrics/widget.rs:207
-#: src/app/components/pages/lyrics/lyrics_page.blp:221
+#: src/app/components/pages/lyrics/widget.rs:215
+#: src/app/components/pages/lyrics/lyrics_page.blp:240
 msgid "Lyrics Timing"
 msgstr "Tempo da letra"
 
 #. translators: Tooltip of the lyrics timing button while an offset is set. {} is like "+200 ms".
-#: src/app/components/pages/lyrics/widget.rs:211
+#: src/app/components/pages/lyrics/widget.rs:219
 #, rust-format
 msgid "Lyrics Timing ({})"
 msgstr "Tempo da letra ({})"
 
 #. translators: Tooltip of the mark on a lyric line that Genius explains.
-#: src/app/components/pages/lyrics/widget.rs:422
+#: src/app/components/pages/lyrics/widget.rs:461
 msgid "What This Line Means"
 msgstr "O que esta linha quer dizer"
 
 #. translators: First entry of the lyrics translation languages: the app's own language.
-#: src/app/components/pages/lyrics/widget.rs:451
+#: src/app/components/pages/lyrics/widget.rs:490
 msgid "App Language"
 msgstr "Idioma do app"
+
+#. translators: Quiet line above the lyrics saying where they came from. {} is the source's name, "LRCLIB" or "Genius" (keep it as is).
+#: src/app/components/pages/lyrics/widget.rs:748
+#, rust-format
+msgid "Lyrics: {}"
+msgstr "Letra: {}"
+
+#. translators: Quiet line above lyrics that have no timing, so they don't follow the song. {} is the source's name, "LRCLIB" or "Genius" (keep it as is).
+#: src/app/components/pages/lyrics/widget.rs:751
+#, rust-format
+msgid "Lyrics: {} · not synced"
+msgstr "Letra: {} · sem sincronia"
 
 #. translators: Title of the queue, listing what plays next, when it's shown beside the content.
 #. Translators: Tooltip of the playback bar button that shows or hides the queue.
@@ -434,35 +447,35 @@ msgid "Queue"
 msgstr "Fila"
 
 #. translators: Shown in Recently Played, above the queue, when Spotify didn't answer.
-#: src/app/components/pages/queue/component.rs:204
+#: src/app/components/pages/queue/component.rs:206
 msgid "Couldn't load your recent songs."
 msgstr "Não foi possível carregar suas músicas recentes."
 
 #. translators: Shown in Recently Played, above the queue, when the account has no history yet.
-#: src/app/components/pages/queue/component.rs:216
+#: src/app/components/pages/queue/component.rs:221
 msgid "Songs you play will show up here."
 msgstr "As músicas que você tocar vão aparecer aqui."
 
 #. translators: When a song in Recently Played was played: less than a minute ago.
-#: src/app/components/pages/queue/component.rs:284
+#: src/app/components/pages/queue/component.rs:292
 msgid "Just now"
 msgstr "Agora mesmo"
 
-#: src/app/components/pages/queue/component.rs:288
+#: src/app/components/pages/queue/component.rs:296
 #, rust-format
 msgid "{} min ago"
 msgid_plural "{} min ago"
 msgstr[0] "há {} min"
 msgstr[1] "há {} min"
 
-#: src/app/components/pages/queue/component.rs:294
+#: src/app/components/pages/queue/component.rs:302
 #, rust-format
 msgid "{} h ago"
 msgid_plural "{} h ago"
 msgstr[0] "há {} h"
 msgstr[1] "há {} h"
 
-#: src/app/components/pages/queue/component.rs:300
+#: src/app/components/pages/queue/component.rs:308
 #, rust-format
 msgid "{} day ago"
 msgid_plural "{} days ago"
@@ -558,40 +571,40 @@ msgstr "Álbuns"
 msgid "Playlists"
 msgstr "Playlists"
 
-#: src/app/components/pages/settings/settings.rs:331
+#: src/app/components/pages/settings/settings.rs:343
 msgid "Unsupported due to legal restrictions."
 msgstr "Indisponível devido a restrições legais."
 
-#: src/app/components/pages/settings/settings.rs:930
+#: src/app/components/pages/settings/settings.rs:949
 msgid "Experimental Features"
 msgstr "Recursos experimentais"
 
-#: src/app/components/pages/settings/settings.rs:932
+#: src/app/components/pages/settings/settings.rs:951
 msgid ""
 "These features are still in development and may be unstable or incomplete."
 msgstr ""
 "Estes recursos ainda estão em desenvolvimento e podem ser instáveis ou "
 "incompletos."
 
-#: src/app/components/pages/settings/settings.rs:1072
+#: src/app/components/pages/settings/settings.rs:1091
 msgid "Couldn't save the key in the keyring"
 msgstr "Não deu para guardar a chave no chaveiro"
 
-#: src/app/components/pages/settings/settings.rs:1096
+#: src/app/components/pages/settings/settings.rs:1115
 msgid "Soloist API Key (saved; type a new one to replace it)"
 msgstr "Chave do Soloist (guardada; digite outra para trocar)"
 
-#: src/app/components/pages/settings/settings.rs:1098
+#: src/app/components/pages/settings/settings.rs:1117
 #: src/app/components/pages/settings/settings.blp:171
 msgid "Soloist API Key"
 msgstr "Chave do Soloist"
 
-#: src/app/components/pages/settings/settings.rs:1172
-#: src/app/components/pages/settings/settings.rs:1194
+#: src/app/components/pages/settings/settings.rs:1191
+#: src/app/components/pages/settings/settings.rs:1213
 msgid "Step 1 opened in browser. Approve access, then click 2. Complete."
 msgstr "Passo 1 aberto no navegador. Aprove o acesso e clique em 2. Concluir."
 
-#: src/app/components/pages/settings/settings.rs:1174
+#: src/app/components/pages/settings/settings.rs:1193
 msgid ""
 "Last.fm no longer accepts this connection. Your plays are kept: click 1. "
 "Open Auth to connect again"
@@ -599,45 +612,45 @@ msgstr ""
 "O Last.fm não aceita mais esta conexão. Suas reproduções estão guardadas: "
 "clique em 1. Abrir Auth para conectar de novo"
 
-#: src/app/components/pages/settings/settings.rs:1181
-#: src/app/components/pages/settings/settings.rs:1285
+#: src/app/components/pages/settings/settings.rs:1200
+#: src/app/components/pages/settings/settings.rs:1304
 msgid "Connected to Last.fm"
 msgstr "Conectado ao Last.fm"
 
-#: src/app/components/pages/settings/settings.rs:1183
+#: src/app/components/pages/settings/settings.rs:1202
 msgid "Connected as"
 msgstr "Conectado como"
 
-#: src/app/components/pages/settings/settings.rs:1196
+#: src/app/components/pages/settings/settings.rs:1215
 msgid "Click 1. Open Auth to approve Canto in your browser"
 msgstr "Clique em 1. Abrir Auth para aprovar o Canto no navegador"
 
-#: src/app/components/pages/settings/settings.rs:1198
-#: src/app/components/pages/settings/settings.blp:548
+#: src/app/components/pages/settings/settings.rs:1217
+#: src/app/components/pages/settings/settings.blp:561
 msgid "Enter API Key and Secret above, then connect your account"
 msgstr "Informe a API Key e o Secret acima e conecte sua conta"
 
-#: src/app/components/pages/settings/settings.rs:1215
-#: src/app/components/pages/settings/settings.rs:1262
+#: src/app/components/pages/settings/settings.rs:1234
+#: src/app/components/pages/settings/settings.rs:1281
 msgid "Enter your Last.fm API Key and Secret first"
 msgstr "Informe primeiro a API Key e o API Secret do Last.fm"
 
-#: src/app/components/pages/settings/settings.rs:1241
+#: src/app/components/pages/settings/settings.rs:1260
 msgid ""
 "Could not start Last.fm authorization. Check API credentials and network."
 msgstr ""
 "Não foi possível iniciar a autorização do Last.fm. Verifique as credenciais "
 "e a conexão."
 
-#: src/app/components/pages/settings/settings.rs:1254
+#: src/app/components/pages/settings/settings.rs:1273
 msgid "Run Step 1 first to open browser authorization"
 msgstr "Execute o Passo 1 primeiro para abrir a autorização no navegador"
 
-#: src/app/components/pages/settings/settings.rs:1287
+#: src/app/components/pages/settings/settings.rs:1306
 msgid "Connected to Last.fm as"
 msgstr "Conectado ao Last.fm como"
 
-#: src/app/components/pages/settings/settings.rs:1294
+#: src/app/components/pages/settings/settings.rs:1313
 msgid ""
 "Last.fm authorization is not approved yet. Approve in browser, then try Step "
 "2 again."
@@ -645,29 +658,29 @@ msgstr ""
 "A autorização do Last.fm ainda não foi aprovada. Aprove no navegador e tente "
 "o Passo 2 novamente."
 
-#: src/app/components/pages/settings/settings.rs:1322
+#: src/app/components/pages/settings/settings.rs:1341
 msgid "Locked by a Family plan parental control and cannot be changed here."
 msgstr ""
 "Bloqueado pelo controle parental do plano Família e não pode ser alterado "
 "aqui."
 
 #. translators: Genius form field that should be left untouched.
-#: src/app/components/pages/settings/settings.rs:1452
+#: src/app/components/pages/settings/settings.rs:1471
 msgid "Keep the default"
 msgstr "Deixe o padrão"
 
 #. translators: Tooltip of the button copying a value for a form field.
-#: src/app/components/pages/settings/settings.rs:1461
+#: src/app/components/pages/settings/settings.rs:1480
 msgid "Copy"
 msgstr "Copiar"
 
 #. translators: Toast after copying a value; {} is the value.
-#: src/app/components/pages/settings/settings.rs:1468
+#: src/app/components/pages/settings/settings.rs:1487
 #, rust-format
 msgid "Copied {}"
 msgstr "Copiado: {}"
 
-#: src/app/components/pages/settings/settings.rs:1490
+#: src/app/components/pages/settings/settings.rs:1509
 msgid ""
 "1. Click the button below to open the New API Client form on Genius (sign in "
 "if asked)."
@@ -675,11 +688,11 @@ msgstr ""
 "1. Clique no botão abaixo para abrir o formulário New API Client no Genius "
 "(entre na sua conta se ele pedir)."
 
-#: src/app/components/pages/settings/settings.rs:1493
+#: src/app/components/pages/settings/settings.rs:1512
 msgid "2. Fill in the form like this, then click 'Save':"
 msgstr "2. Preencha o formulário assim e clique em 'Save':"
 
-#: src/app/components/pages/settings/settings.rs:1505
+#: src/app/components/pages/settings/settings.rs:1524
 msgid ""
 "3. On the next page, click 'Generate Access Token' and copy the Client "
 "Access Token. Canto doesn't need the Client ID or Client Secret."
@@ -687,33 +700,33 @@ msgstr ""
 "3. Na página seguinte, clique em 'Generate Access Token' e copie o Client "
 "Access Token. O Canto não usa o Client ID nem o Client Secret."
 
-#: src/app/components/pages/settings/settings.rs:1508
+#: src/app/components/pages/settings/settings.rs:1527
 msgid "4. Back in Canto, paste it into Client Access Token, under Genius."
 msgstr "4. De volta ao Canto, cole em Client Access Token, na parte do Genius."
 
-#: src/app/components/pages/settings/settings.rs:1515
+#: src/app/components/pages/settings/settings.rs:1534
 msgid "Open Genius"
 msgstr "Abrir o Genius"
 
-#: src/app/components/pages/settings/settings.rs:1523
-#: src/app/components/pages/settings/settings.rs:1616
+#: src/app/components/pages/settings/settings.rs:1542
+#: src/app/components/pages/settings/settings.rs:1635
 #: src/app/components/shell/window/close_dialog.rs:67
 msgid "Close"
 msgstr "Fechar"
 
-#: src/app/components/pages/settings/settings.rs:1535
+#: src/app/components/pages/settings/settings.rs:1554
 msgid "How to Get a Genius Token"
 msgstr "Como obter um token do Genius"
 
-#: src/app/components/pages/settings/settings.rs:1560
+#: src/app/components/pages/settings/settings.rs:1579
 msgid "How to Set Up Scrobbling"
 msgstr "Como configurar o scrobbling"
 
-#: src/app/components/pages/settings/settings.rs:1573
+#: src/app/components/pages/settings/settings.rs:1592
 msgid "Last.fm (API Key + Browser Auth)"
 msgstr "Last.fm (API Key + autorização no navegador)"
 
-#: src/app/components/pages/settings/settings.rs:1579
+#: src/app/components/pages/settings/settings.rs:1598
 msgid ""
 "1. Open last.fm/api/account/create, create an API application, and copy the "
 "API Key and Shared Secret into Canto."
@@ -721,7 +734,7 @@ msgstr ""
 "1. Acesse last.fm/api/account/create, crie uma aplicação de API e copie a "
 "API Key e o Shared Secret para o Canto."
 
-#: src/app/components/pages/settings/settings.rs:1582
+#: src/app/components/pages/settings/settings.rs:1601
 msgid ""
 "2. Click '1. Open Auth' to open Last.fm in your browser and approve access "
 "for Canto."
@@ -729,18 +742,18 @@ msgstr ""
 "2. Clique em '1. Abrir Auth' para abrir o Last.fm no navegador e aprovar o "
 "acesso para o Canto."
 
-#: src/app/components/pages/settings/settings.rs:1585
+#: src/app/components/pages/settings/settings.rs:1604
 msgid ""
 "3. Return to Canto and click '2. Complete' to store your persistent session "
 "key."
 msgstr ""
 "3. Volte ao Canto e clique em '2. Concluir' para salvar sua chave de sessão."
 
-#: src/app/components/pages/settings/settings.rs:1588
+#: src/app/components/pages/settings/settings.rs:1607
 msgid "ListenBrainz (User Token)"
 msgstr "ListenBrainz (User Token)"
 
-#: src/app/components/pages/settings/settings.rs:1595
+#: src/app/components/pages/settings/settings.rs:1614
 msgid ""
 "Open listenbrainz.org/settings, copy your User Token, and paste it into "
 "ListenBrainz User Token."
@@ -748,33 +761,33 @@ msgstr ""
 "Acesse listenbrainz.org/settings, copie seu User Token e cole no campo Token "
 "de Usuário do ListenBrainz."
 
-#: src/app/components/pages/settings/settings.rs:1602
+#: src/app/components/pages/settings/settings.rs:1621
 msgid "Open Last.fm API"
 msgstr "Abrir API do Last.fm"
 
-#: src/app/components/pages/settings/settings.rs:1609
+#: src/app/components/pages/settings/settings.rs:1628
 msgid "Open ListenBrainz"
 msgstr "Abrir ListenBrainz"
 
-#: src/app/components/pages/settings/settings.rs:1635
+#: src/app/components/pages/settings/settings.rs:1654
 msgid "Not installed yet: Canto gets it from Spotify when you press play"
 msgstr "Ainda não instalado: o Canto baixa do Spotify quando você der play"
 
-#: src/app/components/pages/settings/settings.rs:1637
+#: src/app/components/pages/settings/settings.rs:1656
 msgid ""
 "Not installed. Canto plays through the Spotify app hidden in the background."
 msgstr ""
 "Não instalado. O Canto toca pelo app do Spotify escondido em segundo plano."
 
-#: src/app/components/pages/settings/settings.rs:1639
+#: src/app/components/pages/settings/settings.rs:1658
 msgid "Installed, waiting for a key"
 msgstr "Instalado, esperando a chave"
 
-#: src/app/components/pages/settings/settings.rs:1641
+#: src/app/components/pages/settings/settings.rs:1660
 msgid "Ready. It starts when you press play."
 msgstr "Pronto. Ele liga quando você aperta play."
 
-#: src/app/components/pages/settings/settings.rs:1643
+#: src/app/components/pages/settings/settings.rs:1662
 msgid ""
 "Running, not logged in yet: in Spotify on your phone, pick “Canto” in the "
 "device list once"
@@ -782,21 +795,21 @@ msgstr ""
 "Ligado, mas ainda sem login: no Spotify do celular, escolha “Canto” na lista "
 "de aparelhos uma vez"
 
-#: src/app/components/pages/settings/settings.rs:1645
+#: src/app/components/pages/settings/settings.rs:1664
 msgid "Running and playing through Canto"
 msgstr "Ligado e tocando pelo Canto"
 
-#: src/app/components/pages/settings/settings.rs:1647
+#: src/app/components/pages/settings/settings.rs:1666
 msgid "Running and logged in"
 msgstr "Ligado e conectado"
 
-#: src/app/components/pages/settings/settings.rs:1653
+#: src/app/components/pages/settings/settings.rs:1672
 msgid ""
 "This Soloist build has expired; Canto gets the new one when you press play"
 msgstr ""
 "Esta versão do Soloist venceu; o Canto baixa a nova quando você der play"
 
-#: src/app/components/pages/settings/settings.rs:1659
+#: src/app/components/pages/settings/settings.rs:1678
 #, rust-format
 msgid "This Soloist build stops working in {days} days"
 msgstr "Esta versão do Soloist para de funcionar em {days} dias"
@@ -967,7 +980,7 @@ msgstr "Reproduções, ouvintes e tags, pelo Last.fm"
 
 #. Translators: Tooltip of the button in the lyrics that shows them full screen.
 #: src/app/components/shell/command_palette/widget.rs:680
-#: src/app/components/pages/lyrics/lyrics_page.blp:315
+#: src/app/components/pages/lyrics/lyrics_page.blp:334
 msgid "Full-Screen Lyrics"
 msgstr "Letra em tela cheia"
 
@@ -1112,12 +1125,12 @@ msgid "All Time"
 msgstr "Desde sempre"
 
 #: src/app/components/shell/stats_dialog.rs:174
-#: src/app/components/shell/now_panel/stats.rs:261
+#: src/app/components/shell/now_panel/stats.rs:270
 msgid "Link Last.fm to See Your Stats"
 msgstr "Conecte o Last.fm para ver suas estatísticas"
 
 #: src/app/components/shell/stats_dialog.rs:176
-#: src/app/components/shell/now_panel/stats.rs:262
+#: src/app/components/shell/now_panel/stats.rs:271
 msgid "Add your Last.fm username and API key in Preferences → Integrations."
 msgstr ""
 "Coloque seu usuário e a chave de API do Last.fm em Preferências → "
@@ -1239,105 +1252,105 @@ msgstr "Pausar"
 msgid "Select a track to play"
 msgstr "Escolha uma faixa para tocar"
 
-#: src/app/components/shell/now_panel/mod.rs:43
-#: src/app/components/shell/now_panel/mod.rs:1139
+#: src/app/components/shell/now_panel/mod.rs:45
+#: src/app/components/shell/now_panel/mod.rs:1178
 msgid "Go to Album"
 msgstr "Ir para o álbum"
 
 #. translators: Side panel view of the current track, when nothing plays.
-#: src/app/components/shell/now_panel/mod.rs:364
+#: src/app/components/shell/now_panel/mod.rs:366
 #: src/app/components/shell/now_panel/info_page.rs:90
 #: src/app/components/shell/mini_player.rs:254
 msgid "Nothing Playing"
 msgstr "Nada tocando"
 
-#: src/app/components/shell/now_panel/mod.rs:365
+#: src/app/components/shell/now_panel/mod.rs:367
 #: src/app/components/shell/now_panel/info_page.rs:91
 msgid "Play something and it shows up here."
 msgstr "Toque alguma coisa e ela aparece aqui."
 
 #. translators: Tooltip of the lyrics preview card in the Now Playing panel.
-#: src/app/components/shell/now_panel/mod.rs:410
+#: src/app/components/shell/now_panel/mod.rs:412
 msgid "Show Lyrics"
 msgstr "Mostrar letra"
 
 #. translators: Tooltip of the next track card in the Now Playing panel.
-#: src/app/components/shell/now_panel/mod.rs:440
+#: src/app/components/shell/now_panel/mod.rs:442
 msgid "Show Queue"
 msgstr "Mostrar fila"
 
-#: src/app/components/shell/now_panel/mod.rs:446
-#: src/app/components/shell/now_panel/stats.rs:301
+#: src/app/components/shell/now_panel/mod.rs:448
+#: src/app/components/shell/now_panel/stats.rs:310
 msgid "Your Plays"
 msgstr "Suas reproduções"
 
 #. A click opens the Stats tab, with everything Last.fm knows
 #. translators: Tooltip of the "Your Plays" card in the Now Playing panel: it opens the Stats tab.
-#: src/app/components/shell/now_panel/mod.rs:452
+#: src/app/components/shell/now_panel/mod.rs:454
 msgid "Show Song Stats"
 msgstr "Ver estatísticas da música"
 
-#: src/app/components/shell/now_panel/mod.rs:456
+#: src/app/components/shell/now_panel/mod.rs:458
 #: src/app/components/shell/now_panel/about.rs:302
 msgid "Credits"
 msgstr "Créditos"
 
 #. A click opens the About tab, with the full credits and the story
 #. translators: Tooltip of the Credits card in the Now Playing panel: it opens the About tab.
-#: src/app/components/shell/now_panel/mod.rs:461
+#: src/app/components/shell/now_panel/mod.rs:466
 msgid "Show About This Song"
 msgstr "Ver sobre a música"
 
 #. translators: Credits row in the Now Playing panel: the track's artists.
-#: src/app/components/shell/now_panel/mod.rs:547
+#: src/app/components/shell/now_panel/mod.rs:553
 #: src/app/components/shell/now_panel/about.rs:305
 msgid "Performed by"
 msgstr "Interpretada por"
 
-#: src/app/components/shell/now_panel/mod.rs:550
+#: src/app/components/shell/now_panel/mod.rs:556
 #: src/app/components/shell/now_panel/about.rs:309
 msgid "Producer(s)"
 msgstr "Produção"
 
-#: src/app/components/shell/now_panel/mod.rs:551
+#: src/app/components/shell/now_panel/mod.rs:557
 #: src/app/components/shell/now_panel/about.rs:310
 msgid "Writer(s)"
 msgstr "Composição"
 
-#: src/app/components/shell/now_panel/mod.rs:561
+#: src/app/components/shell/now_panel/mod.rs:567
 msgid "No detailed credits were found on Genius for this track."
 msgstr "Nenhum crédito detalhado foi encontrado no Genius para esta faixa."
 
-#: src/app/components/shell/now_panel/mod.rs:571
+#: src/app/components/shell/now_panel/mod.rs:577
 msgid "this song"
 msgstr "esta música"
 
-#: src/app/components/shell/now_panel/mod.rs:572
+#: src/app/components/shell/now_panel/mod.rs:578
 msgid "this album"
 msgstr "este álbum"
 
-#: src/app/components/shell/now_panel/mod.rs:573
+#: src/app/components/shell/now_panel/mod.rs:579
 msgid "this artist"
 msgstr "este artista"
 
-#: src/app/components/shell/now_panel/mod.rs:825
+#: src/app/components/shell/now_panel/mod.rs:864
 msgid "Add a Genius token to see who produced and wrote this track."
 msgstr ""
 "Adicione um token do Genius para ver quem produziu e escreveu esta faixa."
 
-#: src/app/components/shell/now_panel/mod.rs:827
-#: src/app/components/shell/now_panel/mod.rs:855
+#: src/app/components/shell/now_panel/mod.rs:866
+#: src/app/components/shell/now_panel/mod.rs:894
 #: src/app/components/shell/now_panel/about.rs:109
 #: src/app/components/shell/now_panel/about.rs:156
 msgid "Set Up Genius"
 msgstr "Configurar o Genius"
 
 #. translators: Shown while the credits of the current track load.
-#: src/app/components/shell/now_panel/mod.rs:833
+#: src/app/components/shell/now_panel/mod.rs:872
 msgid "Loading credits…"
 msgstr "Carregando créditos…"
 
-#: src/app/components/shell/now_panel/mod.rs:853
+#: src/app/components/shell/now_panel/mod.rs:892
 #: src/app/components/shell/now_panel/about.rs:154
 msgid ""
 "Genius didn't accept your token. Paste a new one in Settings to see the "
@@ -1346,15 +1359,15 @@ msgstr ""
 "O Genius não aceitou seu token. Cole um novo nas Configurações para ver os "
 "créditos de novo."
 
-#: src/app/components/shell/now_panel/mod.rs:860
+#: src/app/components/shell/now_panel/mod.rs:899
 msgid "Couldn't load the credits from Genius."
 msgstr "Não foi possível carregar os créditos do Genius."
 
 #. Translators: Button under "No Lyrics Available": opens the song's page on Genius, where its lyrics can be read or added.
-#: src/app/components/shell/now_panel/mod.rs:862
+#: src/app/components/shell/now_panel/mod.rs:901
 #: src/app/components/shell/now_panel/about.rs:144
 #: src/app/components/shell/now_panel/about.rs:169
-#: src/app/components/pages/lyrics/lyrics_page.blp:103
+#: src/app/components/pages/lyrics/lyrics_page.blp:122
 msgid "Search on Genius"
 msgstr "Buscar no Genius"
 
@@ -1495,7 +1508,7 @@ msgstr "anotações"
 
 #. Translators: Tooltip of the lyrics button that opens the song's page on Genius (to read or fix its lyrics).
 #: src/app/components/shell/now_panel/about.rs:379
-#: src/app/components/pages/lyrics/lyrics_page.blp:138
+#: src/app/components/pages/lyrics/lyrics_page.blp:157
 msgid "Open on Genius"
 msgstr "Abrir no Genius"
 
@@ -1519,19 +1532,19 @@ msgstr "O Last.fm ainda não conhece esta música."
 msgid "Couldn't Reach Last.fm"
 msgstr "Não foi possível acessar o Last.fm"
 
-#: src/app/components/shell/now_panel/stats.rs:263
+#: src/app/components/shell/now_panel/stats.rs:272
 msgid "Set Up Last.fm"
 msgstr "Configurar o Last.fm"
 
 #. translators: Stats tab, the user's Last.fm profile. {count} is a number, {year} like 2019.
-#: src/app/components/shell/now_panel/stats.rs:278
+#: src/app/components/shell/now_panel/stats.rs:287
 #, rust-format
 msgid "{count} scrobble since {year}"
 msgid_plural "{count} scrobbles since {year}"
 msgstr[0] "{count} scrobble desde {year}"
 msgstr[1] "{count} scrobbles desde {year}"
 
-#: src/app/components/shell/now_panel/stats.rs:284
+#: src/app/components/shell/now_panel/stats.rs:293
 #, rust-format
 msgid "{count} scrobble"
 msgid_plural "{count} scrobbles"
@@ -1539,77 +1552,77 @@ msgstr[0] "{count} scrobble"
 msgstr[1] "{count} scrobbles"
 
 #. translators: Stats tab: the user marked the playing song as loved on Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:311
+#: src/app/components/shell/now_panel/stats.rs:321
 msgid "You loved this song on Last.fm"
 msgstr "Você curtiu esta música no Last.fm"
 
 #. translators: Stats tab button: opens the user's top 10 artists, albums and songs.
-#: src/app/components/shell/now_panel/stats.rs:318
+#: src/app/components/shell/now_panel/stats.rs:329
 msgid "See Your Top 10"
 msgstr "Ver seu top 10"
 
 #. translators: Under a number in the Stats tab: people who played the song on Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:327
-#: src/app/components/shell/now_panel/stats.rs:332
+#: src/app/components/shell/now_panel/stats.rs:338
+#: src/app/components/shell/now_panel/stats.rs:343
 msgid "listeners"
 msgstr "ouvintes"
 
 #. translators: Under a number in the Stats tab: times the song was played on Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:329
-#: src/app/components/shell/now_panel/stats.rs:333
+#: src/app/components/shell/now_panel/stats.rs:340
+#: src/app/components/shell/now_panel/stats.rs:344
 msgid "plays"
 msgstr "reproduções"
 
 #. translators: Heading of the Stats tab's card with everyone's plays on Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:338
+#: src/app/components/shell/now_panel/stats.rs:349
 msgid "On Last.fm"
 msgstr "No Last.fm"
 
 #. translators: Stats tab: over the playing song's numbers.
-#: src/app/components/shell/now_panel/stats.rs:340
+#: src/app/components/shell/now_panel/stats.rs:352
 msgid "This Song"
 msgstr "Esta música"
 
-#: src/app/components/shell/now_panel/stats.rs:347
+#: src/app/components/shell/now_panel/stats.rs:361
 msgid "Open on Last.fm"
 msgstr "Abrir no Last.fm"
 
 #. translators: Heading of the Stats tab's genre-like tags from Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:355
+#: src/app/components/shell/now_panel/stats.rs:369
 msgid "Tags"
 msgstr "Tags"
 
 #. translators: Stats tab: over the album's description from Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:369
+#: src/app/components/shell/now_panel/stats.rs:383
 msgid "About the Album"
 msgstr "Sobre o álbum"
 
 #. translators: Stats tab: where the artist's bio comes from.
-#: src/app/components/shell/now_panel/stats.rs:373
+#: src/app/components/shell/now_panel/stats.rs:387
 msgid "From Last.fm"
 msgstr "Do Last.fm"
 
-#: src/app/components/shell/now_panel/stats.rs:375
+#: src/app/components/shell/now_panel/stats.rs:389
 msgid "Read More on Last.fm"
 msgstr "Ler mais no Last.fm"
 
 #. translators: Heading in the Stats tab: the artist's most played songs on Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:383
+#: src/app/components/shell/now_panel/stats.rs:397
 msgid "Most Played Worldwide"
 msgstr "Mais tocadas no mundo"
 
 #. translators: Heading in the Stats tab: songs like the playing one, from Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:408
+#: src/app/components/shell/now_panel/stats.rs:422
 msgid "Similar Songs"
 msgstr "Músicas parecidas"
 
 #. translators: Heading in the Stats tab: artists like the playing one, from Last.fm.
-#: src/app/components/shell/now_panel/stats.rs:432
+#: src/app/components/shell/now_panel/stats.rs:446
 msgid "Similar Artists"
 msgstr "Artistas parecidos"
 
 #. translators: Tooltip of a similar artist in the Stats tab: opens the artist's page.
-#: src/app/components/shell/now_panel/stats.rs:442
+#: src/app/components/shell/now_panel/stats.rs:456
 msgid "Open Artist"
 msgstr "Abrir artista"
 
@@ -1627,7 +1640,7 @@ msgid "Show Less"
 msgstr "Mostrar menos"
 
 #. translators: Tooltip of a song or artist in the About and Stats tabs.
-#: src/app/components/shell/now_panel/info_page.rs:232
+#: src/app/components/shell/now_panel/info_page.rs:237
 msgid "Search in Canto"
 msgstr "Buscar no Canto"
 
@@ -1976,79 +1989,79 @@ msgid "Loading Lyrics…"
 msgstr "Carregando letra…"
 
 #. Translators: Floating button that scrolls the lyrics back to the line being sung.
-#: src/app/components/pages/lyrics/lyrics_page.blp:58
+#: src/app/components/pages/lyrics/lyrics_page.blp:77
 msgid "Back to Current Line"
 msgstr "Voltar à linha atual"
 
 #. Translators: Button to retry fetching lyrics from LRCLIB.
-#: src/app/components/pages/lyrics/lyrics_page.blp:92
+#: src/app/components/pages/lyrics/lyrics_page.blp:111
 msgid "Reload Lyrics"
 msgstr "Recarregar letra"
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:127
+#: src/app/components/pages/lyrics/lyrics_page.blp:146
 msgid "Reload lyrics"
 msgstr "Recarregar letra"
 
 #. Translators: Tooltip of the lyrics button that opens how lyrics light up, scroll and are timed.
-#: src/app/components/pages/lyrics/lyrics_page.blp:149
+#: src/app/components/pages/lyrics/lyrics_page.blp:168
 msgid "Lyrics Options"
 msgstr "Opções da letra"
 
 #. Translators: Heading in the lyrics options popover: how the line being sung lights up.
-#: src/app/components/pages/lyrics/lyrics_page.blp:168
+#: src/app/components/pages/lyrics/lyrics_page.blp:187
 msgid "Highlight"
 msgstr "Destaque"
 
 #. Translators: Lyrics highlight choice: the words light up one by one as they are sung.
-#: src/app/components/pages/lyrics/lyrics_page.blp:182
+#: src/app/components/pages/lyrics/lyrics_page.blp:201
 msgid "Word by Word"
 msgstr "Palavra por palavra"
 
 #. Translators: Lyrics highlight choice: the whole line lights up at once.
-#: src/app/components/pages/lyrics/lyrics_page.blp:188
+#: src/app/components/pages/lyrics/lyrics_page.blp:207
 msgid "Whole Line"
 msgstr "Frase inteira"
 
 #. Translators: Heading in the lyrics options popover: what the lyrics do after you scroll them by hand.
-#: src/app/components/pages/lyrics/lyrics_page.blp:194
+#: src/app/components/pages/lyrics/lyrics_page.blp:213
 msgid "After You Scroll"
 msgstr "Depois de rolar"
 
 #. Translators: Lyrics scroll choice: a few seconds after scrolling by hand, the lyrics go back to the line being sung.
-#: src/app/components/pages/lyrics/lyrics_page.blp:209
+#: src/app/components/pages/lyrics/lyrics_page.blp:228
 msgid "Follow the Song"
 msgstr "Seguir a música"
 
 #. Translators: Lyrics scroll choice: after scrolling by hand, the lyrics stay where you left them until you press Back to Current Line.
-#: src/app/components/pages/lyrics/lyrics_page.blp:215
+#: src/app/components/pages/lyrics/lyrics_page.blp:234
 msgid "Stay Put"
 msgstr "Ficar onde parei"
 
 #. Translators: Explanation in the lyrics timing popover.
-#: src/app/components/pages/lyrics/lyrics_page.blp:232
+#: src/app/components/pages/lyrics/lyrics_page.blp:251
 msgid "If the lyrics run ahead of or behind the song, nudge them here."
 msgstr ""
 "Se a letra estiver adiantada ou atrasada em relação à música, ajuste aqui."
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:253
+#: src/app/components/pages/lyrics/lyrics_page.blp:272
 msgid "Delay lyrics (-100 ms)"
 msgstr "Atrasar letra (-100 ms)"
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:262
+#: src/app/components/pages/lyrics/lyrics_page.blp:281
 msgid "Reset lyrics sync offset"
 msgstr "Zerar ajuste de sincronização"
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:272
+#: src/app/components/pages/lyrics/lyrics_page.blp:291
 msgid "Advance lyrics (+100 ms)"
 msgstr "Adiantar letra (+100 ms)"
 
 #. Translators: Tooltip of the lyrics button that shows a translation under each line.
-#: src/app/components/pages/lyrics/lyrics_page.blp:293
+#: src/app/components/pages/lyrics/lyrics_page.blp:312
 msgid "Translate Lyrics"
 msgstr "Traduzir letra"
 
 #. Translators: Tooltip of the button that picks the language lyrics are translated into.
-#: src/app/components/pages/lyrics/lyrics_page.blp:303
+#: src/app/components/pages/lyrics/lyrics_page.blp:322
 msgid "Translation Language"
 msgstr "Idioma da tradução"
 
@@ -2058,7 +2071,7 @@ msgstr "Idioma da tradução"
 #. translators: Button label. Selects all visible songs.
 #: src/app/components/pages/queue/queue_page.blp:34
 #: src/app/components/shell/headerbar/headerbar.blp:131
-#: src/app/components/pages/queue/widget.rs:157
+#: src/app/components/pages/queue/widget.rs:177
 #: src/app/components/shell/headerbar/widget.rs:783
 #: src/app/components/shell/utility_panel/utility_panel.blp:130
 #: src/app/components/shell/utility_panel/widget.rs:192
@@ -2663,11 +2676,21 @@ msgstr "Como obter o token"
 msgid "Client Access Token"
 msgstr "Client Access Token"
 
-#: src/app/components/pages/settings/settings.blp:507
+#. Translators: Switch in Preferences > Integrations > Lyrics: when LRCLIB (the synced lyrics site) has no lyrics for a song, Canto shows Genius's.
+#: src/app/components/pages/settings/settings.blp:513
+msgid "Lyrics When LRCLIB Has None"
+msgstr "Letra quando o LRCLIB não tiver"
+
+#. Translators: Subtitle of the "Lyrics When LRCLIB Has None" switch. Genius lyrics have no timing: they don't follow the song.
+#: src/app/components/pages/settings/settings.blp:515
+msgid "Shows the lyrics from Genius, without timing"
+msgstr "Mostra a letra do Genius, sem sincronia"
+
+#: src/app/components/pages/settings/settings.blp:520
 msgid "Lyrics Translation"
 msgstr "Tradução da letra"
 
-#: src/app/components/pages/settings/settings.blp:508
+#: src/app/components/pages/settings/settings.blp:521
 msgid ""
 "Lyrics are translated through Google Translate for free, without a key. That "
 "free route isn't official and may stop working; a Google Cloud API key "
@@ -2679,15 +2702,15 @@ msgstr ""
 "Cloud (500 mil caracteres por mês grátis, exige conta de faturamento) deixa "
 "a tradução garantida."
 
-#: src/app/components/pages/settings/settings.blp:511
+#: src/app/components/pages/settings/settings.blp:524
 msgid "Google Cloud API Key (optional)"
 msgstr "Chave da API do Google Cloud (opcional)"
 
-#: src/app/components/pages/settings/settings.blp:516
+#: src/app/components/pages/settings/settings.blp:529
 msgid "Scrobbling (Last.fm and ListenBrainz)"
 msgstr "Scrobbling (Last.fm e ListenBrainz)"
 
-#: src/app/components/pages/settings/settings.blp:517
+#: src/app/components/pages/settings/settings.blp:530
 msgid ""
 "Track played songs to Last.fm and/or ListenBrainz with automatic offline "
 "retry."
@@ -2695,69 +2718,69 @@ msgstr ""
 "Registra faixas tocadas no Last.fm e/ou ListenBrainz com fila de reenvio "
 "offline automática."
 
-#: src/app/components/pages/settings/settings.blp:520
+#: src/app/components/pages/settings/settings.blp:533
 msgid "How to set up scrobbling"
 msgstr "Como configurar scrobbling"
 
-#: src/app/components/pages/settings/settings.blp:529
+#: src/app/components/pages/settings/settings.blp:542
 msgid "Enable Scrobbling"
 msgstr "Ativar scrobbling"
 
-#: src/app/components/pages/settings/settings.blp:530
+#: src/app/components/pages/settings/settings.blp:543
 msgid "Send Now Playing updates and scrobble tracks after listening"
 msgstr "Enviar atualizações de Tocando Agora e registrar faixas ouvidas"
 
-#: src/app/components/pages/settings/settings.blp:534
+#: src/app/components/pages/settings/settings.blp:547
 msgid "Scrobble Connect Devices"
 msgstr "Fazer scrobble de dispositivos Connect"
 
-#: src/app/components/pages/settings/settings.blp:535
+#: src/app/components/pages/settings/settings.blp:548
 msgid "Also track plays from active Spotify Connect speakers and phones"
 msgstr "Também registrar reproduções de dispositivos Spotify Connect ativos"
 
-#: src/app/components/pages/settings/settings.blp:539
+#: src/app/components/pages/settings/settings.blp:552
 msgid "Last.fm API Key"
 msgstr "API Key do Last.fm"
 
-#: src/app/components/pages/settings/settings.blp:543
+#: src/app/components/pages/settings/settings.blp:556
 msgid "Last.fm API Secret"
 msgstr "API Secret do Last.fm"
 
-#: src/app/components/pages/settings/settings.blp:547
+#: src/app/components/pages/settings/settings.blp:560
 msgid "Authorize Last.fm"
 msgstr "Autorizar Last.fm"
 
-#: src/app/components/pages/settings/settings.blp:556
+#: src/app/components/pages/settings/settings.blp:569
 msgid "1. Open Auth"
 msgstr "1. Abrir Auth"
 
-#: src/app/components/pages/settings/settings.blp:560
+#: src/app/components/pages/settings/settings.blp:573
 msgid "2. Complete"
 msgstr "2. Concluir"
 
-#: src/app/components/pages/settings/settings.blp:565
+#: src/app/components/pages/settings/settings.blp:578
 msgid "Disconnect"
 msgstr "Desconectar"
 
 #. Translators: Switch in Preferences > Integrations, shown once Last.fm is connected. "Love" is Last.fm's heart on a song.
-#: src/app/components/pages/settings/settings.blp:577
+#: src/app/components/pages/settings/settings.blp:590
 msgid "Love on Last.fm When You Like a Song"
 msgstr "Curtir no Last.fm ao Curtir uma Música"
 
 #. Translators: Subtitle of the "Love on Last.fm When You Like a Song" switch.
-#: src/app/components/pages/settings/settings.blp:579
+#: src/app/components/pages/settings/settings.blp:592
 msgid "Removing a song from your liked songs unloves it too"
 msgstr "Tirar uma música das curtidas também tira a curtida no Last.fm"
 
-#: src/app/components/pages/settings/settings.blp:584
+#: src/app/components/pages/settings/settings.blp:597
 msgid "ListenBrainz User Token"
 msgstr "Token de Usuário do ListenBrainz"
 
-#: src/app/components/pages/settings/settings.blp:589
+#: src/app/components/pages/settings/settings.blp:602
 msgid "Visual Bridge (External Visualizers)"
 msgstr "Ponte Visual (Visualizadores Externos)"
 
-#: src/app/components/pages/settings/settings.blp:590
+#: src/app/components/pages/settings/settings.blp:603
 msgid ""
 "Opt-in lightweight local state and audio RMS/peak output for external 3D "
 "visualizers."
@@ -2765,11 +2788,11 @@ msgstr ""
 "Saída local leve e opcional de estado e níveis RMS/pico de áudio para "
 "visualizadores 3D."
 
-#: src/app/components/pages/settings/settings.blp:593
+#: src/app/components/pages/settings/settings.blp:606
 msgid "Enable Visual Bridge"
 msgstr "Ativar Ponte Visual"
 
-#: src/app/components/pages/settings/settings.blp:594
+#: src/app/components/pages/settings/settings.blp:607
 msgid ""
 "Write active track, theme colors, and audio energy levels to "
 "$XDG_RUNTIME_DIR/canto/state.json"
@@ -3061,7 +3084,7 @@ msgid "Details"
 msgstr ""
 
 #. translators: Button label. Deselects all songs, once they are all selected.
-#: src/app/components/pages/queue/widget.rs:154
+#: src/app/components/pages/queue/widget.rs:174
 #: src/app/components/shell/headerbar/widget.rs:780
 #: src/app/components/shell/utility_panel/widget.rs:189
 msgid "Deselect All"

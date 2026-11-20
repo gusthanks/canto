@@ -316,8 +316,8 @@ fn render(
             let heart = gtk::Image::from_icon_name(HEART_FILLED_ICON);
             heart.add_css_class("stats-panel__loved");
             loved.append(&heart);
-            // translators: Stats tab: the user marked the playing song as loved on Last.fm.
             loved.append(&gtk::Label::new(Some(&gettext(
+                // translators: Stats tab: the user marked the playing song as loved on Last.fm.
                 "You loved this song on Last.fm",
             ))));
             yours.append(&loved);
@@ -347,8 +347,8 @@ fn render(
         let world = card(&["stats-panel__world"]);
         // translators: Heading of the Stats tab's card with everyone's plays on Last.fm.
         world.append(&heading(&gettext("On Last.fm")));
-        // translators: Stats tab: over the playing song's numbers.
         for (what, numbers) in [
+            // translators: Stats tab: over the playing song's numbers.
             (gettext("This Song"), song_numbers),
             (artist.to_string(), artist_numbers),
         ] {
