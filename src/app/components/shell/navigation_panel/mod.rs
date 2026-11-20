@@ -11,4 +11,6 @@ pub use model::*;
 
 mod navigation_panel_row;
 #[cfg(test)]
+pub(crate) use model::update_store_for_tests;
+#[cfg(test)]
 pub(crate) use navigation_panel::{grid_sample_for_tests, grid_titles_for_tests, sample_for_tests};

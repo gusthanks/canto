@@ -1,5 +1,7 @@
 use gettextrs::gettext;
 use gtk::prelude::*;
+use std::cell::RefCell;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use tokio::sync::oneshot;
 
@@ -156,6 +158,9 @@ pub struct NavigationPanelModel {
     /// Library keys of what was played lately, newest first
     recents: std::cell::RefCell<Vec<String>>,
     recents_fetched: std::cell::Cell<Option<std::time::Instant>>,
+    /// The covers on show, by URL and size: a row or tile made again shows
+    /// its cover at once instead of blinking empty while it loads.
+    covers: Rc<RefCell<HashMap<(String, i32), gtk::gdk::Texture>>>,
 }
 
 impl NavigationPanelModel {
@@ -172,6 +177,7 @@ impl NavigationPanelModel {
             query: Default::default(),
             recents: Default::default(),
             recents_fetched: Default::default(),
+            covers: Default::default(),
         }
     }
 
@@ -451,12 +457,24 @@ impl NavigationPanelModel {
         item
     }
 
-    /// Shows the cover at `url` in `image`, `px` pixels wide.
+    /// Shows the cover at `url` in `image`, `px` pixels wide: right away
+    /// when it was shown before or is in memory, else once it loads.
     pub(super) fn load_cover(&self, image: &gtk::Image, url: &str, px: i32) {
         if canto_api::models::is_resource_url(url) {
             return;
         }
+        if show_known_cover(&self.covers, image, url, px) {
+            return;
+        }
         let api = self.app_model.api();
+        if let Some(texture) = api.cached_texture(url, px, px) {
+            image.set_paintable(Some(&texture));
+            self.covers
+                .borrow_mut()
+                .insert((url.to_owned(), px), texture);
+            return;
+        }
+        let covers = Rc::downgrade(&self.covers);
         let url = url.to_owned();
         let weak = image.downgrade();
         // Behind whatever page is loading
@@ -465,9 +483,14 @@ impl NavigationPanelModel {
             canto_api::BACKGROUND_EPOCH,
         );
         glib::MainContext::default().spawn_local(async move {
-            let texture = api.load_image(&url, px, px, tag).await;
-            if let (Some(image), Some(texture)) = (weak.upgrade(), texture) {
+            let Some(texture) = api.load_image(&url, px, px, tag).await else {
+                return;
+            };
+            if let Some(image) = weak.upgrade() {
                 image.set_paintable(Some(&texture));
+            }
+            if let Some(covers) = covers.upgrade() {
+                covers.borrow_mut().insert((url, px), texture);
             }
         });
     }
@@ -820,7 +843,12 @@ impl NavigationPanelModel {
             items.extend(self.artist_items().into_iter().filter(not_pinned));
         }
         let items = self.arrange_keeping_pins(items, &pinned_ids);
-        list_store.splice(0, list_store.n_items(), items.as_slice());
+        // Covers no longer listed are let go
+        let shown: HashSet<String> = items.iter().map(|item| item.image()).collect();
+        self.covers
+            .borrow_mut()
+            .retain(|(url, _), _| shown.contains(url));
+        update_store(list_store, &items);
     }
 
     /// The pinned rows first as they are, then the rest sorted and searched.
@@ -1012,6 +1040,223 @@ fn with_detail(kind: &str, detail: &str) -> String {
         kind.to_string()
     } else {
         format!("{kind} • {detail}")
+    }
+}
+
+/// Shows the cover already on show elsewhere (or before), if any.
+fn show_known_cover(
+    covers: &RefCell<HashMap<(String, i32), gtk::gdk::Texture>>,
+    image: &gtk::Image,
+    url: &str,
+    px: i32,
+) -> bool {
+    let covers = covers.borrow();
+    let Some(texture) = covers.get(&(url.to_owned(), px)) else {
+        return false;
+    };
+    image.set_paintable(Some(texture));
+    true
+}
+
+/// What a library row shows: two rows that show the same need no new widget.
+fn row_look(item: &NavigationPanelItem) -> (String, String, String, String, String, bool, bool) {
+    (
+        item.id(),
+        item.data(),
+        item.title(),
+        item.subtitle(),
+        item.image(),
+        item.pinned(),
+        item.navigatable(),
+    )
+}
+
+/// The least to change to turn one list of rows into another.
+#[derive(Debug, PartialEq, Eq)]
+enum ListChange {
+    Same,
+    /// One row only moved (what plays now went to the top of Recents).
+    Move { from: usize, to: usize },
+    /// The rows `at..at + removed` give way to `added` new ones.
+    Replace {
+        at: usize,
+        removed: usize,
+        added: usize,
+    },
+}
+
+/// Compares `old` and `new` from both ends: the rows they share there stay.
+fn list_change<T: PartialEq>(old: &[T], new: &[T]) -> ListChange {
+    let start = old.iter().zip(new).take_while(|(a, b)| a == b).count();
+    if start == old.len() && start == new.len() {
+        return ListChange::Same;
+    }
+    let end = old[start..]
+        .iter()
+        .rev()
+        .zip(new[start..].iter().rev())
+        .take_while(|(a, b)| a == b)
+        .count();
+    let old_mid = &old[start..old.len() - end];
+    let new_mid = &new[start..new.len() - end];
+    let n = old_mid.len();
+    if n >= 2 && n == new_mid.len() {
+        if new_mid[0] == old_mid[n - 1] && new_mid[1..] == old_mid[..n - 1] {
+            return ListChange::Move {
+                from: start + n - 1,
+                to: start,
+            };
+        }
+        if new_mid[n - 1] == old_mid[0] && new_mid[..n - 1] == old_mid[1..] {
+            return ListChange::Move {
+                from: start,
+                to: start + n - 1,
+            };
+        }
+    }
+    ListChange::Replace {
+        at: start,
+        removed: n,
+        added: new_mid.len(),
+    }
+}
+
+/// Makes `list_store` show `items`, changing only the rows that differ: the
+/// others keep their widgets, covers and place. Replacing everything made
+/// every cover of the library blink on each play (20/11).
+fn update_store(list_store: &gtk::gio::ListStore, items: &[NavigationPanelItem]) {
+    let old: Vec<NavigationPanelItem> = (0..list_store.n_items())
+        .filter_map(|i| list_store.item(i).and_downcast())
+        .collect();
+    let old_looks: Vec<_> = old.iter().map(row_look).collect();
+    let new_looks: Vec<_> = items.iter().map(row_look).collect();
+    match list_change(&old_looks, &new_looks) {
+        ListChange::Same => {}
+        ListChange::Move { from, to } => {
+            let item = old[from].clone();
+            list_store.remove(from as u32);
+            list_store.insert(to as u32, &item);
+        }
+        ListChange::Replace { at, removed, added } => {
+            list_store.splice(at as u32, removed as u32, &items[at..at + added]);
+        }
+    }
+}
+
+/// `update_store`, for the GTK checks.
+#[cfg(test)]
+pub(crate) fn update_store_for_tests(
+    list_store: &gtk::gio::ListStore,
+    items: &[NavigationPanelItem],
+) {
+    update_store(list_store, items);
+}
+
+#[cfg(test)]
+mod list_change_tests {
+    use super::{list_change, ListChange};
+
+    #[test]
+    fn the_same_rows_change_nothing() {
+        assert_eq!(list_change(&[1, 2, 3], &[1, 2, 3]), ListChange::Same);
+        assert_eq!(list_change::<i32>(&[], &[]), ListChange::Same);
+    }
+
+    #[test]
+    fn a_row_moved_up_is_one_move() {
+        // What plays now goes to the top of Recents (Saved Tracks stays first)
+        assert_eq!(
+            list_change(&[0, 1, 2, 3, 4, 5], &[0, 4, 1, 2, 3, 5]),
+            ListChange::Move { from: 4, to: 1 }
+        );
+        assert_eq!(
+            list_change(&[1, 2, 3], &[3, 1, 2]),
+            ListChange::Move { from: 2, to: 0 }
+        );
+    }
+
+    #[test]
+    fn a_row_moved_down_is_one_move() {
+        assert_eq!(
+            list_change(&[1, 2, 3, 4], &[2, 3, 1, 4]),
+            ListChange::Move { from: 0, to: 2 }
+        );
+    }
+
+    #[test]
+    fn two_rows_swapped_are_one_move() {
+        assert_eq!(
+            list_change(&[1, 2, 3, 4], &[1, 3, 2, 4]),
+            ListChange::Move { from: 2, to: 1 }
+        );
+    }
+
+    #[test]
+    fn added_and_removed_rows_touch_only_their_place() {
+        assert_eq!(
+            list_change(&[1, 2, 3], &[1, 9, 2, 3]),
+            ListChange::Replace {
+                at: 1,
+                removed: 0,
+                added: 1
+            }
+        );
+        assert_eq!(
+            list_change(&[1, 2, 3, 4], &[1, 4]),
+            ListChange::Replace {
+                at: 1,
+                removed: 2,
+                added: 0
+            }
+        );
+        assert_eq!(
+            list_change(&[1, 2, 3], &[]),
+            ListChange::Replace {
+                at: 0,
+                removed: 3,
+                added: 0
+            }
+        );
+        assert_eq!(
+            list_change(&[], &[1, 2]),
+            ListChange::Replace {
+                at: 0,
+                removed: 0,
+                added: 2
+            }
+        );
+    }
+
+    #[test]
+    fn a_reshuffle_replaces_only_the_rows_in_between() {
+        assert_eq!(
+            list_change(&[1, 2, 3, 4, 5], &[1, 4, 3, 2, 5]),
+            ListChange::Replace {
+                at: 1,
+                removed: 3,
+                added: 3
+            }
+        );
+    }
+
+    #[test]
+    fn repeated_rows_do_not_overlap_the_ends() {
+        assert_eq!(
+            list_change(&[1, 1], &[1]),
+            ListChange::Replace {
+                at: 1,
+                removed: 1,
+                added: 0
+            }
+        );
+        assert_eq!(
+            list_change(&[1], &[1, 1]),
+            ListChange::Replace {
+                at: 1,
+                removed: 0,
+                added: 1
+            }
+        );
     }
 }
 

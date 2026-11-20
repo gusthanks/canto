@@ -164,6 +164,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     assert_lastfm_love_switch();
     assert_recently_played();
     assert_recently_played_opens_at_newest();
+    assert_library_keeps_rows_on_play();
     for icon in ["canto-heart-symbolic", "canto-heart-filled-symbolic"] {
         assert!(icon_theme.has_icon(icon), "{} must resolve", icon);
     }
@@ -1079,6 +1080,71 @@ fn assert_recently_played_opens_at_newest() {
         window.destroy();
     }
     gtk_settings.set_gtk_enable_animations(animations);
+}
+
+/// A song from another album plays: Recents moves that album up and every
+/// other row keeps its widget, and so its cover (20/11: every cover of the
+/// library blinked on each play, as all rows were made again).
+fn assert_library_keeps_rows_on_play() {
+    use super::shell::navigation_panel::{
+        update_store_for_tests, NavigationPanelDestination, NavigationPanelItem,
+    };
+    // Built fresh each time, as the library refill builds them
+    let items = |order: &[usize]| -> Vec<NavigationPanelItem> {
+        order
+            .iter()
+            .map(|&i| {
+                let item = NavigationPanelItem::from_destination(NavigationPanelDestination::Album {
+                    id: i.to_string(),
+                    title: format!("Album {i}"),
+                });
+                item.set_image(format!("https://example.com/{i}.jpg"));
+                item.set_subtitle(format!("Album • Artist {i}"));
+                item
+            })
+            .collect()
+    };
+    let store = gtk::gio::ListStore::new::<NavigationPanelItem>();
+    let listbox = gtk::ListBox::new();
+    listbox.bind_model(Some(&store), |obj| {
+        let item = obj.downcast_ref::<NavigationPanelItem>().unwrap();
+        gtk::Label::new(Some(&item.title())).upcast()
+    });
+    let rows = |n: i32| -> Vec<gtk::ListBoxRow> {
+        (0..n).filter_map(|i| listbox.row_at_index(i)).collect()
+    };
+    update_store_for_tests(&store, &items(&[0, 1, 2, 3, 4, 5, 6, 7]));
+    let before = rows(8);
+    assert_eq!(before.len(), 8);
+    // Album 5 plays
+    update_store_for_tests(&store, &items(&[5, 0, 1, 2, 3, 4, 6, 7]));
+    let after = rows(8);
+    let titles: Vec<String> = (0..store.n_items())
+        .filter_map(|i| store.item(i).and_downcast::<NavigationPanelItem>())
+        .map(|item| item.title())
+        .collect();
+    assert_eq!(
+        titles,
+        ["Album 5", "Album 0", "Album 1", "Album 2", "Album 3", "Album 4", "Album 6", "Album 7"]
+    );
+    for (old, new) in [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (6, 6), (7, 7)] {
+        assert_eq!(
+            after[new], before[old],
+            "the row of Album {old} must stay the same widget (no blink)"
+        );
+    }
+    // Refilled with nothing new: nothing is made again
+    update_store_for_tests(&store, &items(&[5, 0, 1, 2, 3, 4, 6, 7]));
+    assert_eq!(rows(8), after, "an unchanged library keeps all its rows");
+    // A renamed album is made again, alone
+    let renamed = items(&[5, 0, 1, 2, 3, 4, 6, 7]);
+    renamed[3].set_title("Album 2 (Deluxe)".to_string());
+    update_store_for_tests(&store, &renamed);
+    let now = rows(8);
+    assert_ne!(now[3], after[3], "the renamed row shows its new name");
+    for i in [0, 1, 2, 4, 5, 6, 7] {
+        assert_eq!(now[i], after[i], "row {i} stays");
+    }
 }
 
 /// Number of distinct opaque-ish colors `widget` renders (rough content check).

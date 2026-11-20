@@ -1375,6 +1375,17 @@ impl ApiService {
         format!("{url}.{IMAGE_EXT}")
     }
 
+    /// The image at `url`, at this size, if it's already in memory: no
+    /// waiting, so a widget made again shows it in the same frame instead of
+    /// blinking empty for a moment (20/11: the library covers on each play).
+    pub fn cached_texture(&self, url: &str, width: i32, height: i32) -> Option<gdk::Texture> {
+        if is_resource_url(url) {
+            return None;
+        }
+        let tex_key = format!("{}:{width}x{height}", Self::image_key(url));
+        self.texture_cache.get(&tex_key)
+    }
+
     /// Load an image: memory LRU -> disk -> CDN, with single-flight per image
     /// so concurrent callers share one download.
     ///
