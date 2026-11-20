@@ -49,6 +49,8 @@ mod imp {
         /// next to Now Playing) while its rows are being laid out.
         pub recent_stick_to_end: Cell<bool>,
         pub recent_stick_generation: Cell<u32>,
+        /// A move to the end is waiting for the current layout to finish.
+        pub recent_end_queued: Cell<bool>,
     }
 
     #[glib::object_subclass]
@@ -84,18 +86,18 @@ mod imp {
                     }
                 });
             // The list's height is only known once it's laid out: follow it
-            // to the end until then.
+            // to the end until then. Not from inside "changed" itself: it
+            // fires while the list is being laid out, and a scroll asked for
+            // then is kept but never drawn, so the list opened at its oldest
+            // songs and only jumped down on the first scroll (20/11)
             let obj = self.obj().downgrade();
-            self.recent_scroller
-                .vadjustment()
-                .connect_changed(move |adj| {
-                    if obj
-                        .upgrade()
-                        .is_some_and(|obj| obj.imp().recent_stick_to_end.get())
-                    {
-                        adj.set_value(adj.upper() - adj.page_size());
+            self.recent_scroller.vadjustment().connect_changed(move |_| {
+                if let Some(obj) = obj.upgrade() {
+                    if obj.imp().recent_stick_to_end.get() {
+                        obj.queue_recent_end();
                     }
-                });
+                }
+            });
             self.obj().show_recent_expanded(false);
         }
     }
@@ -257,8 +259,7 @@ impl QueuePageWidget {
         let generation = imp.recent_stick_generation.get().wrapping_add(1);
         imp.recent_stick_generation.set(generation);
         imp.recent_stick_to_end.set(true);
-        let adj = imp.recent_scroller.vadjustment();
-        adj.set_value(adj.upper() - adj.page_size());
+        self.queue_recent_end();
         let obj = self.downgrade();
         glib::timeout_add_local_once(std::time::Duration::from_millis(600), move || {
             if let Some(obj) = obj.upgrade() {
@@ -268,6 +269,43 @@ impl QueuePageWidget {
                 }
             }
         });
+    }
+
+    /// Scrolls Recently Played to its end once the layout under way is over
+    /// (once, however many times it's asked meanwhile).
+    fn queue_recent_end(&self) {
+        let imp = self.imp();
+        if imp.recent_end_queued.replace(true) {
+            return;
+        }
+        let obj = self.downgrade();
+        glib::idle_add_local_once(move || {
+            let Some(obj) = obj.upgrade() else {
+                return;
+            };
+            let imp = obj.imp();
+            imp.recent_end_queued.set(false);
+            let adj = imp.recent_scroller.vadjustment();
+            adj.set_value(adj.upper() - adj.page_size());
+            // Placed again even when the value was already right: that is
+            // the case where only the drawing lagged behind
+            if let Some(viewport) = imp.recent_scroller.child() {
+                viewport.queue_allocate();
+            }
+        });
+    }
+
+    /// The scroller and rows of Recently Played, for tests.
+    #[cfg(test)]
+    pub fn recent_rows_for_tests(&self) -> (gtk::ScrolledWindow, Vec<gtk::ListBoxRow>) {
+        let imp = self.imp();
+        let mut rows = Vec::new();
+        let mut i = 0;
+        while let Some(row) = imp.recent_list.row_at_index(i) {
+            rows.push(row);
+            i += 1;
+        }
+        (imp.recent_scroller.get(), rows)
     }
 
     /// Fills the list with `rows`, oldest first (the newest ends up next to

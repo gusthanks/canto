@@ -163,6 +163,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     }
     assert_lastfm_love_switch();
     assert_recently_played();
+    assert_recently_played_opens_at_newest();
     for icon in ["canto-heart-symbolic", "canto-heart-filled-symbolic"] {
         assert!(icon_theme.has_icon(icon), "{} must resolve", icon);
     }
@@ -950,6 +951,87 @@ fn assert_recently_played() {
         distinct_colors(window.upcast_ref(), "queue-recently-played-folded-sample");
         window.destroy();
     }
+}
+
+/// Unfolded, Recently Played shows its newest song (the last row, next to
+/// Now Playing) on screen, not just in the scroll value. 20/11: it opened
+/// at the oldest songs and only jumped down on the first scroll.
+fn assert_recently_played_opens_at_newest() {
+    use super::{QueuePageWidget, RecentRow};
+    // Unfolding is animated, and animations don't run on Broadway: without
+    // them it unfolds at once
+    let gtk_settings = gtk::Settings::default().expect("GTK settings");
+    let animations = gtk_settings.is_gtk_enable_animations();
+    gtk_settings.set_gtk_enable_animations(false);
+    let rows: Vec<RecentRow> = (1..=30)
+        .map(|i| RecentRow {
+            title: format!("Song {i}"),
+            subtitle: format!("Artist · {i} h ago"),
+            ..Default::default()
+        })
+        .collect();
+    // Unfolded once the rows are there (a recent load is reused), and
+    // unfolded first with the rows arriving after (a fresh load)
+    for rows_first in [true, false] {
+        let page = QueuePageWidget::default();
+        let queue = gtk::Label::new(Some("(the queue)"));
+        queue.set_vexpand(true);
+        page.set_queue_list(&queue);
+        page.set_queue_empty(false);
+        let window = gtk::Window::new();
+        window.set_default_size(380, 720);
+        window.set_child(Some(&page));
+        window.present();
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        while !page.is_mapped() && std::time::Instant::now() < deadline {
+            pump(10);
+        }
+        pump(300);
+        if rows_first {
+            page.show_recent_rows(&rows);
+            pump(300);
+            page.set_recent_expanded(true);
+        } else {
+            page.set_recent_expanded(true);
+            page.show_recent_loading();
+            pump(400);
+            page.show_recent_rows(&rows);
+        }
+        // Past the unfolding and the 600 ms the list is held at its end
+        pump(1500);
+        let (scroller, list_rows) = page.recent_rows_for_tests();
+        assert_eq!(list_rows.len(), rows.len());
+        let height = scroller.height() as f32;
+        assert!(
+            height > 0.0,
+            "the list must be on screen (rows first: {rows_first}; mapped {}, revealed {})",
+            scroller.is_mapped(),
+            page.is_recent_expanded()
+        );
+        let last = list_rows.last().unwrap().compute_bounds(&scroller).unwrap();
+        let first = list_rows[0].compute_bounds(&scroller).unwrap();
+        eprintln!(
+            "recently played (rows first: {rows_first}): scroller {height} px, \
+             first row y={} last row y={} h={} value={} upper={}",
+            first.y(),
+            last.y(),
+            last.height(),
+            scroller.vadjustment().value(),
+            scroller.vadjustment().upper(),
+        );
+        assert!(
+            last.y() >= -1.0 && last.y() + last.height() <= height + 1.0,
+            "the newest song must be in view when Recently Played opens \
+             (rows first: {rows_first}; it is drawn at y={} in a {height} px list)",
+            last.y()
+        );
+        assert!(
+            first.y() < 0.0,
+            "the oldest songs scroll out above (rows first: {rows_first})"
+        );
+        window.destroy();
+    }
+    gtk_settings.set_gtk_enable_animations(animations);
 }
 
 /// Number of distinct opaque-ish colors `widget` renders (rough content check).
