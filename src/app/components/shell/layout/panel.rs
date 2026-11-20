@@ -12,6 +12,10 @@ pub struct PanelSize {
     pub max_width: i32,
     pub max_fraction: f64,
     pub default_width: i32,
+    /// Over the content, how much of the window it leaves uncovered (see
+    /// [`PanelSize::drawer_width`]); without one, it is as wide there as
+    /// beside the content
+    pub overlay_peek: Option<i32>,
 }
 
 impl PanelSize {
@@ -24,6 +28,15 @@ impl PanelSize {
     pub fn uncapped_width(&self, width: i32, window_width: i32, content_min_width: i32) -> i32 {
         width
             .min(window_width - content_min_width)
+            .max(self.min_width)
+    }
+
+    /// Its width as a drawer over the content: as wide as set, leaving
+    /// `peek` of the window uncovered.
+    pub fn drawer_width(&self, width: i32, window_width: i32, peek: i32) -> i32 {
+        width
+            .clamp(self.min_width, self.max_width)
+            .min(window_width - peek)
             .max(self.min_width)
     }
 
@@ -159,7 +172,11 @@ impl Panel {
     pub fn apply(&self, window_width: i32) {
         let split = &self.split;
         let (min, max) = if split.is_collapsed() && self.overlay.get() {
-            let width = f64::from(self.size.shown_width(self.width.get(), window_width));
+            let width = self.width.get();
+            let width = f64::from(match self.size.overlay_peek {
+                Some(peek) => self.size.drawer_width(width, window_width, peek),
+                None => self.size.shown_width(width, window_width),
+            });
             (width, width)
         } else if split.is_collapsed() {
             (0.0, f64::from(i32::MAX))
@@ -195,6 +212,7 @@ mod tests {
             max_width: 600,
             max_fraction: 1.0 / 3.0,
             default_width: 360,
+            overlay_peek: Some(96),
         };
         assert_eq!(size.resized_width(400), Some(400));
         assert_eq!(size.resized_width(700), Some(600));
@@ -210,5 +228,13 @@ mod tests {
         assert_eq!(size.uncapped_width(400, 900, 350), 400);
         assert_eq!(size.uncapped_width(400, 700, 350), 350);
         assert_eq!(size.uncapped_width(400, 500, 350), 280);
+
+        // A drawer keeps its width, not a third of the window, and leaves
+        // 96 of it uncovered
+        assert_eq!(size.drawer_width(360, 583, 96), 360);
+        assert_eq!(size.drawer_width(600, 700, 96), 600);
+        assert_eq!(size.drawer_width(600, 640, 96), 544);
+        assert_eq!(size.drawer_width(360, 400, 96), 304);
+        assert_eq!(size.drawer_width(900, 3000, 96), 600);
     }
 }

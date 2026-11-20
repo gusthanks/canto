@@ -2,6 +2,10 @@ using Gtk 4.0;
 using Adw 1;
 
 template $UtilityPanelWidget : Adw.Bin {
+  // Floating over the page it is a rounded card of its own (app.css):
+  // what is inside is cut at its corners
+  overflow: hidden;
+
   child: Box {
     orientation: horizontal;
 

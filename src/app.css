@@ -762,6 +762,35 @@ overlay-split-view.canto-cards .navigation-sidebar {
   background: none;
 }
 
+/* Narrow windows: the side panel floats over the page as a drawer (see
+   shell/layout). Floating, the split's panes lose .sidebar-pane and
+   .content-pane, so the rules above stop applying: the page keeps its gap
+   at the window's edge */
+overlay-split-view.utility-split--floating > widget:not(.overlay-pane) {
+  margin-right: 4px;
+}
+
+/* The drawer is a card inside its pane. libadwaita dims the page only up
+   to the pane's edge, so the gap around the card is the pane's own,
+   shaded like the dimmed page */
+overlay-split-view.utility-split--floating > .overlay-pane {
+  padding: 8px;
+  background-color: @shade_color;
+}
+
+overlay-split-view.utility-split--floating > .overlay-pane > * {
+  border-radius: 10px;
+  background-color: @view_bg_color;
+  box-shadow: 0 1px 4px alpha(black, 0.35), 0 0 0 1px alpha(@window_fg_color, 0.06);
+}
+
+/* The card's own edge reads over the dimmed page: no shadow strip from
+   libadwaita at the pane's edge, 8px away from it */
+overlay-split-view.utility-split--floating > shadow,
+overlay-split-view.utility-split--floating > border {
+  opacity: 0;
+}
+
 /* Your Stats */
 .stats-total {
   padding: 12px 6px;

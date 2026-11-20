@@ -3,6 +3,10 @@
 //!
 //! - A side panel is resized by dragging its inner edge, and closes when
 //!   dragged well under its minimum.
+//! - Under `UTILITY_DOCK_MIN_WIDTH_SP`, the utility panel floats over the
+//!   content as a drawer instead of squeezing it, so the content keeps the
+//!   window's width. Narrowing the window under it closes the panel, and
+//!   widening it back brings the panel back beside the content.
 //! - At `MOBILE_WIDTH_SP` or less, both collapse and fill the window when open.
 //! - Without room for both beside the content panel, the one opened last
 //!   stays: narrowing the window closes the utility panel first, and widening
@@ -29,10 +33,33 @@ use crate::app::components::{AppHeaderBar, UtilityPanelWidget};
 const NAVIGATION_ACTION: &str = "show-navigation-panel";
 const RAIL_ACTION: &str = "sidebar-rail";
 const RAIL_CLASS: &str = "navigation-panel--rail";
+/// On the utility split while its panel floats over the content (app.css)
+const FLOATING_CLASS: &str = "utility-split--floating";
 
 fn sp_to_px(sp: f64) -> i32 {
     let settings = gtk::Settings::default();
     LengthUnit::Sp.to_px(sp, settings.as_ref()) as i32
+}
+
+/// Where the utility panel opens in a window this wide.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum UtilityMode {
+    /// Beside the content
+    Beside,
+    /// Over the content at its own width, leaving a strip of it uncovered
+    Drawer,
+    /// Over the content, filling the window
+    FullWindow,
+}
+
+fn utility_mode(window_width: i32, mobile_width: i32, dock_width: i32) -> UtilityMode {
+    if window_width <= mobile_width {
+        UtilityMode::FullWindow
+    } else if window_width < dock_width {
+        UtilityMode::Drawer
+    } else {
+        UtilityMode::Beside
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -130,8 +157,10 @@ impl WindowLayout {
             }
         ));
 
+        // Its content, not its child: libadwaita puts a dialog host between
+        // the window and the content
         if let Some(shell_box) = window
-            .child()
+            .content()
             .and_then(|child| child.downcast::<crate::app::components::ShellBox>().ok())
         {
             shell_box.connect_layout_requested(clone!(
@@ -337,19 +366,38 @@ impl WindowLayout {
             .max(HEADER_COMPACT_WIDTH_PX as i32 + 1)
     }
 
+    /// Too narrow to sit beside the content without squeezing it, the
+    /// utility panel floats over it: as a drawer, or filling the window
+    /// when that is narrower still. Closing it then leaves the content the
+    /// whole width.
     fn collapse_utility_to_fit(&self) {
         let window_width = self.window_width();
         if window_width <= 0 {
             return;
         }
-        let collapse = window_width <= sp_to_px(MOBILE_WIDTH_SP);
-        if self.utility.split.is_collapsed() != collapse {
-            self.utility.split.set_collapsed(collapse);
+        let mode = utility_mode(
+            window_width,
+            sp_to_px(MOBILE_WIDTH_SP),
+            sp_to_px(UTILITY_DOCK_MIN_WIDTH_SP),
+        );
+        // Before collapsing, which applies its width
+        self.utility.set_overlay(mode == UtilityMode::Drawer);
+        let collapse = mode != UtilityMode::Beside;
+        let split = &self.utility.split;
+        if collapse {
+            split.add_css_class(FLOATING_CLASS);
+        } else {
+            split.remove_css_class(FLOATING_CLASS);
+        }
+        if split.is_collapsed() != collapse {
+            split.set_collapsed(collapse);
         }
     }
 
     /// The library, the page and the side panel are rounded cards (see
     /// `.canto-cards` in app.css); what is inside them is cut at the corners.
+    /// A window that starts narrow has its side panel floating already: its
+    /// pane is then an `.overlay-pane`.
     fn clip_card_panes(builder: &gtk::Builder) {
         for name in ["navigation_split", "utility_split"] {
             let Some(split) = builder.object::<libadwaita::OverlaySplitView>(name) else {
@@ -357,7 +405,10 @@ impl WindowLayout {
             };
             let mut child = split.first_child();
             while let Some(pane) = child {
-                if pane.has_css_class("sidebar-pane") || pane.has_css_class("content-pane") {
+                if ["sidebar-pane", "content-pane", "overlay-pane"]
+                    .iter()
+                    .any(|class| pane.has_css_class(class))
+                {
                     pane.set_overflow(gtk::Overflow::Hidden);
                 }
                 child = pane.next_sibling();
@@ -492,6 +543,13 @@ impl WindowLayout {
                 self.hid_navigation.set(false);
                 self.show_navigation(true);
             }
+        } else if !self.navigation.split.is_collapsed()
+            && !self.collapsing_navigation.get()
+            && self.hid_navigation.replace(false)
+        {
+            // Floating over the content, the utility panel takes no room
+            // from the library: the library hidden for it comes back
+            self.show_navigation(true);
         }
         self.collapse_navigation_to_fit();
         self.apply();
@@ -676,4 +734,23 @@ fn max_width_breakpoint(width_sp: f64) -> Breakpoint {
         width_sp,
         LengthUnit::Sp,
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn utility_panel_floats_under_the_dock_width() {
+        let mode = |width| utility_mode(width, 550, 1100);
+        for width in [1920, 1200, 1100] {
+            assert_eq!(mode(width), UtilityMode::Beside, "at {}", width);
+        }
+        for width in [1099, 960, 760, 583, 572, 551] {
+            assert_eq!(mode(width), UtilityMode::Drawer, "at {}", width);
+        }
+        for width in [550, 360] {
+            assert_eq!(mode(width), UtilityMode::FullWindow, "at {}", width);
+        }
+    }
 }

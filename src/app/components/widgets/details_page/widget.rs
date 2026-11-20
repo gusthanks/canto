@@ -199,6 +199,44 @@ impl DetailsPage {
         ));
     }
 
+    /// An album page filled like a real one (cover, caption, title, artist
+    /// links, like and pin, share, menu), to look at how it lays out.
+    #[cfg(test)]
+    pub(crate) fn sample_for_tests(cover: &gdk::Paintable) -> Self {
+        let page = Self::new(HeaderImageShape::Square);
+        let header = page.header();
+        header.connect_play(|| {});
+        header.connect_shuffle(|| {});
+        header.set_menu(&[vec![("queue".into(), "Add to Queue".into())]], |_| {});
+        header.connect_liked(|| {});
+        header.add_like_pin_segmented_button();
+        header.connect_share(|| {});
+        page.set_details("FLOWRA FM DISCO VOADOR", "");
+        header.set_subtitle_links(
+            &[
+                ("1".into(), "Niink".into()),
+                ("2".into(), "Supernova Ent".into()),
+            ],
+            Some("2026 · 12 songs"),
+            |_| {},
+        );
+        header.set_caption("Album");
+        header.set_liked(true);
+        header.set_pin_enabled(true);
+        header.set_pin_visible(true);
+        header.set_pinned(false);
+        if let Some(widget) = header.widget_weak().upgrade() {
+            let imp = widget.imp();
+            imp.image.set_paintable(Some(cover));
+            set_missing_art(&*imp.image_box, false);
+            imp.image_box
+                .remove_css_class("details-header__image-placeholder");
+        }
+        super::tint::set_tint(&*page.widget.imp().scroll_child, Some("#b0281e"));
+        page.set_loaded();
+        page
+    }
+
     pub fn connect_scrolled_past<F: Fn(bool) + 'static>(&self, widget: &gtk::Widget, f: F) {
         let past = Rc::new(Cell::new(false));
         let scroll_child = self.widget.imp().scroll_child.get();

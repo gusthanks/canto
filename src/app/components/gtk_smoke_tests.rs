@@ -168,6 +168,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     for icon in ["canto-heart-symbolic", "canto-heart-filled-symbolic"] {
         assert!(icon_theme.has_icon(icon), "{} must resolve", icon);
     }
+    assert_drawer_layout();
 }
 
 /// The round "playing" badge on album cards must show the bars on top of
@@ -1227,6 +1228,25 @@ fn pump(ms: u64) {
     }
 }
 
+/// A warm gradient standing in for a cover.
+fn sample_cover() -> gtk::gdk::MemoryTexture {
+    let (w, h) = (256usize, 256usize);
+    let mut data = Vec::with_capacity(w * h * 4);
+    for y in 0..h {
+        for x in 0..w {
+            data.extend_from_slice(&[(200 + x / 8) as u8, (40 + y / 3) as u8, 20, 255]);
+        }
+    }
+    let bytes = glib::Bytes::from_owned(data);
+    gtk::gdk::MemoryTexture::new(
+        w as i32,
+        h as i32,
+        gtk::gdk::MemoryFormat::R8g8b8a8,
+        &bytes,
+        w * 4,
+    )
+}
+
 /// Renders the About and Stats tabs with sample data into CANTO_TEST_DUMP_DIR.
 fn dump_info_tab_samples(about: gtk::Widget, stats: gtk::Widget) {
     libadwaita::StyleManager::default().set_color_scheme(libadwaita::ColorScheme::ForceDark);
@@ -1260,22 +1280,7 @@ fn dump_info_tab_samples(about: gtk::Widget, stats: gtk::Widget) {
 /// Renders the Now Playing panel with a sample track into CANTO_TEST_DUMP_DIR.
 fn dump_now_panel_sample() {
     libadwaita::StyleManager::default().set_color_scheme(libadwaita::ColorScheme::ForceDark);
-    // A warm gradient standing in for a cover
-    let (w, h) = (256usize, 256usize);
-    let mut data = Vec::with_capacity(w * h * 4);
-    for y in 0..h {
-        for x in 0..w {
-            data.extend_from_slice(&[(200 + x / 8) as u8, (40 + y / 3) as u8, 20, 255]);
-        }
-    }
-    let bytes = glib::Bytes::from_owned(data);
-    let cover = gtk::gdk::MemoryTexture::new(
-        w as i32,
-        h as i32,
-        gtk::gdk::MemoryFormat::R8g8b8a8,
-        &bytes,
-        w * 4,
-    );
+    let cover = sample_cover();
     let theme = gtk::CssProvider::new();
     theme.load_from_string("@define-color canto_cover_accent #c0392b;");
     gtk::style_context_add_provider_for_display(
@@ -1553,4 +1558,434 @@ fn dump_now_panel_sample() {
     );
     distinct_colors(window.upcast_ref(), "sidebar-grid-sample");
     window.destroy();
+}
+
+/// The widths the shell checks lay the main window out at, and whether the
+/// side panel is open: half (572) and all (1200) of a 1920 px screen at
+/// scale 1.6, each side of 1100 (under it the panel floats as a drawer) and
+/// of 550 (at it or less the panel fills the window).
+const SHELL_SHOTS: [(i32, bool); 10] = [
+    (550, true),
+    (572, false),
+    (572, true),
+    (583, true),
+    (760, true),
+    (960, true),
+    (1099, true),
+    (1100, true),
+    (1200, true),
+    (1920, true),
+];
+
+/// The main window laid out by the real `WindowLayout`, with an album page,
+/// Now Playing in the side panel and a track in the player bar.
+struct Shell {
+    builder: gtk::Builder,
+    window: libadwaita::ApplicationWindow,
+    /// What is rendered: the window, or the box standing in for a window
+    /// wider than the headless screen
+    frame: gtk::Widget,
+    _layout: std::rc::Rc<super::WindowLayout>,
+    panel: super::UtilityPanel,
+    _page: super::DetailsPage,
+}
+
+/// Where the shell's parts ended up (px).
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct ShellShot {
+    width: i32,
+    open: bool,
+    collapsed: bool,
+    panel_shown: bool,
+    max_panel: f64,
+    /// The utility split: the whole window's width
+    window_split: i32,
+    /// The navigation split: what the side panel leaves to library and page
+    page_split: i32,
+    library: i32,
+    rail: bool,
+    page_card: i32,
+    panel_card: i32,
+    /// Where the side panel's card ends, in the utility split
+    panel_end: f32,
+}
+
+impl ShellShot {
+    fn tag(&self) -> String {
+        format!("{}{}", self.width, if self.open { "-open" } else { "" })
+    }
+
+    fn mode(&self) -> &'static str {
+        if !self.collapsed {
+            "beside"
+        } else if self.max_panel >= f64::from(i32::MAX) {
+            "fills the window"
+        } else {
+            "drawer"
+        }
+    }
+}
+
+/// The library's show/hide action, as `Navigation` adds it to the window in
+/// the app: the layout hides and brings back the library through it.
+fn add_library_action(
+    window: &libadwaita::ApplicationWindow,
+    split: &libadwaita::OverlaySplitView,
+) {
+    use gio::prelude::{ActionExt, ActionMapExt};
+    let action = gio::SimpleAction::new_stateful(
+        "show-navigation-panel",
+        None,
+        &split.shows_sidebar().to_variant(),
+    );
+    let hidden = std::rc::Rc::new(std::cell::Cell::new(false));
+    action.connect_change_state(clone!(
+        #[weak]
+        split,
+        #[strong]
+        hidden,
+        move |_, state| {
+            let show = state.and_then(|s| s.get::<bool>()).unwrap_or(true);
+            if !split.is_collapsed() {
+                hidden.set(!show);
+            }
+            split.set_show_sidebar(show);
+        }
+    ));
+    split.connect_collapsed_notify(move |split| {
+        split.set_show_sidebar(!split.is_collapsed() && !hidden.get());
+    });
+    split.connect_show_sidebar_notify(clone!(
+        #[weak]
+        action,
+        move |split| {
+            let shown = split.shows_sidebar();
+            if action.state().and_then(|s| s.get::<bool>()) != Some(shown) {
+                action.set_state(&shown.to_variant());
+            }
+        }
+    ));
+    window.add_action(&action);
+}
+
+/// Lays the main window out at `width` with the side panel open or not.
+fn render_shell(width: i32, open: bool) -> Shell {
+    use libadwaita::prelude::AdwApplicationWindowExt;
+    let builder = gtk::Builder::from_resource("/io/github/gusthanks/Canto/window.ui");
+    let window: libadwaita::ApplicationWindow = builder.object("window").unwrap();
+    let navigation: libadwaita::OverlaySplitView = builder.object("navigation_split").unwrap();
+    add_library_action(&window, &navigation);
+    // The library's filter pills, as `NavigationPanel` adds them: they give
+    // the full library its least width, and hide on the rail of covers
+    let sidebar: gtk::Widget = builder.object("navigation_panel").unwrap();
+    let library_header: gtk::Widget = builder.object("navigation_panel_header").unwrap();
+    let filters = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    filters.add_css_class("library-filters");
+    for label in ["Playlists", "Albums", "Artists"] {
+        let pill = gtk::ToggleButton::with_label(label);
+        pill.add_css_class("pill");
+        pill.add_css_class("library-filter");
+        filters.append(&pill);
+    }
+    library_header
+        .parent()
+        .and_downcast::<gtk::Box>()
+        .expect("the library's box")
+        .insert_child_after(&filters, Some(&library_header));
+    sidebar.connect_css_classes_notify(move |sidebar| {
+        filters.set_visible(!sidebar.has_css_class("navigation-panel--rail"));
+    });
+    // The layout's first fit reads the window's default width
+    window.set_default_size(width, 621);
+    let layout = super::WindowLayout::new(&builder);
+    let panel = super::UtilityPanel::new(
+        builder.object("utility_panel").unwrap(),
+        builder.object("utility_split").unwrap(),
+        std::rc::Rc::clone(&layout),
+    );
+    let cover = sample_cover();
+    let tab = |name: &str| Some(gtk::Label::new(Some(name)).upcast::<gtk::Widget>());
+    panel.set_pages(&super::PanelPages {
+        now: Some(super::shell::now_panel::sample_for_tests(
+            cover.upcast_ref(),
+        )),
+        queue: tab("Queue"),
+        lyrics: tab("Lyrics"),
+        about: tab("About"),
+        stats: tab("Stats"),
+    });
+    let page = super::DetailsPage::sample_for_tests(cover.upcast_ref());
+    let stack: gtk::Stack = builder.object("content_stack").unwrap();
+    stack.add_named(page.widget(), Some("album"));
+    stack.set_visible_child_name("album");
+    let bar: super::shell::playback::PlaybackWidget = builder.object("playback").unwrap();
+    bar.set_track(
+        &super::now_panel::title_markup("MARIA BONITA SEM LAMPIÃO", "1", true),
+        "<a href=\"https://open.spotify.com/artist/1\">Niink</a>, <a href=\"https://open.spotify.com/artist/2\">Supernova Ent</a>",
+    );
+    bar.set_liked(Some(true));
+    // Opened before it shows: a slide-in started on screen may never finish
+    // on the headless display
+    panel.set_open(open);
+    let frame = if width > 1024 {
+        // Wider than the headless screen: the window's content moves into a
+        // box that wide, in a scrolled window. The layout reads the split's
+        // own width, so it lays out as in a window that wide
+        let content = window.content().expect("the window's content");
+        window.set_content(None::<&gtk::Widget>);
+        let host = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        host.set_size_request(width, 621);
+        content.set_vexpand(true);
+        host.append(&content);
+        let scroller = gtk::ScrolledWindow::new();
+        scroller.set_child(Some(&host));
+        window.set_content(Some(&scroller));
+        host.upcast()
+    } else {
+        window.clone().upcast()
+    };
+    window.present();
+    wait_mapped(&frame, 1500);
+    Shell {
+        builder,
+        window,
+        frame,
+        _layout: layout,
+        panel,
+        _page: page,
+    }
+}
+
+/// Reads where the shell's parts are, once they stay put (up to 5 s).
+fn shoot_shell(shell: &Shell, width: i32, open: bool) -> ShellShot {
+    let b = &shell.builder;
+    let utility: libadwaita::OverlaySplitView = b.object("utility_split").unwrap();
+    let navigation: libadwaita::OverlaySplitView = b.object("navigation_split").unwrap();
+    let library: gtk::Widget = b.object("navigation_panel").unwrap();
+    let panel: gtk::Widget = b.object("utility_panel").unwrap();
+    let page = navigation.content().expect("the page");
+    // A card is the child of its pane: the pane's margins are the gaps
+    let card = |child: &gtk::Widget| if child.is_mapped() { child.width() } else { 0 };
+    let read = || ShellShot {
+        width,
+        open,
+        collapsed: utility.is_collapsed(),
+        panel_shown: utility.shows_sidebar(),
+        max_panel: utility.max_sidebar_width(),
+        window_split: utility.width(),
+        page_split: navigation.width(),
+        library: if navigation.shows_sidebar() {
+            card(&library)
+        } else {
+            0
+        },
+        rail: library.has_css_class("navigation-panel--rail"),
+        page_card: card(&page),
+        panel_card: if utility.shows_sidebar() {
+            card(&panel)
+        } else {
+            0
+        },
+        panel_end: panel
+            .compute_bounds(&utility)
+            .map_or(0.0, |b| b.x() + b.width()),
+    };
+    // Laid out at that width, then unchanged for 1.2 s: a frame of the
+    // headless display can take a second, and a refit takes one more
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(8);
+    let mut last = read();
+    let mut same = 0;
+    while same < 8 && std::time::Instant::now() < deadline {
+        pump(150);
+        let now = read();
+        same = if now == last && now.window_split == width {
+            same + 1
+        } else {
+            0
+        };
+        last = now;
+    }
+    last
+}
+
+/// Under 1100 px the side panel floats over the page as a drawer (at most
+/// 360 wide, leaving 96 of the window uncovered) and the page keeps the
+/// whole width; from 1100 up it sits beside the page as before; at 550 or
+/// less it fills the window, as before.
+fn assert_drawer_layout() {
+    let style = libadwaita::StyleManager::default();
+    let scheme = style.color_scheme();
+    style.set_color_scheme(libadwaita::ColorScheme::ForceDark);
+    let gtk_settings = gtk::Settings::default().unwrap();
+    let animations = gtk_settings.is_gtk_enable_animations();
+    gtk_settings.set_gtk_enable_animations(false);
+    let mut shots = Vec::new();
+    for (width, open) in SHELL_SHOTS.iter().copied() {
+        let shell = render_shell(width, open);
+        let shot = shoot_shell(&shell, width, open);
+        distinct_colors(
+            &shell.frame,
+            &format!("layout-{:04}{}", width, if open { "-open" } else { "" }),
+        );
+        shell.window.destroy();
+        shots.push(shot);
+    }
+    assert_drawer_follows_resizes();
+    gtk_settings.set_gtk_enable_animations(animations);
+    style.set_color_scheme(scheme);
+    for s in &shots {
+        eprintln!(
+            "layout {}: side panel {} {} (shown {}, max {}), library {}{}, page card {}, page split {} of {}",
+            s.tag(),
+            s.mode(),
+            s.panel_card,
+            s.panel_shown,
+            s.max_panel,
+            s.library,
+            if s.rail { " (rail)" } else { "" },
+            s.page_card,
+            s.page_split,
+            s.window_split
+        );
+    }
+    // What the side panel leaves to the page, first
+    for s in &shots {
+        if s.width > 550 && s.width < 1100 {
+            assert!(
+                s.page_split >= s.window_split - 4,
+                "{}: the side panel squeezes the page: page card {} beside a side panel of {} in a {} px window",
+                s.tag(),
+                s.page_card,
+                s.panel_card,
+                s.width
+            );
+        } else if s.width >= 1100 {
+            assert!(
+                s.page_card >= 401,
+                "{}: the page card is {} px beside the side panel",
+                s.tag(),
+                s.page_card
+            );
+        }
+    }
+    for s in &shots {
+        assert_eq!(
+            s.collapsed,
+            s.width < 1100,
+            "{}: the side panel floats over the page under 1100 px only",
+            s.tag()
+        );
+        assert_eq!(
+            s.panel_shown,
+            s.open,
+            "{}: the side panel stays as it was opened",
+            s.tag()
+        );
+        if s.width <= 550 {
+            assert_eq!(
+                s.max_panel,
+                f64::from(i32::MAX),
+                "{}: the side panel fills a window this narrow",
+                s.tag()
+            );
+        } else if s.width < 1100 {
+            assert_eq!(
+                s.max_panel,
+                f64::from(360.min(s.width - 96)),
+                "{}: the drawer is 360 px or leaves 96 px of the window",
+                s.tag()
+            );
+            if s.open {
+                assert!(
+                    s.panel_card > 0 && s.panel_end <= s.window_split as f32 + 0.5,
+                    "{}: the drawer shows whole (card {} px, ends at {} of {})",
+                    s.tag(),
+                    s.panel_card,
+                    s.panel_end,
+                    s.window_split
+                );
+            }
+        }
+    }
+    eprintln!("layout drawer ok");
+}
+
+/// Narrowing a window under 1100 with the side panel open closes the panel
+/// and gives the page the whole width; widening it back brings the panel
+/// back beside the page. And a library hidden to make room for the panel
+/// beside the page (here under a page header too wide for both) comes back
+/// once the panel floats. In the box standing in for a window wider than
+/// the headless screen, so the panel can sit beside the page.
+fn assert_drawer_follows_resizes() {
+    let shell = render_shell(1200, true);
+    let resize = |width: i32| {
+        shell.frame.set_size_request(width, 621);
+        shoot_shell(&shell, width, true)
+    };
+    let docked = shoot_shell(&shell, 1200, true);
+    let narrowed = resize(1050);
+    let widened = resize(1200);
+    shell.window.destroy();
+
+    let shell = render_shell(1200, false);
+    let header: super::AppHeaderBar = shell.builder.object("app_header").unwrap();
+    let registrar = super::HeaderRegistrar::new(header.clone(), Default::default());
+    let wide = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    wide.set_size_request(760, -1);
+    registrar.page("wide").add_end(&wide);
+    header.set_active("wide");
+    pump(300);
+    shell.panel.set_open(true);
+    let hidden = shoot_shell(&shell, 1200, true);
+    shell.frame.set_size_request(1050, 621);
+    let floating = shoot_shell(&shell, 1050, true);
+    shell.window.destroy();
+
+    for (step, s) in [
+        ("docked", &docked),
+        ("narrowed", &narrowed),
+        ("widened", &widened),
+        ("wide header, docked", &hidden),
+        ("wide header, narrowed", &floating),
+    ] {
+        eprintln!(
+            "layout resize, {} at {}: side panel {} {} (shown {}), library {}, page split {} of {}",
+            step,
+            s.width,
+            s.mode(),
+            s.panel_card,
+            s.panel_shown,
+            s.library,
+            s.page_split,
+            s.window_split
+        );
+    }
+    assert!(
+        !docked.collapsed && docked.panel_shown,
+        "1200: the side panel sits open beside the page: {:?}",
+        docked
+    );
+    assert!(
+        narrowed.window_split == 1050
+            && narrowed.collapsed
+            && !narrowed.panel_shown
+            && narrowed.page_split >= narrowed.window_split - 4,
+        "narrowed to 1050 with the side panel open, it closes and the page takes the whole width: {:?}",
+        narrowed
+    );
+    assert!(
+        !widened.collapsed && widened.panel_shown,
+        "widened back to 1200, the side panel is back beside the page: {:?}",
+        widened
+    );
+    assert!(
+        hidden.panel_shown && hidden.library == 0,
+        "1200 under a wide page header: opening the side panel hides the library: {:?}",
+        hidden
+    );
+    assert!(
+        floating.collapsed && floating.library > 0,
+        "narrowed to 1050, the side panel floats and the library hidden for it comes back: {:?}",
+        floating
+    );
 }
