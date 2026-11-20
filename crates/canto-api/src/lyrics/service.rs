@@ -548,7 +548,7 @@ impl LyricsService {
 
         // Then the search endpoint, preferring the right duration
         let reply = self
-            .query_search(track_name, artist_name, duration_secs)
+            .query_search(track_name, artist_name, duration_secs, false)
             .await;
         if chain.take(reply) {
             return chain.answer();
@@ -559,12 +559,33 @@ impl LyricsService {
             let reply = self
                 .query_get(&clean_title, artist_name, None, duration_secs)
                 .await;
-            if !chain.take(reply) {
-                let reply = self
-                    .query_search(&clean_title, artist_name, duration_secs)
-                    .await;
-                chain.take(reply);
+            if chain.take(reply) {
+                return chain.answer();
             }
+            let reply = self
+                .query_search(&clean_title, artist_name, duration_secs, false)
+                .await;
+            if chain.take(reply) {
+                return chain.answer();
+            }
+        }
+
+        // Then, for a song with several artists, the first one alone: LRCLIB
+        // often files it that way ("Froid, Major Rd" is "Froid" there), and
+        // 3 of the 9 songs it missed in Gus's listening had synced lyrics so
+        // (20/11). The search takes only the right length, as the looser of
+        // the two
+        if let Some(first) = first_of_several(artist_name) {
+            let reply = self
+                .query_get(track_name, first, album_name, duration_secs)
+                .await;
+            if chain.take(reply) {
+                return chain.answer();
+            }
+            let reply = self
+                .query_search(track_name, first, duration_secs, true)
+                .await;
+            chain.take(reply);
         }
         chain.answer()
     }
@@ -619,11 +640,13 @@ impl LyricsService {
         item.lyrics().map_or(Reply::None, Reply::Lyrics)
     }
 
+    /// `same_length`: take only lyrics of the track's length (when known).
     async fn query_search(
         &self,
         track_name: &str,
         artist_name: &str,
         duration_secs: Option<u32>,
+        same_length: bool,
     ) -> Reply {
         let query = [("track_name", track_name), ("artist_name", artist_name)];
 
@@ -669,6 +692,9 @@ impl LyricsService {
             (Some(target), Some(d)) => (d - f64::from(target)).abs() <= 2.0,
             _ => true,
         };
+        if same_length && duration_secs.is_some() {
+            items.retain(|item| item.duration.is_some() && fits(item));
+        }
         if let Some(lyrics) = items
             .iter()
             .filter(|item| item.has_words() && fits(item))
@@ -691,6 +717,14 @@ impl LyricsService {
 
         Reply::None
     }
+}
+
+/// The first of several artists ("Froid, Major Rd" -> "Froid"); `None` for
+/// one artist.
+fn first_of_several(artists: &str) -> Option<&str> {
+    let (first, rest) = artists.split_once(',')?;
+    let first = first.trim();
+    (!first.is_empty() && !rest.trim().is_empty()).then_some(first)
 }
 
 /// A request LRCLIB never answered (offline, timed out).
@@ -1379,6 +1413,68 @@ mod network_tests {
     }
 
     #[tokio::test]
+    async fn a_song_with_several_artists_is_found_under_the_first() {
+        let (cache, dir) = temp_cache("several");
+        // Only "Nora Vale" alone has it; "Nora Vale, Theo Lis" gets nothing
+        let lrclib = TestServer::start(&[
+            ("artist_name=Nora+Vale&", 200, SYNCED),
+            ("/api/get", 404, NOT_FOUND),
+            ("/api/search", 200, "[]"),
+        ]);
+        let genius = genius_up();
+        let service = LyricsService::for_tests(cache, &lrclib.base, &genius.base);
+        let found = service
+            .fetch_lyrics(
+                KEY,
+                "Lua de Papel",
+                "Nora Vale, Theo Lis",
+                Some("Papel"),
+                Some(180),
+                Some(""),
+            )
+            .await
+            .unwrap();
+        assert_eq!(found.source, crate::lyrics::model::LyricsSource::Lrclib);
+        assert!(found.lyrics.is_synced());
+        // get, get, search with both names, then get with the first alone
+        assert_eq!(lrclib.requests("/api/").len(), 4);
+        assert!(genius.requests("/").is_empty(), "Genius isn't asked");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn the_first_artist_search_takes_only_the_right_length() {
+        let (cache, dir) = temp_cache("several-length");
+        // Searched under the first artist alone, LRCLIB has only a version
+        // 40 s longer: not taken, Genius gets its turn
+        let longer = r#"[{"trackName":"Lua de Papel","artistName":"Nora Vale","duration":220.0,"instrumental":false,"plainLyrics":"Outra","syncedLyrics":"[00:01.00] Outra\n"}]"#;
+        let lrclib = TestServer::start(&[
+            ("/api/get", 404, NOT_FOUND),
+            ("artist_name=Nora+Vale%2C", 200, "[]"),
+            ("/api/search", 200, longer),
+        ]);
+        let genius = genius_up();
+        let service = LyricsService::for_tests(cache, &lrclib.base, &genius.base);
+        let found = service
+            .fetch_lyrics(
+                KEY,
+                "Lua de Papel",
+                "Nora Vale, Theo Lis",
+                Some("Papel"),
+                Some(180),
+                Some(""),
+            )
+            .await
+            .unwrap();
+        assert!(
+            found.source.genius_url().is_some(),
+            "not the longer version"
+        );
+        assert_eq!(lrclib.requests("/api/").len(), 5);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
     async fn lrclib_lyrics_are_found_and_kept() {
         let (cache, dir) = temp_cache("found");
         let lrclib = TestServer::start(&[("/api/get", 200, SYNCED)]);
@@ -1479,6 +1575,18 @@ mod tests {
         let json = r#"{"syncedLyrics":"[00:01.00] a\n","hasWordSync":true,"lyricsfile":"lines:\n- text: |\n"}"#;
         let item: LrclibItem = serde_json::from_str(json).unwrap();
         assert!(matches!(item.lyrics(), Some(Lyrics::Synced(l)) if l[0].text == "a"));
+    }
+
+    #[test]
+    fn the_first_of_several_artists() {
+        assert_eq!(first_of_several("Froid, Major Rd"), Some("Froid"));
+        assert_eq!(
+            first_of_several("Brandão85, Jovem Dex, Leviano, ALEE"),
+            Some("Brandão85")
+        );
+        assert_eq!(first_of_several("Froid"), None);
+        assert_eq!(first_of_several("Froid, "), None);
+        assert_eq!(first_of_several(", Froid"), None);
     }
 
     #[test]
