@@ -67,6 +67,12 @@ impl UtilityPanel {
         self.split.shows_sidebar()
     }
 
+    /// Whether it floats over the page when open: the window is too narrow
+    /// for it beside the page.
+    pub fn floats(&self) -> bool {
+        self.split.is_collapsed()
+    }
+
     pub fn set_open(&self, open: bool) {
         self.layout.set_utility_open(open);
     }

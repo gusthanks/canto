@@ -58,9 +58,18 @@ impl Panels {
     fn set_open(&self, open: bool) {
         match self.placement.get() {
             Some(Placement::Side) => self.panel.set_open(open),
-            Some(Placement::Sheet) => self.sheet.set_open(open),
+            Some(Placement::Sheet) => self.set_sheet_open(open),
             None => {}
         }
+    }
+
+    /// One over the page at a time: the queue sheet closes the side panel
+    /// floating there.
+    fn set_sheet_open(&self, open: bool) {
+        if open && self.panel.floats() && self.panel.is_open() {
+            self.panel.set_open(false);
+        }
+        self.sheet.set_open(open);
     }
 
     fn sync_header(&self) {
@@ -88,10 +97,14 @@ impl Panels {
             return;
         }
         if self.panel_has(tab) {
+            // Floating over the page, the side panel closes the queue sheet
+            if self.panel.floats() && self.sheet.is_open() {
+                self.sheet.set_open(false);
+            }
             self.panel.show_tab(tab);
             self.panel.set_open(true);
         } else {
-            self.sheet.set_open(!self.sheet.is_open());
+            self.set_sheet_open(!self.sheet.is_open());
         }
     }
 
@@ -134,6 +147,33 @@ impl Panels {
         }
         self.sync_header();
     }
+}
+
+/// What the player bar's cover, lyrics and queue buttons do over `panel` and
+/// `sheet`, with the queue in the sheet (queue-side-panel off). Pages are
+/// stand-ins.
+#[cfg(test)]
+pub(crate) fn toggle_view_for_tests(
+    panel: UtilityPanel,
+    sheet: BottomSheet,
+    app_header: AppHeaderBar,
+) -> impl Fn(&'static str) {
+    use gtk::prelude::*;
+    let page = |name: &str| gtk::Label::new(Some(name)).upcast::<gtk::Widget>();
+    let panels = Rc::new(Panels {
+        now: page("Now Playing"),
+        queue: QueuePageWidget::default().upcast(),
+        lyrics: page("Lyrics"),
+        about: page("About"),
+        stats: page("Stats"),
+        panel,
+        sheet,
+        app_header,
+        action: gio::SimpleAction::new_stateful(TOGGLE_ACTION, None, &false.to_variant()),
+        placement: Cell::new(None),
+    });
+    panels.place(Placement::Sheet);
+    move |tab| panels.toggle_view(tab)
 }
 
 pub struct PanelManager {

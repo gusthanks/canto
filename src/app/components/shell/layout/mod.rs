@@ -7,7 +7,12 @@
 //!   content as a drawer instead of squeezing it, so the content keeps the
 //!   window's width. Narrowing the window under it closes the panel, and
 //!   widening it back brings the panel back beside the content.
+//! - Floating, it closes with its button, Esc or a click on the dimmed
+//!   content, and the keyboard focus it had goes to the content, which stays
+//!   where it was scrolled.
 //! - At `MOBILE_WIDTH_SP` or less, both collapse and fill the window when open.
+//! - One panel over the content at a time: the floating utility panel, the
+//!   sidebar opened over the content, the queue sheet (panel_manager).
 //! - Too narrow for the full library beside the content, the library shrinks
 //!   to its rail of covers. So it does beside the utility panel when the full
 //!   library would leave the content card under `DOCKED_CONTENT_MIN_WIDTH_SP`,
@@ -41,6 +46,10 @@ const RAIL_ACTION: &str = "sidebar-rail";
 const RAIL_CLASS: &str = "navigation-panel--rail";
 /// On the utility split while its panel floats over the content (app.css)
 const FLOATING_CLASS: &str = "utility-split--floating";
+/// The controllers that close the floating utility panel: Esc on the
+/// window, a click on the dimmed content (the smoke test finds them by name)
+const FLOATING_ESCAPE: &str = "canto-floating-panel-escape";
+const FLOATING_CLICK: &str = "canto-floating-panel-click";
 
 fn sp_to_px(sp: f64) -> i32 {
     let settings = gtk::Settings::default();
@@ -144,6 +153,12 @@ pub struct WindowLayout {
     collapsing_navigation: Rc<Cell<bool>>,
     /// The full sidebar is open over the content of a narrow window
     navigation_overlay: Cell<bool>,
+    /// The sidebar is collapsing to open over the content: the refit that
+    /// collapsing runs leaves it collapsed
+    opening_navigation_overlay: Cell<bool>,
+    /// The content's pages: the visible one takes the keyboard focus the
+    /// floating utility panel had
+    pages: gtk::Stack,
     /// Why the library is on its rail without the user choosing it
     auto_rail: Cell<Option<AutoRail>>,
     /// The user expanded the library while the utility panel beside the
@@ -175,8 +190,9 @@ impl WindowLayout {
         let utility_widget: UtilityPanelWidget = builder.object("utility_panel").unwrap();
         let utility_handle: gtk::Widget = utility_widget.resize_handle().clone().upcast();
         let header: AppHeaderBar = builder.object("app_header").unwrap();
+        let pages: gtk::Stack = builder.object("content_stack").unwrap();
         // Back and forward live in the window's top bar
-        header.set_content(&builder.object::<gtk::Widget>("content_stack").unwrap());
+        header.set_content(&pages);
         let history_slot: gtk::Box = builder.object("top_history").unwrap();
         header.set_history_slot(&history_slot);
         header.set_top_search(
@@ -204,6 +220,8 @@ impl WindowLayout {
             hid_navigation: Cell::new(false),
             collapsing_navigation: Rc::new(Cell::new(false)),
             navigation_overlay: Cell::new(false),
+            opening_navigation_overlay: Cell::new(false),
+            pages,
             auto_rail: Cell::new(None),
             expanded_by_hand: Cell::new(false),
             fitted_width: Cell::new(0),
@@ -356,15 +374,138 @@ impl WindowLayout {
         Self::clip_card_panes(builder);
         layout.wire_resize(Which::Navigation, navigation_handle);
         layout.wire_resize(Which::Utility, utility_handle);
+        layout.close_floating_on_escape();
+        layout.close_floating_on_click_outside();
         layout
     }
 
     pub fn set_utility_open(&self, open: bool) {
         self.closed_to_fit.set(false);
-        if open {
-            self.make_room_for_utility(self.utility.width());
+        if !open {
+            self.hide_utility();
+            return;
         }
-        self.utility.split.set_show_sidebar(open);
+        // One over the content at a time: floating, it closes the sidebar
+        // opened over the content
+        if self.utility.split.is_collapsed() && self.navigation_over_content() {
+            self.navigation.split.set_show_sidebar(false);
+        }
+        self.make_room_for_utility(self.utility.width());
+        self.utility.split.set_show_sidebar(true);
+    }
+
+    /// Closes the utility panel. Floating, it hands the keyboard focus it
+    /// has to the visible page, which stays where it was scrolled: left to
+    /// libadwaita, the focus would go back to the widget that had it before
+    /// (scrolling the page back to it) or to the sidebar's first row
+    /// (scrolling the sidebar to its top).
+    fn hide_utility(&self) {
+        let split = &self.utility.split;
+        let focus_inside = split.is_collapsed() && self.focus_in_utility();
+        if focus_inside {
+            // Out of the panel first, or libadwaita moves it on closing
+            GtkWindowExt::set_focus(&self.window, None::<&gtk::Widget>);
+        }
+        split.set_show_sidebar(false);
+        // The content takes the focus again once nothing floats over it
+        if focus_inside {
+            self.focus_page();
+        }
+    }
+
+    fn focus_in_utility(&self) -> bool {
+        let Some(panel) = self.utility.split.sidebar() else {
+            return false;
+        };
+        GtkWindowExt::focus(&self.window)
+            .is_some_and(|focus| focus == panel || focus.is_ancestor(&panel))
+    }
+
+    /// Moves the keyboard focus to the visible page's first widget, without
+    /// scrolling the page to it.
+    fn focus_page(&self) {
+        let Some(page) = self.pages.visible_child() else {
+            return;
+        };
+        let viewports = viewports_in(&page);
+        let scrolling: Vec<bool> = viewports.iter().map(|v| v.is_scroll_to_focus()).collect();
+        for viewport in &viewports {
+            viewport.set_scroll_to_focus(false);
+        }
+        page.child_focus(gtk::DirectionType::TabForward);
+        for (viewport, scroll) in viewports.iter().zip(scrolling) {
+            viewport.set_scroll_to_focus(scroll);
+        }
+    }
+
+    /// The utility panel open over the content (as a drawer, or filling
+    /// the window).
+    fn utility_floating_open(&self) -> bool {
+        let split = &self.utility.split;
+        split.is_collapsed() && split.shows_sidebar()
+    }
+
+    /// The full sidebar open over the content (narrow windows).
+    fn navigation_over_content(&self) -> bool {
+        self.navigation.split.is_collapsed() && self.navigation_shown()
+    }
+
+    /// Esc closes the utility panel floating over the content, as its
+    /// button does. On the window and bubbling: what has the focus (a text
+    /// field, a popover) takes Esc first. libadwaita's split view closes on
+    /// Esc too, but this runs before it (newer controllers run first) and
+    /// hands the focus to the page.
+    fn close_floating_on_escape(self: &Rc<Self>) {
+        let layout = Rc::downgrade(self);
+        let close = gtk::CallbackAction::new(move |_, _| match layout.upgrade() {
+            Some(layout) if layout.utility_floating_open() => {
+                layout.set_utility_open(false);
+                glib::Propagation::Stop
+            }
+            _ => glib::Propagation::Proceed,
+        });
+        let shortcuts = gtk::ShortcutController::new();
+        shortcuts.set_name(Some(FLOATING_ESCAPE));
+        shortcuts.set_propagation_phase(gtk::PropagationPhase::Bubble);
+        shortcuts.add_shortcut(gtk::Shortcut::new(
+            Some(gtk::KeyvalTrigger::new(
+                gtk::gdk::Key::Escape,
+                gtk::gdk::ModifierType::empty(),
+            )),
+            Some(close),
+        ));
+        self.window.add_controller(shortcuts);
+    }
+
+    /// A click on the content dimmed under the floating utility panel (or
+    /// on the dimmed frame around its card) closes it, as its button does.
+    /// libadwaita's split view closes on that click too, but then moves the
+    /// focus as `hide_utility` says: this runs first (capture) and keeps
+    /// the click.
+    fn close_floating_on_click_outside(self: &Rc<Self>) {
+        let click = gtk::GestureClick::new();
+        click.set_name(Some(FLOATING_CLICK));
+        click.set_button(0);
+        click.set_propagation_phase(gtk::PropagationPhase::Capture);
+        let layout = Rc::downgrade(self);
+        click.connect_pressed(move |gesture, _, x, y| {
+            let Some(layout) = layout.upgrade() else {
+                return;
+            };
+            let split = &layout.utility.split;
+            let on_panel = split.sidebar().is_some_and(|panel| {
+                split
+                    .compute_point(&panel, &gtk::graphene::Point::new(x as f32, y as f32))
+                    .is_some_and(|p| panel.contains(f64::from(p.x()), f64::from(p.y())))
+            });
+            if !layout.utility_floating_open() || on_panel {
+                gesture.set_state(gtk::EventSequenceState::Denied);
+                return;
+            }
+            gesture.set_state(gtk::EventSequenceState::Claimed);
+            layout.set_utility_open(false);
+        });
+        self.utility.split.add_controller(click);
     }
 
     // Without room for both, the utility panel wins
@@ -536,12 +677,20 @@ impl WindowLayout {
     }
 
     fn open_navigation_overlay(&self) {
+        // One over the content at a time
+        if self.utility_floating_open() {
+            self.set_utility_open(false);
+        }
         self.navigation.set_auto_rail(false);
         self.apply_rail();
         let split = &self.navigation.split;
-        // Collapsing hides the sidebar on its own: only then is the overlay
-        // marked open, or that hiding would count as closing it
+        // Collapsing refits the layout, which must leave the sidebar
+        // collapsed, not put it back on its rail. It also hides the sidebar
+        // on its own: only then is the overlay marked open, or that hiding
+        // would count as closing it
+        self.opening_navigation_overlay.set(true);
         split.set_collapsed(true);
+        self.opening_navigation_overlay.set(false);
         self.navigation_overlay.set(true);
         self.navigation.set_overlay(true);
         self.show_navigation(true);
@@ -568,7 +717,10 @@ impl WindowLayout {
 
     fn collapse_navigation_to_fit(&self) {
         let window_width = self.window_width();
-        if window_width <= 0 || self.navigation_overlay.get() {
+        if window_width <= 0
+            || self.navigation_overlay.get()
+            || self.opening_navigation_overlay.get()
+        {
             return;
         }
         let fit = self.library_fit(window_width);
@@ -698,6 +850,12 @@ impl WindowLayout {
     }
 
     fn navigation_changed(&self) {
+        // One over the content at a time: the sidebar opened over it (its
+        // button or F9 at `MOBILE_WIDTH_SP` or less) closes the floating
+        // utility panel
+        if self.navigation_over_content() && self.utility_floating_open() {
+            self.set_utility_open(false);
+        }
         let split = &self.utility.split;
         if self.navigation_shown()
             && !self.navigation.split.is_collapsed()
@@ -716,7 +874,7 @@ impl WindowLayout {
         let split = &self.utility.split;
         if split.is_collapsed() && split.shows_sidebar() {
             self.closed_to_fit.set(true);
-            split.set_show_sidebar(false);
+            self.hide_utility();
         }
         self.fit();
     }
@@ -839,6 +997,27 @@ fn max_width_breakpoint(width_sp: f64) -> Breakpoint {
         width_sp,
         LengthUnit::Sp,
     ))
+}
+
+/// The viewports in `widget`, each scrolling to the widget that takes the
+/// focus. Not inside lists: their rows hold none.
+fn viewports_in(widget: &gtk::Widget) -> Vec<gtk::Viewport> {
+    let mut found = Vec::new();
+    let mut stack = vec![widget.clone()];
+    while let Some(widget) = stack.pop() {
+        if let Some(viewport) = widget.downcast_ref::<gtk::Viewport>() {
+            found.push(viewport.clone());
+        }
+        if widget.is::<gtk::ListView>() || widget.is::<gtk::GridView>() {
+            continue;
+        }
+        let mut child = widget.first_child();
+        while let Some(c) = child {
+            child = c.next_sibling();
+            stack.push(c);
+        }
+    }
+    found
 }
 
 #[cfg(test)]

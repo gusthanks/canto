@@ -1589,7 +1589,7 @@ struct Shell {
     frame: gtk::Widget,
     _layout: std::rc::Rc<super::WindowLayout>,
     panel: super::UtilityPanel,
-    _page: super::DetailsPage,
+    page: super::DetailsPage,
 }
 
 /// Where the shell's parts ended up (px).
@@ -1754,7 +1754,7 @@ fn render_shell(width: i32, open: bool) -> Shell {
         frame,
         _layout: layout,
         panel,
-        _page: page,
+        page,
     }
 }
 
@@ -1850,6 +1850,7 @@ fn assert_drawer_layout() {
     }
     assert_drawer_follows_resizes();
     assert_library_rails_beside_panel();
+    assert_drawer_behavior();
     gtk_settings.set_gtk_enable_animations(animations);
     style.set_color_scheme(scheme);
     // What the side panel leaves to the page, first
@@ -2146,4 +2147,405 @@ fn assert_library_rails_beside_panel() {
         saved_chosen,
         saved_at_end
     );
+}
+
+/// Where the main window's keyboard focus is.
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum FocusIn {
+    SidePanel,
+    Page,
+    Library,
+    Elsewhere,
+    Nowhere,
+}
+
+/// What is open over (or beside) the page, where the keyboard focus is,
+/// and how far the page is scrolled (px).
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Overlays {
+    /// The side panel is open...
+    panel: bool,
+    /// ...and floats over the page when it is (drawer, or the whole window)
+    floats: bool,
+    /// The full library is open over the page
+    library_over_page: bool,
+    /// The library is on its rail of covers
+    rail: bool,
+    /// The queue sheet is open
+    sheet: bool,
+    focus: FocusIn,
+    page_scroll: i32,
+}
+
+/// The album page's scrolled window.
+fn page_scroller(shell: &Shell) -> gtk::ScrolledWindow {
+    with_class(shell.page.widget().upcast_ref(), "details-page-scroll")
+        .into_iter()
+        .next()
+        .and_downcast::<gtk::ScrolledWindow>()
+        .expect("the page's scrolled window")
+}
+
+fn read_overlays(shell: &Shell, scroller: &gtk::ScrolledWindow) -> Overlays {
+    let b = &shell.builder;
+    let utility: libadwaita::OverlaySplitView = b.object("utility_split").unwrap();
+    let navigation: libadwaita::OverlaySplitView = b.object("navigation_split").unwrap();
+    let sheet: libadwaita::BottomSheet = b.object("bottom_sheet").unwrap();
+    let library: gtk::Widget = b.object("navigation_panel").unwrap();
+    let panel: gtk::Widget = b.object("utility_panel").unwrap();
+    let focus = match GtkWindowExt::focus(&shell.window) {
+        None => FocusIn::Nowhere,
+        Some(f) if f == panel || f.is_ancestor(&panel) => FocusIn::SidePanel,
+        Some(f) if f.is_ancestor(shell.page.widget()) => FocusIn::Page,
+        Some(f) if f.is_ancestor(&library) => FocusIn::Library,
+        Some(_) => FocusIn::Elsewhere,
+    };
+    Overlays {
+        panel: utility.shows_sidebar(),
+        floats: utility.is_collapsed(),
+        library_over_page: navigation.is_collapsed() && navigation.shows_sidebar(),
+        rail: library.has_css_class("navigation-panel--rail"),
+        sheet: sheet.is_open(),
+        focus,
+        page_scroll: scroller.vadjustment().value().round() as i32,
+    }
+}
+
+/// Pumps until `read` gives the same value four times in a row, 100 ms
+/// apart (up to 4 s), and returns it.
+fn settled<T: PartialEq>(read: impl Fn() -> T) -> T {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(4);
+    let mut last = read();
+    let mut same = 0;
+    while same < 4 && std::time::Instant::now() < deadline {
+        pump(100);
+        let now = read();
+        same = if now == last { same + 1 } else { 0 };
+        last = now;
+    }
+    last
+}
+
+/// Canto's Esc for the side panel floating over the page: the action of
+/// the Escape shortcut in its own controller on the window, which bubbles
+/// (text fields and popovers keep their Esc).
+fn canto_escape(window: &impl IsA<gtk::Widget>) -> Option<gtk::ShortcutAction> {
+    let controllers = window.as_ref().observe_controllers();
+    (0..controllers.n_items())
+        .filter_map(|i| {
+            controllers
+                .item(i)
+                .and_downcast::<gtk::ShortcutController>()
+        })
+        .filter(|c| {
+            c.name().as_deref() == Some("canto-floating-panel-escape")
+                && c.propagation_phase() == gtk::PropagationPhase::Bubble
+        })
+        .flat_map(|c| {
+            (0..c.n_items())
+                .filter_map(|j| c.item(j).and_downcast::<gtk::Shortcut>())
+                .collect::<Vec<_>>()
+        })
+        .find(|s| s.trigger().is_some_and(|t| t.to_str() == "Escape"))
+        .and_then(|s| s.action())
+}
+
+/// Canto's click on the page dimmed under the floating side panel: its
+/// gesture on the split view, before libadwaita's own (capture).
+fn canto_click(split: &impl IsA<gtk::Widget>) -> Option<gtk::GestureClick> {
+    let controllers = split.as_ref().observe_controllers();
+    (0..controllers.n_items())
+        .filter_map(|i| controllers.item(i).and_downcast::<gtk::GestureClick>())
+        .find(|c| {
+            c.name().as_deref() == Some("canto-floating-panel-click")
+                && c.propagation_phase() == gtk::PropagationPhase::Capture
+        })
+}
+
+/// The side panel floating over the page (under 1100 px) closes with its
+/// button, with Esc and with a click on the dimmed page, and the keyboard
+/// focus it had goes to the page, which stays where it was scrolled; Esc
+/// leaves the panel beside the page alone. And only one thing is open over
+/// the page at a time: the library opened over it (its icon on the rail,
+/// or its button at 550 or less), the side panel, the queue sheet.
+fn assert_drawer_behavior() {
+    let mut checks: Vec<(&'static str, bool, String)> = Vec::new();
+
+    // Gus's half screen: the library on its rail of covers
+    let shell = render_shell(583, false);
+    let b = &shell.builder;
+    let utility: libadwaita::OverlaySplitView = b.object("utility_split").unwrap();
+    let navigation: libadwaita::OverlaySplitView = b.object("navigation_split").unwrap();
+    let panel: gtk::Widget = b.object("utility_panel").unwrap();
+    // A row in the library, as there always is
+    let rows: gtk::ListBox = b.object("home_listbox").unwrap();
+    let row = gtk::ListBoxRow::new();
+    row.set_child(Some(&gtk::Box::new(gtk::Orientation::Horizontal, 0)));
+    rows.append(&row);
+    // A page long enough to scroll
+    let filler = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    filler.set_size_request(-1, 1600);
+    shell.page.content().append(&filler);
+    let scroller = page_scroller(&shell);
+    let read = || read_overlays(&shell, &scroller);
+    let library_icon = || {
+        WidgetExt::activate_action(&shell.window, "win.sidebar-rail", None)
+            .expect("the library's rail action");
+    };
+
+    let start = settled(&read);
+    library_icon();
+    let library_open = settled(&read);
+    distinct_colors(&shell.frame, "layout-0583-library-over-page");
+    checks.push((
+        "583: the library icon on the rail opens the full library over the page",
+        start.rail && library_open.library_over_page && !library_open.rail,
+        format!("{:?} then {:?}", start, library_open),
+    ));
+    shell.panel.set_open(true);
+    let panel_open = settled(&read);
+    checks.push((
+        "583: opening the side panel closes the library opened over the page",
+        library_open.library_over_page
+            && panel_open.panel
+            && panel_open.floats
+            && !panel_open.library_over_page
+            && panel_open.rail,
+        format!("{:?} then {:?}", library_open, panel_open),
+    ));
+    // A click on the library icon lands on the dimmed page; its action can
+    // still come while the side panel floats
+    library_icon();
+    let library_over_panel = settled(&read);
+    checks.push((
+        "583: opening the library over the page closes the side panel",
+        library_over_panel.library_over_page && !library_over_panel.panel,
+        format!("{:?}", library_over_panel),
+    ));
+    navigation.set_show_sidebar(false);
+    let library_closed = settled(&read);
+    checks.push((
+        "583: closing the library over the page brings its rail back",
+        library_closed.rail && !library_closed.library_over_page && !library_closed.panel,
+        format!("{:?}", library_closed),
+    ));
+
+    // The page scrolled down, and the side panel opened with the focus in
+    // it (a tab clicked): from nothing focused before, or from the page's
+    // first widget, now scrolled out of sight
+    let tab = with_class(&panel, "utility-panel__tabs")
+        .into_iter()
+        .next()
+        .and_then(|tabs| tabs.first_child())
+        .expect("the side panel's first tab");
+    let open_with_focus_inside = |page_focused_before: bool| {
+        let adjustment = scroller.vadjustment();
+        adjustment.set_value(0.0);
+        pump(100);
+        if page_focused_before {
+            let _ = shell
+                .page
+                .widget()
+                .child_focus(gtk::DirectionType::TabForward);
+        } else {
+            GtkWindowExt::set_focus(&shell.window, None::<&gtk::Widget>);
+        }
+        pump(100);
+        adjustment.set_value(400.0);
+        shell.panel.set_open(true);
+        settled(&read);
+        tab.grab_focus();
+        settled(&read)
+    };
+    let closed_to_page = |opened: &Overlays, closed: &Overlays| {
+        opened.panel
+            && opened.focus == FocusIn::SidePanel
+            && opened.page_scroll == 400
+            && !closed.panel
+            && closed.focus == FocusIn::Page
+            && closed.page_scroll == opened.page_scroll
+    };
+
+    let opened = open_with_focus_inside(false);
+    shell.panel.set_open(false);
+    let by_button = settled(&read);
+    let opened_after_page = open_with_focus_inside(true);
+    shell.panel.set_open(false);
+    let by_button_after_page = settled(&read);
+    checks.push((
+        "583: its button closes the side panel; the focus goes to the page, which stays where it was (with nothing focused before, and with the page's first widget)",
+        closed_to_page(&opened, &by_button)
+            && closed_to_page(&opened_after_page, &by_button_after_page),
+        format!(
+            "{:?} then {:?}; {:?} then {:?}",
+            opened, by_button, opened_after_page, by_button_after_page
+        ),
+    ));
+
+    let escape = canto_escape(&shell.window);
+    let press_escape = || {
+        escape
+            .as_ref()
+            .map(|action| action.activate(gtk::ShortcutActionFlags::EXCLUSIVE, &shell.window, None))
+    };
+    let opened = open_with_focus_inside(false);
+    let handled = press_escape();
+    let by_escape = settled(&read);
+    let handled_when_closed = press_escape();
+    let still_closed = settled(&read);
+    checks.push((
+        "583: Esc closes the side panel floating over the page; the focus goes to the page",
+        handled == Some(true) && closed_to_page(&opened, &by_escape),
+        format!("handled {:?}: {:?} then {:?}", handled, opened, by_escape),
+    ));
+    checks.push((
+        "583: Esc with the side panel closed passes on",
+        handled_when_closed == Some(false) && !still_closed.panel,
+        format!("handled {:?}: {:?}", handled_when_closed, still_closed),
+    ));
+
+    let click = canto_click(&utility);
+    let press_at = |x: f64, y: f64| {
+        if let Some(click) = &click {
+            click.emit_by_name::<()>("pressed", &[&1i32, &x, &y]);
+        }
+    };
+    let opened = open_with_focus_inside(false);
+    let card = panel
+        .compute_bounds(&utility)
+        .expect("the side panel's bounds");
+    press_at(
+        f64::from(card.x() + card.width() / 2.0),
+        f64::from(card.y() + card.height() / 2.0),
+    );
+    let clicked_in_panel = settled(&read);
+    let (x, y) = (20.0, f64::from(utility.height()) / 2.0);
+    let dimmed = utility
+        .pick(x, y, gtk::PickFlags::DEFAULT)
+        .is_some_and(|w| w != panel && !w.is_ancestor(&panel));
+    press_at(x, y);
+    let clicked_on_page = settled(&read);
+    checks.push((
+        "583: a click in the side panel leaves it open",
+        click.is_some() && clicked_in_panel.panel && clicked_in_panel.focus == FocusIn::SidePanel,
+        format!("{:?}", clicked_in_panel),
+    ));
+    checks.push((
+        "583: a click on the dimmed page closes the side panel; the focus goes to the page",
+        click.is_some() && dimmed && closed_to_page(&opened, &clicked_on_page),
+        format!(
+            "dimmed page under ({}, {}): {}; {:?} then {:?}",
+            x, y, dimmed, opened, clicked_on_page
+        ),
+    ));
+
+    // The queue in its sheet (queue-side-panel off)
+    let toggle_view = super::shell::panel_manager::toggle_view_for_tests(
+        shell.panel.clone(),
+        super::BottomSheet::new(b.object("bottom_sheet").unwrap()),
+        b.object("app_header").unwrap(),
+    );
+    toggle_view("now");
+    let now_open = settled(&read);
+    toggle_view("queue");
+    let queue_open = settled(&read);
+    toggle_view("now");
+    let now_again = settled(&read);
+    checks.push((
+        "583: the queue sheet closes the side panel floating over the page",
+        now_open.panel && now_open.floats && queue_open.sheet && !queue_open.panel,
+        format!("{:?} then {:?}", now_open, queue_open),
+    ));
+    checks.push((
+        "583: the side panel opening over the page closes the queue sheet",
+        now_again.panel && !now_again.sheet,
+        format!("{:?}", now_again),
+    ));
+    shell.window.destroy();
+
+    // At 550 or less the side panel fills the window, and the library's
+    // button (or F9) opens the library over the page
+    let shell = render_shell(550, true);
+    let scroller = page_scroller(&shell);
+    let read = || read_overlays(&shell, &scroller);
+    let full = settled(&read);
+    WidgetExt::activate_action(&shell.window, "win.show-navigation-panel", None)
+        .expect("the library's action");
+    let library = settled(&read);
+    distinct_colors(&shell.frame, "layout-0550-library-over-page");
+    shell.panel.set_open(true);
+    let panel_again = settled(&read);
+    checks.push((
+        "550: opening the library over the page closes the side panel filling the window",
+        full.panel && full.floats && library.library_over_page && !library.panel,
+        format!("{:?} then {:?}", full, library),
+    ));
+    checks.push((
+        "550: opening the side panel closes the library opened over the page",
+        library.library_over_page && panel_again.panel && !panel_again.library_over_page,
+        format!("{:?} then {:?}", library, panel_again),
+    ));
+    shell.window.destroy();
+
+    // Beside the page, Esc is not the side panel's
+    let shell = render_shell(1200, true);
+    shoot_shell(&shell, 1200, true);
+    let utility: libadwaita::OverlaySplitView = shell.builder.object("utility_split").unwrap();
+    let side = || (utility.shows_sidebar(), utility.is_collapsed());
+    let escape = canto_escape(&shell.window);
+    let docked = side();
+    let handled = escape
+        .as_ref()
+        .map(|action| action.activate(gtk::ShortcutActionFlags::EXCLUSIVE, &shell.window, None));
+    let after = settled(side);
+    checks.push((
+        "1200: Esc leaves the side panel beside the page alone",
+        docked == (true, false) && handled == Some(false) && after == (true, false),
+        format!(
+            "open and floating {:?}, Esc handled {:?}, then {:?}",
+            docked, handled, after
+        ),
+    ));
+    // Newer controllers run first: Canto's Esc comes before libadwaita's
+    // own (the window's shortcut manager, which also closes a floating
+    // split view)
+    let controllers = shell.window.observe_controllers();
+    let names: Vec<String> = (0..controllers.n_items())
+        .filter_map(|i| controllers.item(i).and_downcast::<gtk::EventController>())
+        .map(|c| c.name().map(|n| n.to_string()).unwrap_or_default())
+        .collect();
+    let ours = names
+        .iter()
+        .position(|n| n == "canto-floating-panel-escape");
+    let libadwaitas = names
+        .iter()
+        .position(|n| n == "gtk-shortcut-manager-bubble");
+    checks.push((
+        "Canto's Esc runs before libadwaita's on the window",
+        ours.is_some() && libadwaitas.is_some() && ours < libadwaitas,
+        format!("{:?}", names),
+    ));
+    shell.window.destroy();
+
+    for (what, ok, seen) in &checks {
+        eprintln!(
+            "drawer behavior, {}: {} ({})",
+            what,
+            if *ok { "ok" } else { "FAILED" },
+            seen
+        );
+    }
+    let failed: Vec<&str> = checks
+        .iter()
+        .filter(|(_, ok, _)| !ok)
+        .map(|(what, _, _)| *what)
+        .collect();
+    assert!(
+        failed.is_empty(),
+        "drawer behavior: {} of {} checks failed: {:?}",
+        failed.len(),
+        checks.len(),
+        failed
+    );
+    eprintln!("drawer behavior ok");
 }
