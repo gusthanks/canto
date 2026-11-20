@@ -1076,7 +1076,10 @@ fn row_look(item: &NavigationPanelItem) -> (String, String, String, String, Stri
 enum ListChange {
     Same,
     /// One row only moved (what plays now went to the top of Recents).
-    Move { from: usize, to: usize },
+    Move {
+        from: usize,
+        to: usize,
+    },
     /// The rows `at..at + removed` give way to `added` new ones.
     Replace {
         at: usize,

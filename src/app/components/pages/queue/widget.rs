@@ -97,13 +97,15 @@ mod imp {
             // then is kept but never drawn, so the list opened at its oldest
             // songs and only jumped down on the first scroll (20/11)
             let obj = self.obj().downgrade();
-            self.recent_scroller.vadjustment().connect_changed(move |_| {
-                if let Some(obj) = obj.upgrade() {
-                    if obj.imp().recent_stick_to_end.get() {
-                        obj.queue_recent_end();
+            self.recent_scroller
+                .vadjustment()
+                .connect_changed(move |_| {
+                    if let Some(obj) = obj.upgrade() {
+                        if obj.imp().recent_stick_to_end.get() {
+                            obj.queue_recent_end();
+                        }
                     }
-                }
-            });
+                });
             self.obj().show_recent_expanded(false);
         }
     }
@@ -393,7 +395,12 @@ fn recent_row(row: &RecentRow) -> (gtk::ListBoxRow, gtk::Image, gtk::Button) {
     heart.set_has_frame(false);
     heart.set_valign(gtk::Align::Center);
     heart.set_focus_on_click(false);
-    for class in ["circular", "flat", "heart-button", "queue-page__recent-like"] {
+    for class in [
+        "circular",
+        "flat",
+        "heart-button",
+        "queue-page__recent-like",
+    ] {
         heart.add_css_class(class);
     }
     show_like_state(&heart, Some(row.liked));

@@ -1095,10 +1095,11 @@ fn assert_library_keeps_rows_on_play() {
         order
             .iter()
             .map(|&i| {
-                let item = NavigationPanelItem::from_destination(NavigationPanelDestination::Album {
-                    id: i.to_string(),
-                    title: format!("Album {i}"),
-                });
+                let item =
+                    NavigationPanelItem::from_destination(NavigationPanelDestination::Album {
+                        id: i.to_string(),
+                        title: format!("Album {i}"),
+                    });
                 item.set_image(format!("https://example.com/{i}.jpg"));
                 item.set_subtitle(format!("Album • Artist {i}"));
                 item
