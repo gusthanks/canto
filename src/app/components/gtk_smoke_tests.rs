@@ -117,6 +117,8 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     assert_card_playing_badge_shows_bars();
     assert_scrollbar_stays_put();
     assert_lyrics_options();
+    assert_lyrics_source_line();
+    assert_genius_lyrics_switch();
 
     // Space plays/pauses unless it's typed into a text field
     let entry = gtk::SearchEntry::new();
@@ -284,7 +286,11 @@ fn assert_lyrics_options() {
     let lines: Vec<canto_api::lyrics::LyricLine> = (0..40)
         .map(|i| canto_api::lyrics::LyricLine::new(i * 4000, format!("linha {i} da letra")))
         .collect();
-    lyrics.set_lyrics(&canto_api::Lyrics::Synced(lines), |_| {});
+    lyrics.set_lyrics(
+        &canto_api::Lyrics::Synced(lines),
+        &canto_api::LyricsSource::Lrclib,
+        |_| {},
+    );
     let window = gtk::Window::new();
     window.set_default_size(500, 400);
     window.set_child(Some(&lyrics));
@@ -322,6 +328,507 @@ fn assert_lyrics_options() {
     assert!(!lyrics.is_detached());
     eprintln!("lyrics options ok");
     window.destroy();
+}
+
+/// Waits (up to 5 s) for `widget` to be on screen, then lets it settle.
+fn wait_mapped(widget: &impl IsA<gtk::Widget>, settle_ms: u64) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    while !widget.is_mapped() && std::time::Instant::now() < deadline {
+        pump(10);
+    }
+    pump(settle_ms);
+}
+
+/// The widgets under `widget` (itself included) that have `class`.
+fn with_class(widget: &gtk::Widget, class: &str) -> Vec<gtk::Widget> {
+    let mut found = Vec::new();
+    let mut stack = vec![widget.clone()];
+    while let Some(w) = stack.pop() {
+        if w.has_css_class(class) {
+            found.push(w.clone());
+        }
+        let mut child = w.first_child();
+        while let Some(c) = child {
+            child = c.next_sibling();
+            stack.push(c);
+        }
+    }
+    found
+}
+
+/// The brightest channel value `window` paints inside `widget`'s bounds,
+/// from a render of the window (text: how strongly it reads).
+fn brightest_in(window: &gtk::Window, widget: &impl IsA<gtk::Widget>) -> u8 {
+    let (w, h) = (window.width(), window.height());
+    let paintable = gtk::WidgetPaintable::new(Some(window));
+    let mut node = None;
+    for _ in 0..60 {
+        let snapshot = gtk::Snapshot::new();
+        paintable.snapshot(&snapshot, w as f64, h as f64);
+        node = snapshot.to_node();
+        if node.is_some() {
+            break;
+        }
+        window.queue_draw();
+        pump(50);
+    }
+    let node = node.expect("a render of the window");
+    let renderer = window.renderer().expect("the window's renderer");
+    let viewport = gtk::graphene::Rect::new(0.0, 0.0, w as f32, h as f32);
+    let texture = renderer.render_texture(&node, Some(&viewport));
+    let mut downloader = gtk::gdk::TextureDownloader::new(&texture);
+    downloader.set_format(gtk::gdk::MemoryFormat::R8g8b8a8);
+    let (bytes, stride) = downloader.download_bytes();
+    let area = widget.compute_bounds(window).expect("bounds in the window");
+    let (x0, y0) = (area.x().max(0.0) as usize, area.y().max(0.0) as usize);
+    let x1 = ((area.x() + area.width()) as usize).min(texture.width() as usize);
+    let y1 = ((area.y() + area.height()) as usize).min(texture.height() as usize);
+    let mut brightest = 0;
+    for y in y0..y1 {
+        for x in x0..x1 {
+            let px = &bytes[y * stride + x * 4..y * stride + x * 4 + 3];
+            brightest = px.iter().copied().fold(brightest, u8::max);
+        }
+    }
+    brightest
+}
+
+/// The line saying where the lyrics came from starts on the lines' text
+/// edge, sits above the first line with a little room, reads smaller than
+/// the lyrics and fits whole.
+fn assert_source_line_placed(lyrics: &LyricsPageWidget, tag: &str) {
+    let source = lyrics.source_label();
+    assert!(source.is_mapped(), "{}: the source line is on screen", tag);
+    let first = lyrics.line_label_at(0).expect("a first lyric line");
+    // New lines are laid out a frame or more after they are set: on a busy
+    // machine a fixed wait read the first line before it had a size (20/11)
+    wait_laid_out(&source, lyrics);
+    wait_laid_out(&first, lyrics);
+    let s = source.compute_bounds(lyrics).expect("source line bounds");
+    let f = first.compute_bounds(lyrics).expect("first line bounds");
+    let gap = f.y() - (s.y() + s.height());
+    eprintln!(
+        "{} source line: x={} y={} h={} | first line x={} y={} h={} | gap {}",
+        tag,
+        s.x(),
+        s.y(),
+        s.height(),
+        f.x(),
+        f.y(),
+        f.height(),
+        gap
+    );
+    assert!(
+        (s.x() - f.x()).abs() <= 1.0,
+        "{}: the source line starts at x={}, the lyrics' text at x={}",
+        tag,
+        s.x(),
+        f.x()
+    );
+    assert!(
+        (8.0..=32.0).contains(&gap),
+        "{}: {} px between the source line and the first line",
+        tag,
+        gap
+    );
+    assert!(
+        s.height() < f.height(),
+        "{}: the source line ({} px) is not smaller than a lyric line ({} px)",
+        tag,
+        s.height(),
+        f.height()
+    );
+    assert!(
+        !source.layout().is_ellipsized(),
+        "{}: the source line is cut",
+        tag
+    );
+}
+
+/// Waits (up to 5 s) until `widget` has a size and stays where it is for
+/// three reads in a row.
+fn wait_laid_out(widget: &impl IsA<gtk::Widget>, relative_to: &impl IsA<gtk::Widget>) {
+    let read = || {
+        widget
+            .compute_bounds(relative_to)
+            .map(|b| (b.x(), b.y(), b.width(), b.height()))
+    };
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    let mut last = read();
+    let mut same = 0;
+    while same < 3 && std::time::Instant::now() < deadline {
+        pump(50);
+        let now = read();
+        let sized = widget.is_mapped() && now.is_some_and(|(_, _, w, h)| w > 0.0 && h > 0.0);
+        same = if sized && now == last { same + 1 } else { 0 };
+        last = now;
+    }
+}
+
+/// Lyrics without timing read strongly; the source line above them reads
+/// too, but quieter.
+fn assert_source_line_reads(window: &gtk::Window, lyrics: &LyricsPageWidget, tag: &str) {
+    let source = brightest_in(window, &lyrics.source_label());
+    let line = brightest_in(window, &lyrics.line_label_at(0).expect("a first line"));
+    eprintln!(
+        "{} brightness: source line {} | first line {}",
+        tag, source, line
+    );
+    assert!(
+        line >= 180,
+        "{}: lyrics without timing read dimmed ({})",
+        tag,
+        line
+    );
+    assert!(
+        source >= 110,
+        "{}: the source line is too faint to read ({})",
+        tag,
+        source
+    );
+    assert!(
+        source <= line.saturating_sub(20),
+        "{}: the source line ({}) is not quieter than the lyrics ({})",
+        tag,
+        source,
+        line
+    );
+}
+
+/// The window's pixels (RGBA) inside `widget`'s bounds, from a fresh render.
+fn pixels_in(window: &gtk::Window, widget: &gtk::Widget) -> Vec<u8> {
+    let (w, h) = (window.width(), window.height());
+    let paintable = gtk::WidgetPaintable::new(Some(window));
+    let mut node = None;
+    for _ in 0..60 {
+        let snapshot = gtk::Snapshot::new();
+        paintable.snapshot(&snapshot, w as f64, h as f64);
+        node = snapshot.to_node();
+        if node.is_some() {
+            break;
+        }
+        window.queue_draw();
+        pump(50);
+    }
+    let node = node.expect("a render of the window");
+    let renderer = window.renderer().expect("the window's renderer");
+    let viewport = gtk::graphene::Rect::new(0.0, 0.0, w as f32, h as f32);
+    let texture = renderer.render_texture(&node, Some(&viewport));
+    let mut downloader = gtk::gdk::TextureDownloader::new(&texture);
+    downloader.set_format(gtk::gdk::MemoryFormat::R8g8b8a8);
+    let (bytes, stride) = downloader.download_bytes();
+    let area = widget.compute_bounds(window).expect("bounds in the window");
+    let (x0, y0) = (area.x().max(0.0) as usize, area.y().max(0.0) as usize);
+    let x1 = ((area.x() + area.width()) as usize).min(texture.width() as usize);
+    let y1 = ((area.y() + area.height()) as usize).min(texture.height() as usize);
+    let mut pixels = Vec::new();
+    for y in y0..y1 {
+        pixels.extend_from_slice(&bytes[y * stride + x0 * 4..y * stride + x1 * 4]);
+    }
+    pixels
+}
+
+/// How much lyric line `index` changes under the pointer (the biggest
+/// change of any color channel), on screen.
+fn hover_change(window: &gtk::Window, lyrics: &LyricsPageWidget, index: usize) -> u8 {
+    let label = lyrics.line_label_at(index).expect("a lyric line");
+    let row = std::iter::successors(label.parent(), |w| w.parent())
+        .find(|w| w.has_css_class("lyric-line"))
+        .expect("the line's row");
+    // The CSS fades don't run on the test's display: the end state at once
+    let gtk_settings = gtk::Settings::default().expect("GTK settings");
+    let animations = gtk_settings.is_gtk_enable_animations();
+    gtk_settings.set_gtk_enable_animations(false);
+    let still = pixels_in(window, &row);
+    assert!(!still.is_empty(), "the line is off screen");
+    row.set_state_flags(gtk::StateFlags::PRELIGHT, false);
+    window.queue_draw();
+    pump(500);
+    let hovered = pixels_in(window, &row);
+    row.unset_state_flags(gtk::StateFlags::PRELIGHT);
+    window.queue_draw();
+    pump(300);
+    // Back to how it was before animations come back, or the fade back
+    // would never run here and the line would stay lit in later renders
+    let back = pixels_in(window, &row);
+    gtk_settings.set_gtk_enable_animations(animations);
+    let change = |a: &[u8], b: &[u8]| {
+        assert_eq!(a.len(), b.len(), "the row kept its size");
+        a.iter()
+            .zip(b)
+            .map(|(x, y)| x.abs_diff(*y))
+            .max()
+            .unwrap_or(0)
+    };
+    assert!(
+        change(&still, &back) <= 2,
+        "line {} stayed lit after the pointer left",
+        index
+    );
+    change(&still, &hovered)
+}
+
+/// Lines without timing can't be clicked, so the pointer doesn't light them
+/// up.
+fn assert_plain_lines_stay_still(window: &gtk::Window, lyrics: &LyricsPageWidget, tag: &str) {
+    let change = hover_change(window, lyrics, 0);
+    eprintln!(
+        "{} line without timing under the pointer: change {}",
+        tag, change
+    );
+    assert!(
+        change <= 2,
+        "{}: a line without timing lights up under the pointer (change {})",
+        tag,
+        change
+    );
+}
+
+/// One quiet line above the lyrics says where they came from, the same for
+/// both sources: in the side panel and full screen, never as a lyric line
+/// (no index moves), and gone while loading or without lyrics.
+fn assert_lyrics_source_line() {
+    use super::{PanelPages, UtilityPanelWidget};
+    use canto_api::{LyricLine, Lyrics, LyricsSource};
+
+    libadwaita::StyleManager::default().set_color_scheme(libadwaita::ColorScheme::ForceDark);
+    // Invented lines (real lyrics never go in this repository), in stanzas
+    // with Genius's blank line between them
+    let lines: Vec<String> = [
+        "Acordei com o céu ainda cinza",
+        "O café esfriando na janela",
+        "Contei os carros que passavam",
+        "Nenhum deles parou por ela",
+        "A cidade fala baixo cedo",
+        "Quem escuta aprende a esperar",
+        "",
+        "Guardei no bolso um mapa velho",
+        "De um bairro que mudou de lugar",
+        "As ruas trocaram de nome",
+        "Mas o vento sabe o caminho",
+        "Eu sigo a linha do ônibus",
+        "Cantando baixo, sozinho",
+        "",
+        "E quando a tarde cai devagar",
+        "O rádio toca a mesma canção",
+        "Ninguém sabe a letra inteira",
+        "Mas todo mundo sabe o refrão",
+    ]
+    .iter()
+    .map(|line| line.to_string())
+    .collect();
+    let genius = LyricsSource::Genius {
+        url: "https://genius.com/Sample-artist-sample-song-lyrics".to_string(),
+    };
+
+    // As the lyrics page builds it, in the side panel's lyrics tab
+    let lyrics = LyricsPageWidget::default();
+    lyrics.set_lyrics(&Lyrics::Plain(lines.clone()), &genius, |_| {});
+    let source = lyrics.source_label();
+    assert_eq!(source.text().as_str(), "Lyrics: Genius · not synced");
+    assert!(source.is_visible());
+    assert_eq!(lyrics.source(), Some(genius.clone()));
+    assert_eq!(
+        lyrics.line_texts(),
+        lines,
+        "the source line is not a lyric line"
+    );
+    // Translations and Genius's marks land on the right lines of lyrics
+    // without timing too
+    let mut translations = vec![None; lines.len()];
+    translations[0] = Some("I woke up with the sky still gray".to_string());
+    lyrics.set_translations(Some(&translations));
+    let shown: Vec<String> = with_class(lyrics.upcast_ref(), "lyric-translation")
+        .iter()
+        .filter(|w| w.is_visible())
+        .filter_map(|w| w.downcast_ref::<gtk::Label>().map(|l| l.text().to_string()))
+        .collect();
+    assert_eq!(shown, vec!["I woke up with the sky still gray".to_string()]);
+    let line0 = lyrics.line_label_at(0).unwrap();
+    let translation_parent = with_class(lyrics.upcast_ref(), "lyric-translation")
+        .into_iter()
+        .find(|w| w.is_visible())
+        .and_then(|w| w.parent());
+    assert_eq!(
+        translation_parent,
+        line0.parent().and_then(|head| head.parent()),
+        "the translation sits under line 0"
+    );
+    let mut notes = vec![None; lines.len()];
+    notes[1] = Some("What the line means".to_string());
+    lyrics.set_annotations(Some(&notes));
+    let marks = with_class(lyrics.upcast_ref(), "lyric-annotation");
+    assert_eq!(marks.len(), 1, "one Genius mark");
+    assert_eq!(
+        marks[0].parent(),
+        lyrics.line_label_at(1).unwrap().parent(),
+        "the Genius mark sits on line 1"
+    );
+    lyrics.set_translations(None);
+    lyrics.set_annotations(None);
+
+    let panel: UtilityPanelWidget = glib::Object::new();
+    let tab = || Some(gtk::Box::new(gtk::Orientation::Vertical, 0).upcast::<gtk::Widget>());
+    panel.set_pages(&PanelPages {
+        now: tab(),
+        queue: tab(),
+        lyrics: Some(lyrics.clone().upcast()),
+        about: tab(),
+        stats: tab(),
+    });
+    panel.show_tab("lyrics");
+    panel.set_vexpand(true);
+    // The side panel's card color
+    let card = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    card.add_css_class("view");
+    card.append(&panel);
+    let window = gtk::Window::new();
+    window.set_default_size(420, 900);
+    window.set_child(Some(&card));
+    window.present();
+    wait_mapped(&source, 1200);
+    assert_source_line_placed(&lyrics, "side panel, Genius");
+    assert_source_line_reads(&window, &lyrics, "side panel, Genius");
+    assert_plain_lines_stay_still(&window, &lyrics, "side panel");
+    distinct_colors(window.upcast_ref(), "lyrics-genius-sample");
+
+    // LRCLIB, synced: the same line, with the source's name
+    let synced: Vec<LyricLine> = lines
+        .iter()
+        .enumerate()
+        .map(|(i, text)| LyricLine::new(i as u64 * 4000, text.clone()))
+        .collect();
+    lyrics.set_lyrics(&Lyrics::Synced(synced), &LyricsSource::Lrclib, |_| {});
+    assert_eq!(source.text().as_str(), "Lyrics: LRCLIB");
+    assert!(source.is_visible());
+    assert_eq!(lyrics.line_texts(), lines);
+    lyrics.set_position(Some((1, 6)));
+    pump(800);
+    assert_source_line_placed(&lyrics, "side panel, LRCLIB");
+    // Lines that jump to their time do light up: the check above can see it
+    let change = hover_change(&window, &lyrics, 0);
+    eprintln!(
+        "side panel, LRCLIB line under the pointer: change {}",
+        change
+    );
+    assert!(change > 2, "a clickable line doesn't light up ({})", change);
+    distinct_colors(window.upcast_ref(), "lyrics-lrclib-sample");
+    // LRCLIB lyrics without timing say so too
+    lyrics.set_lyrics(&Lyrics::Plain(lines.clone()), &LyricsSource::Lrclib, |_| {});
+    assert_eq!(source.text().as_str(), "Lyrics: LRCLIB · not synced");
+
+    // No source line while loading or without lyrics
+    lyrics.set_loading();
+    assert!(!source.is_visible(), "a source line while loading");
+    assert_eq!(lyrics.source(), None);
+    lyrics.set_lyrics(&Lyrics::Plain(lines.clone()), &genius, |_| {});
+    assert!(source.is_visible());
+    lyrics.set_empty(
+        "No Lyrics Available",
+        Some("Lyrics couldn't be found for this song."),
+        true,
+    );
+    assert!(!source.is_visible(), "a source line without lyrics");
+    assert_eq!(lyrics.source(), None);
+    window.destroy();
+
+    // Full screen: the lyrics are huge, the source line stays small
+    let (w, h) = (256usize, 256usize);
+    let mut data = Vec::with_capacity(w * h * 4);
+    for y in 0..h {
+        for x in 0..w {
+            data.extend_from_slice(&[(30 + x / 6) as u8, (60 + y / 4) as u8, 120, 255]);
+        }
+    }
+    let cover = gtk::gdk::MemoryTexture::new(
+        w as i32,
+        h as i32,
+        gtk::gdk::MemoryFormat::R8g8b8a8,
+        &glib::Bytes::from_owned(data),
+        w * 4,
+    );
+    let (window, lyrics) = super::shell::fullscreen_lyrics::sample_with_lyrics_for_tests(
+        cover.upcast_ref(),
+        &Lyrics::Plain(lines.clone()),
+        &genius,
+        "Linha do Ônibus",
+        "Artista de Exemplo",
+    );
+    window.set_default_size(1280, 720);
+    window.present();
+    let source = lyrics.source_label();
+    wait_mapped(&source, 2000);
+    assert_eq!(source.text().as_str(), "Lyrics: Genius · not synced");
+    assert!(source.is_visible());
+    assert_source_line_placed(&lyrics, "full screen, Genius");
+    // No line is being sung: they all read, none dimmed waiting its turn
+    assert_source_line_reads(&window, &lyrics, "full screen, Genius");
+    assert_plain_lines_stay_still(&window, &lyrics, "full screen");
+    let first = lyrics.line_label_at(0).unwrap();
+    assert!(
+        source.height() * 2 < first.height(),
+        "full screen: the source line ({} px) is not small next to the lyrics ({} px)",
+        source.height(),
+        first.height()
+    );
+    distinct_colors(window.upcast_ref(), "lyrics-fullscreen-genius-sample");
+    window.destroy();
+    eprintln!("lyrics source line ok");
+}
+
+/// "Lyrics When LRCLIB Has None" sits in Integrations, on by default, and
+/// turns the Genius fallback key on and off.
+fn assert_genius_lyrics_switch() {
+    use canto_config::settings::{LYRICS_GENIUS_FALLBACK, SETTINGS};
+    libadwaita::StyleManager::default().set_color_scheme(libadwaita::ColorScheme::ForceDark);
+    let gsettings = gio::Settings::new(SETTINGS);
+    gsettings.reset(LYRICS_GENIUS_FALLBACK);
+    assert!(gsettings.boolean(LYRICS_GENIUS_FALLBACK), "on by default");
+    // What the look-ups get: the token while on (none works too), nothing
+    // while off
+    {
+        use super::genius_fallback;
+        use canto_config::settings::GENIUS_ACCESS_TOKEN;
+        gsettings.reset(GENIUS_ACCESS_TOKEN);
+        assert_eq!(genius_fallback(&gsettings), Some(String::new()));
+        gsettings
+            .set_string(GENIUS_ACCESS_TOKEN, "  test-token ")
+            .expect("a token");
+        assert_eq!(genius_fallback(&gsettings), Some("test-token".to_string()));
+        gsettings
+            .set_boolean(LYRICS_GENIUS_FALLBACK, false)
+            .expect("the switch off");
+        assert_eq!(genius_fallback(&gsettings), None);
+        gsettings.reset(GENIUS_ACCESS_TOKEN);
+        gsettings.reset(LYRICS_GENIUS_FALLBACK);
+    }
+    let dialog = SettingsDialog::new();
+    let row = dialog.genius_lyrics_row();
+    assert!(row.is_visible() && row.is_active(), "shown and on");
+    row.set_active(false);
+    pump(50);
+    assert!(
+        !gsettings.boolean(LYRICS_GENIUS_FALLBACK),
+        "the switch turns the Genius fallback off"
+    );
+    row.set_active(true);
+    pump(50);
+    assert!(gsettings.boolean(LYRICS_GENIUS_FALLBACK));
+    if std::env::var_os("CANTO_TEST_DUMP_DIR").is_some() {
+        libadwaita::prelude::PreferencesDialogExt::set_visible_page_name(&dialog, "integrations");
+        // A dialog shows only over an Adwaita window
+        let window = libadwaita::Window::new();
+        window.set_default_size(720, 1000);
+        window.present();
+        libadwaita::prelude::AdwDialogExt::present(&dialog, Some(&window));
+        // The run's first dialog takes a while to show
+        wait_mapped(&row, 1500);
+        distinct_colors(window.upcast_ref(), "settings-genius-lyrics-sample");
+        libadwaita::prelude::AdwDialogExt::force_close(&dialog);
+        window.destroy();
+    }
+    gsettings.reset(LYRICS_GENIUS_FALLBACK);
+    eprintln!("genius lyrics switch ok");
 }
 
 /// The "Love on Last.fm" switch shows in Integrations only once Last.fm is
@@ -654,6 +1161,7 @@ fn dump_now_panel_sample() {
                 })
                 .collect(),
         ),
+        &canto_api::LyricsSource::Lrclib,
         |_| {},
     );
     assert_eq!(lyrics.line_texts(), lines);

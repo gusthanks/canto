@@ -21,8 +21,8 @@ use super::SettingsModel;
 use canto_config::settings::{
     GENIUS_ACCESS_TOKEN, LASTFM_API_KEY, LASTFM_API_SECRET, LASTFM_LOVE_ON_LIKE,
     LASTFM_SESSION_KEY, LASTFM_SESSION_REJECTED, LASTFM_USERNAME, LISTENBRAINZ_TOKEN,
-    RESTART_REQUIRED_KEYS, SCROBBLE_ENABLED, SCROBBLE_RESPECT_REMOTE, SETTINGS,
-    SMART_QUEUE_CONTINUATION, VISUAL_BRIDGE_ENABLED,
+    LYRICS_GENIUS_FALLBACK, RESTART_REQUIRED_KEYS, SCROBBLE_ENABLED, SCROBBLE_RESPECT_REMOTE,
+    SETTINGS, SMART_QUEUE_CONTINUATION, VISUAL_BRIDGE_ENABLED,
 };
 
 mod imp {
@@ -165,6 +165,8 @@ mod imp {
         #[template_child]
         pub genius_token_entry: TemplateChild<libadwaita::PasswordEntryRow>,
         #[template_child]
+        pub genius_lyrics_switch: TemplateChild<libadwaita::SwitchRow>,
+        #[template_child]
         pub google_translate_key_entry: TemplateChild<libadwaita::PasswordEntryRow>,
 
         #[template_child]
@@ -242,6 +244,11 @@ impl SettingsDialog {
     #[cfg(test)]
     pub fn lastfm_love_row(&self) -> libadwaita::SwitchRow {
         self.imp().lastfm_love_switch.get()
+    }
+
+    #[cfg(test)]
+    pub fn genius_lyrics_row(&self) -> libadwaita::SwitchRow {
+        self.imp().genius_lyrics_switch.get()
     }
 
     pub fn new() -> Self {
@@ -886,6 +893,13 @@ impl SettingsDialog {
         // Integrations (Genius, Scrobbling, Visual Bridge)
         settings
             .bind(GENIUS_ACCESS_TOKEN, &*widget.genius_token_entry, "text")
+            .build();
+        settings
+            .bind(
+                LYRICS_GENIUS_FALLBACK,
+                &*widget.genius_lyrics_switch,
+                "active",
+            )
             .build();
         settings
             .bind(

@@ -161,6 +161,8 @@ pub const LAST_PLAYED: &str = "last-played";
 pub const LYRICS_TRANSLATION_LANGUAGE: &str = "lyrics-translation-language";
 pub const GOOGLE_TRANSLATE_API_KEY: &str = "google-translate-api-key";
 pub const GENIUS_ACCESS_TOKEN: &str = "genius-access-token";
+/// When LRCLIB has no lyrics for a song, show Genius's, without timing.
+pub const LYRICS_GENIUS_FALLBACK: &str = "lyrics-genius-fallback";
 pub const SCROBBLE_ENABLED: &str = "scrobble-enabled";
 pub const SCROBBLE_RESPECT_REMOTE: &str = "scrobble-respect-remote";
 pub const LASTFM_API_KEY: &str = "lastfm-api-key";

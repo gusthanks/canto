@@ -256,12 +256,8 @@ impl EventListener for FullscreenLyrics {
 /// The full-screen view with sample lyrics, to look at its rendering.
 #[cfg(test)]
 pub(crate) fn sample_for_tests(cover: &gtk::gdk::Texture) -> gtk::Window {
-    use crate::app::components::LyricsPageWidget;
-    use canto_api::{LyricLine, Lyrics};
+    use canto_api::{LyricLine, Lyrics, LyricsSource};
 
-    let lyrics_widget = LyricsPageWidget::default();
-    lyrics_widget.add_css_class("lyrics--fullscreen");
-    lyrics_widget.set_fullscreen_button_visible(false);
     let lines = [
         "Todos esses manos querem ser",
         "Mas ninguém quer pagar o preço",
@@ -281,12 +277,37 @@ pub(crate) fn sample_for_tests(cover: &gtk::gdk::Texture) -> gtk::Window {
             })
             .collect(),
     );
-    lyrics_widget.set_lyrics(&lyrics, |_| {});
+    let (window, lyrics_widget) = sample_with_lyrics_for_tests(
+        cover,
+        &lyrics,
+        &LyricsSource::Lrclib,
+        "TODOS ESSES MANOS",
+        "Niink, Jotapê, Supernova Ent",
+    );
     // Halfway through the active line
     lyrics_widget.set_position(Some((2, 5)));
+    window
+}
+
+/// The full-screen view showing `lyrics` from `source`, and its lyrics.
+#[cfg(test)]
+pub(crate) fn sample_with_lyrics_for_tests(
+    cover: &gtk::gdk::Texture,
+    lyrics: &canto_api::Lyrics,
+    source: &canto_api::LyricsSource,
+    title: &str,
+    artist: &str,
+) -> (gtk::Window, crate::app::components::LyricsPageWidget) {
+    use crate::app::components::LyricsPageWidget;
+
+    // As FullscreenLyrics::new sets up its lyrics page
+    let lyrics_widget = LyricsPageWidget::default();
+    lyrics_widget.add_css_class("lyrics--fullscreen");
+    lyrics_widget.set_fullscreen_button_visible(false);
+    lyrics_widget.set_lyrics(lyrics, source, |_| {});
     let view = build_view(None, lyrics_widget.upcast_ref());
-    view.title.set_text("TODOS ESSES MANOS");
-    view.artist.set_text("Niink, Jotapê, Supernova Ent");
+    view.title.set_text(title);
+    view.artist.set_text(artist);
     set_cover(&view, Some(cover));
-    view.window
+    (view.window, lyrics_widget)
 }

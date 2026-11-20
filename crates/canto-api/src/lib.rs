@@ -20,13 +20,15 @@ pub(crate) mod service;
 
 #[cfg(debug_assertions)]
 pub(crate) mod dev;
+#[cfg(test)]
+mod test_server;
 
 pub use error::DomainError;
 pub use genius::{
     build_genius_search_url, normalize_genius_query_title, GeniusArtistInfo, GeniusBioStatus,
     GeniusCredit, GeniusRelationship, GeniusSongStats, GeniusTrackInfo, GeniusTranslation,
 };
-pub use lyrics::{LyricLine, Lyrics, LyricsCache, LyricsService};
+pub use lyrics::{FoundLyrics, LyricLine, Lyrics, LyricsCache, LyricsService, LyricsSource};
 pub use providers::spotify::domain::{check_user_profile, UserProfileCheck};
 pub use providers::spotify::spotify_service;
 pub use providers::{ProviderCapabilities, ProviderKind};

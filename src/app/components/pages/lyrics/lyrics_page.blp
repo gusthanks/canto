@@ -34,14 +34,33 @@ template $LyricsPageWidget : Adw.Bin {
             hscrollbar-policy: never;
             vexpand: true;
 
-            Box lyrics_container {
+            Box lyrics_column {
               orientation: vertical;
               valign: start;
               margin-top: 24;
               margin-bottom: 48;
               margin-start: 16;
               margin-end: 16;
-              spacing: 8;
+
+              // Where the lyrics came from: one quiet line that scrolls away
+              // with them. Outside the lines' box, so it never counts as a line
+              Label lyrics_source {
+                visible: false;
+                halign: start;
+                xalign: 0.0;
+                ellipsize: end;
+
+                styles [
+                  "caption",
+                  "dim-label",
+                  "lyrics-source",
+                ]
+              }
+
+              Box lyrics_container {
+                orientation: vertical;
+                spacing: 8;
+              }
             }
           };
 

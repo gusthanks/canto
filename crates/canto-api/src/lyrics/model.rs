@@ -36,6 +36,67 @@ pub enum Lyrics {
     Plain(Vec<String>),
 }
 
+/// Where shown lyrics came from.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum LyricsSource {
+    Lrclib,
+    /// Genius, without timing; `url` is the song's page there.
+    Genius {
+        url: String,
+    },
+}
+
+impl LyricsSource {
+    /// The source's name for the listener (a proper noun, never translated).
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Lrclib => "LRCLIB",
+            Self::Genius { .. } => "Genius",
+        }
+    }
+
+    /// The Genius page the lyrics were read from.
+    pub fn genius_url(&self) -> Option<&str> {
+        match self {
+            Self::Lrclib => None,
+            Self::Genius { url } => Some(url),
+        }
+    }
+
+    /// The key a translation of these lyrics is saved under: Genius's lines
+    /// differ from LRCLIB's, so their translation is never reused for them.
+    pub fn translation_key(&self, track_id: &str) -> String {
+        match self {
+            Self::Lrclib => track_id.to_string(),
+            Self::Genius { .. } => format!("{track_id}.genius"),
+        }
+    }
+}
+
+/// Lyrics and where they came from.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FoundLyrics {
+    pub lyrics: Lyrics,
+    pub source: LyricsSource,
+}
+
+impl FoundLyrics {
+    pub fn lrclib(lyrics: Lyrics) -> Self {
+        Self {
+            lyrics,
+            source: LyricsSource::Lrclib,
+        }
+    }
+
+    /// Genius's lines (`""` between stanzas), which have no timing.
+    pub fn genius(lines: Vec<String>, url: String) -> Self {
+        Self {
+            lyrics: Lyrics::Plain(lines),
+            source: LyricsSource::Genius { url },
+        }
+    }
+}
+
 /// Roughly how long singing one character takes, for the estimated highlight
 /// (measured on 610 lines with real word timings: median 97 ms, so 120 keeps
 /// the guess from running ahead of the voice).
@@ -248,6 +309,29 @@ mod sung_length_tests {
         // The first word lights with the line
         assert_eq!(lyrics.karaoke(0), Some((0, 2)));
         assert_eq!(lyrics.karaoke(19_000), Some((0, 12)));
+    }
+}
+
+#[cfg(test)]
+mod source_tests {
+    use super::*;
+
+    #[test]
+    fn each_source_has_its_name_page_and_translation_key() {
+        let lrclib = FoundLyrics::lrclib(Lyrics::Plain(vec!["a".into()]));
+        assert_eq!(lrclib.source.name(), "LRCLIB");
+        assert_eq!(lrclib.source.genius_url(), None);
+        assert_eq!(lrclib.source.translation_key("abc"), "abc");
+
+        let genius = FoundLyrics::genius(
+            vec!["a".into(), String::new(), "b".into()],
+            "https://genius.com/x".into(),
+        );
+        assert_eq!(genius.source.name(), "Genius");
+        assert_eq!(genius.source.genius_url(), Some("https://genius.com/x"));
+        assert_eq!(genius.source.translation_key("abc"), "abc.genius");
+        assert!(!genius.lyrics.is_synced());
+        assert_eq!(genius.lyrics.lines_count(), 3);
     }
 }
 

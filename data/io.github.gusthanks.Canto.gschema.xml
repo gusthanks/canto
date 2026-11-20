@@ -425,6 +425,11 @@
       <summary>Genius Client Access Token</summary>
       <description>Optional Genius API client access token used to fetch verified song pages, credits, and liner notes.</description>
     </key>
+    <key name="lyrics-genius-fallback" type="b">
+      <default>true</default>
+      <summary>Show lyrics from Genius when LRCLIB has none</summary>
+      <description>Genius lyrics have no timing, so they don't follow the song. Works without a Genius token.</description>
+    </key>
     <key name="scrobble-enabled" type="b">
       <default>false</default>
       <summary>Enable scrobbling</summary>

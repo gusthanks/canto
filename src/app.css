@@ -274,6 +274,13 @@ bottom-sheet.bottom-sheet--padded > sheet {
   font-weight: 500;
 }
 
+/* Where the lyrics came from: one quiet line above them (caption size and
+   dimmed by its classes). 14px in, the same as .lyric-line's padding, so its
+   text starts where the lines' text does */
+.lyrics-source {
+  margin: 0 14px 6px 14px;
+}
+
 .lyric-sync-bar {
   padding: 4px 10px;
   margin: 4px 12px 8px 12px;
@@ -445,6 +452,19 @@ bottom-sheet.bottom-sheet--padded > sheet {
 
 .lyrics--fullscreen .lyric-line:hover {
   background: alpha(#ffffff, 0.06);
+}
+
+/* Lyrics without timing (Genius's) have no line being sung, so none waits
+   dimmed for its turn: they all read, as in the side panel */
+.lyrics--fullscreen .lyric-line.plain {
+  opacity: 0.85;
+}
+
+/* Lines without timing can't be clicked, so the pointer doesn't light them
+   up like the lines that jump to their time */
+.lyric-line.plain:hover,
+.lyrics--fullscreen .lyric-line.plain:hover {
+  background: transparent;
 }
 
 /* Covers in the sidebar */

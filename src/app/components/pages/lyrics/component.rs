@@ -4,10 +4,11 @@ use crate::app::components::{Component, EventListener};
 use crate::app::models::TrackExt;
 use crate::app::state::{PlaybackAction, PlaybackEvent};
 use crate::app::{AppEvent, AppModel, Dispatcher};
-use canto_api::Lyrics;
+use canto_api::{FoundLyrics, Lyrics, LyricsSource};
 use canto_config::settings::{
-    APP_LANGUAGE, GOOGLE_TRANSLATE_API_KEY, LYRICS_HIGHLIGHT, LYRICS_OFFSET_MS, LYRICS_SCROLL,
-    LYRICS_TRANSLATION, LYRICS_TRANSLATION_LANGUAGE, SETTINGS,
+    APP_LANGUAGE, GENIUS_ACCESS_TOKEN, GOOGLE_TRANSLATE_API_KEY, LYRICS_GENIUS_FALLBACK,
+    LYRICS_HIGHLIGHT, LYRICS_OFFSET_MS, LYRICS_SCROLL, LYRICS_TRANSLATION,
+    LYRICS_TRANSLATION_LANGUAGE, SETTINGS,
 };
 use gettextrs::gettext;
 use gio::prelude::SettingsExt;
@@ -35,6 +36,22 @@ fn adjusted_lyric_position(pos_ms: u64, offset_ms: i32) -> u64 {
 
 fn adjusted_seek_target(seek_ms: u32, offset_ms: i32) -> u32 {
     (i64::from(seek_ms) - i64::from(offset_ms)).clamp(0, i64::from(u32::MAX)) as u32
+}
+
+/// What the lyrics look-ups get for the Genius fallback: the user's Genius
+/// token while it's on (empty works too), `None` while it's off. The lyrics
+/// page and the Now Playing card both ask this, so they always agree.
+pub fn genius_fallback(settings: &gio::Settings) -> Option<String> {
+    settings
+        .boolean(LYRICS_GENIUS_FALLBACK)
+        .then(|| settings.string(GENIUS_ACCESS_TOKEN).trim().to_string())
+}
+
+/// Whether turning the Genius fallback `on` (or off) means looking the
+/// lyrics up again: while none show (or a look-up made with the old setting
+/// is still running), and when Genius's are shown and it goes off.
+fn switch_needs_lookup(on: bool, has_lyrics: bool, from_genius: bool) -> bool {
+    !has_lyrics || (!on && from_genius)
 }
 
 impl LyricsPage {
@@ -81,8 +98,16 @@ impl LyricsPage {
 
     fn setup_controls(&self) {
         let weak_model = Rc::downgrade(&self.app_model);
+        let weak_widget = self.widget.downgrade();
         self.widget.connect_open_genius(move |button| {
-            if let Some(model) = weak_model.upgrade() {
+            // Lyrics read from Genius: straight to the page they came from
+            let page = weak_widget
+                .upgrade()
+                .and_then(|widget| widget.source())
+                .and_then(|source| source.genius_url().map(str::to_owned));
+            if let Some(url) = page {
+                crate::app::components::open_external_url(button, &url);
+            } else if let Some(model) = weak_model.upgrade() {
                 open_genius_page(button, &model);
             }
         });
@@ -254,6 +279,49 @@ impl LyricsPage {
                 );
             }
         ));
+
+        // The Genius fallback switch takes effect at once: off takes Genius's
+        // lyrics away, on looks again for a song shown without lyrics
+        self.settings.connect_changed(
+            Some(LYRICS_GENIUS_FALLBACK),
+            clone!(
+                #[weak(rename_to = widget)]
+                self.widget,
+                #[weak(rename_to = app_model)]
+                self.app_model,
+                #[strong(rename_to = dispatcher)]
+                self.dispatcher,
+                #[weak(rename_to = lyrics)]
+                self.lyrics,
+                #[weak(rename_to = current_track_id)]
+                self.current_track_id,
+                #[weak(rename_to = pending_fetch)]
+                self.pending_fetch,
+                #[weak(rename_to = offset_ms)]
+                self.offset_ms,
+                #[weak(rename_to = clock)]
+                self.clock,
+                move |settings, _| {
+                    let from_genius = matches!(widget.source(), Some(LyricsSource::Genius { .. }));
+                    let on = settings.boolean(LYRICS_GENIUS_FALLBACK);
+                    if switch_needs_lookup(on, lyrics.borrow().is_some(), from_genius) {
+                        // Not shown now: looked up again when it shows
+                        pending_fetch.set(true);
+                        fetch_lyrics_for_current_track(
+                            &widget,
+                            &app_model,
+                            &dispatcher,
+                            &lyrics,
+                            &current_track_id,
+                            &pending_fetch,
+                            &offset_ms,
+                            &clock,
+                            false,
+                        );
+                    }
+                }
+            ),
+        );
     }
 
     fn setup_visibility_hooks(&self) {
@@ -427,10 +495,11 @@ fn fetch_lyrics_for_current_track(
         .clone()
         .unwrap_or_else(|| track.rri.id.clone());
     let api = app_model.api();
+    let genius = genius_fallback(&gio::Settings::new(SETTINGS));
 
     // 1. Check disk cache synchronously unless reloading manually
     if !force_refresh {
-        if let Some(cached) = api.lyrics_service().cache().get(&key) {
+        if let Some(cached) = api.cached_lyrics(&key, genius.is_some()) {
             apply_lyrics_to_widget(
                 widget,
                 app_model,
@@ -446,7 +515,7 @@ fn fetch_lyrics_for_current_track(
         }
     }
 
-    // 2. Fetch asynchronously from LRCLIB
+    // 2. Fetch asynchronously from LRCLIB (then Genius, with the fallback on)
     clock.stop();
     widget.set_loading();
 
@@ -461,14 +530,29 @@ fn fetch_lyrics_for_current_track(
     let weak_offset = Rc::downgrade(offset_ms);
     let weak_model = Rc::downgrade(app_model);
     let weak_clock = Rc::downgrade(clock);
+    let asked_genius = genius.is_some();
 
     glib::spawn_future_local(async move {
         let fetched = if force_refresh {
-            api.refetch_lyrics(&key, &title, &artist, album.as_deref(), Some(duration_secs))
-                .await
+            api.refetch_lyrics(
+                &key,
+                &title,
+                &artist,
+                album.as_deref(),
+                Some(duration_secs),
+                genius.as_deref(),
+            )
+            .await
         } else {
-            api.fetch_lyrics(&key, &title, &artist, album.as_deref(), Some(duration_secs))
-                .await
+            api.fetch_lyrics(
+                &key,
+                &title,
+                &artist,
+                album.as_deref(),
+                Some(duration_secs),
+                genius.as_deref(),
+            )
+            .await
         };
 
         let (Some(w), Some(lc), Some(ct), Some(off), Some(am), Some(cl)) = (
@@ -481,6 +565,10 @@ fn fetch_lyrics_for_current_track(
         ) else {
             return;
         };
+        // The Genius switch flipped meanwhile: its own look-up shows instead
+        if gio::Settings::new(SETTINGS).boolean(LYRICS_GENIUS_FALLBACK) != asked_genius {
+            return;
+        }
 
         apply_lyrics_to_widget(
             &w,
@@ -506,19 +594,19 @@ fn apply_lyrics_to_widget(
     offset_ms: &Rc<Cell<i32>>,
     clock: &Rc<Clock>,
     track_id: &str,
-    lyrics_opt: Option<Lyrics>,
+    found: Option<FoundLyrics>,
 ) {
     if current_track_id.borrow().as_deref() != Some(track_id) {
         return;
     }
 
-    *lyrics_cell.borrow_mut() = lyrics_opt.clone();
+    *lyrics_cell.borrow_mut() = found.as_ref().map(|f| f.lyrics.clone());
 
-    if let Some(l) = lyrics_opt {
+    if let Some(FoundLyrics { lyrics: l, source }) = found {
         let disp = dispatcher.clone();
         let off_seek = Rc::clone(offset_ms);
         let is_synced = l.is_synced();
-        widget.set_lyrics(&l, move |seek_ms| {
+        widget.set_lyrics(&l, &source, move |seek_ms| {
             let target = adjusted_seek_target(seek_ms, off_seek.get());
             disp.dispatch(PlaybackAction::Seek(target).into());
         });
@@ -557,7 +645,7 @@ fn open_genius_page(button: &gtk::Button, app_model: &Rc<AppModel>) {
     let track_id = track.rri.id.clone();
     let search = api.genius_search_url(&artist, &title);
     let token = gio::Settings::new(SETTINGS)
-        .string(canto_config::settings::GENIUS_ACCESS_TOKEN)
+        .string(GENIUS_ACCESS_TOKEN)
         .trim()
         .to_string();
     if token.is_empty() {
@@ -585,7 +673,7 @@ fn open_genius_page(button: &gtk::Button, app_model: &Rc<AppModel>) {
 /// Marks the lines Genius explains (with a Genius token).
 fn annotate_lyrics(widget: &LyricsPageWidget, app_model: &Rc<AppModel>, track_id: &str) {
     let token = gio::Settings::new(SETTINGS)
-        .string(canto_config::settings::GENIUS_ACCESS_TOKEN)
+        .string(GENIUS_ACCESS_TOKEN)
         .trim()
         .to_string();
     let Some(track) = app_model.get_state().playback.current_song() else {
@@ -650,12 +738,16 @@ fn translate_lyrics(widget: &LyricsPageWidget, app_model: &Rc<AppModel>, track_i
         .to_string();
     let api = app_model.api();
     let weak_widget = widget.downgrade();
-    let track_id = track_id.to_string();
+    // Saved apart per source: Genius's lines differ from LRCLIB's
+    let key = widget
+        .source()
+        .map(|source| source.translation_key(track_id))
+        .unwrap_or_else(|| track_id.to_string());
     glib::spawn_future_local(async move {
         let result = api
             .lyrics_service()
             .translator()
-            .translate(&track_id, &lines, &target, Some(api_key.as_str()))
+            .translate(&key, &lines, &target, Some(api_key.as_str()))
             .await;
         let Some(widget) = weak_widget.upgrade() else {
             return;
@@ -764,5 +856,24 @@ impl EventListener for LyricsPage {
             }
             _ => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::switch_needs_lookup;
+
+    #[test]
+    fn the_genius_switch_looks_again_only_when_it_changes_what_shows() {
+        // Nothing shown, or a look-up still running: again, on or off
+        assert!(switch_needs_lookup(true, false, false));
+        assert!(switch_needs_lookup(false, false, false));
+        // Genius's lyrics go when it's turned off
+        assert!(switch_needs_lookup(false, true, true));
+        // LRCLIB's lyrics stay either way
+        assert!(!switch_needs_lookup(true, true, false));
+        assert!(!switch_needs_lookup(false, true, false));
+        // Turned on with Genius's already shown: nothing changes
+        assert!(!switch_needs_lookup(true, true, true));
     }
 }

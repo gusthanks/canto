@@ -503,6 +503,19 @@ template $SettingsWindow : Adw.PreferencesDialog {
       }
     }
 
+    // Its own group: the Genius one above is about the token for credits,
+    // and this works without a token
+    Adw.PreferencesGroup {
+      title: _("Lyrics");
+
+      Adw.SwitchRow genius_lyrics_switch {
+        /* Translators: Switch in Preferences > Integrations > Lyrics: when LRCLIB (the synced lyrics site) has no lyrics for a song, Canto shows Genius's. */
+        title: _("Lyrics When LRCLIB Has None");
+        /* Translators: Subtitle of the "Lyrics When LRCLIB Has None" switch. Genius lyrics have no timing: they don't follow the song. */
+        subtitle: _("Shows the lyrics from Genius, without timing");
+      }
+    }
+
     Adw.PreferencesGroup {
       title: _("Lyrics Translation");
       description: _("Lyrics are translated through Google Translate for free, without a key. That free route isn't official and may stop working; a Google Cloud API key (500,000 characters a month free, a billing account required) makes it reliable.");

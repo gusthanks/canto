@@ -240,6 +240,9 @@ impl ApiService {
         Arc::clone(&self.lyrics_service)
     }
 
+    /// The track's lyrics and where they came from: LRCLIB, or with
+    /// `genius` set (the Genius fallback on; the user's token, which may be
+    /// empty) Genius when LRCLIB has none. `None` turns the fallback off.
     pub async fn fetch_lyrics(
         &self,
         key: &str,
@@ -247,12 +250,22 @@ impl ApiService {
         artist_name: &str,
         album_name: Option<&str>,
         duration_secs: Option<u32>,
-    ) -> Option<crate::lyrics::Lyrics> {
+        genius: Option<&str>,
+    ) -> Option<crate::lyrics::FoundLyrics> {
         self.lyrics_service
-            .fetch_lyrics(key, track_name, artist_name, album_name, duration_secs)
+            .fetch_lyrics(
+                key,
+                track_name,
+                artist_name,
+                album_name,
+                duration_secs,
+                genius,
+            )
             .await
     }
 
+    /// Like [`Self::fetch_lyrics`], skipping the copies on disk (the reload
+    /// button).
     pub async fn refetch_lyrics(
         &self,
         key: &str,
@@ -260,10 +273,28 @@ impl ApiService {
         artist_name: &str,
         album_name: Option<&str>,
         duration_secs: Option<u32>,
-    ) -> Option<crate::lyrics::Lyrics> {
+        genius: Option<&str>,
+    ) -> Option<crate::lyrics::FoundLyrics> {
         self.lyrics_service
-            .refetch_lyrics(key, track_name, artist_name, album_name, duration_secs)
+            .refetch_lyrics(
+                key,
+                track_name,
+                artist_name,
+                album_name,
+                duration_secs,
+                genius,
+            )
             .await
+    }
+
+    /// The lyrics already on disk, at once: LRCLIB's, or else Genius's
+    /// while fresh when the Genius fallback is on.
+    pub fn cached_lyrics(
+        &self,
+        key: &str,
+        genius_fallback: bool,
+    ) -> Option<crate::lyrics::FoundLyrics> {
+        self.lyrics_service.cached_lyrics(key, genius_fallback)
     }
 
     /// Clear all cached data, on disk (API responses + images) and in memory

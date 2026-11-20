@@ -23,7 +23,9 @@ mod info_page;
 mod stats;
 
 pub use about::AboutPanel;
-use canto_config::settings::{GENIUS_ACCESS_TOKEN, LYRICS_OFFSET_MS, SETTINGS};
+use canto_config::settings::{
+    GENIUS_ACCESS_TOKEN, LYRICS_GENIUS_FALLBACK, LYRICS_OFFSET_MS, SETTINGS,
+};
 pub use stats::StatsPanel;
 
 /// Lines shown in the lyrics preview card.
@@ -456,11 +458,11 @@ impl Widgets {
         credits_card.append(&heading(&gettext("Credits")));
         let credits_body = gtk::Box::new(gtk::Orientation::Vertical, 8);
         credits_card.append(&credits_body);
-        // A click opens the About tab, with the full credits and the story
-        // translators: Tooltip of the Credits card in the Now Playing panel: it opens the About tab.
         make_card_activate(
             &credits_card,
             "win.show-about",
+            // A click opens the About tab, with the full credits and the story
+            // translators: Tooltip of the Credits card in the Now Playing panel: it opens the About tab.
             &gettext("Show About This Song"),
         );
         content.append(&credits_card);
@@ -655,6 +657,24 @@ impl NowPanel {
         let refresh = Rc::new(refresh);
         let on_map = Rc::clone(&refresh);
         w.scroller.connect_map(move |_| on_map());
+        // The Genius lyrics switch: the preview follows the lyrics page at
+        // once on screen, or the next time the panel shows
+        let on_switch = Rc::clone(&refresh);
+        self.settings.connect_changed(
+            Some(LYRICS_GENIUS_FALLBACK),
+            clone!(
+                #[weak(rename_to = widgets)]
+                self.widgets,
+                #[weak(rename_to = loaded_for)]
+                self.loaded_for,
+                move |_, _| {
+                    *loaded_for.borrow_mut() = None;
+                    if widgets.scroller.is_mapped() {
+                        on_switch();
+                    }
+                }
+            ),
+        );
         w.scroller.connect_unmap(clone!(
             #[weak(rename_to = clock)]
             self.clock,
@@ -802,10 +822,21 @@ fn load_extras(
     let settings_l = settings.clone();
     let lyrics_api = api.clone();
     let lyrics_track_id = track_id.clone();
+    // The same look-up as the lyrics page, so both show the same lyrics
+    let genius = crate::app::components::genius_fallback(settings);
+    let asked_genius = genius.is_some();
     glib::spawn_future_local(async move {
         let fetched = lyrics_api
-            .fetch_lyrics(&key, &title, &artist, album.as_deref(), Some(duration_secs))
-            .await;
+            .fetch_lyrics(
+                &key,
+                &title,
+                &artist,
+                album.as_deref(),
+                Some(duration_secs),
+                genius.as_deref(),
+            )
+            .await
+            .map(|found| found.lyrics);
         let (Some(w), Some(model), Some(cell), Some(loaded)) = (
             weak_w.upgrade(),
             weak_model.upgrade(),
@@ -815,6 +846,10 @@ fn load_extras(
             return;
         };
         if loaded.borrow().as_deref() != Some(lyrics_track_id.as_str()) {
+            return;
+        }
+        // The Genius switch flipped meanwhile: its own look-up shows instead
+        if settings_l.boolean(LYRICS_GENIUS_FALLBACK) != asked_genius {
             return;
         }
         *cell.borrow_mut() = fetched;

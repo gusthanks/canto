@@ -7,7 +7,7 @@ use libadwaita::subclass::prelude::*;
 use std::cell::{Cell, RefCell};
 use std::time::Duration;
 
-use canto_api::Lyrics;
+use canto_api::{Lyrics, LyricsSource};
 
 mod imp {
     use super::*;
@@ -21,6 +21,10 @@ mod imp {
         pub loading_page: TemplateChild<libadwaita::StatusPage>,
         #[template_child]
         pub lyrics_scroller: TemplateChild<gtk::ScrolledWindow>,
+        #[template_child]
+        pub lyrics_column: TemplateChild<gtk::Box>,
+        #[template_child]
+        pub lyrics_source: TemplateChild<gtk::Label>,
         #[template_child]
         pub lyrics_container: TemplateChild<gtk::Box>,
         #[template_child]
@@ -59,6 +63,8 @@ mod imp {
         pub back_to_line_button: TemplateChild<gtk::Button>,
 
         pub line_widgets: RefCell<Vec<gtk::Widget>>,
+        /// Where the shown lyrics came from (`None` while none are shown).
+        pub source: RefCell<Option<LyricsSource>>,
         pub active_index: RefCell<Option<usize>>,
         /// The synced lines' text, for the word-by-word highlight.
         pub line_texts: RefCell<Vec<String>>,
@@ -178,6 +184,7 @@ impl LyricsPageWidget {
 
     pub fn set_loading(&self) {
         let imp = self.imp();
+        self.forget_source();
         imp.reload_empty_button.set_visible(false);
         imp.sync_toolbar.set_visible(false);
         imp.lyrics_stack.set_visible_child_name("loading");
@@ -185,6 +192,7 @@ impl LyricsPageWidget {
 
     pub fn set_empty(&self, title: &str, description: Option<&str>, allow_reload: bool) {
         let imp = self.imp();
+        self.forget_source();
         imp.empty_page.set_title(title);
         imp.empty_page.set_description(description);
         imp.reload_empty_button.set_visible(allow_reload);
@@ -242,11 +250,17 @@ impl LyricsPageWidget {
             .connect_clicked(move |_| f2());
     }
 
-    pub fn set_lyrics<F>(&self, lyrics: &Lyrics, on_seek: F)
+    /// Shows `lyrics`, with one quiet line above them saying where they
+    /// came from (`source`).
+    pub fn set_lyrics<F>(&self, lyrics: &Lyrics, source: &LyricsSource, on_seek: F)
     where
         F: Fn(u32) + Clone + 'static,
     {
         let imp = self.imp();
+        imp.lyrics_source
+            .set_text(&source_line(lyrics.is_synced(), source));
+        imp.lyrics_source.set_visible(true);
+        imp.source.replace(Some(source.clone()));
         if let Some(anim) = imp.scroll_anim.borrow_mut().take() {
             anim.pause();
         }
@@ -316,6 +330,31 @@ impl LyricsPageWidget {
         imp.sync_toolbar.set_visible(true);
         imp.lyrics_stack.set_visible_child_name("list");
         imp.lyrics_scroller.vadjustment().set_value(0.0);
+    }
+
+    /// Where the shown lyrics came from (`None` while none are shown).
+    pub fn source(&self) -> Option<LyricsSource> {
+        self.imp().source.borrow().clone()
+    }
+
+    /// No lyrics shown: no line saying where they came from.
+    fn forget_source(&self) {
+        let imp = self.imp();
+        imp.source.replace(None);
+        imp.lyrics_source.set_visible(false);
+        imp.lyrics_source.set_text("");
+    }
+
+    /// The line above the lyrics saying where they came from (for tests).
+    #[cfg(test)]
+    pub fn source_label(&self) -> gtk::Label {
+        self.imp().lyrics_source.get()
+    }
+
+    /// The label of lyric line `index` (for tests).
+    #[cfg(test)]
+    pub fn line_label_at(&self, index: usize) -> Option<gtk::Label> {
+        self.line_label(index)
     }
 
     /// The active line and how much of it is sung, in bytes, lighting its
@@ -658,7 +697,9 @@ impl LyricsPageWidget {
             return;
         }
         let vadjust = imp.lyrics_scroller.vadjustment();
-        if let Some((_, y)) = widget.translate_coordinates(&*imp.lyrics_container, 0.0, 0.0) {
+        // From the top of the scrolled column, so the line above the lyrics
+        // scrolls away without moving where the sung line sits
+        if let Some((_, y)) = widget.translate_coordinates(&*imp.lyrics_column, 0.0, 0.0) {
             let line_h = widget.height() as f64;
             let scroller_h = imp.lyrics_scroller.height() as f64;
             if scroller_h <= 1.0 {
@@ -696,6 +737,18 @@ impl LyricsPageWidget {
             anim.play();
             *imp.scroll_anim.borrow_mut() = Some(anim);
         }
+    }
+}
+
+/// The line above the lyrics saying where they came from, and whether they
+/// follow the song.
+fn source_line(synced: bool, source: &LyricsSource) -> String {
+    if synced {
+        // translators: Quiet line above the lyrics saying where they came from. {} is the source's name, "LRCLIB" or "Genius" (keep it as is).
+        gettext("Lyrics: {}").replace("{}", source.name())
+    } else {
+        // translators: Quiet line above lyrics that have no timing, so they don't follow the song. {} is the source's name, "LRCLIB" or "Genius" (keep it as is).
+        gettext("Lyrics: {} · not synced").replace("{}", source.name())
     }
 }
 

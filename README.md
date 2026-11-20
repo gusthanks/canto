@@ -26,6 +26,7 @@
 
 **Lyrics**
 - Synced lyrics from LRCLIB in the side panel or full screen over the blurred cover. The active line lights up word by word (with real word timing when LRCLIB has it, an estimate otherwise).
+- When LRCLIB doesn't have a song, the lyrics come from **Genius** instead (not synced), and the line above the lyrics says where they came from. You can turn this off in **Preferences -> Integrations**.
 - Click a line to jump there, nudge the timing live, and translate lyrics into your language, shown under each line.
 - **Genius** annotations: tap the mark next to a line to read what it means, right inside the lyrics.
 
@@ -124,7 +125,7 @@ o.window({ title = "^Canto Mini Player$" }, {
 
 ## BYOK API Setup Tutorials
 
-Canto works out of the box for browsing your library, LRCLIB synced lyrics, and Genius search links. Everything below is Bring-Your-Own-Key (BYOK): keys stay on your computer (GSettings / keyring) and are only sent to their own official APIs.
+Canto works out of the box for browsing your library, LRCLIB synced lyrics, lyrics from Genius when LRCLIB has none, and Genius search links. Everything below is Bring-Your-Own-Key (BYOK): keys stay on your computer (GSettings / keyring) and are only sent to their own official APIs.
 
 ### 0. Spotify Soloist (playback)
 

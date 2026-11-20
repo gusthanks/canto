@@ -2,6 +2,8 @@
 //!
 //! Never logs tokens or secrets.
 
+pub mod lyrics;
+
 use std::collections::HashSet;
 use std::time::Duration;
 
@@ -629,11 +631,24 @@ async fn get_genius_json(
     url: &str,
     token: &str,
 ) -> Result<Value, DomainError> {
-    let response = client
+    get_json(client, url, Some(token)).await
+}
+
+/// GETs a Genius JSON answer, with the user's token when one is given (the
+/// public web search needs none).
+async fn get_json(
+    client: &reqwest::Client,
+    url: &str,
+    token: Option<&str>,
+) -> Result<Value, DomainError> {
+    let mut request = client
         .get(url)
         .header(reqwest::header::USER_AGENT, GENIUS_USER_AGENT)
-        .bearer_auth(token)
-        .timeout(Duration::from_secs(12))
+        .timeout(Duration::from_secs(12));
+    if let Some(token) = token {
+        request = request.bearer_auth(token);
+    }
+    let response = request
         .send()
         .await
         .map_err(|e| DomainError::Network(e.without_url().to_string()))?;
