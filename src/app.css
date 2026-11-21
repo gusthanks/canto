@@ -581,10 +581,21 @@ bottom-sheet.bottom-sheet--padded > sheet {
 }
 
 /* The page's bar over album, playlist and artist pages: see-through until
-   the page is scrolled and its title shows */
+   the page is scrolled and its title shows. Then the page card's own
+   background and a thin edge, as the list scrolls up under the bar */
 .page-bar--clear headerbar {
   background: transparent;
   box-shadow: none;
+}
+
+.page-bar--solid headerbar {
+  background-color: @view_bg_color;
+  box-shadow: 0 1px alpha(@window_fg_color, 0.08);
+}
+
+.page-bar--clear headerbar,
+.page-bar--solid headerbar {
+  transition: background-color 250ms ease-out, box-shadow 250ms ease-out;
 }
 
 /* "Your Library": what's playing, and pinned items */

@@ -172,6 +172,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     }
     assert_drawer_layout();
     assert_album_page_fits();
+    assert_page_bar_covers_the_list();
     assert_bar_tiers();
     let overflows = OVERFLOWS
         .lock()
@@ -1436,6 +1437,112 @@ fn assert_filtered_card_grid_keeps_its_columns() {
         format!("{:?}", off_edge),
     );
     window.destroy();
+}
+
+/// Over a floating page (album, playlist, artist) the page's bar is
+/// see-through while the cover shows. Once the title shows in it, the bar
+/// takes the page card's background: the list scrolls up under the bar, and
+/// its text crossed the title (20/11, Teto's page).
+fn assert_page_bar_covers_the_list() {
+    let gtk_settings = gtk::Settings::default().unwrap();
+    let animations = gtk_settings.is_gtk_enable_animations();
+    gtk_settings.set_gtk_enable_animations(false);
+    let display = gtk::gdk::Display::default().unwrap();
+    let red = gtk::CssProvider::new();
+    red.load_from_string(".page-bar-test-under { background-color: #ff0000; }");
+    gtk::style_context_add_provider_for_display(
+        &display,
+        &red,
+        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 2,
+    );
+    // The page under the bar: plain red, so any of it showing through reads
+    let under = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    under.add_css_class("page-bar-test-under");
+    under.set_hexpand(true);
+    under.set_vexpand(true);
+    let header = super::AppHeaderBar::new();
+    header.set_valign(gtk::Align::Start);
+    let overlay = gtk::Overlay::new();
+    overlay.set_child(Some(&under));
+    overlay.add_overlay(&header);
+    header.set_content(&under);
+    let registrar = super::HeaderRegistrar::new(header.clone(), Default::default());
+    let page = registrar.page("album");
+    page.set_title("Flowra FM Disco Voador");
+    page.set_floating(true);
+    page.set_title_revealed(false);
+    header.set_active("album");
+    let window = gtk::Window::new();
+    window.set_default_size(600, 300);
+    window.set_child(Some(&overlay));
+    window.present();
+    wait_frames(&window, 3);
+    pump(300);
+    // Above the title and away from the buttons: only the bar's background
+    let bar = || {
+        let x = header.width() * 3 / 4;
+        pixel_at(overlay.upcast_ref(), x, 4)
+    };
+    let clear = bar();
+    page.set_title_revealed(true);
+    wait_frames(&window, 3);
+    pump(300);
+    let solid = bar();
+    let is_red = |px: Option<[u8; 4]>| px.is_some_and(|p| p[0] > 200 && p[1] < 80 && p[2] < 80);
+    check(
+        "the page's bar is see-through over a floating page while its title is hidden",
+        is_red(clear),
+        format!("{:?}", clear),
+    );
+    check(
+        "with the title shown, the page's bar covers the page scrolling under it",
+        solid.is_some() && !is_red(solid),
+        format!("{:?}", solid),
+    );
+    window.destroy();
+    gtk::style_context_remove_provider_for_display(&display, &red);
+    gtk_settings.set_gtk_enable_animations(animations);
+}
+
+/// Pumps until `n` frames of `widget`'s window have started (a tick
+/// callback keeps them coming; the headless display is slow), up to 10 s.
+fn wait_frames(widget: &impl IsA<gtk::Widget>, n: u32) {
+    let ticks = std::rc::Rc::new(std::cell::Cell::new(0u32));
+    let ticker = {
+        let ticks = ticks.clone();
+        widget.as_ref().add_tick_callback(move |_, _| {
+            ticks.set(ticks.get() + 1);
+            glib::ControlFlow::Continue
+        })
+    };
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    while ticks.get() < n && std::time::Instant::now() < deadline {
+        pump(50);
+    }
+    ticker.remove();
+}
+
+/// The color `widget` renders at (`x`, `y`), as RGBA bytes.
+fn pixel_at(widget: &gtk::Widget, x: i32, y: i32) -> Option<[u8; 4]> {
+    let (w, h) = (widget.width(), widget.height());
+    if x < 0 || y < 0 || x >= w || y >= h {
+        return None;
+    }
+    let paintable = gtk::WidgetPaintable::new(Some(widget));
+    let snapshot = gtk::Snapshot::new();
+    paintable.snapshot(&snapshot, w as f64, h as f64);
+    let node = snapshot.to_node()?;
+    let renderer = widget.native().and_then(|n| n.renderer())?;
+    let texture = renderer.render_texture(&node, None);
+    let mut downloader = gtk::gdk::TextureDownloader::new(&texture);
+    downloader.set_format(gtk::gdk::MemoryFormat::R8g8b8a8);
+    let (bytes, stride) = downloader.download_bytes();
+    // The texture may be scaled (fractional or doubled display scale)
+    let sx = texture.width() as f64 / w as f64;
+    let sy = texture.height() as f64 / h as f64;
+    let (px, py) = ((x as f64 * sx) as usize, (y as f64 * sy) as usize);
+    let i = py * stride + px * 4;
+    bytes.get(i..i + 4).map(|p| [p[0], p[1], p[2], p[3]])
 }
 
 /// Number of distinct opaque-ish colors `widget` renders (rough content check).

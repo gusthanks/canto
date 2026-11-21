@@ -223,6 +223,14 @@ fn animate_in(widget: &gtk::Widget) {
     );
 }
 
+fn set_css_class(widget: &impl IsA<gtk::Widget>, class: &str, on: bool) {
+    if on {
+        widget.add_css_class(class);
+    } else {
+        widget.remove_css_class(class);
+    }
+}
+
 #[derive(Debug)]
 pub struct PageState {
     pub(super) title: String,
@@ -306,15 +314,13 @@ impl AppHeaderBar {
         self.render();
     }
 
-    /// See-through over floating pages until their title shows; the pages
-    /// that don't float start below the bar.
+    /// See-through over floating pages until their title shows. Then the
+    /// page card's own background, with a thin edge: the list scrolls up
+    /// under the bar, and its text crossed the title (20/11). The pages that
+    /// don't float start below the bar.
     fn apply_floating(&self, floats: bool, revealed: bool) {
-        let see_through = floats && !revealed;
-        if see_through {
-            self.add_css_class("page-bar--clear");
-        } else {
-            self.remove_css_class("page-bar--clear");
-        }
+        set_css_class(self, "page-bar--clear", floats && !revealed);
+        set_css_class(self, "page-bar--solid", floats && revealed);
         if let Some(content) = self.imp().content.borrow().as_ref() {
             let height = if floats {
                 0
