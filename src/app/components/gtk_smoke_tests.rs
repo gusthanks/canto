@@ -2,11 +2,21 @@ use gtk::prelude::*;
 
 use super::{CommandPaletteDialog, LyricsPageWidget, SettingsDialog};
 
+/// How to run the GTK tests: they need a headless display, the built gresource and the
+/// repo's settings schema, which scripts/dev/gtk-tests.sh sets up.
+const GTK_TESTS_HINT: &str = "needs Broadway: run scripts/dev/gtk-tests.sh";
+
 #[test]
+#[ignore = "needs Broadway: run scripts/dev/gtk-tests.sh"]
 fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
+    // Never a silent pass: an explicit run without the setup fails and says why
     let Some(gresource_path) = std::env::var_os("CANTO_TEST_GRESOURCE") else {
-        return;
+        panic!("CANTO_TEST_GRESOURCE is not set: {}", GTK_TESTS_HINT);
     };
+    // The windows must open on a headless display, never on the desktop session
+    if std::env::var("GDK_BACKEND").as_deref() != Ok("broadway") {
+        panic!("GDK_BACKEND is not broadway: {}", GTK_TESTS_HINT);
+    }
 
     gtk::init().expect("gtk::init should succeed under test display");
     libadwaita::init().expect("libadwaita::init should succeed");
