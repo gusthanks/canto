@@ -181,6 +181,15 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
         overflows.is_empty(),
         format!("{:?}", overflows),
     );
+    let layout_errors = LAYOUT_ERRORS
+        .lock()
+        .map(|errors| errors.clone())
+        .unwrap_or_default();
+    check(
+        "GTK allocated no widget a negative size and logged no critical anywhere in the run",
+        layout_errors.is_empty(),
+        format!("{:?}", layout_errors),
+    );
     let failed = FAILED_CHECKS.with(|failed| failed.borrow().clone());
     assert!(
         failed.is_empty(),
@@ -201,8 +210,15 @@ thread_local! {
 /// between them, or in a step that measures nothing.
 static OVERFLOWS: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
 
-/// Keeps libadwaita's "exceeds" warnings in `OVERFLOWS`, every message still
-/// written out as before. Once per process (GLib allows one writer).
+/// What GTK reported going wrong in a layout during the run: a widget
+/// allocated a negative size ("attempt to allocate"), or any critical. Both
+/// come from state changed in the middle of an allocation, after the sizes
+/// were measured (a CSS class adding margins, for one).
+static LAYOUT_ERRORS: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+
+/// Keeps libadwaita's "exceeds" warnings in `OVERFLOWS` and GTK's layout
+/// errors in `LAYOUT_ERRORS`, every message still written out as before.
+/// Once per process (GLib allows one writer).
 fn watch_overflows() {
     glib::log_set_writer_func(|level, fields| {
         let field = |key: &str| {
@@ -211,10 +227,20 @@ fn watch_overflows() {
                 .find(|field| field.key() == key)
                 .and_then(|field| field.value_str())
         };
-        if field("GLIB_DOMAIN") == Some("Adwaita") {
-            if let Some(message) = field("MESSAGE").filter(|m| m.contains(" exceeds ")) {
+        let domain = field("GLIB_DOMAIN");
+        let message = field("MESSAGE");
+        if domain == Some("Adwaita") {
+            if let Some(message) = message.filter(|m| m.contains(" exceeds ")) {
                 if let Ok(mut overflows) = OVERFLOWS.lock() {
                     overflows.push(message.to_string());
+                }
+            }
+        }
+        if domain == Some("Gtk") {
+            let negative = message.is_some_and(|m| m.contains("attempt to allocate"));
+            if negative || level == glib::LogLevel::Critical {
+                if let Ok(mut errors) = LAYOUT_ERRORS.lock() {
+                    errors.push(message.unwrap_or_default().to_string());
                 }
             }
         }

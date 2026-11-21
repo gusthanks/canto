@@ -190,8 +190,18 @@ struct RailWidgets {
     handle: gtk::Widget,
     header: libadwaita::HeaderBar,
     rail_header: gtk::Box,
-    top_bar: gtk::Widget,
+    /// The top bar's main menu, first in the top bar
+    menu_button: gtk::Widget,
+    /// Its end margin from window.blp, beside the full sidebar
+    menu_margin_end: i32,
 }
+
+/// With the sidebar on its rail (72 px), the top bar's main menu sits right
+/// above the rail's library icon: the header bar's 6 px of padding plus 13
+/// put the 34 px button's center at 36 px. Back and forward start past the
+/// rail's edge, 26 px further than beside the full sidebar.
+const RAIL_MENU_MARGIN_START: i32 = 13;
+const RAIL_MENU_EXTRA_MARGIN_END: i32 = 26;
 
 impl WindowLayout {
     pub fn new(builder: &gtk::Builder) -> Rc<Self> {
@@ -215,12 +225,14 @@ impl WindowLayout {
         );
         let window: libadwaita::ApplicationWindow = builder.object("window").unwrap();
 
+        let menu_button: gtk::Widget = builder.object("user").unwrap();
         let rail = RailWidgets {
             sidebar: builder.object("navigation_panel").unwrap(),
             handle: navigation_handle.clone(),
             header: builder.object("navigation_panel_header").unwrap(),
             rail_header: builder.object("rail_header").unwrap(),
-            top_bar: builder.object("top_bar").unwrap(),
+            menu_margin_end: menu_button.margin_end(),
+            menu_button,
         };
 
         let navigation = Panel::new(NAVIGATION_PANEL, navigation_split.clone(), Edge::Start);
@@ -934,14 +946,26 @@ impl WindowLayout {
         if rail == w.sidebar.has_css_class(RAIL_CLASS) {
             return;
         }
-        // The top bar's menu lines up over the rail's library icon
         if rail {
             w.sidebar.add_css_class(RAIL_CLASS);
-            w.top_bar.add_css_class("top-bar--rail");
         } else {
             w.sidebar.remove_css_class(RAIL_CLASS);
-            w.top_bar.remove_css_class("top-bar--rail");
         }
+        // The top bar's menu lines up over the rail's library icon. Margins
+        // as properties, not CSS: this runs inside the shell's allocation
+        // (`ShellBox` refits before allocating its children), and a CSS
+        // margin reaches the button after its size was measured, so GTK
+        // allocated it a negative width. A property margin is measured anew
+        let (start, end) = if rail {
+            (
+                RAIL_MENU_MARGIN_START,
+                w.menu_margin_end + RAIL_MENU_EXTRA_MARGIN_END,
+            )
+        } else {
+            (0, w.menu_margin_end)
+        };
+        w.menu_button.set_margin_start(start);
+        w.menu_button.set_margin_end(end);
         w.header.set_visible(!rail);
         w.rail_header.set_visible(rail);
         w.handle
