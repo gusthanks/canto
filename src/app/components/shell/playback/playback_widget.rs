@@ -925,13 +925,14 @@ fn pressed(on: bool) -> gtk::AccessibleTristate {
     }
 }
 
-/// Parses the integer boolean field from `hyprctl -j getoption <name>`.
+/// Parses the boolean field from `hyprctl -j getoption <name>`
+/// (`"bool"` on Hyprland 0.56+, `"int"` on older releases).
 fn parse_hyprctl_bool_option(stdout: &str) -> Option<bool> {
-    serde_json::from_str::<serde_json::Value>(stdout)
-        .ok()?
-        .get("int")
-        .and_then(|v| v.as_i64())
-        .map(|n| n != 0)
+    let value = serde_json::from_str::<serde_json::Value>(stdout).ok()?;
+    if let Some(flag) = value.get("bool").and_then(|v| v.as_bool()) {
+        return Some(flag);
+    }
+    value.get("int").and_then(|v| v.as_i64()).map(|n| n != 0)
 }
 
 fn query_hyprctl_bool_option(option: &str) -> bool {
@@ -1408,6 +1409,18 @@ mod tests {
         use gtk::gdk::{ScrollRelativeDirection as Rel, ScrollUnit};
         let close = |a: f64, b: f64| (a - b).abs() < 1e-9;
 
+        assert_eq!(
+            parse_hyprctl_bool_option(
+                r#"{"option": "input:touchpad:natural_scroll", "bool": true, "set": true }"#
+            ),
+            Some(true)
+        );
+        assert_eq!(
+            parse_hyprctl_bool_option(
+                r#"{"option": "input:natural_scroll", "bool": false, "set": false }"#
+            ),
+            Some(false)
+        );
         assert_eq!(
             parse_hyprctl_bool_option(
                 r#"{"option":"input:touchpad:natural_scroll","int":1,"set":true}"#
