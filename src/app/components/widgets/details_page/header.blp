@@ -20,8 +20,11 @@ template $DetailsHeaderWidget : Widget {
     overflow: visible;
 
     // Narrow: stack artwork above the text/buttons instead of beside them.
+    // Also under the 478 px the cover and the buttons take beside each
+    // other (cover 200, gap 12, buttons 266), whatever the text scale: with
+    // text at 0.91, 510sp is only 464 px.
     Adw.Breakpoint {
-      condition("max-width: 510sp")
+      condition("max-width: 510sp or max-width: 477px")
 
       setters {
         header_box.orientation: vertical;

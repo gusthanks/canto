@@ -2906,9 +2906,18 @@ const TWO_LINE_TITLE: &str = "O Veneno do Escorpião V.2";
 const HEADER_BESIDE_OVER_SP: f64 = 510.0;
 
 /// A text scale of 0.91 (`text-scaling-factor` 0.9091) as GTK's font DPI
-/// (96 × 1024 × scale). The header's breakpoint is in sp: at that scale the
-/// cover sits beside the text from 464 px.
+/// (96 × 1024 × scale). The header's breakpoint is in sp: at that scale 510
+/// sp is 464 px, under what the cover and the buttons beside it take.
 const SMALL_TEXT_XFT_DPI: i32 = 89_367;
+
+/// The least width (px) of the album header with the cover beside the text,
+/// whatever the text scale: the cover 200, its gap 12 and the row of
+/// buttons 266. The header stacks under it.
+const HEADER_BESIDE_LEAST_PX: f64 = 478.0;
+
+/// Album pages at text 0.91 around where the header turns beside its cover
+/// (inside their 24 px paddings: headers of 464 to 492).
+const ALBUM_PAGE_WIDTHS_SMALL_TEXT: [i32; 5] = [512, 518, 525, 526, 540];
 
 /// The widths an album page gets, with the title it shows (`None`: the
 /// sample's): its least (the header's 280 inside its 24 px paddings), the
@@ -2939,7 +2948,8 @@ struct AlbumPageShot {
     bin: i32,
     layout_min: i32,
     /// The cover beside the text (not above it), and the bin's width over
-    /// which it belongs there (510 sp at the current text scale)
+    /// which it belongs there: 510 sp at the current text scale, and never
+    /// under the 478 px it takes there
     beside: bool,
     beside_over: f64,
     /// The header's height, and how far down it draws: the end of its
@@ -2977,7 +2987,8 @@ fn shoot_album_page(page: &super::DetailsPage) -> AlbumPageShot {
         layout_min: parts.header_box.measure(gtk::Orientation::Horizontal, -1).0,
         beside: parts.header_box.orientation() == gtk::Orientation::Horizontal,
         beside_over: libadwaita::LengthUnit::Sp
-            .to_px(HEADER_BESIDE_OVER_SP, gtk::Settings::default().as_ref()),
+            .to_px(HEADER_BESIDE_OVER_SP, gtk::Settings::default().as_ref())
+            .max(HEADER_BESIDE_LEAST_PX - 1.0),
         header: parts.header.height(),
         drawn: (buttons_bottom + parts.buttons.margin_bottom() as f32)
             .max(bottom(parts.image_box.compute_bounds(&parts.header))),
@@ -3063,8 +3074,8 @@ fn assert_album_page_fits() {
     let scheme = style.color_scheme();
     style.set_color_scheme(libadwaita::ColorScheme::ForceDark);
     let cover = sample_cover();
-    let mut shots = Vec::new();
-    for (width, title) in ALBUM_PAGE_SHOTS.iter().copied() {
+    // Alone in a window `width` px wide, with four tracks
+    let shoot_alone = |width: i32, title: Option<&str>, tag: &str| {
         let page = super::DetailsPage::sample_for_tests(cover.upcast_ref());
         page.add_sample_tracks_for_tests(4);
         if let Some(title) = title {
@@ -3077,12 +3088,14 @@ fn assert_album_page_fits() {
         window.present();
         wait_mapped(page.widget(), 300);
         let shot = settle_album_page(&window, &page);
-        let suffix = if title.is_some() { "-two-lines" } else { "" };
-        distinct_colors(
-            window.upcast_ref(),
-            &format!("album-page-{:04}{}", width, suffix),
-        );
+        distinct_colors(window.upcast_ref(), tag);
         window.destroy();
+        shot
+    };
+    let mut shots = Vec::new();
+    for (width, title) in ALBUM_PAGE_SHOTS.iter().copied() {
+        let suffix = if title.is_some() { "-two-lines" } else { "" };
+        let shot = shoot_alone(width, title, &format!("album-page-{:04}{}", width, suffix));
         let label = format!(
             "{}{}",
             width,
@@ -3094,10 +3107,66 @@ fn assert_album_page_fits() {
         );
         shots.push((label, shot));
     }
+    // With text at 0.91, where the header turns beside its cover
+    let gtk_settings = gtk::Settings::default().unwrap();
+    let dpi = gtk_settings.gtk_xft_dpi();
+    gtk_settings.set_gtk_xft_dpi(SMALL_TEXT_XFT_DPI);
+    let small_text: Vec<AlbumPageShot> = ALBUM_PAGE_WIDTHS_SMALL_TEXT
+        .iter()
+        .map(|width| {
+            shoot_alone(
+                *width,
+                Some(TWO_LINE_TITLE),
+                &format!("album-page-{:04}-small-text", width),
+            )
+        })
+        .collect();
+    gtk_settings.set_gtk_xft_dpi(dpi);
     let (layout, beside_panels) = shoot_album_page_beside_panels();
     let in_shell = "1200 beside the side panel and the full library, text at 0.91 (two-line title)";
     shots.push((in_shell.to_string(), beside_panels));
     style.set_color_scheme(scheme);
+    for s in &small_text {
+        eprintln!(
+            "album page {} at text 0.91 (two-line title): header {} in {} (its layout needs {}), {} tall, draws {}; buttons end at {}, first track at {}; right edge {} of {}",
+            s.page,
+            if s.beside { "beside the cover" } else { "under the cover" },
+            s.bin,
+            s.layout_min,
+            s.header,
+            s.drawn,
+            s.buttons_end,
+            s.first_row,
+            s.right,
+            s.viewport
+        );
+    }
+    let misfits: Vec<String> = small_text
+        .iter()
+        .filter(|s| {
+            s.layout_min > s.bin
+                || s.right > s.viewport as f32 + 0.5
+                || (s.drawn - s.header as f32).abs() > 1.0
+                || s.first_row < s.buttons_end + 17.0
+                || s.beside != (f64::from(s.bin) >= HEADER_BESIDE_LEAST_PX)
+        })
+        .map(|s| {
+            format!(
+                "page {}: header {} in {} (needs {}), right edge {} of {}",
+                s.page,
+                if s.beside { "beside" } else { "under" },
+                s.bin,
+                s.layout_min,
+                s.right,
+                s.viewport
+            )
+        })
+        .collect();
+    check(
+        "album pages of 512 to 540 px with text at 0.91: the header fits, and puts its cover beside the text once it fits there (478 px)",
+        small_text.len() == ALBUM_PAGE_WIDTHS_SMALL_TEXT.len() && misfits.is_empty(),
+        format!("{:?}", misfits),
+    );
     for (label, s) in &shots {
         eprintln!(
             "album page {}: page {}, header {} in {} (its layout needs {}), {} tall, draws {}, title {} lines; buttons end at {}, first track at {}; right edge {} of {}",
@@ -3174,7 +3243,7 @@ fn assert_album_page_fits() {
         assert_eq!(
             s.beside,
             f64::from(s.bin) > s.beside_over,
-            "album page {}: the header puts its cover beside the text only over {} px (510 sp)",
+            "album page {}: the header puts its cover beside the text only over {} px (510 sp, at least 477)",
             label,
             s.beside_over
         );
