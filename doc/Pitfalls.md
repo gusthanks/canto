@@ -116,7 +116,13 @@ See the volume scroll in `src/app/components/shell/playback/playback_widget.rs`.
 **Natural scrolling arrives inverted.** With natural scrolling, fingers going
 up send a scroll down, so the volume moved against the hand. Read
 `ScrollEvent::relative_direction()`: `ScrollRelativeDirection::Inverted` means
-flip the steps (`scroll_steps` in the same file).
+flip the steps (`scroll_steps` in the same file). Some Wayland compositors
+(such as Hyprland) always send `Identical` even when natural scrolling is on:
+read `ScrollEvent::unit()` on the raw event (not `EventControllerScroll::unit()`,
+which reports `Wheel` under `DISCRETE`) to tell touchpad (`Surface`) from mouse
+wheel (`Wheel`), and check the compositor's `natural_scroll` option via
+`hyprctl -j getoption` when `HYPRLAND_INSTANCE_SIGNATURE` is set
+(`is_natural_scroll`).
 
 **A label's `activate-link` opens the browser.** The default handler runs
 whenever no handler returned `Propagation::Stop`. A test that emits

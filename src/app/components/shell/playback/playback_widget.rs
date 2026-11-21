@@ -498,13 +498,26 @@ mod imp {
                 scroll.connect_scroll(move |controller, _, dy| {
                     // With natural scrolling the fingers
                     // going up scroll down: the volume follows the fingers
-                    let natural = controller
+                    let event = controller
                         .current_event()
-                        .and_then(|event| event.downcast::<gtk::gdk::ScrollEvent>().ok())
-                        .is_some_and(|event| {
-                            event.relative_direction()
-                                == gtk::gdk::ScrollRelativeDirection::Inverted
-                        });
+                        .and_then(|event| event.downcast::<gtk::gdk::ScrollEvent>().ok());
+                    let natural = event.as_ref().is_some_and(|event| {
+                        let hyprland = std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE")
+                            .map(|_| super::hyprland_natural_scroll());
+                        let natural = super::is_natural_scroll(
+                            event.relative_direction(),
+                            event.unit(),
+                            hyprland,
+                        );
+                        log::debug!(
+                            "volume scroll: dy={} unit={:?} rel={:?} natural={}",
+                            dy,
+                            event.unit(),
+                            event.relative_direction(),
+                            natural
+                        );
+                        natural
+                    });
                     let steps = super::scroll_steps(dy, natural);
                     slider.set_value(super::volume_after_scroll(slider.value(), steps));
                     glib::Propagation::Stop
@@ -909,6 +922,70 @@ fn pressed(on: bool) -> gtk::AccessibleTristate {
         gtk::AccessibleTristate::True
     } else {
         gtk::AccessibleTristate::False
+    }
+}
+
+/// Parses the integer boolean field from `hyprctl -j getoption <name>`.
+fn parse_hyprctl_bool_option(stdout: &str) -> Option<bool> {
+    serde_json::from_str::<serde_json::Value>(stdout)
+        .ok()?
+        .get("int")
+        .and_then(|v| v.as_i64())
+        .map(|n| n != 0)
+}
+
+fn query_hyprctl_bool_option(option: &str) -> bool {
+    std::process::Command::new("hyprctl")
+        .args(["-j", "getoption", option])
+        .output()
+        .ok()
+        .filter(|out| out.status.success())
+        .and_then(|out| String::from_utf8(out.stdout).ok())
+        .and_then(|stdout| parse_hyprctl_bool_option(&stdout))
+        .unwrap_or(false)
+}
+
+/// Reads Hyprland's `(touchpad, pointer)` `natural_scroll` settings, cached
+/// for a few seconds so rapid scroll events never spawn repeated commands.
+fn hyprland_natural_scroll() -> (bool, bool) {
+    static CACHE: std::sync::Mutex<Option<(std::time::Instant, (bool, bool))>> =
+        std::sync::Mutex::new(None);
+    let now = std::time::Instant::now();
+    if let Ok(cache) = CACHE.lock() {
+        if let Some((at, pair)) = *cache {
+            if now.duration_since(at) < std::time::Duration::from_secs(10) {
+                return pair;
+            }
+        }
+    }
+    let pair = (
+        query_hyprctl_bool_option("input:touchpad:natural_scroll"),
+        query_hyprctl_bool_option("input:natural_scroll"),
+    );
+    if let Ok(mut cache) = CACHE.lock() {
+        *cache = Some((now, pair));
+    }
+    pair
+}
+
+/// Whether `event`'s scroll delta is inverted relative to physical motion.
+/// Wayland compositors should report this through `relative_direction`, but some
+/// (such as Hyprland) always report `Identical`, so we fall back to checking the
+/// compositor's `natural_scroll` setting for touchpad (`Surface`) vs mouse (`Wheel`).
+fn is_natural_scroll(
+    relative: gtk::gdk::ScrollRelativeDirection,
+    unit: gtk::gdk::ScrollUnit,
+    hyprland_fallback: Option<(bool, bool)>,
+) -> bool {
+    if relative == gtk::gdk::ScrollRelativeDirection::Inverted {
+        true
+    } else if let Some((touchpad, pointer)) = hyprland_fallback {
+        match unit {
+            gtk::gdk::ScrollUnit::Surface => touchpad,
+            _ => pointer,
+        }
+    } else {
+        false
     }
 }
 
@@ -1324,6 +1401,61 @@ mod tests {
             0.45
         ));
         assert_eq!(volume_tooltip(0.0), "Volume 0% · Ctrl+↑ / Ctrl+↓");
+    }
+
+    #[test]
+    fn hyprland_fallback_detects_touchpad_natural_scroll_when_relative_stays_identical() {
+        use gtk::gdk::{ScrollRelativeDirection as Rel, ScrollUnit};
+        let close = |a: f64, b: f64| (a - b).abs() < 1e-9;
+
+        assert_eq!(
+            parse_hyprctl_bool_option(
+                r#"{"option":"input:touchpad:natural_scroll","int":1,"set":true}"#
+            ),
+            Some(true)
+        );
+        assert_eq!(
+            parse_hyprctl_bool_option(r#"{"option":"input:natural_scroll","int":0,"set":false}"#),
+            Some(false)
+        );
+        assert_eq!(parse_hyprctl_bool_option("{}"), None);
+        assert_eq!(parse_hyprctl_bool_option("not json"), None);
+
+        assert!(is_natural_scroll(Rel::Inverted, ScrollUnit::Wheel, None));
+        assert!(is_natural_scroll(
+            Rel::Inverted,
+            ScrollUnit::Surface,
+            Some((false, false))
+        ));
+        assert!(is_natural_scroll(
+            Rel::Identical,
+            ScrollUnit::Surface,
+            Some((true, false))
+        ));
+        assert!(!is_natural_scroll(
+            Rel::Identical,
+            ScrollUnit::Wheel,
+            Some((true, false))
+        ));
+        assert!(!is_natural_scroll(
+            Rel::Identical,
+            ScrollUnit::Surface,
+            None
+        ));
+
+        // Fingers up on a touchpad with natural scroll (dy=+1, Identical on Hyprland): louder
+        let natural = is_natural_scroll(Rel::Identical, ScrollUnit::Surface, Some((true, false)));
+        assert!(close(
+            volume_after_scroll(0.40, scroll_steps(1.0, natural)),
+            0.45
+        ));
+        // Mouse wheel up without natural scroll (dy=-1): louder
+        let mouse_natural =
+            is_natural_scroll(Rel::Identical, ScrollUnit::Wheel, Some((true, false)));
+        assert!(close(
+            volume_after_scroll(0.40, scroll_steps(-1.0, mouse_natural)),
+            0.45
+        ));
     }
 
     #[test]
