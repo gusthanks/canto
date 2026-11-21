@@ -25,13 +25,14 @@
 ## What Canto does
 
 **Lyrics**
-- Synced lyrics from LRCLIB in the side panel or full screen over the blurred cover. The active line lights up word by word (with real word timing when LRCLIB has it, an estimate otherwise).
+- Synced lyrics from LRCLIB in the side panel or full screen with a sharp cover over a solid color picked from it. The active line lights up word by word (with real word timing when LRCLIB has it, an estimate otherwise).
 - When LRCLIB doesn't have a song, the lyrics come from **Genius** instead (not synced), and the line above the lyrics says where they came from. You can turn this off in **Preferences -> Integrations**.
 - Click a line to jump there, nudge the timing live, and translate lyrics into your language, shown under each line.
 - **Genius** annotations: tap the mark next to a line to read what it means, right inside the lyrics.
+- When no source has the lyrics: **Search the Web** in your language, or **Add Lyrics** to paste or type them (plain or timed LRC) and publish them to LRCLIB after confirming.
 
 <p align="center">
-  <img src="data/screenshots/03-lyrics-fullscreen.png" width="49%" alt="Full-screen lyrics over the blurred album cover">
+  <img src="data/screenshots/03-lyrics-fullscreen.png" width="49%" alt="Full-screen lyrics beside the album cover over a solid background">
   <img src="data/screenshots/08-lyrics-translated.png" width="49%" alt="Lyrics with a translation under each line">
   <img src="data/screenshots/07-genius-annotation.png" width="49%" alt="A Genius annotation open on a lyrics line">
   <img src="data/screenshots/02-lyrics-panel.png" width="49%" alt="Synced lyrics in the side panel">
@@ -41,13 +42,15 @@
 - **Follow System** reads your Omarchy theme and changes with it, live. Built-in themes too: Neutral (Adwaita), Green, OLED Dark, Warm Vinyl and Purple Night.
 - Optional background tint taken from the album cover.
 - A player bar you can customize: right-click it to pick which buttons show and in what order.
+- Built for tiled and narrow windows too: below 1100 sp the side panel floats as a drawer, the library collapses to covers beside it when space gets tight, and the player bar stays on one line while stepping buttons down.
 
 **Listening**
 - Now Playing panel with a big cover, a lyrics preview, the next track, how many times you played the song, album and artist (Last.fm), song credits and the song's story from **Genius**. The title takes you to the album, the artists to their pages.
 - Your Library as a list or a grid of covers, with pinned items, Recents and sorting, plus a collapsed sidebar that keeps only the covers.
 - Reopens on the track you closed it on, right where it stopped. Nothing plays until you press play.
 - Plays here or on any Spotify Connect device, such as a phone or a smart speaker. On launch it follows the device that is already playing.
-- Mini player window, track radio, a sleep timer, and **Your Stats** from Last.fm.
+- Queue with **Recently Played** folded above Now Playing (and a like heart on each track), plus a mini player window, track radio, a sleep timer, and **Your Stats** from Last.fm.
+- Scroll over the volume slider (or the narrow bar's volume button) in 5% steps, filter an artist's releases directly under **Releases**, and click any artist name under an album or song cover.
 - Scrobbling to Last.fm and ListenBrainz, counting only real listening time, with an offline queue.
 
 <p align="center">
