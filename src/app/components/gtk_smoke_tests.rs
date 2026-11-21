@@ -177,6 +177,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     assert_release_filters_are_buttons();
     assert_card_artist_links();
     assert_add_lyrics_window();
+    assert_no_lines_between_songs();
     assert_bar_tiers();
     let overflows = OVERFLOWS
         .lock()
@@ -1784,6 +1785,50 @@ fn assert_add_lyrics_window() {
     confirm.force_close();
     dialog.force_close();
     window.destroy();
+}
+
+/// No line between the songs of a track list (as Spotify): at a fractional
+/// display scale the 1px line moved between pixels while scrolling and
+/// flickered (Q6). The color right at the edge between two songs is the
+/// color just above it.
+fn assert_no_lines_between_songs() {
+    let style = libadwaita::StyleManager::default();
+    let scheme = style.color_scheme();
+    style.set_color_scheme(libadwaita::ColorScheme::ForceDark);
+    let cover = sample_cover();
+    let page = super::DetailsPage::sample_for_tests(cover.upcast_ref());
+    page.add_sample_tracks_for_tests(4);
+    let window = gtk::Window::new();
+    window.set_decorated(false);
+    window.set_default_size(900, 1100);
+    window.set_child(Some(page.widget()));
+    window.present();
+    wait_mapped(page.widget(), 300);
+    wait_frames(&window, 3);
+    pump(500);
+    let cards = with_class(page.widget().upcast_ref(), "song__card");
+    let mut bounds: Vec<_> = cards
+        .iter()
+        .filter_map(|card| card.compute_bounds(&window))
+        .collect();
+    bounds.sort_by(|a, b| a.y().total_cmp(&b.y()));
+    // A song in the middle: the first and the last are the card's ends
+    let seen = bounds.get(1).map(|middle| {
+        let x = (middle.x() + middle.width() * 0.55) as i32;
+        let edge = (middle.y() + middle.height()) as i32 - 1;
+        (
+            pixel_at(window.upcast_ref(), x, edge),
+            pixel_at(window.upcast_ref(), x, edge - 5),
+        )
+    });
+    let same = |a: [u8; 4], b: [u8; 4]| a.iter().zip(b.iter()).all(|(p, q)| p.abs_diff(*q) <= 2);
+    check(
+        "no line between the songs of a track list",
+        bounds.len() >= 3 && matches!(seen, Some((Some(edge), Some(above))) if same(edge, above)),
+        format!("{} rows, edge and above: {:?}", bounds.len(), seen),
+    );
+    window.destroy();
+    style.set_color_scheme(scheme);
 }
 
 /// Pumps until `n` frames of `widget`'s window have started (a tick
