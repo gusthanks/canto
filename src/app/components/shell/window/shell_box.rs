@@ -119,7 +119,13 @@ mod imp {
         }
 
         fn size_allocate(&self, width: i32, height: i32, _baseline: i32) {
-            self.last_width.set(width);
+            // A new width: the panels are laid out for it before the children
+            // are allocated, so its first frame isn't drawn in the old layout
+            // (as AdwBreakpointBin applies its breakpoints). The idle signal
+            // stays for whatever else asks for a refit
+            if self.last_width.replace(width) != width {
+                self.obj().emit_by_name::<()>("layout-requested", &[]);
+            }
             self.schedule_layout_signal();
 
             let children = self.layout_children();
@@ -157,6 +163,12 @@ glib::wrapper! {
 }
 
 impl ShellBox {
+    /// The width it is being laid out at, as soon as its allocation starts
+    /// (its children still have the one before); 0 before the first.
+    pub fn allocated_width(&self) -> i32 {
+        self.imp().last_width.get()
+    }
+
     pub fn connect_layout_requested<F: Fn(&Self) + 'static>(&self, f: F) -> glib::SignalHandlerId {
         self.connect_closure(
             "layout-requested",

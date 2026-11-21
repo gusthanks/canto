@@ -7,18 +7,22 @@
 //!   content as a drawer instead of squeezing it, so the content keeps the
 //!   window's width. Narrowing the window under it closes the panel, and
 //!   widening it back brings the panel back beside the content.
-//! - Floating, it closes with its button, Esc or a click on the dimmed
-//!   content, and the keyboard focus it had goes to the content, which stays
-//!   where it was scrolled.
+//! - Floating, it closes with its button, Esc, a click on the dimmed content
+//!   or a move to another page, and the keyboard focus it had goes back to
+//!   the content widget that had it before (or the content's first), with
+//!   the content staying where it was scrolled.
 //! - At `MOBILE_WIDTH_SP` or less, both collapse and fill the window when open.
 //! - One panel over the content at a time: the floating utility panel, the
 //!   sidebar opened over the content, the queue sheet (panel_manager).
 //! - Too narrow for the full library beside the content, the library shrinks
 //!   to its rail of covers. So it does beside the utility panel when the full
 //!   library would leave the content card under `DOCKED_CONTENT_MIN_WIDTH_SP`,
-//!   until the panel closes or the window grows (the library icon brings it
-//!   back beside the panel until then). Neither is saved: the user's own
-//!   choice of rail comes back.
+//!   until the panel closes (once it has slid out) or the window grows (the
+//!   library icon brings it back beside the panel until then). Neither is
+//!   saved: the user's own choice of rail comes back.
+//! - The full library opened over the content from its rail closes with its
+//!   own collapse button (nothing saved), and once the window is wide enough
+//!   for it beside the content.
 //! - Without room for both beside the content panel, the one opened last
 //!   stays: narrowing the window closes the utility panel first, and widening
 //!   it brings it back.
@@ -36,7 +40,7 @@ use gio::prelude::*;
 use gtk::prelude::*;
 use libadwaita::prelude::*;
 use libadwaita::{Breakpoint, BreakpointCondition, BreakpointConditionLengthType, LengthUnit};
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use crate::app::components::{AppHeaderBar, UtilityPanelWidget};
@@ -44,7 +48,8 @@ use crate::app::components::{AppHeaderBar, UtilityPanelWidget};
 const NAVIGATION_ACTION: &str = "show-navigation-panel";
 const RAIL_ACTION: &str = "sidebar-rail";
 const RAIL_CLASS: &str = "navigation-panel--rail";
-/// On the utility split while its panel floats over the content (app.css)
+/// On the utility split while its panel floats over the content as a drawer
+/// (app.css); filling a window of `MOBILE_WIDTH_SP` or less, it is flush
 const FLOATING_CLASS: &str = "utility-split--floating";
 /// The controllers that close the floating utility panel: Esc on the
 /// window, a click on the dimmed content (the smoke test finds them by name)
@@ -145,6 +150,9 @@ enum Which {
 
 pub struct WindowLayout {
     window: libadwaita::ApplicationWindow,
+    /// The window's content: its width is the window's as soon as its
+    /// allocation starts, before the panels in it are allocated
+    shell_box: Option<glib::WeakRef<crate::app::components::ShellBox>>,
     navigation: Panel,
     utility: Panel,
     header: AppHeaderBar,
@@ -159,6 +167,12 @@ pub struct WindowLayout {
     /// The content's pages: the visible one takes the keyboard focus the
     /// floating utility panel had
     pages: gtk::Stack,
+    /// Where the keyboard focus was on the content when the utility panel
+    /// opened over it: it goes back there when the panel closes
+    focus_before_utility: RefCell<Option<glib::WeakRef<gtk::Widget>>>,
+    /// The utility panel, closed beside the content, is still sliding out:
+    /// until it has, the library is laid out as beside it
+    utility_sliding_out: Cell<bool>,
     /// Why the library is on its rail without the user choosing it
     auto_rail: Cell<Option<AutoRail>>,
     /// The user expanded the library while the utility panel beside the
@@ -211,8 +225,14 @@ impl WindowLayout {
 
         let navigation = Panel::new(NAVIGATION_PANEL, navigation_split.clone(), Edge::Start);
         let utility = Panel::new(UTILITY_PANEL, utility_split.clone(), Edge::End);
+        // Its content, not its child: libadwaita puts a dialog host between
+        // the window and the content
+        let shell_box = window
+            .content()
+            .and_then(|child| child.downcast::<crate::app::components::ShellBox>().ok());
         let layout = Rc::new(Self {
             window: window.clone(),
+            shell_box: shell_box.as_ref().map(|shell_box| shell_box.downgrade()),
             navigation,
             utility,
             header,
@@ -221,7 +241,9 @@ impl WindowLayout {
             collapsing_navigation: Rc::new(Cell::new(false)),
             navigation_overlay: Cell::new(false),
             opening_navigation_overlay: Cell::new(false),
-            pages,
+            pages: pages.clone(),
+            focus_before_utility: RefCell::new(None),
+            utility_sliding_out: Cell::new(false),
             auto_rail: Cell::new(None),
             expanded_by_hand: Cell::new(false),
             fitted_width: Cell::new(0),
@@ -249,12 +271,8 @@ impl WindowLayout {
             }
         ));
 
-        // Its content, not its child: libadwaita puts a dialog host between
-        // the window and the content
-        if let Some(shell_box) = window
-            .content()
-            .and_then(|child| child.downcast::<crate::app::components::ShellBox>().ok())
-        {
+        // A new width refits before the panels are allocated for it
+        if let Some(shell_box) = shell_box {
             shell_box.connect_layout_requested(clone!(
                 #[strong]
                 refit_if_changed,
@@ -276,7 +294,24 @@ impl WindowLayout {
         utility_split.connect_show_sidebar_notify(clone!(
             #[weak]
             layout,
-            move |_| layout.fit()
+            move |split| {
+                if !split.shows_sidebar() && !split.is_collapsed() {
+                    layout.follow_utility_sliding_out();
+                }
+                layout.fit()
+            }
+        ));
+        // Another page while the utility panel floats over the content (a
+        // shortcut, a link in the panel): the panel closes, so the new page
+        // can take the keyboard focus, which it can't under the panel
+        pages.connect_visible_child_notify(clone!(
+            #[weak]
+            layout,
+            move |_| {
+                if layout.utility_floating_open() {
+                    layout.set_utility_open(false);
+                }
+            }
         ));
         utility_split.connect_collapsed_notify(clone!(
             #[weak]
@@ -330,6 +365,13 @@ impl WindowLayout {
             #[weak]
             layout,
             move |action, _| {
+                // The full sidebar open over the content (from its rail, or
+                // its button at `MOBILE_WIDTH_SP` or less): its own collapse
+                // button closes it, and the saved choice stays as it was
+                if layout.navigation_over_content() {
+                    layout.navigation.split.set_show_sidebar(false);
+                    return;
+                }
                 if layout.navigation.is_rail() && !layout.navigation.rail_chosen() {
                     if layout.auto_rail.get() == Some(AutoRail::BesidePanel) {
                         // On its rail for the utility panel: the library icon
@@ -390,15 +432,22 @@ impl WindowLayout {
         if self.utility.split.is_collapsed() && self.navigation_over_content() {
             self.navigation.split.set_show_sidebar(false);
         }
+        // Where the keyboard focus goes back to when it closes again
+        let split = &self.utility.split;
+        if split.is_collapsed() && !split.shows_sidebar() {
+            let focus = GtkWindowExt::focus(&self.window).filter(|f| f.is_ancestor(&self.pages));
+            self.focus_before_utility
+                .replace(focus.map(|f| f.downgrade()));
+        }
         self.make_room_for_utility(self.utility.width());
         self.utility.split.set_show_sidebar(true);
     }
 
     /// Closes the utility panel. Floating, it hands the keyboard focus it
-    /// has to the visible page, which stays where it was scrolled: left to
-    /// libadwaita, the focus would go back to the widget that had it before
-    /// (scrolling the page back to it) or to the sidebar's first row
-    /// (scrolling the sidebar to its top).
+    /// has back to the page (`focus_page`), which stays where it was
+    /// scrolled: left to libadwaita, the focus would go back to the widget
+    /// that had it before and scroll the page back to it, or go to the
+    /// sidebar's first row and scroll the sidebar to its top.
     fn hide_utility(&self) {
         let split = &self.utility.split;
         let focus_inside = split.is_collapsed() && self.focus_in_utility();
@@ -421,9 +470,15 @@ impl WindowLayout {
             .is_some_and(|focus| focus == panel || focus.is_ancestor(&panel))
     }
 
-    /// Moves the keyboard focus to the visible page's first widget, without
-    /// scrolling the page to it.
+    /// Moves the keyboard focus back to the visible page, without scrolling
+    /// the page: to the widget that had it when the utility panel opened, if
+    /// it is still there (a keyboard user keeps their place), else to the
+    /// page's first widget.
     fn focus_page(&self) {
+        let before = self
+            .focus_before_utility
+            .take()
+            .and_then(|widget| widget.upgrade());
         let Some(page) = self.pages.visible_child() else {
             return;
         };
@@ -432,7 +487,12 @@ impl WindowLayout {
         for viewport in &viewports {
             viewport.set_scroll_to_focus(false);
         }
-        page.child_focus(gtk::DirectionType::TabForward);
+        let back = before
+            .filter(|widget| widget.is_ancestor(&page) && widget.is_mapped())
+            .is_some_and(|widget| widget.grab_focus());
+        if !back {
+            page.child_focus(gtk::DirectionType::TabForward);
+        }
         for (viewport, scroll) in viewports.iter().zip(scrolling) {
             viewport.set_scroll_to_focus(scroll);
         }
@@ -526,9 +586,20 @@ impl WindowLayout {
         }
     }
 
-    /// Until it's allocated, the size it's about to show at
+    /// The window's content's width from the start of its allocation (the
+    /// split's is the last frame's until the split is allocated), and until
+    /// it's allocated, the size it's about to show at
     fn window_width(&self) -> i32 {
-        let width = self.utility.split.width();
+        let width = self
+            .shell_box
+            .as_ref()
+            .and_then(|shell_box| shell_box.upgrade())
+            .map_or(0, |shell_box| shell_box.allocated_width());
+        let width = if width > 0 {
+            width
+        } else {
+            self.utility.split.width()
+        };
         if width > 0 || self.window.is_maximized() {
             width
         } else {
@@ -609,7 +680,8 @@ impl WindowLayout {
         self.utility.set_overlay(mode == UtilityMode::Drawer);
         let collapse = mode != UtilityMode::Beside;
         let split = &self.utility.split;
-        if collapse {
+        // A card in a shaded frame as a drawer; filling the window, flush
+        if mode == UtilityMode::Drawer {
             split.add_css_class(FLOATING_CLASS);
         } else {
             split.remove_css_class(FLOATING_CLASS);
@@ -705,7 +777,8 @@ impl WindowLayout {
             mobile: window_width <= sp_to_px(MOBILE_WIDTH_SP),
             content_min: self.content_min_width(),
             library_least: self.navigation.full_least_width(),
-            beside_panel: self.utility_beside().then(|| {
+            // Sliding out, it still takes its room from the content
+            beside_panel: (self.utility_beside() || self.utility_sliding_out.get()).then(|| {
                 (
                     self.navigation.full_width_beside(window_width),
                     self.utility.shown_width(window_width),
@@ -715,12 +788,53 @@ impl WindowLayout {
         }
     }
 
+    /// Closed beside the content, the utility panel slides out over it:
+    /// until it has, the library keeps the rail it had for the panel
+    /// (`library_fit`), so the content only grows. A full library at once
+    /// would squeeze the content under the panel still there, dropping
+    /// columns and the album header's layout for a moment. Without
+    /// animations the panel leaves at once, and so does the rail.
+    fn follow_utility_sliding_out(self: &Rc<Self>) {
+        let split = &self.utility.split;
+        let pane_shows = |split: &libadwaita::OverlaySplitView| {
+            split
+                .sidebar()
+                .and_then(|sidebar| sidebar.parent())
+                .is_some_and(|pane| pane.is_child_visible())
+        };
+        if !split.settings().is_gtk_enable_animations()
+            || !pane_shows(split)
+            || self.utility_sliding_out.replace(true)
+        {
+            return;
+        }
+        let layout = Rc::downgrade(self);
+        split.add_tick_callback(move |split, _| {
+            let Some(layout) = layout.upgrade() else {
+                return glib::ControlFlow::Break;
+            };
+            // Slid out, opened again, or floating now: laid out as it is
+            if pane_shows(split) && !split.shows_sidebar() && !split.is_collapsed() {
+                return glib::ControlFlow::Continue;
+            }
+            layout.utility_sliding_out.set(false);
+            layout.fit();
+            glib::ControlFlow::Break
+        });
+    }
+
     fn collapse_navigation_to_fit(&self) {
         let window_width = self.window_width();
-        if window_width <= 0
-            || self.navigation_overlay.get()
-            || self.opening_navigation_overlay.get()
-        {
+        if window_width <= 0 || self.opening_navigation_overlay.get() {
+            return;
+        }
+        if self.navigation_overlay.get() {
+            // Wide enough again for the full sidebar beside the content
+            // (maximized from a narrow window): closing it over the content
+            // puts it back there
+            if self.library_fit(window_width).full_fits() {
+                self.navigation.split.set_show_sidebar(false);
+            }
             return;
         }
         let fit = self.library_fit(window_width);

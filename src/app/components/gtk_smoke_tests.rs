@@ -10,6 +10,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
 
     gtk::init().expect("gtk::init should succeed under test display");
     libadwaita::init().expect("libadwaita::init should succeed");
+    watch_overflows();
 
     let res = gio::Resource::load(&gresource_path).unwrap_or_else(|e| {
         panic!(
@@ -171,6 +172,69 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     assert_drawer_layout();
     assert_album_page_fits();
     assert_bar_tiers();
+    let overflows = OVERFLOWS
+        .lock()
+        .map(|overflows| overflows.clone())
+        .unwrap_or_default();
+    check(
+        "nothing overflows its breakpoint bin anywhere in the run (libadwaita's \"exceeds\")",
+        overflows.is_empty(),
+        format!("{:?}", overflows),
+    );
+    let failed = FAILED_CHECKS.with(|failed| failed.borrow().clone());
+    assert!(
+        failed.is_empty(),
+        "{} checks failed: {:?}",
+        failed.len(),
+        failed
+    );
+}
+
+thread_local! {
+    /// The checks that failed (see `check`).
+    static FAILED_CHECKS: std::cell::RefCell<Vec<String>> = Default::default();
+}
+
+/// What libadwaita reported overflowing during the run: a breakpoint bin
+/// whose child needs more than the bin's width ("exceeds"), which cuts the
+/// child's end. The checks measure a few widths each; this catches one
+/// between them, or in a step that measures nothing.
+static OVERFLOWS: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+
+/// Keeps libadwaita's "exceeds" warnings in `OVERFLOWS`, every message still
+/// written out as before. Once per process (GLib allows one writer).
+fn watch_overflows() {
+    glib::log_set_writer_func(|level, fields| {
+        let field = |key: &str| {
+            fields
+                .iter()
+                .find(|field| field.key() == key)
+                .and_then(|field| field.value_str())
+        };
+        if field("GLIB_DOMAIN") == Some("Adwaita") {
+            if let Some(message) = field("MESSAGE").filter(|m| m.contains(" exceeds ")) {
+                if let Ok(mut overflows) = OVERFLOWS.lock() {
+                    overflows.push(message.to_string());
+                }
+            }
+        }
+        glib::log_writer_default(level, fields)
+    });
+}
+
+/// A check that reports instead of stopping the run, so one run shows every
+/// one that fails: printed either way, and the smoke test fails at its end if
+/// any did. `seen` is what was measured.
+fn check(what: &str, ok: bool, seen: impl std::fmt::Display) {
+    eprintln!(
+        "check {}: {} ({})",
+        what,
+        if ok { "ok" } else { "FAILED" },
+        seen
+    );
+    if !ok {
+        FAILED_CHECKS.with(|failed| failed.borrow_mut().push(what.to_string()));
+    }
 }
 
 /// The round "playing" badge on album cards must show the bars on top of
@@ -1589,9 +1653,24 @@ struct Shell {
     /// What is rendered: the window, or the box standing in for a window
     /// wider than the headless screen
     frame: gtk::Widget,
+    /// What sizes the window's content to a width under the headless
+    /// screen's, when the shell has to be resized there (`resize_clamped`)
+    clamp: Option<libadwaita::Clamp>,
     _layout: std::rc::Rc<super::WindowLayout>,
     panel: super::UtilityPanel,
     page: super::DetailsPage,
+}
+
+impl Shell {
+    /// Lays the window's content out at `width` (from `render_shell_clamped`).
+    fn resize_clamped(&self, width: i32) {
+        let clamp = self
+            .clamp
+            .as_ref()
+            .expect("a shell from render_shell_clamped");
+        clamp.set_maximum_size(width);
+        clamp.set_tightening_threshold(width);
+    }
 }
 
 /// Where the shell's parts ended up (px).
@@ -1628,6 +1707,18 @@ impl ShellShot {
             "drawer"
         }
     }
+}
+
+/// The open side panel's card is drawn whole where its sizes say: 348 px
+/// beside the page (360 less its gaps), its width less its 8 px frame as a
+/// drawer, ending inside the window.
+fn panel_card_drawn(s: &ShellShot) -> bool {
+    let card = if s.collapsed {
+        s.max_panel as i32 - 16
+    } else {
+        348
+    };
+    s.panel_shown && s.panel_card == card && s.panel_end <= s.window_split as f32 + 0.5
 }
 
 /// The library's show/hide action, as `Navigation` adds it to the window in
@@ -1674,6 +1765,18 @@ fn add_library_action(
 
 /// Lays the main window out at `width` with the side panel open or not.
 fn render_shell(width: i32, open: bool) -> Shell {
+    render_shell_in(width, open, false)
+}
+
+/// As `render_shell`, in a headless window as wide as its screen whose
+/// content is laid out `width` wide, so `Shell::resize_clamped` can widen or
+/// narrow it under 1024 px as a window would (the window's own breakpoint
+/// stays at the screen's width).
+fn render_shell_clamped(width: i32, open: bool) -> Shell {
+    render_shell_in(width, open, true)
+}
+
+fn render_shell_in(width: i32, open: bool, clamped: bool) -> Shell {
     use libadwaita::prelude::AdwApplicationWindowExt;
     let builder = gtk::Builder::from_resource("/io/github/gusthanks/Canto/window.ui");
     let window: libadwaita::ApplicationWindow = builder.object("window").unwrap();
@@ -1731,7 +1834,20 @@ fn render_shell(width: i32, open: bool) -> Shell {
     // Opened before it shows: a slide-in started on screen may never finish
     // on the headless display
     panel.set_open(open);
-    let frame = if width > 1024 {
+    let mut clamp = None;
+    let frame = if clamped {
+        // As wide as the headless screen, its content laid out `width` wide
+        let content = window.content().expect("the window's content");
+        window.set_content(None::<&gtk::Widget>);
+        window.set_default_size(1024, 621);
+        let sizer = libadwaita::Clamp::new();
+        sizer.set_maximum_size(width);
+        sizer.set_tightening_threshold(width);
+        sizer.set_child(Some(&content));
+        window.set_content(Some(&sizer));
+        clamp = Some(sizer);
+        content
+    } else if width > 1024 {
         // Wider than the headless screen: the window's content moves into a
         // box that wide, in a scrolled window. The layout reads the split's
         // own width, so it lays out as in a window that wide
@@ -1754,6 +1870,7 @@ fn render_shell(width: i32, open: bool) -> Shell {
         builder,
         window,
         frame,
+        clamp,
         _layout: layout,
         panel,
         page,
@@ -1932,6 +2049,42 @@ fn assert_drawer_layout() {
             }
         }
     }
+    // At 550 or less the side panel fills the window flush, as before the
+    // drawer, and so does the page under it: the drawer's card and its
+    // shaded frame are for wider windows
+    for s in shots.iter().filter(|s| s.width <= 550 && s.open) {
+        check(
+            &format!(
+                "layout {}: the side panel and the page fill the window, flush",
+                s.tag()
+            ),
+            s.panel_card == s.window_split && s.page_split == s.window_split,
+            format!(
+                "side panel {}, page split {}, of {}",
+                s.panel_card, s.page_split, s.window_split
+            ),
+        );
+    }
+    // Drawn whole where its sizes say: its card 348 beside the page (inside
+    // its gaps), its width less its 8 px frame as a drawer
+    let misdrawn: Vec<String> = shots
+        .iter()
+        .filter(|s| s.open && s.width > 550)
+        .filter(|s| !panel_card_drawn(s))
+        .map(|s| {
+            format!(
+                "{}: card {} ending at {}",
+                s.tag(),
+                s.panel_card,
+                s.panel_end
+            )
+        })
+        .collect();
+    check(
+        "layout: the side panel's card is drawn whole, 348 px beside the page, its width less 16 as a drawer",
+        misdrawn.is_empty(),
+        format!("{:?}", misdrawn),
+    );
     eprintln!("layout drawer ok");
 }
 
@@ -2013,6 +2166,21 @@ fn assert_drawer_follows_resizes() {
         "narrowed to 1050, the side panel floats and the library hidden for it comes back: {:?}",
         floating
     );
+    // Opened again after the window showed, it is drawn beside the page
+    let misdrawn: Vec<String> = [
+        ("docked", &docked),
+        ("widened", &widened),
+        ("wide header, docked", &hidden),
+    ]
+    .iter()
+    .filter(|(_, s)| !panel_card_drawn(s))
+    .map(|(step, s)| format!("{}: card {} ending at {}", step, s.panel_card, s.panel_end))
+    .collect();
+    check(
+        "layout resize: the side panel's card is drawn whole beside the page (348 px) whenever it is open there",
+        misdrawn.is_empty(),
+        format!("{:?}", misdrawn),
+    );
 }
 
 /// With the side panel beside the page (1100 px and up), a full library that
@@ -2061,6 +2229,65 @@ fn assert_library_rails_beside_panel() {
     // The full library again, as the other checks expect
     library_button();
     let saved_at_end = saved();
+    let full = |s: &ShellShot| !s.rail && s.library > 200;
+    let rail = |s: &ShellShot| s.rail && s.library == 60;
+    let docked = |s: &ShellShot| !s.collapsed && s.panel_shown;
+
+    // Closing the side panel beside the page, as on screen (animated): the
+    // panel slides out over a page that only grows, the library keeping its
+    // rail until the panel has left (a full library at once would leave the
+    // page 546 px under the panel still there, and drop the album column)
+    let docked_before_close = panel_open(true);
+    let gtk_settings = gtk::Settings::default().unwrap();
+    let animations = gtk_settings.is_gtk_enable_animations();
+    gtk_settings.set_gtk_enable_animations(true);
+    let library_widget: gtk::Widget = shell.builder.object("navigation_panel").unwrap();
+    let panel_widget: gtk::Widget = shell.builder.object("utility_panel").unwrap();
+    let page_widget = shell
+        .builder
+        .object::<libadwaita::OverlaySplitView>("navigation_split")
+        .unwrap()
+        .content()
+        .expect("the page");
+    // The page's width and the library's rail at each frame
+    let frames = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+    let tick = page_widget.add_tick_callback(clone!(
+        #[strong]
+        frames,
+        #[weak]
+        library_widget,
+        #[upgrade_or]
+        glib::ControlFlow::Break,
+        move |page, _| {
+            frames.borrow_mut().push((
+                page.width(),
+                library_widget.has_css_class("navigation-panel--rail"),
+            ));
+            glib::ControlFlow::Continue
+        }
+    ));
+    shell.panel.set_open(false);
+    let sliding = panel_widget
+        .parent()
+        .is_some_and(|pane| pane.is_child_visible());
+    let rail_while_sliding = library_widget.has_css_class("navigation-panel--rail");
+    let after_close = shoot_shell(&shell, 1200, false);
+    tick.remove();
+    gtk_settings.set_gtk_enable_animations(animations);
+    let frames = frames.borrow().clone();
+    check(
+        "layout library, 1200: closing the side panel beside the page, the library keeps its rail while the panel slides out, and is full once it has",
+        docked(&docked_before_close)
+            && rail(&docked_before_close)
+            && sliding
+            && rail_while_sliding
+            && !after_close.panel_shown
+            && full(&after_close),
+        format!(
+            "before {:?}; just after closing: panel sliding {}, rail {}; frames (page, rail) {:?}; after {:?}",
+            docked_before_close, sliding, rail_while_sliding, frames, after_close
+        ),
+    );
     shell.window.destroy();
 
     let steps = [
@@ -2093,9 +2320,6 @@ fn assert_library_rails_beside_panel() {
         "layout library, saved rail: {} at start, {} after the library icon, {} collapsed by hand, {} at the end",
         saved_at_start, saved_by_hand, saved_chosen, saved_at_end
     );
-    let full = |s: &ShellShot| !s.rail && s.library > 200;
-    let rail = |s: &ShellShot| s.rail && s.library == 60;
-    let docked = |s: &ShellShot| !s.collapsed && s.panel_shown;
     for (step, s, want_rail) in [
         ("1366", &wide, false),
         ("narrowed to 1200", &narrowed, true),
@@ -2148,6 +2372,18 @@ fn assert_library_rails_beside_panel() {
         saved_by_hand,
         saved_chosen,
         saved_at_end
+    );
+    // Opened after the window showed (reopened, widened), it is drawn beside
+    // the page, not just said to be there
+    let misdrawn: Vec<String> = steps
+        .iter()
+        .filter(|(_, s)| s.panel_shown && !panel_card_drawn(s))
+        .map(|(step, s)| format!("{}: card {} ending at {}", step, s.panel_card, s.panel_end))
+        .collect();
+    check(
+        "layout library: the side panel's card is drawn whole beside the page (348 px) in every step it is open",
+        misdrawn.is_empty(),
+        format!("{:?}", misdrawn),
     );
 }
 
@@ -2441,6 +2677,81 @@ fn assert_drawer_behavior() {
         ),
     ));
 
+    // A keyboard user's place on the page: a widget further down, focused
+    // and then scrolled out of sight. Closing the side panel gives it the
+    // focus back, and the page stays where it was scrolled (libadwaita,
+    // left alone, scrolls the page back to that widget)
+    let further = gtk::Button::with_label("Further down");
+    shell.page.content().append(&further);
+    let adjustment = scroller.vadjustment();
+    adjustment.set_value(adjustment.upper());
+    pump(300);
+    further.grab_focus();
+    pump(100);
+    adjustment.set_value(400.0);
+    let before = settled(&read);
+    shell.panel.set_open(true);
+    settled(&read);
+    tab.grab_focus();
+    let opened = settled(&read);
+    shell.panel.set_open(false);
+    let closed = settled(&read);
+    let focus = GtkWindowExt::focus(&shell.window);
+    checks.push((
+        "583: closing the side panel gives the focus back to the page's widget that had it, out of sight, and the page stays where it was",
+        before.focus == FocusIn::Page
+            && opened.panel
+            && opened.focus == FocusIn::SidePanel
+            && !closed.panel
+            && focus.as_ref() == Some(further.upcast_ref())
+            && closed.page_scroll == before.page_scroll,
+        format!(
+            "{:?} then {:?} then {:?}, focus on {:?}",
+            before,
+            opened,
+            closed,
+            focus.map(|f| f.type_().name())
+        ),
+    ));
+
+    // Another page (Ctrl+F, Alt+2..5, a link in the side panel) with the
+    // side panel floating over the page: the panel closes, so the new page
+    // can take the focus
+    let stack: gtk::Stack = b.object("content_stack").unwrap();
+    let other_page = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    let entry = gtk::SearchEntry::new();
+    other_page.append(&entry);
+    stack.add_named(&other_page, Some("other-page"));
+    let opened = open_with_focus_inside(false);
+    stack.set_visible_child_name("other-page");
+    // As `Navigation::go` does once the page shows
+    glib::idle_add_local_once(clone!(
+        #[weak]
+        entry,
+        move || {
+            entry.grab_focus();
+        }
+    ));
+    let navigated = settled(&read);
+    let focus = GtkWindowExt::focus(&shell.window);
+    let on_entry = focus
+        .as_ref()
+        .is_some_and(|f| f == entry.upcast_ref::<gtk::Widget>() || f.is_ancestor(&entry));
+    checks.push((
+        "583: going to another page closes the side panel floating over the page, and the new page takes the focus",
+        opened.panel && opened.floats && !navigated.panel && on_entry,
+        format!(
+            "{:?} then {:?}, focus on {:?}",
+            opened,
+            navigated,
+            focus.map(|f| f.type_().name())
+        ),
+    ));
+    stack.set_visible_child_name("album");
+    stack.remove(&other_page);
+    shell.panel.set_open(false);
+    settled(&read);
+
     // The queue in its sheet (queue-side-panel off)
     let toggle_view = super::shell::panel_manager::toggle_view_for_tests(
         shell.panel.clone(),
@@ -2463,6 +2774,35 @@ fn assert_drawer_behavior() {
         now_again.panel && !now_again.sheet,
         format!("{:?}", now_again),
     ));
+
+    // The full library opened over the page has its own collapse button:
+    // there it closes the library (back to its rail), and saves no rail
+    // the user never chose (navigation-rail)
+    let settings = gio::Settings::new(canto_config::settings::SETTINGS);
+    let saved_before = settings.boolean(canto_config::settings::NAVIGATION_RAIL);
+    shell.panel.set_open(false);
+    settled(&read);
+    library_icon();
+    let over_page = settled(&read);
+    let collapse: gtk::Button = b.object("rail_collapse").unwrap();
+    let collapse_shown = collapse.is_mapped();
+    collapse.emit_clicked();
+    let collapsed = settled(&read);
+    let saved_after = settings.boolean(canto_config::settings::NAVIGATION_RAIL);
+    checks.push((
+        "583: the collapse button of the library opened over the page closes it, and saves no rail",
+        over_page.library_over_page
+            && collapse_shown
+            && !collapsed.library_over_page
+            && collapsed.rail
+            && saved_after == saved_before,
+        format!(
+            "{:?} (its collapse button shown {}) then {:?}; saved rail {} then {}",
+            over_page, collapse_shown, collapsed, saved_before, saved_after
+        ),
+    ));
+    // As it was, for the checks after
+    let _ = settings.set_boolean(canto_config::settings::NAVIGATION_RAIL, saved_before);
     shell.window.destroy();
 
     // At 550 or less the side panel fills the window, and the library's
@@ -2486,6 +2826,29 @@ fn assert_drawer_behavior() {
         "550: opening the side panel closes the library opened over the page",
         library.library_over_page && panel_again.panel && !panel_again.library_over_page,
         format!("{:?} then {:?}", library, panel_again),
+    ));
+    shell.window.destroy();
+
+    // Widened from the half screen with the library opened over the page:
+    // once the full library fits beside the page, it is back there
+    let shell = render_shell_clamped(583, false);
+    let scroller = page_scroller(&shell);
+    let read = || read_overlays(&shell, &scroller);
+    settled(&read);
+    WidgetExt::activate_action(&shell.window, "win.sidebar-rail", None)
+        .expect("the library's rail action");
+    let over_page = settled(&read);
+    shell.resize_clamped(1000);
+    let widened = shoot_shell(&shell, 1000, false);
+    let widened_overlays = settled(&read);
+    checks.push((
+        "widened from 583 to 1000, the library opened over the page goes back beside it, full",
+        over_page.library_over_page
+            && !widened_overlays.library_over_page
+            && !widened.rail
+            && widened.library > 200
+            && widened.window_split == 1000,
+        format!("{:?} then {:?}; {:?}", over_page, widened_overlays, widened),
     ));
     shell.window.destroy();
 
@@ -2530,26 +2893,9 @@ fn assert_drawer_behavior() {
     shell.window.destroy();
 
     for (what, ok, seen) in &checks {
-        eprintln!(
-            "drawer behavior, {}: {} ({})",
-            what,
-            if *ok { "ok" } else { "FAILED" },
-            seen
-        );
+        check(&format!("drawer behavior, {}", what), *ok, seen);
     }
-    let failed: Vec<&str> = checks
-        .iter()
-        .filter(|(_, ok, _)| !ok)
-        .map(|(what, _, _)| *what)
-        .collect();
-    assert!(
-        failed.is_empty(),
-        "drawer behavior: {} of {} checks failed: {:?}",
-        failed.len(),
-        checks.len(),
-        failed
-    );
-    eprintln!("drawer behavior ok");
+    eprintln!("drawer behavior checked");
 }
 
 /// A title that takes two lines beside the cover at the widths below.
