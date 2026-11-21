@@ -1194,7 +1194,7 @@ mod tests {
     fn library_shrinks_to_its_rail_beside_the_side_panel() {
         let auto = |window, panel| library_fit(window, panel).auto_rail(false, false);
         // Beside the side panel (360) the full library would leave the page
-        // card 448 at 1100, 548 at 1200 (Gus's full screen) and 655 at 1307:
+        // card 448 at 1100, 548 at 1200 (a 1200 sp full screen) and 655 at 1307:
         // its rail of covers leaves 656, 756 and 863
         for window in [1100, 1200, 1307] {
             assert_eq!(

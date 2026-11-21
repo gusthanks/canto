@@ -1338,7 +1338,7 @@ fn assert_filtered_card_grid_keeps_its_columns() {
     flowbox.set_selection_mode(gtk::SelectionMode::None);
     // Albums and singles mixed, as on an artist page
     // A single first: where it was, it ties with the first album, which
-    // then took the second column (Teto's page starts with singles)
+    // then took the second column (an artist page often starts with singles)
     let kinds = [
         "single", "album", "single", "album", "album", "single", "album", "album", "album",
     ];
@@ -1470,7 +1470,7 @@ fn assert_filtered_card_grid_keeps_its_columns() {
 /// Over a floating page (album, playlist, artist) the page's bar is
 /// see-through while the cover shows. Once the title shows in it, the bar
 /// takes the page card's background: the list scrolls up under the bar, and
-/// its text crossed the title (20/11, Teto's page).
+/// its text crossed the title.
 fn assert_page_bar_covers_the_list() {
     let gtk_settings = gtk::Settings::default().unwrap();
     let animations = gtk_settings.is_gtk_enable_animations();
@@ -3028,7 +3028,7 @@ fn canto_click(split: &impl IsA<gtk::Widget>) -> Option<gtk::GestureClick> {
 fn assert_drawer_behavior() {
     let mut checks: Vec<(&'static str, bool, String)> = Vec::new();
 
-    // Gus's half screen: the library on its rail of covers
+    // Half of a 1200 sp screen: the library on its rail of covers
     let shell = render_shell(583, false);
     let b = &shell.builder;
     let utility: libadwaita::OverlaySplitView = b.object("utility_split").unwrap();

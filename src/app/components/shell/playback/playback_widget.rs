@@ -468,7 +468,7 @@ mod imp {
                 scroll.set_propagation_phase(gtk::PropagationPhase::Capture);
                 let slider = self.volume_slider.clone();
                 scroll.connect_scroll(move |controller, _, dy| {
-                    // With natural scrolling (Gus's touchpad) the fingers
+                    // With natural scrolling the fingers
                     // going up scroll down: the volume follows the fingers
                     let natural = controller
                         .current_event()

@@ -572,8 +572,8 @@ impl LyricsService {
 
         // Then, for a song with several artists, the first one alone: LRCLIB
         // often files it that way ("Froid, Major Rd" is "Froid" there), and
-        // 3 of the 9 songs it missed in Gus's listening had synced lyrics so
-        // (20/11). The search takes only the right length, as the looser of
+        // 3 of the 9 songs it missed in a sample of real listening had
+        // synced lyrics so. The search takes only the right length, as the looser of
         // the two
         if let Some(first) = first_of_several(artist_name) {
             let reply = self

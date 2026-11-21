@@ -131,8 +131,7 @@ glib::wrapper! {
 
 const LIST_MARGIN: i32 = 12;
 /// How many songs Recently Played shows at once when unfolded; the rest
-/// scroll. Three leave Now Playing and the next song in view below it
-/// (20/11, Gus).
+/// scroll. Three leave Now Playing and the next song in view below it.
 pub const RECENT_VISIBLE_ROWS: i32 = 3;
 /// The list's bottom padding (app.css, `.queue-page__recent-list`).
 const RECENT_LIST_BOTTOM_PADDING: i32 = 6;
