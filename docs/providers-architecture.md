@@ -22,7 +22,7 @@ Canto separates UI, queueing, metadata caching, authentication, and audio stream
 
 ## Adding a YouTube Music Provider
 
-1. Create `crates/canto-api/src/providers/youtube_music/` implementing `MusicProvider` with:
+1. Create the provider folder (planned: `crates/canto-api/src/providers/youtube_music/`) implementing `MusicProvider` with:
    - `kind() -> ProviderKind::YouTubeMusic`
    - `capabilities() -> ProviderCapabilities::youtube_music()` (`supports_connect: false`, catalog/search/radio/library `true`)
    - Mappings from YouTube Music browse/search/playlist endpoints into `canto-api::models` (`Track`, `Album`, `Artist`, `Playlist`, `SearchResults`).

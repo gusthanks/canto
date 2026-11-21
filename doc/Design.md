@@ -6,7 +6,7 @@
 
 **Centralized.** That state is centralized and unique. This allows various parts of the application to access any part of it, and conversely makes it easy to perform state updates that affect various and sometimes unrelated parts of the application.
 
-**Controlled mutations.** There is only one way to modify the app state, and that is by dispatching *actions* — plain structs that represent a mutation to the state. Updates to the state produce *events*, which `EventListeners` can use to update the UI.
+**Controlled mutations.** There is only one way to modify the app state, and that is by dispatching *actions* — plain structs that represent a mutation to the state. Updates to the state produce *events*, which each `EventListener` can use to update the UI.
 
 ```mermaid
 flowchart TD
@@ -49,7 +49,7 @@ On the technical side: all actions being dispatched, synchronous or not, are eve
 
 ## A listener: the player subsystem
 
-Any element that wishes to update the state or react to changes from the state has to follow that same pattern. For instance, the "player" part of Canto receives `Commands` (mapped from events by a `PlayerNotifier`) to start playing music, and dispatches actions back to the app through a `SpotifyPlayerDelegate` (see the figure below).
+Any element that wishes to update the state or react to changes from the state has to follow that same pattern. For instance, the "player" part of Canto receives `Commands` (mapped from events by a `PlayerNotifier`) to start playing music, and dispatches actions back to the app through an `AppPlayerDelegate` (see the figure below).
 
 These two extra elements add some indirection so that the player is not too strongly coupled to the rest of the app (it does not and should not care about most events, afterall!). Moreover, those commands are handled in a separate thread where the player lives.
 
@@ -68,7 +68,7 @@ flowchart TD
         direction TB
         notifier["PlayerNotifier"]
         player["SpotifyPlayer"]
-        delegate["SpotifyPlayerDelegate"]
+        delegate["AppPlayerDelegate"]
         notifier -- command --> player
         player -- calls --> delegate
     end

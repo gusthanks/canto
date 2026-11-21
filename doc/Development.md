@@ -168,7 +168,7 @@ echo > src/config.rs
 
 ### Lint and Quality Checks
 
-Run the five CI gates (rustfmt, blueprints, shellcheck, icons, translations) before committing, or name some of them:
+Run the six CI gates (rustfmt, blueprints, shellcheck, icons, translations, docrefs) before committing, or name some of them:
 
 ```sh
 ./scripts/checks/check-quality.sh

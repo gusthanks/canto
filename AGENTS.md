@@ -29,7 +29,7 @@ listeners update widgets from the events (see `doc/Design.md`).
 | `data/` | GSettings schema, desktop file, metainfo, icons |
 | `po/` | Translations (gettext) |
 | `scripts/dev/` | The development loop (below) |
-| `scripts/checks/` | The five CI quality gates |
+| `scripts/checks/` | The six CI quality gates |
 | `flatpak/` | Flatpak manifests and `flatpak/cargo-sources.json` |
 
 ## 2. Commands
@@ -47,7 +47,7 @@ in the meson dir `build/`). Run everything from the repo root.
 | The rest of the app suite | `scripts/dev/tests.sh [filter]` |
 | Another crate's tests | `cargo test -p canto-api` (a separate build: slow the first time) |
 | UI resources after a `.blp`, `.css` or icon change | `ninja -C build src/canto.gresource` |
-| The five CI gates, or some | `scripts/checks/check-quality.sh [rustfmt blueprints shellcheck icons translations]` |
+| The six CI gates, or some | `scripts/checks/check-quality.sh [rustfmt blueprints shellcheck icons translations docrefs]` |
 | Translations | `./scripts/build.sh pot`, then `./scripts/build.sh update-po`, then review every fuzzy entry |
 | Set translations from a JSON map | `scripts/dev/po-set.py LANG PAIRS.json` |
 | Full build, before any install or merge | `meson compile -C build` |
@@ -146,6 +146,9 @@ Proof:
   into `doc/Testing.md`.
 - A rule tied to one spot in the code goes in a comment at that line.
 - When a UI part moves, update the docs that name it in the same commit.
+  `scripts/checks/check-doc-refs.py` fails on a name in backticks that the
+  code no longer has; a path that does not exist yet goes right after
+  "planned:".
 
 ## 7. More docs
 

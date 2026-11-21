@@ -4,7 +4,7 @@
 #   gresource the UI resources, then the Blueprint lint
 #   gtk       the GTK tests on Broadway, with PNG renders   (scripts/dev/gtk-tests.sh)
 #   tests     the rest of the canto suite                   (scripts/dev/tests.sh)
-#   gates     the five CI quality gates                     (scripts/checks/check-quality.sh)
+#   gates     the six CI quality gates                      (scripts/checks/check-quality.sh)
 # No release build. The last line is the verdict: ROUND-OK, or <STEP>-FAIL.
 #
 # Usage: [SKIP="check gresource"] scripts/dev/round.sh
@@ -100,10 +100,10 @@ step_gtk() {
 
 not_run=""
 step_gates() {
-    local gates=(rustfmt blueprints shellcheck icons translations)
+    local gates=(rustfmt blueprints shellcheck icons translations docrefs)
     if ! command -v shellcheck > /dev/null 2>&1; then
         echo "WARNING: shellcheck is not installed: that gate does NOT run here (CI runs it)."
-        gates=(rustfmt blueprints icons translations)
+        gates=(rustfmt blueprints icons translations docrefs)
         not_run="shellcheck"
     fi
     scripts/checks/check-quality.sh "${gates[@]}"
