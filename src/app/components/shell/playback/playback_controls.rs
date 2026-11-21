@@ -52,6 +52,15 @@ mod imp {
     impl BoxImpl for PlaybackControlsWidget {}
 }
 
+/// The icon of a repeat mode, in the bar and in its More Options menu.
+pub fn repeat_icon_name(mode: RepeatMode) -> &'static str {
+    match mode {
+        RepeatMode::Track => "media-playlist-repeat-song-symbolic",
+        RepeatMode::Context => "media-playlist-repeat-symbolic",
+        RepeatMode::Off => "media-playlist-consecutive-symbolic",
+    }
+}
+
 glib::wrapper! {
     pub struct PlaybackControlsWidget(ObjectSubclass<imp::PlaybackControlsWidget>) @extends gtk::Widget, gtk::Box,
         @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget, gtk::Orientable;
@@ -82,13 +91,21 @@ impl PlaybackControlsWidget {
     }
 
     pub fn set_repeat_mode(&self, mode: RepeatMode) {
-        let repeat_mode_icon = match mode {
-            RepeatMode::Track => "media-playlist-repeat-song-symbolic",
-            RepeatMode::Context => "media-playlist-repeat-symbolic",
-            RepeatMode::Off => "media-playlist-consecutive-symbolic",
-        };
+        self.imp().repeat.set_icon_name(repeat_icon_name(mode));
+    }
 
-        self.imp().repeat.set_icon_name(repeat_mode_icon);
+    /// Shuffle, previous and repeat: the player bar hides them when it is
+    /// narrow (see its tiers in playback_widget.rs).
+    pub fn shuffle_button(&self) -> gtk::Widget {
+        self.imp().shuffle.get().upcast()
+    }
+
+    pub fn prev_button(&self) -> gtk::Widget {
+        self.imp().prev.get().upcast()
+    }
+
+    pub fn repeat_button(&self) -> gtk::Widget {
+        self.imp().repeat.get().upcast()
     }
 
     pub fn connect_play_pause<F>(&self, f: F)

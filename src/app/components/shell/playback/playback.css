@@ -15,10 +15,11 @@
   opacity: 0.78;
 }
 
+/* 40: what a squeezed bar keeps of it (see the tiers in playback_widget.rs) */
 .seek-bar {
   padding: 0;
   min-height: 22px;
-  min-width: 60px;
+  min-width: 40px;
 }
 
 .seek-bar trough {

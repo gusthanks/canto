@@ -8,42 +8,12 @@ template $PlaybackWidget : Box {
     "playback-bar",
   ]
 
-  Adw.BreakpointBin {
-    width-request: 1;
+  // Its tiers (which buttons leave as the bar narrows) are set up in
+  // playback_widget.rs: their setters reach into the controls and the
+  // track info, which a blueprint can't. 360: the window's least width
+  Adw.BreakpointBin bar_bin {
+    width-request: 360;
     height-request: 88;
-
-    Adw.Breakpoint {
-      condition("max-width:700sp")
-
-      setters {
-        volume_box.visible: false;
-        volume_button.visible: true;
-        device_selector_box.visible: false;
-        mini_player_button.visible: false;
-        playback_center.homogeneous: false;
-      }
-    }
-
-    Adw.Breakpoint {
-      condition("max-width:480sp")
-
-      setters {
-        volume_box.visible: false;
-        volume_button.visible: true;
-        device_selector_box.visible: false;
-        eq_button.visible: false;
-        playback_center.homogeneous: false;
-        now_playing_box.visible: false;
-        now_playing_button_box.visible: true;
-        lyrics_button.visible: false;
-        mini_player_button.visible: false;
-        queue_button.visible: false;
-        sleep_timer_button.visible: false;
-        side_panel_button.visible: false;
-        playback_center.margin-start: 10;
-        playback_center.margin-end: 10;
-      }
-    }
 
     child: Box playback_center {
       orientation: horizontal;
@@ -61,26 +31,6 @@ template $PlaybackWidget : Box {
         hexpand: false;
         halign: start;
         valign: center;
-
-        Box now_playing_button_box {
-          visible: false;
-          width-request: 40;
-          valign: center;
-
-          Button now_playing_button {
-            visible: false;
-            icon-name: "now-playing-symbolic";
-            tooltip-text: _("Now Playing");
-            action-name: "win.show-now-playing";
-            focus-on-click: false;
-            can-focus: false;
-            valign: center;
-
-            styles [
-              "flat",
-            ]
-          }
-        }
 
         Box now_playing_box {
           hexpand: true;
@@ -113,9 +63,13 @@ template $PlaybackWidget : Box {
           spacing: 8;
           hexpand: true;
 
+          // A squeezed bar shortens a track's times over an hour (1∶02…)
+          // rather than growing past the window: never narrower than
+          // width-chars, as wide as the text when there's room
           Label track_position {
             label: "0∶00";
             width-chars: 5;
+            ellipsize: end;
             xalign: 1.0;
 
             styles [
@@ -141,6 +95,7 @@ template $PlaybackWidget : Box {
           Label track_duration {
             label: "0∶00";
             width-chars: 5;
+            ellipsize: end;
             xalign: 0.0;
 
             styles [
@@ -472,6 +427,74 @@ template $PlaybackWidget : Box {
               margin-bottom: 6;
               margin-start: 6;
               margin-end: 6;
+
+              // Shuffle and repeat, when the bar is too narrow for them
+              // (see its tiers). The menu stays open, so the new state shows
+              Button more_shuffle {
+                visible: false;
+                action-name: "app.toggle_shuffle";
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Box {
+                  spacing: 10;
+
+                  Image {
+                    icon-name: "media-playlist-shuffle-symbolic";
+                  }
+
+                  Label {
+                    label: _("Shuffle");
+                    xalign: 0.0;
+                    hexpand: true;
+                  }
+
+                  Image more_shuffle_check {
+                    visible: false;
+                    icon-name: "object-select-symbolic";
+                  }
+                };
+              }
+
+              Button more_repeat {
+                visible: false;
+                action-name: "app.toggle_repeat";
+                halign: fill;
+
+                styles [
+                  "flat",
+                  "playback-preset-btn",
+                ]
+
+                child: Box {
+                  spacing: 10;
+
+                  Image more_repeat_icon {
+                    icon-name: "media-playlist-consecutive-symbolic";
+                  }
+
+                  Label {
+                    label: _("Repeat");
+                    xalign: 0.0;
+                    hexpand: true;
+                  }
+
+                  Image more_repeat_check {
+                    visible: false;
+                    icon-name: "object-select-symbolic";
+                  }
+                };
+              }
+
+              Separator more_toggles_separator {
+                visible: false;
+                margin-top: 2;
+                margin-bottom: 2;
+              }
 
               Button more_sleep_timer {
                 halign: fill;

@@ -5,7 +5,8 @@ using Gtk 4.0;
 template $PlaybackInfoWidget : Box {
   halign: start;
   valign: center;
-  spacing: 12;
+  // The 12 between the parts are margins: an empty like slot takes none
+  spacing: 0;
 
   styles [
     "playback-info",
@@ -45,11 +46,15 @@ template $PlaybackInfoWidget : Box {
     orientation: vertical;
     halign: start;
     valign: center;
+    margin-start: 12;
     spacing: 2;
 
+    // Never narrower than this, about 100 sp: the player bar drops its
+    // buttons first (see the tiers in playback_widget.rs)
     Label song_title {
       halign: start;
       xalign: 0;
+      width-chars: 10;
       max-width-chars: 24;
       ellipsize: end;
       single-line-mode: true;
@@ -63,6 +68,7 @@ template $PlaybackInfoWidget : Box {
     Label song_artist {
       halign: start;
       xalign: 0;
+      width-chars: 12;
       max-width-chars: 28;
       ellipsize: end;
       single-line-mode: true;
@@ -75,16 +81,23 @@ template $PlaybackInfoWidget : Box {
     }
   }
 
-  Button like_button {
-    visible: false;
+  // The player bar hides the slot when it is narrow; the like state shows
+  // or hides the button inside (`show_like_state`)
+  Box like_slot {
     valign: center;
-    icon-name: "canto-heart-symbolic";
-    focus-on-click: false;
 
-    styles [
-      "flat",
-      "circular",
-      "heart-button",
-    ]
+    Button like_button {
+      visible: false;
+      valign: center;
+      margin-start: 12;
+      icon-name: "canto-heart-symbolic";
+      focus-on-click: false;
+
+      styles [
+        "flat",
+        "circular",
+        "heart-button",
+      ]
+    }
   }
 }

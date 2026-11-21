@@ -32,6 +32,9 @@ mod imp {
         pub song_artist: TemplateChild<gtk::Label>,
 
         #[template_child]
+        pub like_slot: TemplateChild<gtk::Box>,
+
+        #[template_child]
         pub like_button: TemplateChild<gtk::Button>,
     }
 
@@ -93,6 +96,12 @@ impl PlaybackInfoWidget {
 
     pub fn set_liked(&self, liked: Option<bool>) {
         show_like_state(&self.imp().like_button, liked);
+    }
+
+    /// The like button's slot, which the player bar hides when it is
+    /// narrow (see its tiers in playback_widget.rs).
+    pub fn like_slot(&self) -> gtk::Widget {
+        self.imp().like_slot.get().upcast()
     }
 
     /// Markups from `now_panel::title_markup` and `now_panel::artists_markup`.

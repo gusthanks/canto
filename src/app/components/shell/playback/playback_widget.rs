@@ -18,11 +18,30 @@ use crate::app::load;
 use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 
-use super::playback_controls::PlaybackControlsWidget;
+use super::playback_controls::{repeat_icon_name, PlaybackControlsWidget};
 use super::playback_info::PlaybackInfoWidget;
+use libadwaita::{BreakpointCondition, BreakpointConditionLengthType, LengthUnit};
 
 /// Matches the artwork size request in playback_info.blp.
 const ARTWORK_SIZE: i32 = 48;
+
+/// Under each of these widths the player bar drops more of its parts, so it
+/// stays on one line and its title and artist keep about 100 sp
+/// (`width-chars` in playback_info.blp). Each tier adds to the ones above:
+/// - 860: the volume slider turns into a button, and the device and mini
+///   player buttons leave (both stay in Ctrl+K);
+/// - 660 (half of a 1200 sp screen): shuffle and repeat move into More
+///   Options, and the times beside the seek bar get shorter;
+/// - 560: lyrics and queue leave (the side panel has them as tabs, and the
+///   cover opens it);
+/// - 486: the like button and the volume button leave;
+/// - 400: previous and the times leave.
+///
+/// The gear and the side panel button never leave: the gear is the way to
+/// everything else. Each width is one less than what the tier above needs
+/// at text 1.0 (its row: track with a 100 title, controls, buttons), in px,
+/// and in sp for larger text (`bar_tier_condition`).
+const BAR_TIER_WIDTHS: [f64; 5] = [860.0, 660.0, 560.0, 486.0, 400.0];
 
 pub const EQ_PRESETS: [(&str, [f64; 10]); 5] = [
     ("flat", [0.0; 10]),
@@ -63,7 +82,7 @@ mod imp {
         pub now_playing: TemplateChild<PlaybackInfoWidget>,
 
         #[template_child]
-        pub now_playing_button: TemplateChild<gtk::Button>,
+        pub bar_bin: TemplateChild<libadwaita::BreakpointBin>,
 
         #[template_child]
         pub seek_row: TemplateChild<gtk::Box>,
@@ -82,6 +101,30 @@ mod imp {
 
         #[template_child]
         pub mute_button: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub volume_box: TemplateChild<gtk::Box>,
+        #[template_child]
+        pub volume_button: TemplateChild<gtk::MenuButton>,
+        #[template_child]
+        pub device_selector_box: TemplateChild<gtk::Box>,
+        #[template_child]
+        pub mini_player_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub lyrics_button: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub more_shuffle: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub more_shuffle_check: TemplateChild<gtk::Image>,
+        #[template_child]
+        pub more_repeat: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub more_repeat_icon: TemplateChild<gtk::Image>,
+        #[template_child]
+        pub more_repeat_check: TemplateChild<gtk::Image>,
+        #[template_child]
+        pub more_toggles_separator: TemplateChild<gtk::Separator>,
 
         #[template_child]
         pub eq_popover: TemplateChild<gtk::Popover>,
@@ -170,6 +213,10 @@ mod imp {
         pub clock: Clock,
         pub volume_changed_handler: RefCell<Option<glib::SignalHandlerId>>,
         pub last_nonzero_volume: Cell<f64>,
+        /// The bar's tiers, by width (see `BAR_TIER_WIDTHS`)
+        pub bar_tiers: RefCell<Vec<(f64, libadwaita::Breakpoint)>>,
+        /// The room (px) the tiers keep for the sleep timer's button
+        pub bar_tier_room: Cell<i32>,
     }
 
     impl Default for PlaybackWidget {
@@ -177,13 +224,24 @@ mod imp {
             Self {
                 controls: Default::default(),
                 now_playing: Default::default(),
-                now_playing_button: Default::default(),
+                bar_bin: Default::default(),
                 seek_row: Default::default(),
                 seek_bar: Default::default(),
                 track_position: Default::default(),
                 track_duration: Default::default(),
                 volume_slider: Default::default(),
                 mute_button: Default::default(),
+                volume_box: Default::default(),
+                volume_button: Default::default(),
+                device_selector_box: Default::default(),
+                mini_player_button: Default::default(),
+                lyrics_button: Default::default(),
+                more_shuffle: Default::default(),
+                more_shuffle_check: Default::default(),
+                more_repeat: Default::default(),
+                more_repeat_icon: Default::default(),
+                more_repeat_check: Default::default(),
+                more_toggles_separator: Default::default(),
                 eq_popover: Default::default(),
                 more_sleep_timer: Default::default(),
                 more_stack: Default::default(),
@@ -220,6 +278,8 @@ mod imp {
                 clock: Clock::default(),
                 volume_changed_handler: Default::default(),
                 last_nonzero_volume: Cell::new(0.7),
+                bar_tiers: Default::default(),
+                bar_tier_room: Cell::new(0),
             }
         }
     }
@@ -253,6 +313,22 @@ mod imp {
             display_add_css_provider(resource!("/components/playback.css"));
 
             self.setup_customizable_bar();
+            self.setup_bar_tiers();
+
+            // The tiers keep room for the sleep timer's button while it shows
+            // (measured once it has its style, on screen)
+            let weak_self = self.obj().downgrade();
+            self.sleep_timer_button.connect_visible_notify(move |_| {
+                if let Some(obj) = weak_self.upgrade() {
+                    obj.imp().retune_bar_tiers();
+                }
+            });
+            let weak_self = self.obj().downgrade();
+            self.sleep_timer_button.connect_map(move |_| {
+                if let Some(obj) = weak_self.upgrade() {
+                    obj.imp().retune_bar_tiers();
+                }
+            });
 
             // The sleep timer lives in More Options; its own button only shows
             // while a timer runs, or while its menu is open from there
@@ -339,7 +415,7 @@ mod imp {
 
     impl PlaybackWidget {
         /// Each optional button sits in a slot whose visibility follows a
-        /// player-bar-* setting. The narrow-window breakpoints hide the
+        /// player-bar-* setting (`follow_slot`). The bar's tiers hide the
         /// buttons inside, so the two never fight over the same property.
         fn setup_customizable_bar(&self) {
             use canto_config::settings::{
@@ -424,7 +500,7 @@ mod imp {
                     name.set_margin_start(30);
                     row.append(&name);
                 } else {
-                    settings.bind(key, &widget, "visible").get().build();
+                    follow_slot(&settings, key, &widget);
                     let check = gtk::CheckButton::with_label(&label);
                     check.set_hexpand(true);
                     settings.bind(key, &check, "active").build();
@@ -532,8 +608,171 @@ mod imp {
             self.bar_end.add_controller(click);
             self.customize_popover.replace(Some(popover));
         }
+
+        /// The bar's tiers (see `BAR_TIER_WIDTHS`). libadwaita applies only
+        /// the last breakpoint that matches, so each one carries the setters
+        /// of the tiers above it, the later value winning. They change the
+        /// parts inside the slots, never a slot (`follow_slot`).
+        fn setup_bar_tiers(&self) {
+            use libadwaita::prelude::BreakpointBinExt;
+            let set = |widget: gtk::Widget, property: &'static str, value: glib::Value| {
+                (widget, property, value)
+            };
+            let hide = |widget: gtk::Widget| set(widget, "visible", false.to_value());
+            let show = |widget: gtk::Widget| set(widget, "visible", true.to_value());
+            let times = [
+                self.track_position.get().upcast::<gtk::Widget>(),
+                self.track_duration.get().upcast(),
+            ];
+            let tiers = vec![
+                vec![
+                    hide(self.volume_box.get().upcast()),
+                    show(self.volume_button.get().upcast()),
+                    hide(self.device_selector_box.get().upcast()),
+                    hide(self.mini_player_button.get().upcast()),
+                ],
+                vec![
+                    hide(self.controls.shuffle_button()),
+                    hide(self.controls.repeat_button()),
+                    show(self.more_shuffle.get().upcast()),
+                    show(self.more_repeat.get().upcast()),
+                    show(self.more_toggles_separator.get().upcast()),
+                    set(times[0].clone(), "width-chars", 4.to_value()),
+                    set(times[1].clone(), "width-chars", 4.to_value()),
+                ],
+                vec![
+                    hide(self.lyrics_button.get().upcast()),
+                    hide(self.queue_button.get().upcast()),
+                ],
+                vec![
+                    hide(self.now_playing.like_slot()),
+                    hide(self.volume_button.get().upcast()),
+                ],
+                vec![
+                    hide(self.controls.prev_button()),
+                    hide(times[0].clone()),
+                    hide(times[1].clone()),
+                ],
+            ];
+            let mut setters: Vec<(gtk::Widget, &str, glib::Value)> = Vec::new();
+            let mut breakpoints = self.bar_tiers.borrow_mut();
+            for (width, tier) in BAR_TIER_WIDTHS.iter().copied().zip(tiers) {
+                for (widget, property, value) in tier {
+                    setters.retain(|(w, p, _)| !(*w == widget && *p == property));
+                    setters.push((widget, property, value));
+                }
+                let breakpoint = libadwaita::Breakpoint::new(bar_tier_condition(width, 0.0, None));
+                for (widget, property, value) in &setters {
+                    breakpoint.add_setter(widget, property, Some(value));
+                }
+                self.bar_bin.add_breakpoint(breakpoint.clone());
+                breakpoints.push((width, breakpoint));
+            }
+        }
+
+        /// Makes room in every tier for the sleep timer's button while it
+        /// shows: its countdown while a timer runs, or the round button its
+        /// menu opens from (More Options). Each tier starts that much wider.
+        pub(super) fn retune_bar_tiers(&self) {
+            let button = &self.sleep_timer_button;
+            let room = if button.is_visible() {
+                button.measure(gtk::Orientation::Horizontal, -1).1 + self.bar_end.spacing()
+            } else {
+                0
+            };
+            if self.bar_tier_room.replace(room) == room {
+                return;
+            }
+            let settings = self.obj().settings();
+            for (width, breakpoint) in self.bar_tiers.borrow().iter() {
+                breakpoint.set_condition(Some(&bar_tier_condition(
+                    *width,
+                    f64::from(room),
+                    Some(&settings),
+                )));
+            }
+        }
     }
     impl BoxImpl for PlaybackWidget {}
+}
+
+/// A tier of the bar applies at `width` px and under, or at `width` sp and
+/// under when the text is larger than 1.0: the bar's icons keep their size
+/// whatever the text scale, while its title and times grow with it (and
+/// with text under 1.0 the px keep the tier as safe as at 1.0). Plus `room`
+/// px for the sleep timer's button while it shows.
+fn bar_tier_condition(
+    width: f64,
+    room: f64,
+    settings: Option<&gtk::Settings>,
+) -> BreakpointCondition {
+    let max_width = |value, unit| {
+        BreakpointCondition::new_length(BreakpointConditionLengthType::MaxWidth, value, unit)
+    };
+    BreakpointCondition::new_or(
+        max_width(width + room, LengthUnit::Px),
+        max_width(
+            width + LengthUnit::Sp.from_px(room, settings),
+            LengthUnit::Sp,
+        ),
+    )
+}
+
+/// A slot of the bar shows while its `player-bar-*` setting is on and
+/// something in it shows: an empty slot would still take the bar's spacing,
+/// and the gaps between its buttons would go uneven. The tiers (and the
+/// device selector's flag) hide what is inside a slot, never the slot.
+fn follow_slot(settings: &gio::Settings, key: &'static str, slot: &gtk::Widget) {
+    let sync: std::rc::Rc<dyn Fn()> = {
+        // Weak, or the handler below would keep the settings (and itself)
+        // alive forever; the check buttons of "Show in the Bar" keep them
+        // for as long as the bar
+        let settings = settings.downgrade();
+        let slot = slot.downgrade();
+        std::rc::Rc::new(move || {
+            if let (Some(settings), Some(slot)) = (settings.upgrade(), slot.upgrade()) {
+                slot.set_visible(settings.boolean(key) && children_show(&slot));
+            }
+        })
+    };
+    let mut boxes = vec![slot.clone()];
+    while let Some(parent) = boxes.pop() {
+        let mut child = parent.first_child();
+        while let Some(c) = child {
+            child = c.next_sibling();
+            let sync = sync.clone();
+            c.connect_visible_notify(move |_| sync());
+            if c.type_() == gtk::Box::static_type() {
+                boxes.push(c);
+            }
+        }
+    }
+    let on_change = sync.clone();
+    settings.connect_changed(Some(key), move |_, _| on_change());
+    sync();
+}
+
+/// Whether anything inside `widget` shows: a plain box through its
+/// children, anything else by its own `visible` (not `is_visible`, which
+/// is false in a hidden slot whatever the child's own state).
+fn children_show(widget: &gtk::Widget) -> bool {
+    let mut child = widget.first_child();
+    while let Some(c) = child {
+        if c.get_visible() && (c.type_() != gtk::Box::static_type() || children_show(&c)) {
+            return true;
+        }
+        child = c.next_sibling();
+    }
+    false
+}
+
+/// A More Options row's state, for screen readers.
+fn pressed(on: bool) -> gtk::AccessibleTristate {
+    if on {
+        gtk::AccessibleTristate::True
+    } else {
+        gtk::AccessibleTristate::False
+    }
 }
 
 /// Standard speaker icon for a volume level in `0.0..=1.0`.
@@ -564,7 +803,6 @@ impl PlaybackWidget {
         let widget = self.imp();
         widget.now_playing.set_visible(true);
         widget.now_playing.set_track(title_markup, artists_markup);
-        widget.now_playing_button.set_visible(true);
     }
 
     pub fn set_liked(&self, liked: Option<bool>) {
@@ -575,7 +813,6 @@ impl PlaybackWidget {
         let widget = self.imp();
         widget.now_playing.set_visible(true);
         widget.now_playing.reset_info();
-        widget.now_playing_button.set_visible(false);
         self.set_song_duration(None);
     }
 
@@ -699,11 +936,24 @@ impl PlaybackWidget {
     pub fn set_repeat_mode(&self, mode: RepeatMode) {
         let widget = self.imp();
         widget.controls.set_repeat_mode(mode);
+        // And its row in More Options, for a bar too narrow for the button
+        let on = mode != RepeatMode::Off;
+        widget
+            .more_repeat_icon
+            .set_icon_name(Some(repeat_icon_name(mode)));
+        widget.more_repeat_check.set_visible(on);
+        widget
+            .more_repeat
+            .update_state(&[gtk::accessible::State::Pressed(pressed(on))]);
     }
 
     pub fn set_shuffled(&self, shuffled: bool) {
         let widget = self.imp();
         widget.controls.set_shuffled(shuffled);
+        widget.more_shuffle_check.set_visible(shuffled);
+        widget
+            .more_shuffle
+            .update_state(&[gtk::accessible::State::Pressed(pressed(shuffled))]);
     }
 
     pub fn set_seekbar_visible(&self, visible: bool) {
@@ -770,6 +1020,8 @@ impl PlaybackWidget {
                 btn.remove_css_class("suggested-action");
             }
         }
+        // The countdown's width changes with its digits and its style
+        imp.retune_bar_tiers();
     }
 
     pub fn connect_sleep_timer<F: Fn(SleepTimerMode) + Clone + 'static>(&self, on_select: F) {

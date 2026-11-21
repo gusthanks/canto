@@ -170,6 +170,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     }
     assert_drawer_layout();
     assert_album_page_fits();
+    assert_bar_tiers();
 }
 
 /// The round "playing" badge on album cards must show the bars on top of
@@ -2833,4 +2834,495 @@ fn assert_album_page_fits() {
         );
     }
     eprintln!("album page ok");
+}
+
+/// Player bar widths (px): both sides of every tier's edge, a window on half
+/// of a 1200 sp screen (572 and 583) and the widest the headless screen
+/// shows.
+const BAR_WIDTHS: [i32; 15] = [
+    360, 400, 401, 486, 487, 560, 561, 572, 583, 660, 661, 760, 860, 861, 1024,
+];
+
+/// With text at 0.91 the icons keep their size while the text shrinks: just
+/// past each tier's edge, and the window on half of the screen.
+const BAR_WIDTHS_SMALL_TEXT: [i32; 6] = [401, 487, 561, 572, 661, 861];
+
+/// A track over an hour ("1∶02∶03"), whose times beside the seek bar are
+/// wider than the controls over them: at the narrow edges of the steps that
+/// keep the times, and the window on half of the screen.
+const BAR_WIDTHS_LONG_TRACK: [i32; 3] = [401, 487, 572];
+
+/// The bar's parts that its tiers hide or show, by their ids in the
+/// templates.
+const BAR_PARTS: [&str; 16] = [
+    "shuffle",
+    "prev",
+    "repeat",
+    "track_position",
+    "track_duration",
+    "like_slot",
+    "lyrics_button",
+    "queue_button",
+    "device_selector_box",
+    "volume_box",
+    "volume_button",
+    "mini_player_button",
+    "eq_button",
+    "side_panel_button",
+    "more_shuffle",
+    "more_repeat",
+];
+
+/// Whether `part` of the player bar shows in a bar `width` px wide, with no
+/// sleep timer running.
+fn bar_part_shows(part: &str, width: i32) -> bool {
+    match part {
+        // 860 and under: the volume slider turns into a button, and the
+        // device and mini player buttons leave (both stay in Ctrl+K)
+        "volume_box" | "device_selector_box" | "mini_player_button" => width > 860,
+        "volume_button" => width > 486 && width <= 860,
+        // 660 and under (a window on half of a 1200 sp screen): shuffle and
+        // repeat move into the gear's More Options menu
+        "shuffle" | "repeat" => width > 660,
+        "more_shuffle" | "more_repeat" => width <= 660,
+        // 560 and under: lyrics and queue, which the side panel has as tabs
+        "lyrics_button" | "queue_button" => width > 560,
+        // 486 and under: the like button and the volume button
+        "like_slot" => width > 486,
+        // 400 and under: previous, and the times beside the seek bar
+        "prev" | "track_position" | "track_duration" => width > 400,
+        // The gear (the way to everything else) and the side panel button
+        // never leave
+        _ => true,
+    }
+}
+
+/// The widget under `root` (itself included) that its template or builder
+/// file names `id`.
+fn by_id(root: &gtk::Widget, id: &str) -> Option<gtk::Widget> {
+    let mut stack = vec![root.clone()];
+    while let Some(widget) = stack.pop() {
+        if widget.buildable_id().as_deref() == Some(id) {
+            return Some(widget);
+        }
+        let mut child = widget.first_child();
+        while let Some(c) = child {
+            child = c.next_sibling();
+            stack.push(c);
+        }
+    }
+    None
+}
+
+/// Where the player bar's parts ended up (px).
+#[derive(Clone, Debug, PartialEq)]
+struct BarShot {
+    tag: String,
+    width: i32,
+    /// The bar's breakpoint bin, and the least width its row needs: past
+    /// the bin's width libadwaita warns "exceeds" and cuts the row's end
+    bar: i32,
+    needs: i32,
+    /// The least width of the row's three columns: the track (cover, title
+    /// and like), the controls over the seek bar, and the buttons at the end
+    columns: (i32, i32, i32),
+    /// The title and artist column, and the least of it in px (100 sp)
+    title: i32,
+    title_least: f64,
+    /// Where the side panel button ends, in the bin
+    end: f32,
+    /// The gaps along the buttons at the bar's end: before the first,
+    /// between each two, after the last
+    end_gaps: Vec<i32>,
+    /// The parts in `BAR_PARTS` that show, and those the templates lack
+    shown: Vec<&'static str>,
+    missing: Vec<&'static str>,
+}
+
+fn shoot_bar(bar: &super::shell::playback::PlaybackWidget, tag: &str, width: i32) -> BarShot {
+    let root = bar.upcast_ref::<gtk::Widget>();
+    let bin = bar.first_child().expect("the bar's breakpoint bin");
+    let row = bin.first_child().expect("the bar's row");
+    let least =
+        |w: Option<gtk::Widget>| w.map_or(0, |w| w.measure(gtk::Orientation::Horizontal, -1).0);
+    let info = by_id(root, "song_info_box").expect("the title column");
+    let side = by_id(root, "side_panel_button").expect("the side panel button");
+    let bar_end = by_id(root, "bar_end").expect("the buttons at the bar's end");
+    let mut spans = Vec::new();
+    let mut child = bar_end.first_child();
+    while let Some(c) = child {
+        child = c.next_sibling();
+        if c.is_visible() && c.width() > 0 {
+            if let Some(b) = c.compute_bounds(&bar_end) {
+                spans.push((b.x().round() as i32, (b.x() + b.width()).round() as i32));
+            }
+        }
+    }
+    let mut end_gaps = Vec::new();
+    let mut at = 0;
+    for (start, end) in &spans {
+        end_gaps.push(start - at);
+        at = *end;
+    }
+    end_gaps.push(bar_end.width() - at);
+    let mut shown = Vec::new();
+    let mut missing = Vec::new();
+    for id in BAR_PARTS.iter().copied() {
+        match by_id(root, id) {
+            // In the bar: on screen (its slot too). In the gear's menu,
+            // closed here: its own state
+            Some(widget)
+                if if id.starts_with("more_") {
+                    widget.get_visible()
+                } else {
+                    widget.is_visible()
+                } =>
+            {
+                shown.push(id)
+            }
+            Some(_) => {}
+            None => missing.push(id),
+        }
+    }
+    BarShot {
+        tag: tag.to_string(),
+        width,
+        bar: bin.width(),
+        needs: row.measure(gtk::Orientation::Horizontal, -1).0,
+        columns: (
+            least(row.first_child()),
+            least(row.first_child().and_then(|c| c.next_sibling())),
+            least(row.last_child()),
+        ),
+        title: if info.is_mapped() { info.width() } else { 0 },
+        title_least: libadwaita::LengthUnit::Sp.to_px(100.0, gtk::Settings::default().as_ref()),
+        end: side
+            .compute_bounds(&bin)
+            .map_or(f32::MAX, |b| b.x() + b.width()),
+        end_gaps,
+        shown,
+        missing,
+    }
+}
+
+/// The player bar alone in a window `width` px wide, playing a track with
+/// a long title and three artists (3∶35 long, or over an hour), once it
+/// stays put (up to 8 s).
+fn render_bar(
+    width: i32,
+    tag: &str,
+    timer: bool,
+    long_track: bool,
+) -> (gtk::Window, super::shell::playback::PlaybackWidget, BarShot) {
+    let bar: super::shell::playback::PlaybackWidget = glib::Object::new();
+    bar.set_track(
+        &super::now_panel::title_markup("MARIA BONITA SEM LAMPIÃO", "1", true),
+        "<a href=\"https://open.spotify.com/artist/1\">Niink</a>, <a href=\"https://open.spotify.com/artist/2\">Jotapê</a>, <a href=\"https://open.spotify.com/artist/3\">Supernova Ent</a>",
+    );
+    bar.set_liked(Some(true));
+    if long_track {
+        bar.set_song_duration(Some(3_723_000.0));
+        bar.set_seek_position(3_600_000.0);
+    } else {
+        bar.set_song_duration(Some(215_000.0));
+    }
+    if timer {
+        bar.set_sleep_timer_snapshot(&super::SleepTimerSnapshot {
+            mode: super::SleepTimerMode::Minutes(45),
+            remaining_secs: Some(45 * 60 - 1),
+        });
+    }
+    let window = gtk::Window::new();
+    window.set_decorated(false);
+    window.set_default_size(width, 96);
+    window.set_child(Some(&bar));
+    window.present();
+    wait_mapped(&bar, 300);
+    // Laid out at that width, then unchanged for 1.2 s: a frame of the
+    // headless display can take a second, and a new tier takes one more
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(8);
+    let mut last = shoot_bar(&bar, tag, width);
+    let mut same = 0;
+    while same < 8 && std::time::Instant::now() < deadline {
+        pump(150);
+        let now = shoot_bar(&bar, tag, width);
+        same = if now == last && now.bar == width {
+            same + 1
+        } else {
+            0
+        };
+        last = now;
+    }
+    (window, bar, last)
+}
+
+/// The player bar stays on one line at every width a window can have: its
+/// row fits the bar (no "exceeds", nothing cut at its end), the title and
+/// artist keep at least 100 sp, and the bar drops its buttons tier by tier
+/// as the window narrows; at 660 and under, shuffle and repeat move into the
+/// gear's More Options menu. The gear and the side panel button never
+/// leave. Also with text at 0.91, with a sleep timer's countdown in the
+/// bar, and with a track over an hour. Renders player-bar-<width>.
+fn assert_bar_tiers() {
+    let style = libadwaita::StyleManager::default();
+    let scheme = style.color_scheme();
+    style.set_color_scheme(libadwaita::ColorScheme::ForceDark);
+    let gtk_settings = gtk::Settings::default().unwrap();
+    let dpi = gtk_settings.gtk_xft_dpi();
+    let runs = BAR_WIDTHS
+        .iter()
+        .map(|w| (*w, false, false, false))
+        .chain(
+            BAR_WIDTHS_SMALL_TEXT
+                .iter()
+                .map(|w| (*w, true, false, false)),
+        )
+        .chain(
+            [(661, false, true, false), (861, false, true, false)]
+                .iter()
+                .copied(),
+        )
+        .chain(
+            BAR_WIDTHS_LONG_TRACK
+                .iter()
+                .map(|w| (*w, false, false, true)),
+        );
+    let mut shots = Vec::new();
+    for (width, small_text, timer, long_track) in runs {
+        if small_text {
+            gtk_settings.set_gtk_xft_dpi(SMALL_TEXT_XFT_DPI);
+        }
+        let tag = format!(
+            "player-bar-{:04}{}{}{}",
+            width,
+            if small_text { "-small-text" } else { "" },
+            if timer { "-sleep-timer" } else { "" },
+            if long_track { "-long-track" } else { "" }
+        );
+        let (window, _bar, shot) = render_bar(width, &tag, timer, long_track);
+        distinct_colors(window.upcast_ref(), &tag);
+        window.destroy();
+        gtk_settings.set_gtk_xft_dpi(dpi);
+        shots.push((small_text, timer, shot));
+    }
+    style.set_color_scheme(scheme);
+    for (_, _, s) in &shots {
+        eprintln!(
+            "bar tier {}: bar {} (its row needs {}: track {}, controls {}, buttons {}), title {} (least {:.0}), side panel button ends at {}, gaps at the end {:?}; shows {}{}",
+            s.tag,
+            s.bar,
+            s.needs,
+            s.columns.0,
+            s.columns.1,
+            s.columns.2,
+            s.title,
+            s.title_least,
+            s.end,
+            s.end_gaps,
+            s.shown.join(" "),
+            if s.missing.is_empty() {
+                String::new()
+            } else {
+                format!("; missing {}", s.missing.join(" "))
+            }
+        );
+    }
+    for (_, _, s) in &shots {
+        assert!(
+            s.needs <= s.bar,
+            "{}: the bar's row needs {} px but gets {}: libadwaita warns \"exceeds\" and cuts its end",
+            s.tag,
+            s.needs,
+            s.bar
+        );
+        assert!(
+            s.end <= s.bar as f32 + 0.5,
+            "{}: the side panel button ends at {}, past the bar's {}",
+            s.tag,
+            s.end,
+            s.bar
+        );
+        assert!(
+            f64::from(s.title) >= s.title_least - 0.5,
+            "{}: the title and artist get {} px, under 100 sp ({:.0} px)",
+            s.tag,
+            s.title,
+            s.title_least
+        );
+        // Evenly spaced (the bar's end has a spacing of 2): a hidden
+        // button's empty slot would add its spacing to a gap
+        let last = s.end_gaps.len() - 1;
+        assert!(
+            s.end_gaps
+                .iter()
+                .enumerate()
+                .all(|(i, gap)| *gap == if i == 0 || i == last { 0 } else { 2 }),
+            "{}: the buttons at the bar's end are not evenly spaced: gaps {:?}",
+            s.tag,
+            s.end_gaps
+        );
+    }
+    for (_, timer, s) in &shots {
+        assert!(
+            s.missing.is_empty(),
+            "{}: the bar has no {}",
+            s.tag,
+            s.missing.join(", ")
+        );
+        if *timer {
+            // The countdown takes room: the next tier down makes it
+            let (gone, from) = if s.width < 800 {
+                ("shuffle", "shuffle and repeat")
+            } else {
+                ("volume_box", "the volume slider")
+            };
+            assert!(
+                !s.shown.contains(&gone),
+                "{}: with the sleep timer's countdown in the bar, {} should leave: {:?}",
+                s.tag,
+                from,
+                s.shown
+            );
+            continue;
+        }
+        for part in BAR_PARTS.iter().copied() {
+            assert_eq!(
+                s.shown.contains(&part),
+                bar_part_shows(part, s.width),
+                "{}: {} should {}show in a bar {} px wide",
+                s.tag,
+                part,
+                if bar_part_shows(part, s.width) {
+                    ""
+                } else {
+                    "not "
+                },
+                s.width
+            );
+        }
+    }
+    assert_more_options_rows();
+    eprintln!("bar tiers ok");
+}
+
+/// In a bar too narrow for them, shuffle and repeat are rows of the gear's
+/// More Options menu: they run the actions of Ctrl+S and Ctrl+R, keep the
+/// menu open, and their marks (and repeat's icon) follow the state.
+/// Renders player-bar-0572-more-options with shuffle on.
+fn assert_more_options_rows() {
+    use crate::app::models::RepeatMode;
+    use gio::prelude::ActionMapExt;
+    let style = libadwaita::StyleManager::default();
+    let scheme = style.color_scheme();
+    style.set_color_scheme(libadwaita::ColorScheme::ForceDark);
+    let (window, bar, _) = render_bar(572, "player-bar-0572-more-options", false, false);
+    let root = bar.upcast_ref::<gtk::Widget>();
+    let part = |id: &str| by_id(root, id).unwrap_or_else(|| panic!("the bar has no {}", id));
+    // Stand-ins for the app's actions, which turn the state and tell the
+    // bar, as the app does
+    let shuffled = std::rc::Rc::new(std::cell::Cell::new(false));
+    let toggle_shuffle = gio::SimpleAction::new("toggle_shuffle", None);
+    toggle_shuffle.connect_activate(clone!(
+        #[weak]
+        bar,
+        #[strong]
+        shuffled,
+        move |_, _| {
+            shuffled.set(!shuffled.get());
+            bar.set_shuffled(shuffled.get());
+        }
+    ));
+    let repeat = std::rc::Rc::new(std::cell::Cell::new(RepeatMode::Off));
+    let toggle_repeat = gio::SimpleAction::new("toggle_repeat", None);
+    toggle_repeat.connect_activate(clone!(
+        #[weak]
+        bar,
+        #[strong]
+        repeat,
+        move |_, _| {
+            repeat.set(match repeat.get() {
+                RepeatMode::Off => RepeatMode::Context,
+                RepeatMode::Context => RepeatMode::Track,
+                RepeatMode::Track => RepeatMode::Off,
+            });
+            bar.set_repeat_mode(repeat.get());
+        }
+    ));
+    let app = gio::SimpleActionGroup::new();
+    app.add_action(&toggle_shuffle);
+    app.add_action(&toggle_repeat);
+    window.insert_action_group("app", Some(&app));
+
+    let shuffle_row = part("more_shuffle").downcast::<gtk::Button>().unwrap();
+    let repeat_row = part("more_repeat").downcast::<gtk::Button>().unwrap();
+    let shuffle_check = part("more_shuffle_check");
+    let repeat_check = part("more_repeat_check");
+    let repeat_icon = part("more_repeat_icon").downcast::<gtk::Image>().unwrap();
+    assert_eq!(
+        shuffle_row.action_name().as_deref(),
+        Some("app.toggle_shuffle"),
+        "the shuffle row runs the action of Ctrl+S"
+    );
+    assert_eq!(
+        repeat_row.action_name().as_deref(),
+        Some("app.toggle_repeat"),
+        "the repeat row runs the action of Ctrl+R"
+    );
+    let popover = part("eq_popover").downcast::<gtk::Popover>().unwrap();
+    popover.popup();
+    wait_mapped(&shuffle_row, 500);
+    assert!(
+        shuffle_row.is_mapped() && repeat_row.is_mapped(),
+        "the rows show in More Options at 572 px"
+    );
+    assert!(!shuffle_check.get_visible() && !repeat_check.get_visible());
+    shuffle_row.emit_clicked();
+    pump(300);
+    assert!(
+        shuffled.get() && shuffle_check.get_visible(),
+        "the shuffle row turns shuffle on and shows its mark"
+    );
+    assert!(popover.is_visible(), "the menu stays open after a row");
+    for (mode, icon, on) in [
+        (RepeatMode::Context, "media-playlist-repeat-symbolic", true),
+        (
+            RepeatMode::Track,
+            "media-playlist-repeat-song-symbolic",
+            true,
+        ),
+        (
+            RepeatMode::Off,
+            "media-playlist-consecutive-symbolic",
+            false,
+        ),
+    ]
+    .iter()
+    .copied()
+    {
+        repeat_row.emit_clicked();
+        pump(100);
+        assert_eq!(repeat.get(), mode);
+        assert_eq!(
+            repeat_icon.icon_name().as_deref(),
+            Some(icon),
+            "the repeat row's icon follows the mode"
+        );
+        assert_eq!(
+            repeat_check.get_visible(),
+            on,
+            "the repeat row's mark follows the mode"
+        );
+    }
+    repeat_row.emit_clicked();
+    pump(500);
+    distinct_colors(popover.upcast_ref(), "player-bar-0572-more-options");
+    bar.set_shuffled(false);
+    assert!(
+        !shuffle_check.get_visible(),
+        "the shuffle mark follows the bar"
+    );
+    popover.popdown();
+    window.destroy();
+    style.set_color_scheme(scheme);
+    eprintln!("bar more options rows ok");
 }
