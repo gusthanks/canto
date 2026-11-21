@@ -138,6 +138,9 @@ Proof:
 - Nothing that puts the user's Spotify account at risk.
 - Keys the user brings (BYOK: Last.fm, ListenBrainz, Genius and others) stay on
   the user's machine. The session log (`src/session_log.rs`) never holds tokens.
+- The design rules behind these (colors that follow the system, one control
+  per function, icons, small windows): `doc/Principles.md`. Read it before
+  adding a feature or changing how something looks.
 
 ## 6. Where things go
 
@@ -157,6 +160,7 @@ Proof:
   waiting, the red proof and what tests cannot see. Read it before writing a check.
 - `doc/Pitfalls.md`: GTK, libadwaita, Rust 2018, translation, icon and Web API
   traps, each with symptom, cause, fix and file. Read it before touching an area.
+- `doc/Principles.md`: who Canto is for and the design rules that follow.
 - `doc/interface-map.md`: where each part of the window lives, by file and
   widget name, and what was decided about it. Read its section before
   changing an area of the UI.
