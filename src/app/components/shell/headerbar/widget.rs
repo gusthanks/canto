@@ -7,6 +7,7 @@ use libadwaita::subclass::prelude::BinImpl;
 
 use super::HistoryMenuRow;
 use crate::app::components::shell::layout::HEADER_COMPACT_WIDTH_PX;
+use crate::app::components::utils::set_css_class;
 use crate::app::components::{labels, Drawer};
 
 mod imp {
@@ -221,14 +222,6 @@ fn animate_in(widget: &gtk::Widget) {
             move || widget.remove_css_class(ADDED_CLASS)
         ),
     );
-}
-
-fn set_css_class(widget: &impl IsA<gtk::Widget>, class: &str, on: bool) {
-    if on {
-        widget.add_css_class(class);
-    } else {
-        widget.remove_css_class(class);
-    }
 }
 
 #[derive(Debug)]
