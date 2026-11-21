@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::future::Future;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
 
@@ -389,6 +389,21 @@ impl LyricsService {
     /// asks them to confirm first. The error is a sentence to show.
     pub async fn publish_lyrics(&self, lyrics: &super::LyricsToPublish) -> Result<(), String> {
         super::publish::publish(&self.client, &self.endpoints.lrclib_base, lyrics).await
+    }
+
+    /// Sends a listener's lyrics to LRCLIB, stopping if `cancel` is set.
+    pub async fn publish_lyrics_cancellable(
+        &self,
+        lyrics: &super::LyricsToPublish,
+        cancel: Arc<AtomicBool>,
+    ) -> Result<(), String> {
+        super::publish::publish_with_cancel(
+            &self.client,
+            &self.endpoints.lrclib_base,
+            lyrics,
+            cancel,
+        )
+        .await
     }
 
     pub fn cache(&self) -> &LyricsCache {

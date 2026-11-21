@@ -4,8 +4,16 @@
 //! after the prefix, hashes (SHA-256) at or under the target. The app asks
 //! the listener to confirm each sending before calling this.
 
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
+use std::time::Duration;
+
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
+
+const PUBLISH_TIMEOUT: Duration = Duration::from_secs(15);
 
 /// The lyrics and the song they are for, as LRCLIB files them.
 #[derive(Clone, Debug, PartialEq)]
@@ -34,17 +42,49 @@ fn meets_target(hash: &[u8], target: &[u8]) -> bool {
     hash.len() == target.len() && hash <= target
 }
 
+/// Formats `n` as ASCII decimal bytes inside `buf` without heap allocation.
+fn format_u64_ascii(mut n: u64, buf: &mut [u8; 20]) -> &[u8] {
+    let mut i = buf.len();
+    loop {
+        i -= 1;
+        buf[i] = b'0' + (n % 10) as u8;
+        n /= 10;
+        if n == 0 {
+            break;
+        }
+    }
+    &buf[i..]
+}
+
+/// The first number that, after `prefix`, hashes at or under `target`
+/// (hex); `None` when the target isn't hex of a SHA-256's length, is all
+/// zeroes (unsolvable), or `cancel` becomes true.
+pub fn solve_challenge_cancellable(prefix: &str, target: &str, cancel: &AtomicBool) -> Option<u64> {
+    let target = hex::decode(target).ok()?;
+    if target.len() != 32 || target.iter().all(|&b| b == 0) {
+        return None;
+    }
+    let mut base = Sha256::new();
+    base.update(prefix.as_bytes());
+    let mut buf = [0u8; 20];
+    for nonce in 0u64.. {
+        if (nonce & 0x3fff) == 0 && cancel.load(Ordering::Relaxed) {
+            return None;
+        }
+        let mut hasher = base.clone();
+        hasher.update(format_u64_ascii(nonce, &mut buf));
+        let hash = hasher.finalize();
+        if meets_target(hash.as_slice(), &target) {
+            return Some(nonce);
+        }
+    }
+    None
+}
+
 /// The first number that, after `prefix`, hashes at or under `target`
 /// (hex); `None` when the target isn't hex of a SHA-256's length.
 pub fn solve_challenge(prefix: &str, target: &str) -> Option<u64> {
-    let target = hex::decode(target).ok()?;
-    if target.len() != 32 {
-        return None;
-    }
-    (0u64..).find(|nonce| {
-        let hash = Sha256::digest(format!("{prefix}{nonce}").as_bytes());
-        meets_target(hash.as_slice(), &target)
-    })
+    solve_challenge_cancellable(prefix, target, &AtomicBool::new(false))
 }
 
 /// What LRCLIB's publish takes.
@@ -59,16 +99,39 @@ pub fn publish_body(lyrics: &LyricsToPublish) -> serde_json::Value {
     })
 }
 
+struct CancelOnDrop(Option<Arc<AtomicBool>>);
+
+impl CancelOnDrop {
+    fn disarm(&mut self) {
+        self.0 = None;
+    }
+}
+
+impl Drop for CancelOnDrop {
+    fn drop(&mut self) {
+        if let Some(flag) = self.0.take() {
+            flag.store(true, Ordering::Relaxed);
+        }
+    }
+}
+
 /// Sends `lyrics` to LRCLIB at `base` ("https://lrclib.net"): asks for a
 /// challenge, solves it on a thread of its own (it can take a minute on a
-/// slow computer), then publishes. The error is a sentence to show.
-pub async fn publish(
+/// slow computer), then publishes. Stops before solving or posting if
+/// `cancel` is set (including when the caller drops this future while the
+/// solver runs). The error is a sentence to show.
+pub async fn publish_with_cancel(
     client: &reqwest::Client,
     base: &str,
     lyrics: &LyricsToPublish,
+    cancel: Arc<AtomicBool>,
 ) -> Result<(), String> {
+    if cancel.load(Ordering::Relaxed) {
+        return Err("Cancelled".to_string());
+    }
     let challenge: Challenge = client
         .post(format!("{base}/api/request-challenge"))
+        .timeout(PUBLISH_TIMEOUT)
         .send()
         .await
         .and_then(reqwest::Response::error_for_status)
@@ -77,20 +140,37 @@ pub async fn publish(
         .await
         .map_err(|e| format!("LRCLIB's answer couldn't be read: {e}"))?;
 
+    if cancel.load(Ordering::Relaxed) {
+        return Err("Cancelled".to_string());
+    }
     let (sender, receiver) = futures::channel::oneshot::channel();
     let prefix = challenge.prefix.clone();
     let target = challenge.target.clone();
+    let thread_cancel = Arc::clone(&cancel);
     std::thread::spawn(move || {
-        let _ = sender.send(solve_challenge(&prefix, &target));
+        let _ = sender.send(solve_challenge_cancellable(
+            &prefix,
+            &target,
+            &thread_cancel,
+        ));
     });
-    let nonce = receiver
-        .await
-        .ok()
-        .flatten()
-        .ok_or_else(|| "LRCLIB's challenge couldn't be solved".to_string())?;
+    let mut solver_guard = CancelOnDrop(Some(Arc::clone(&cancel)));
+    let solved = receiver.await;
+    solver_guard.disarm();
+    let nonce = solved.ok().flatten().ok_or_else(|| {
+        if cancel.load(Ordering::Relaxed) {
+            "Cancelled".to_string()
+        } else {
+            "LRCLIB's challenge couldn't be solved".to_string()
+        }
+    })?;
 
+    if cancel.load(Ordering::Relaxed) {
+        return Err("Cancelled".to_string());
+    }
     let response = client
         .post(format!("{base}/api/publish"))
+        .timeout(PUBLISH_TIMEOUT)
         .header("X-Publish-Token", format!("{}:{nonce}", challenge.prefix))
         .json(&publish_body(lyrics))
         .send()
@@ -107,6 +187,17 @@ pub async fn publish(
         .and_then(|e| e.message)
         .unwrap_or_else(|| format!("LRCLIB answered {status}"));
     Err(message)
+}
+
+/// Sends `lyrics` to LRCLIB at `base` ("https://lrclib.net"): asks for a
+/// challenge, solves it on a thread of its own (it can take a minute on a
+/// slow computer), then publishes. The error is a sentence to show.
+pub async fn publish(
+    client: &reqwest::Client,
+    base: &str,
+    lyrics: &LyricsToPublish,
+) -> Result<(), String> {
+    publish_with_cancel(client, base, lyrics, Arc::new(AtomicBool::new(false))).await
 }
 
 #[cfg(test)]
@@ -195,5 +286,43 @@ mod tests {
         let client = crate::test_server::client();
         let error = publish(&client, &server.base, &song()).await.unwrap_err();
         assert_eq!(error, "The provided publish token is incorrect");
+    }
+
+    #[test]
+    fn cancelling_stops_the_solver() {
+        let cancel = AtomicBool::new(true);
+        assert_eq!(solve_challenge_cancellable("abc", EASY, &cancel), None);
+    }
+
+    #[test]
+    fn all_zero_target_returns_none_and_ascii_formatter_handles_edges() {
+        let zeroes = "00".repeat(32);
+        assert_eq!(
+            solve_challenge_cancellable("abc", &zeroes, &AtomicBool::new(false)),
+            None
+        );
+        let mut buf = [0u8; 20];
+        assert_eq!(format_u64_ascii(0, &mut buf), b"0");
+        assert_eq!(format_u64_ascii(9, &mut buf), b"9");
+        assert_eq!(format_u64_ascii(10, &mut buf), b"10");
+        assert_eq!(format_u64_ascii(42, &mut buf), b"42");
+        assert_eq!(
+            format_u64_ascii(u64::MAX, &mut buf),
+            b"18446744073709551615"
+        );
+    }
+
+    #[tokio::test]
+    async fn cancelling_never_posts_to_publish() {
+        let challenge = format!(r#"{{"prefix":"abc","target":"{EASY}"}}"#);
+        let server = TestServer::start(&[
+            ("/api/request-challenge", 200, &challenge),
+            ("/api/publish", 201, ""),
+        ]);
+        let client = crate::test_server::client();
+        let cancel = Arc::new(AtomicBool::new(true));
+        let result = publish_with_cancel(&client, &server.base, &song(), cancel).await;
+        assert!(result.is_err());
+        assert!(server.requests("/api/publish").is_empty());
     }
 }

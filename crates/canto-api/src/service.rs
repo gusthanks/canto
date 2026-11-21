@@ -274,6 +274,17 @@ impl ApiService {
         self.lyrics_service.publish_lyrics(lyrics).await
     }
 
+    /// Sends a listener's lyrics to LRCLIB, stopping if `cancel` becomes true.
+    pub async fn publish_lyrics_cancellable(
+        &self,
+        lyrics: &crate::lyrics::LyricsToPublish,
+        cancel: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    ) -> Result<(), String> {
+        self.lyrics_service
+            .publish_lyrics_cancellable(lyrics, cancel)
+            .await
+    }
+
     pub async fn refetch_lyrics(
         &self,
         key: &str,

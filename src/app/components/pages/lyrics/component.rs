@@ -166,7 +166,13 @@ impl LyricsPage {
                 let weak_widget = weak_widget.clone();
                 let dispatcher = dispatcher.clone();
                 glib::spawn_future_local(async move {
-                    match api.publish_lyrics(&lyrics).await {
+                    let result = api
+                        .publish_lyrics_cancellable(&lyrics, sending.cancel_flag())
+                        .await;
+                    if sending.is_cancelled() {
+                        return;
+                    }
+                    match result {
                         Ok(()) => {
                             sending.done();
                             dispatcher.dispatch(crate::app::AppAction::ShowNotification(

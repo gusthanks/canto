@@ -5,6 +5,13 @@
 //! Opened from the lyrics page when no source has the song. Each sending
 //! is confirmed first.
 
+use std::cell::{Cell, RefCell};
+use std::rc::Rc;
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
+
 use gettextrs::gettext;
 use gtk::glib;
 use gtk::prelude::*;
@@ -28,44 +35,126 @@ pub struct LyricsDraft {
     pub lines: usize,
 }
 
-/// A line's time, as "[01:23.45]" or "[01:23]", and the text after it.
-fn split_time(line: &str) -> Option<&str> {
-    let rest = line.strip_prefix('[')?;
-    let (time, text) = rest.split_once(']')?;
-    let (minutes, seconds) = time.split_once(':')?;
+fn is_time_tag(tag: &str) -> bool {
+    let Some((minutes, seconds)) = tag.split_once(':') else {
+        return false;
+    };
     let digits = |s: &str| !s.is_empty() && s.chars().all(|c| c.is_ascii_digit());
-    let (whole, fraction) = seconds.split_once('.').unwrap_or((seconds, "0"));
-    (digits(minutes) && digits(whole) && digits(fraction)).then_some(text.trim_start())
+    let (whole, fraction) = seconds
+        .split_once('.')
+        .or_else(|| seconds.split_once(','))
+        .unwrap_or((seconds, "0"));
+    digits(minutes) && digits(whole) && digits(fraction)
 }
 
-/// The draft for `text`: synced when every line with words carries a time.
+/// One or more leading line times, as "[01:23.45]", "[01:23,45]", or
+/// "[01:23]", and the text after them.
+fn split_time(line: &str) -> Option<&str> {
+    let mut rest = line.trim_start();
+    let mut matched = false;
+    while let Some(after_open) = rest.strip_prefix('[') {
+        let Some((tag, after_close)) = after_open.split_once(']') else {
+            break;
+        };
+        if !is_time_tag(tag) {
+            break;
+        }
+        matched = true;
+        rest = after_close.trim_start();
+    }
+    matched.then_some(rest)
+}
+
+/// Whether `line` is an LRC metadata header such as `[ar: Artist]` or
+/// `[length: 03:45]`, matching the LRC parser's rule.
+fn is_lrc_metadata_tag(line: &str) -> bool {
+    let line = line.trim();
+    let Some(inner) = line.strip_prefix('[').and_then(|s| s.strip_suffix(']')) else {
+        return false;
+    };
+    if inner.contains(']') {
+        return false;
+    }
+    let Some((key, _)) = inner.split_once(':') else {
+        return false;
+    };
+    let key = key.trim();
+    !key.is_empty() && key.chars().all(|c| c.is_ascii_alphabetic())
+}
+
+fn trim_blank_edges(lines: Vec<String>) -> Vec<String> {
+    let start = lines
+        .iter()
+        .position(|l| !l.trim().is_empty())
+        .unwrap_or(lines.len());
+    let end = lines
+        .iter()
+        .rposition(|l| !l.trim().is_empty())
+        .map_or(0, |i| i + 1);
+    if start >= end {
+        Vec::new()
+    } else {
+        lines.into_iter().skip(start).take(end - start).collect()
+    }
+}
+
+/// The draft for `text`: synced when every non-metadata line with words
+/// carries a time. LRC metadata headers are ignored and timestamps are
+/// always stripped from `plain` so they never leak into plain lyrics.
 pub fn parse_draft(text: &str) -> LyricsDraft {
     let text = text.trim();
     let lines: Vec<&str> = text.lines().map(str::trim_end).collect();
-    let worded: Vec<&str> = lines
+    let content_lines: Vec<&str> = lines
         .iter()
         .copied()
-        .filter(|l| !l.trim().is_empty())
+        .filter(|l| !l.trim().is_empty() && !is_lrc_metadata_tag(l))
         .collect();
-    let synced = !worded.is_empty() && worded.iter().all(|l| split_time(l).is_some());
-    let plain = if synced {
-        lines
-            .iter()
-            .map(|l| split_time(l).unwrap_or(l).to_string())
-            .collect::<Vec<_>>()
-            .join("\n")
+    if content_lines.is_empty() {
+        return LyricsDraft {
+            plain: String::new(),
+            synced: None,
+            lines: 0,
+        };
+    }
+    let has_any_time = content_lines.iter().any(|l| split_time(l).is_some());
+    let synced = content_lines.iter().all(|l| split_time(l).is_some());
+    let plain_lines = if synced || has_any_time {
+        trim_blank_edges(
+            lines
+                .iter()
+                .copied()
+                .filter(|l| !is_lrc_metadata_tag(l))
+                .map(|l| split_time(l).unwrap_or(l).to_string())
+                .collect(),
+        )
     } else {
-        lines.join("\n")
+        lines.iter().map(|l| (*l).to_string()).collect()
     };
+    let plain = plain_lines.join("\n");
+    let synced_out = if synced {
+        let synced_lines = trim_blank_edges(
+            lines
+                .iter()
+                .copied()
+                .filter(|l| !is_lrc_metadata_tag(l))
+                .map(|l| l.trim_start().to_string())
+                .collect(),
+        );
+        Some(synced_lines.join("\n"))
+    } else {
+        None
+    };
+    let worded = plain.lines().filter(|l| !l.trim().is_empty()).count();
     LyricsDraft {
         plain,
-        synced: synced.then(|| lines.join("\n")),
-        lines: worded.len(),
+        synced: synced_out,
+        lines: worded,
     }
 }
 
 /// The window while its lyrics are being sent: `done` closes it, `failed`
-/// says why and lets the listener try again.
+/// says why and lets the listener try again, `cancel_flag` lets closing the
+/// dialog abort the proof-of-work and HTTP send.
 #[derive(Clone)]
 pub struct Sending {
     dialog: glib::WeakRef<libadwaita::Dialog>,
@@ -73,9 +162,20 @@ pub struct Sending {
     spinner: glib::WeakRef<libadwaita::Spinner>,
     review: glib::WeakRef<gtk::Button>,
     text: glib::WeakRef<gtk::TextView>,
+    busy: Rc<Cell<bool>>,
+    cancel: Arc<AtomicBool>,
+    active_cancel: Rc<RefCell<Option<Arc<AtomicBool>>>>,
 }
 
 impl Sending {
+    pub fn cancel_flag(&self) -> Arc<AtomicBool> {
+        Arc::clone(&self.cancel)
+    }
+
+    pub fn is_cancelled(&self) -> bool {
+        self.cancel.load(Ordering::Relaxed)
+    }
+
     fn start(&self) {
         if let Some(status) = self.status.upgrade() {
             // translators: In "Add Lyrics" while the lyrics are sent; LRCLIB first asks the computer to solve a small puzzle.
@@ -89,6 +189,7 @@ impl Sending {
     }
 
     fn busy(&self, busy: bool) {
+        self.busy.set(busy);
         if let Some(spinner) = self.spinner.upgrade() {
             spinner.set_visible(busy);
         }
@@ -101,12 +202,15 @@ impl Sending {
     }
 
     pub fn done(&self) {
+        *self.active_cancel.borrow_mut() = None;
+        self.busy(false);
         if let Some(dialog) = self.dialog.upgrade() {
             dialog.force_close();
         }
     }
 
     pub fn failed(&self, error: &str) {
+        *self.active_cancel.borrow_mut() = None;
         self.busy(false);
         if let Some(status) = self.status.upgrade() {
             // translators: In "Add Lyrics" when sending failed. {} is the reason, from LRCLIB.
@@ -214,21 +318,31 @@ pub fn open(
     sending_row.append(&status);
     body.append(&sending_row);
     body.append(&review);
-    let sending = Sending {
-        dialog: dialog.downgrade(),
-        status: status.downgrade(),
-        spinner: spinner.downgrade(),
-        review: review.downgrade(),
-        text: text.downgrade(),
-    };
+    let busy = Rc::new(Cell::new(false));
+    let active_cancel: Rc<RefCell<Option<Arc<AtomicBool>>>> = Rc::new(RefCell::new(None));
+    let cancel_on_close = Rc::clone(&active_cancel);
+    dialog.connect_closed(move |_| {
+        if let Some(flag) = cancel_on_close.borrow_mut().take() {
+            flag.store(true, Ordering::Relaxed);
+        }
+    });
+
+    let dialog_weak = dialog.downgrade();
+    let status_weak = status.downgrade();
+    let spinner_weak = spinner.downgrade();
+    let review_weak = review.downgrade();
+    let text_weak = text.downgrade();
 
     let buffer = text.buffer();
+    let busy_changed = Rc::clone(&busy);
     buffer.connect_changed(glib::clone!(
         #[weak]
         review,
         move |buffer| {
             let (start, end) = buffer.bounds();
-            review.set_sensitive(!buffer.text(&start, &end, false).trim().is_empty());
+            let ready =
+                !busy_changed.get() && parse_draft(&buffer.text(&start, &end, false)).lines > 0;
+            review.set_sensitive(ready);
         }
     ));
     let song = song.clone();
@@ -243,10 +357,28 @@ pub fn open(
             let draft = parse_draft(&buffer.text(&start, &end, false));
             let confirm = confirmation(&song, &draft);
             let on_publish = on_publish.clone();
-            let sending = sending.clone();
+            let dialog_weak = dialog_weak.clone();
+            let status_weak = status_weak.clone();
+            let spinner_weak = spinner_weak.clone();
+            let review_weak = review_weak.clone();
+            let text_weak = text_weak.clone();
+            let busy = Rc::clone(&busy);
+            let active_cancel = Rc::clone(&active_cancel);
             confirm.connect_response(Some("publish"), move |_, _| {
+                let cancel = Arc::new(AtomicBool::new(false));
+                *active_cancel.borrow_mut() = Some(Arc::clone(&cancel));
+                let sending = Sending {
+                    dialog: dialog_weak.clone(),
+                    status: status_weak.clone(),
+                    spinner: spinner_weak.clone(),
+                    review: review_weak.clone(),
+                    text: text_weak.clone(),
+                    busy: Rc::clone(&busy),
+                    cancel,
+                    active_cancel: Rc::clone(&active_cancel),
+                };
                 sending.start();
-                on_publish(draft.clone(), sending.clone());
+                on_publish(draft.clone(), sending);
             });
             confirm.present(Some(&dialog));
         }
@@ -328,9 +460,30 @@ mod tests {
         let draft = parse_draft("[00:12.40] First sample line\nSecond sample line");
         assert_eq!(draft.synced, None);
         assert_eq!(draft.lines, 2);
-        assert!(draft.plain.starts_with("[00:12.40]"));
+        assert_eq!(draft.plain, "First sample line\nSecond sample line");
         assert_eq!(parse_draft("  ").lines, 0);
         assert_eq!(parse_draft("[1:2x] no").synced, None);
+    }
+
+    #[test]
+    fn lrc_metadata_headers_stay_synced_and_leave_plain_clean() {
+        let draft = parse_draft(
+            "[ar: Niink]\n[ti: Disco Voador]\n[al: Flowra FM]\n[length: 03:45]\n\n[00:12.40] First line\n[00:15,10] Second line\n",
+        );
+        assert_eq!(draft.lines, 2);
+        assert_eq!(draft.plain, "First line\nSecond line");
+        assert_eq!(
+            draft.synced.as_deref(),
+            Some("[00:12.40] First line\n[00:15,10] Second line")
+        );
+    }
+
+    #[test]
+    fn only_metadata_tags_count_as_empty() {
+        let draft = parse_draft("[ar: Niink]\n[ti: Disco Voador]");
+        assert_eq!(draft.lines, 0);
+        assert_eq!(draft.synced, None);
+        assert!(draft.plain.is_empty());
     }
 
     #[test]
