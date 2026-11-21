@@ -63,9 +63,10 @@ template $PlaybackWidget : Box {
           spacing: 8;
           hexpand: true;
 
-          // A squeezed bar shortens a track's times over an hour (1∶02…)
-          // rather than growing past the window: never narrower than
-          // width-chars, as wide as the text when there's room
+          // Never narrower than width-chars, as wide as the text when
+          // there's room; under the widest tier a track over an hour reads
+          // 1h02 (playback_widget.rs), and a squeezed bar would shorten
+          // anything longer (1∶0…) rather than grow past the window
           Label track_position {
             label: "0∶00";
             width-chars: 5;

@@ -4,7 +4,9 @@ use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 
-use crate::app::components::utils::{decode_px, format_duration, Clock, Debouncer};
+use crate::app::components::utils::{
+    decode_px, format_duration, format_duration_short, Clock, Debouncer,
+};
 use crate::app::components::{
     display_add_css_provider, DeviceSelectorWidget, SleepTimerMode, SleepTimerSnapshot,
 };
@@ -31,7 +33,8 @@ const ARTWORK_SIZE: i32 = 48;
 /// - 860: the volume slider turns into a button, and the device and mini
 ///   player buttons leave (both stay in Ctrl+K);
 /// - 660 (half of a 1200 sp screen): shuffle and repeat move into More
-///   Options, and the times beside the seek bar get shorter;
+///   Options, and the times beside the seek bar get shorter (a track over
+///   an hour reads 1h02);
 /// - 560: lyrics and queue leave (the side panel has them as tabs, and the
 ///   cover opens it);
 /// - 486: the like button and the volume button leave;
@@ -234,6 +237,9 @@ mod imp {
         pub bar_tiers: RefCell<Vec<(f64, libadwaita::Breakpoint)>>,
         /// The room (px) the tiers keep for the sleep timer's countdown
         pub bar_tier_room: Cell<i32>,
+        /// Whether a tier under the widest one applies, which keeps the
+        /// times beside the seek bar short
+        pub short_times: Cell<bool>,
     }
 
     impl Default for PlaybackWidget {
@@ -305,6 +311,7 @@ mod imp {
                 last_nonzero_volume: Cell::new(0.7),
                 bar_tiers: Default::default(),
                 bar_tier_room: Cell::new(0),
+                short_times: Cell::new(false),
             }
         }
     }
@@ -339,6 +346,27 @@ mod imp {
 
             self.setup_customizable_bar();
             self.setup_bar_tiers();
+
+            // Under the widest tier the times beside the seek bar keep 4
+            // characters: a track over an hour reads 1h02 there, not 1∶0…
+            use libadwaita::prelude::BreakpointBinExt;
+            let weak_self = self.obj().downgrade();
+            self.bar_bin.connect_current_breakpoint_notify(move |bin| {
+                if let Some(obj) = weak_self.upgrade() {
+                    let imp = obj.imp();
+                    let short = bin.current_breakpoint().is_some_and(|current| {
+                        imp.bar_tiers
+                            .borrow()
+                            .iter()
+                            .skip(1)
+                            .any(|(_, tier)| *tier == current)
+                    });
+                    if imp.short_times.replace(short) != short {
+                        let duration = imp.seek_bar.adjustment().upper();
+                        obj.update_track_time(imp.seek_bar.value(), duration);
+                    }
+                }
+            });
 
             // The tiers keep room for the sleep timer's countdown while it
             // shows (measured once it has its style, on screen). The
@@ -1008,8 +1036,13 @@ impl PlaybackWidget {
 
     fn update_track_time(&self, pos: f64, duration: f64) {
         let widget = self.imp();
-        widget.track_position.set_text(&format_duration(pos));
-        widget.track_duration.set_text(&format_duration(duration));
+        let format = if widget.short_times.get() {
+            format_duration_short
+        } else {
+            format_duration
+        };
+        widget.track_position.set_text(&format(pos));
+        widget.track_duration.set_text(&format(duration));
     }
 
     pub fn increment_seek_position(&self) {

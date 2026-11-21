@@ -199,6 +199,18 @@ pub fn format_duration(duration: f64) -> String {
     }
 }
 
+/// `format_duration` for the narrow player bar: an hour or more reads in
+/// hours and minutes ("1h02"), short enough not to be cut there.
+pub fn format_duration_short(duration: f64) -> String {
+    let minutes = (duration / 1000.0) as i32 / 60;
+    let hours = minutes.div_euclid(60);
+    if hours > 0 {
+        format!("{hours}h{:02}", minutes.rem_euclid(60))
+    } else {
+        format_duration(duration)
+    }
+}
+
 /// Device pixels for `logical` px of artwork. Read from the display rather than
 /// a widget, so every caller lands under the same texture cache keys.
 pub fn decode_px(logical: i32) -> i32 {
@@ -257,4 +269,20 @@ pub fn confirm_delete_playlist(
         &gettext("Delete"),
         on_confirmed,
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{format_duration, format_duration_short};
+
+    #[test]
+    fn short_durations_read_hours_and_minutes() {
+        assert_eq!(format_duration_short(215_000.0), "3∶35");
+        assert_eq!(format_duration_short(754_000.0), "12∶34");
+        assert_eq!(format_duration_short(3_599_000.0), "59∶59");
+        assert_eq!(format_duration_short(3_600_000.0), "1h00");
+        assert_eq!(format_duration_short(3_723_000.0), "1h02");
+        assert_eq!(format_duration_short(36_059_000.0), "10h00");
+        assert_eq!(format_duration(3_723_000.0), "1∶02∶03");
+    }
 }

@@ -3883,9 +3883,22 @@ const BAR_WIDTHS: [i32; 15] = [
 const BAR_WIDTHS_SMALL_TEXT: [i32; 6] = [401, 487, 561, 572, 661, 861];
 
 /// A track over an hour ("1∶02∶03"), whose times beside the seek bar are
-/// wider than the controls over them: at the narrow edges of the steps that
-/// keep the times, and the window on half of the screen.
-const BAR_WIDTHS_LONG_TRACK: [i32; 3] = [401, 487, 572];
+/// wider than the controls over them, and one under an hour with the
+/// widest times ("12∶34" of "59∶59"): at the narrow edges of the steps that
+/// keep the times, the window on half of the screen, and both sides of 660,
+/// under which the times get shorter.
+const BAR_WIDTHS_LONG_TRACK: [i32; 5] = [401, 487, 572, 660, 661];
+
+/// How long the player bar's track is, for the times beside its seek bar.
+#[derive(Clone, Copy, PartialEq)]
+enum BarTrack {
+    /// 3∶35, at its start
+    Short,
+    /// 59∶59, at 12∶34
+    Minutes,
+    /// 1∶02∶03, at 1∶00∶00
+    Hour,
+}
 
 /// A sleep timer's countdown in the bar: the window on half of a 1200 sp
 /// screen (572 and 583), and just past the edges where the slider and
@@ -3989,6 +4002,10 @@ struct BarShot {
     missing: Vec<&'static str>,
     /// The sleep timer's countdown button, while it shows (else 0)
     countdown: i32,
+    /// The times beside the seek bar, and whether either one that shows is
+    /// cut short ("1∶0…")
+    times: (String, String),
+    times_cut: bool,
 }
 
 fn shoot_bar(bar: &super::shell::playback::PlaybackWidget, tag: &str, width: i32) -> BarShot {
@@ -4010,6 +4027,11 @@ fn shoot_bar(bar: &super::shell::playback::PlaybackWidget, tag: &str, width: i32
             }
         }
     }
+    let time = |i: usize| {
+        by_id(root, ["track_position", "track_duration"][i])
+            .and_then(|w| w.downcast::<gtk::Label>().ok())
+            .expect("the times beside the seek bar")
+    };
     let mut end_gaps = Vec::new();
     let mut at = 0;
     for (start, end) in &spans {
@@ -4057,17 +4079,19 @@ fn shoot_bar(bar: &super::shell::playback::PlaybackWidget, tag: &str, width: i32
         countdown: by_id(root, "sleep_timer_button")
             .filter(|button| button.is_mapped())
             .map_or(0, |button| button.width()),
+        times: (time(0).text().to_string(), time(1).text().to_string()),
+        times_cut: (0..2).any(|i| time(i).is_mapped() && time(i).layout().is_ellipsized()),
     }
 }
 
 /// The player bar alone in a window `width` px wide, playing a track with
-/// a long title and three artists (3∶35 long, or over an hour), once it
-/// stays put (up to 8 s).
+/// a long title and three artists (`track` long), once it stays put (up to
+/// 8 s).
 fn render_bar(
     width: i32,
     tag: &str,
     timer: bool,
-    long_track: bool,
+    track: BarTrack,
 ) -> (gtk::Window, super::shell::playback::PlaybackWidget, BarShot) {
     let bar: super::shell::playback::PlaybackWidget = glib::Object::new();
     bar.set_track(
@@ -4075,11 +4099,16 @@ fn render_bar(
         "<a href=\"https://open.spotify.com/artist/1\">Niink</a>, <a href=\"https://open.spotify.com/artist/2\">Jotapê</a>, <a href=\"https://open.spotify.com/artist/3\">Supernova Ent</a>",
     );
     bar.set_liked(Some(true));
-    if long_track {
-        bar.set_song_duration(Some(3_723_000.0));
-        bar.set_seek_position(3_600_000.0);
-    } else {
-        bar.set_song_duration(Some(215_000.0));
+    match track {
+        BarTrack::Short => bar.set_song_duration(Some(215_000.0)),
+        BarTrack::Minutes => {
+            bar.set_song_duration(Some(3_599_000.0));
+            bar.set_seek_position(754_000.0);
+        }
+        BarTrack::Hour => {
+            bar.set_song_duration(Some(3_723_000.0));
+            bar.set_seek_position(3_600_000.0);
+        }
     }
     if timer {
         bar.set_sleep_timer_snapshot(&super::SleepTimerSnapshot {
@@ -4117,7 +4146,8 @@ fn render_bar(
 /// as the window narrows; at 660 and under, shuffle and repeat move into the
 /// gear's More Options menu. The gear and the side panel button never
 /// leave. Also with text at 0.91, with a sleep timer's countdown in the
-/// bar, and with a track over an hour. Renders player-bar-<width>.
+/// bar, and with tracks of 10 minutes or more, whose times are never cut
+/// (over an hour, a narrow bar shows "1h02"). Renders player-bar-<width>.
 fn assert_bar_tiers() {
     let style = libadwaita::StyleManager::default();
     let scheme = style.color_scheme();
@@ -4126,20 +4156,25 @@ fn assert_bar_tiers() {
     let dpi = gtk_settings.gtk_xft_dpi();
     let runs = BAR_WIDTHS
         .iter()
-        .map(|w| (*w, false, false, false))
+        .map(|w| (*w, false, false, BarTrack::Short))
         .chain(
             BAR_WIDTHS_SMALL_TEXT
                 .iter()
-                .map(|w| (*w, true, false, false)),
+                .map(|w| (*w, true, false, BarTrack::Short)),
         )
-        .chain(BAR_WIDTHS_TIMER.iter().map(|w| (*w, false, true, false)))
         .chain(
-            BAR_WIDTHS_LONG_TRACK
+            BAR_WIDTHS_TIMER
                 .iter()
-                .map(|w| (*w, false, false, true)),
-        );
+                .map(|w| (*w, false, true, BarTrack::Short)),
+        )
+        .chain(BAR_WIDTHS_LONG_TRACK.iter().flat_map(|w| {
+            [
+                (*w, false, false, BarTrack::Hour),
+                (*w, false, false, BarTrack::Minutes),
+            ]
+        }));
     let mut shots = Vec::new();
-    for (width, small_text, timer, long_track) in runs {
+    for (width, small_text, timer, track) in runs {
         if small_text {
             gtk_settings.set_gtk_xft_dpi(SMALL_TEXT_XFT_DPI);
         }
@@ -4148,9 +4183,35 @@ fn assert_bar_tiers() {
             width,
             if small_text { "-small-text" } else { "" },
             if timer { "-sleep-timer" } else { "" },
-            if long_track { "-long-track" } else { "" }
+            match track {
+                BarTrack::Short => "",
+                BarTrack::Minutes => "-minutes-track",
+                BarTrack::Hour => "-long-track",
+            }
         );
-        let (window, _bar, shot) = render_bar(width, &tag, timer, long_track);
+        let (window, _bar, shot) = render_bar(width, &tag, timer, track);
+        if track != BarTrack::Short && width > 400 {
+            // Never "1∶0…": a narrow bar (660 and under) shows a track over
+            // an hour in hours and minutes, and the minutes of any track
+            // whole
+            check(
+                &format!("{}: the times beside the seek bar are whole", tag),
+                !shot.times_cut,
+                format!("{} and {}", shot.times.0, shot.times.1),
+            );
+            if track == BarTrack::Hour {
+                let expected = if width <= 660 {
+                    ("1h00", "1h02")
+                } else {
+                    ("1∶00∶00", "1∶02∶03")
+                };
+                check(
+                    &format!("{}: the times read {} and {}", tag, expected.0, expected.1),
+                    shot.times.0 == expected.0 && shot.times.1 == expected.1,
+                    format!("{} and {}", shot.times.0, shot.times.1),
+                );
+            }
+        }
         distinct_colors(window.upcast_ref(), &tag);
         window.destroy();
         gtk_settings.set_gtk_xft_dpi(dpi);
@@ -4161,7 +4222,7 @@ fn assert_bar_tiers() {
     // Options) rather than push the row past the bar's end
     for width in BAR_WIDTHS_NARROW_TIMER.iter().copied() {
         let tag = format!("player-bar-{:04}-sleep-timer", width);
-        let (window, _bar, s) = render_bar(width, &tag, true, false);
+        let (window, _bar, s) = render_bar(width, &tag, true, BarTrack::Short);
         distinct_colors(window.upcast_ref(), &tag);
         window.destroy();
         check(
@@ -4310,7 +4371,7 @@ fn assert_more_options_rows() {
     let style = libadwaita::StyleManager::default();
     let scheme = style.color_scheme();
     style.set_color_scheme(libadwaita::ColorScheme::ForceDark);
-    let (window, bar, _) = render_bar(572, "player-bar-0572-more-options", false, false);
+    let (window, bar, _) = render_bar(572, "player-bar-0572-more-options", false, BarTrack::Short);
     let root = bar.upcast_ref::<gtk::Widget>();
     let part = |id: &str| by_id(root, id).unwrap_or_else(|| panic!("the bar has no {}", id));
     // Stand-ins for the app's actions, which turn the state and tell the
