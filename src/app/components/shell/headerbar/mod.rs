@@ -2,7 +2,8 @@ mod widget;
 pub use widget::*;
 
 mod history_menu_row;
-use history_menu_row::HistoryMenuRow;
+// pub(crate) for the GTK tests, which build every template widget
+pub(crate) use history_menu_row::HistoryMenuRow;
 
 mod component;
 pub use component::*;

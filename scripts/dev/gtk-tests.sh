@@ -2,7 +2,9 @@
 # Runs the GTK tests (ignored in a plain cargo test) on a headless Broadway display.
 #
 # Usage: scripts/dev/gtk-tests.sh [filter] [--dump DIR]
-#   filter      only the GTK tests whose name, inside the GTK test module, starts with it
+#   filter      only the GTK tests whose name, inside the GTK test module, starts with it:
+#               an area (lyrics, queue, library, now_panel, shell_layout, playback_bar,
+#               settings, resources_icons, dumps) or one test (lyrics::lyrics_options)
 #   --dump DIR  also write the PNG renders there (a new or empty folder)
 #
 # The tests never touch the desktop session: a free Broadway display of their own, the
@@ -10,7 +12,9 @@
 # D-Bus session, no portals, and no Wayland, X11 or compositor variables.
 # Refuses a gresource older than any .blp, .css, icon or resource list: rebuild it with
 #   ninja -C build src/canto.gresource
-# The full output goes to $CANTO_OUT/gtk-tests.log (default $TMPDIR/canto-dev).
+# The tests run one at a time, in name order; each ends with a "GTK test <name>: ok in
+# <s>" (or FAILED) line, which is what this script shows of them. The full output goes to
+# $CANTO_OUT/gtk-tests.log (default $TMPDIR/canto-dev).
 # Exit code: the test run's own; 1 also when no test ran. Settings: see scripts/dev/lib.sh.
 set -uo pipefail
 
@@ -21,7 +25,7 @@ cd "$CANTO_REPO" || exit 1
 
 # The module that holds the GTK tests. The filter always starts with it, so
 # --include-ignored never starts an unrelated ignored test (like a large download).
-GTK_MODULE="app::components::gtk_smoke_tests::"
+GTK_MODULE="app::components::gtk_tests::"
 
 filter=""
 dump=""
@@ -74,9 +78,9 @@ fi
 mapfile -t jobs < <(canto_jobs_args)
 canto_heavy env "${CANTO_SESSION_ENV[@]}" dbus-run-session -- \
     "$CARGO" test "${CANTO_PACKAGES[@]}" "${jobs[@]}" --color never "$GTK_MODULE$filter" \
-    -- --include-ignored --nocapture 2>&1 \
+    -- --include-ignored --nocapture --test-threads=1 2>&1 \
     | tee "$log" \
-    | grep -E "^test |test result|panicked|^error|^\s+-->"
+    | grep -E "^GTK test |test result|panicked|^error|^\s+-->"
 rc=${PIPESTATUS[0]}
 
 if [[ -n "$dump" ]]; then

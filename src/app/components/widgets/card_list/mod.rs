@@ -11,5 +11,7 @@ pub use card_grid::align_cards_to_edges;
 pub(crate) use card_grid::aligned_grid_for_tests;
 pub use component::*;
 pub use filter_chips::{categories_in, FilterChips};
+#[cfg(test)]
+pub(crate) use page_widget::CardListWidget;
 pub use traits::*;
 pub use widget::*;

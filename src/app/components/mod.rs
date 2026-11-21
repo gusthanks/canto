@@ -66,7 +66,7 @@ pub mod level_bars;
 pub use level_bars::LevelBarsListener;
 
 #[cfg(test)]
-mod gtk_smoke_tests;
+mod gtk_tests;
 
 // without this the builder doesn't seen to know about the custom widgets
 pub fn expose_custom_widgets() {
