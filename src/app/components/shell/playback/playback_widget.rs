@@ -467,8 +467,18 @@ mod imp {
                 );
                 scroll.set_propagation_phase(gtk::PropagationPhase::Capture);
                 let slider = self.volume_slider.clone();
-                scroll.connect_scroll(move |_, _, dy| {
-                    slider.set_value(super::volume_after_scroll(slider.value(), dy));
+                scroll.connect_scroll(move |controller, _, dy| {
+                    // With natural scrolling (Gus's touchpad) the fingers
+                    // going up scroll down: the volume follows the fingers
+                    let natural = controller
+                        .current_event()
+                        .and_then(|event| event.downcast::<gtk::gdk::ScrollEvent>().ok())
+                        .is_some_and(|event| {
+                            event.relative_direction()
+                                == gtk::gdk::ScrollRelativeDirection::Inverted
+                        });
+                    let steps = super::scroll_steps(dy, natural);
+                    slider.set_value(super::volume_after_scroll(slider.value(), steps));
                     glib::Propagation::Stop
                 });
                 target.add_controller(scroll);
@@ -874,6 +884,16 @@ fn pressed(on: bool) -> gtk::AccessibleTristate {
     }
 }
 
+/// Steps of the wheel or the touchpad as the hand moved them (negative:
+/// up). With natural scrolling the fingers going up send a scroll down.
+fn scroll_steps(dy: f64, natural: bool) -> f64 {
+    if natural {
+        -dy
+    } else {
+        dy
+    }
+}
+
 /// The volume after `steps` of the wheel or the touchpad (negative: up),
 /// each the step of Ctrl+Up and Ctrl+Down.
 fn volume_after_scroll(value: f64, steps: f64) -> f64 {
@@ -1258,6 +1278,15 @@ mod tests {
         assert!(close(volume_after_scroll(0.98, -1.0), 1.0));
         assert!(close(volume_after_scroll(0.02, 1.0), 0.0));
         assert_eq!(volume_tooltip(0.45), "Volume 45% · Ctrl+↑ / Ctrl+↓");
+        // A wheel up, and fingers up with natural scrolling: louder
+        assert!(close(
+            volume_after_scroll(0.40, scroll_steps(-1.0, false)),
+            0.45
+        ));
+        assert!(close(
+            volume_after_scroll(0.40, scroll_steps(1.0, true)),
+            0.45
+        ));
         assert_eq!(volume_tooltip(0.0), "Volume 0% · Ctrl+↑ / Ctrl+↓");
     }
 
