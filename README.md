@@ -194,20 +194,25 @@ You can enable Last.fm, ListenBrainz, or both simultaneously.
 
 There are no packages yet. Build from source:
 
-
 ```sh
 ./scripts/setup-dev.sh    # install system build dependencies
-./scripts/build.sh dev    # compile debug build with Meson + Cargo
-./scripts/build.sh test   # run workspace tests and Meson checks
+./scripts/build.sh dev    # compile a debug build with Meson + Cargo
+./scripts/build.sh test   # unit tests and Clippy (not the GTK tests)
 ```
 
-To install into `~/.local`:
+The GTK tests need a headless Broadway display, so `./scripts/build.sh test` skips them. Run them with `scripts/dev/gtk-tests.sh`, or run the whole check loop with `scripts/dev/round.sh`.
+
+To install into `~/.local` (close Canto first):
 
 ```sh
 ./scripts/build.sh release --install
 ```
 
 See the [Development Guide](doc/Development.md) for architecture notes, feature flags, and developer tools (`Ctrl+Shift+D`).
+
+## Contributing
+
+Contributors and AI agents: start at [AGENTS.md](AGENTS.md), then read [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Acknowledgements
 
