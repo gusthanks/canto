@@ -176,6 +176,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     assert_volume_scrolls_in_steps();
     assert_release_filters_are_buttons();
     assert_card_artist_links();
+    assert_add_lyrics_window();
     assert_bar_tiers();
     let overflows = OVERFLOWS
         .lock()
@@ -1727,6 +1728,60 @@ fn assert_card_artist_links() {
             left_to_label.borrow()
         ),
     );
+    window.destroy();
+}
+
+/// "Add Lyrics", shown for approval before sending is built: it opens
+/// empty, its button waits for some text, and the confirmation says what
+/// would go out. Renders add-lyrics-*.png (Q13b, sample lines only).
+fn assert_add_lyrics_window() {
+    use super::pages::lyrics::add_lyrics;
+    use libadwaita::prelude::{AdwDialogExt, AdwWindowExt};
+    let song = add_lyrics::SongForLyrics {
+        title: "Disco Voador".to_string(),
+        artist: "Niink".to_string(),
+        album: "Flowra FM".to_string(),
+        duration_ms: 225_000,
+    };
+    // An Adw window hosts the dialog inside it, as the main window does
+    let window = libadwaita::Window::new();
+    window.set_default_size(560, 720);
+    window.set_content(Some(&gtk::Box::new(gtk::Orientation::Vertical, 0)));
+    window.present();
+    wait_frames(&window, 2);
+    let sent = std::rc::Rc::new(std::cell::Cell::new(0));
+    let dialog = {
+        let sent = sent.clone();
+        add_lyrics::open(&window, &song, move |_| sent.set(sent.get() + 1))
+    };
+    wait_frames(&window, 3);
+    pump(300);
+    let view = add_lyrics::text_view_for_tests(&dialog).expect("the lyrics box");
+    let buffer = view.buffer();
+    let (start, end) = buffer.bounds();
+    let empty = buffer.text(&start, &end, false).is_empty();
+    distinct_colors(window.upcast_ref(), "add-lyrics-empty");
+    buffer.set_text(
+        "[00:12.40] First sample line\n[00:15.10] Second sample line\n[00:18.90] Third sample line",
+    );
+    wait_frames(&window, 2);
+    pump(300);
+    distinct_colors(window.upcast_ref(), "add-lyrics-filled");
+    let draft = add_lyrics::parse_draft(
+        "[00:12.40] First sample line\n[00:15.10] Second sample line\n[00:18.90] Third sample line",
+    );
+    let confirm = add_lyrics::confirmation(&song, &draft);
+    confirm.present(Some(&dialog));
+    wait_frames(&window, 3);
+    pump(300);
+    distinct_colors(window.upcast_ref(), "add-lyrics-confirm");
+    check(
+        "Add Lyrics opens empty, waits for text, and sends nothing on its own",
+        empty && draft.synced.is_some() && draft.lines == 3 && sent.get() == 0,
+        format!("empty {}, draft {:?}, sent {}", empty, draft, sent.get()),
+    );
+    confirm.force_close();
+    dialog.force_close();
     window.destroy();
 }
 

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-21 04:47-0300\n"
+"POT-Creation-Date: 2026-11-21 08:59-0300\n"
 "Language: pt-br\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -54,7 +54,7 @@ msgstr "Músicas Curtidas"
 #. translators: Header above the tracks the user added to the play queue, on the queue page.
 #. translators: Heading of the card showing the track that plays next.
 #: src/app/components/labels.rs:29
-#: src/app/components/shell/now_panel/mod.rs:459
+#: src/app/components/shell/now_panel/mod.rs:465
 msgid "Next in Queue"
 msgstr "A seguir na fila"
 
@@ -369,16 +369,80 @@ msgstr ""
 msgid "Public Playlists"
 msgstr "Todas as listas de reprodução"
 
+#. translators: Title of the window where a listener adds the lyrics of a song no source has.
+#: src/app/components/pages/lyrics/add_lyrics.rs:84
+msgid "Add Lyrics"
+msgstr "Adicionar letra"
+
+#: src/app/components/pages/lyrics/add_lyrics.rs:116
+msgid ""
+"Paste or type the lyrics, one line per line. Lines that start with a time, "
+"like [01:23.45], follow the song."
+msgstr "Cole ou digite a letra, uma linha por verso. As linhas que começam com um tempo, como [01:23.45], acompanham a música."
+
+#: src/app/components/pages/lyrics/add_lyrics.rs:139
+msgid ""
+"Lyrics you add go to LRCLIB, a free public lyrics library, without an "
+"account: anyone can read and use them. Add only lyrics you typed yourself or "
+"may share."
+msgstr "A letra que você adicionar vai para o LRCLIB, uma biblioteca pública e gratuita de letras, sem conta: qualquer pessoa pode ler e usar. Adicione só letras que você mesmo digitou ou que pode compartilhar."
+
+#. translators: Button in "Add Lyrics" that shows what will be sent, before sending it.
+#: src/app/components/pages/lyrics/add_lyrics.rs:148
+msgid "Review and Publish…"
+msgstr "Revisar e publicar…"
+
+#. translators: In the confirmation before publishing lyrics. {} is the number of lines.
+#: src/app/components/pages/lyrics/add_lyrics.rs:192
+#, rust-format
+msgid "{} lines, following the song"
+msgstr "{} linhas, acompanhando a música"
+
+#. translators: In the confirmation before publishing lyrics. {} is the number of lines.
+#: src/app/components/pages/lyrics/add_lyrics.rs:195
+#, rust-format
+msgid "{} lines, without times"
+msgstr "{} linhas, sem tempos"
+
+#. translators: Last line of the confirmation before publishing lyrics to LRCLIB.
+#: src/app/components/pages/lyrics/add_lyrics.rs:206
+msgid "Once published, anyone can see and use them."
+msgstr "Depois de publicada, qualquer pessoa pode ver e usar."
+
+#. translators: Heading of the confirmation before publishing lyrics.
+#: src/app/components/pages/lyrics/add_lyrics.rs:209
+msgid "Publish to LRCLIB?"
+msgstr "Publicar no LRCLIB?"
+
+#. translators: Button in the confirmation before publishing lyrics.
+#. translators: Button of the dialog asking to confirm clearing the play queue: keeps the queue.
+#. Translators: Button label. Exits selection mode.
+#. translators: Button of a dialog asking to confirm something that cannot be undone: leaves things as they are.
+#: src/app/components/pages/lyrics/add_lyrics.rs:211
+#: src/app/components/shell/clipboard_import/mod.rs:116
+#: src/app/components/widgets/queue_list/model.rs:260
+#: src/app/components/pages/queue/queue_page.blp:19
+#: src/app/components/shell/headerbar/headerbar.blp:118
+#: src/app/components/shell/utility_panel/utility_panel.blp:127
+#: src/app/components/utils.rs:226
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. translators: Button in the confirmation before publishing lyrics: sends them.
+#: src/app/components/pages/lyrics/add_lyrics.rs:213
+msgid "Publish"
+msgstr "Publicar"
+
 #. translators: Title of the full-screen lyrics window.
 #. Translators: Tooltip of the player bar button that shows or hides synced lyrics.
 #. Translators: Tab label for lyrics in utility panel.
 #: src/app/components/pages/lyrics/component.rs:89
-#: src/app/components/shell/now_panel/mod.rs:444
+#: src/app/components/shell/now_panel/mod.rs:450
 #: src/app/components/shell/fullscreen_lyrics.rs:101
 #: src/app/components/pages/settings/settings.blp:509
 #: src/app/components/shell/playback/playback_widget.blp:123
 #: src/app/components/shell/utility_panel/utility_panel.blp:74
-#: src/app/components/shell/playback/playback_widget.rs:496
+#: src/app/components/shell/playback/playback_widget.rs:506
 msgid "Lyrics"
 msgstr "Letra"
 
@@ -449,7 +513,7 @@ msgstr "Letra: {} · sem sincronia"
 #: src/app/components/pages/queue/component.rs:79
 #: src/app/components/shell/playback/playback_widget.blp:143
 #: src/app/components/shell/utility_panel/utility_panel.blp:67
-#: src/app/components/shell/playback/playback_widget.rs:502
+#: src/app/components/shell/playback/playback_widget.rs:512
 msgid "Queue"
 msgstr "Fila"
 
@@ -845,18 +909,6 @@ msgstr ""
 msgid "There’s a Spotify track link in your clipboard. Open it in Canto?"
 msgstr ""
 
-#. translators: Button of the dialog asking to confirm clearing the play queue: keeps the queue.
-#. Translators: Button label. Exits selection mode.
-#. translators: Button of a dialog asking to confirm something that cannot be undone: leaves things as they are.
-#: src/app/components/shell/clipboard_import/mod.rs:116
-#: src/app/components/widgets/queue_list/model.rs:260
-#: src/app/components/pages/queue/queue_page.blp:19
-#: src/app/components/shell/headerbar/headerbar.blp:118
-#: src/app/components/shell/utility_panel/utility_panel.blp:127
-#: src/app/components/utils.rs:226
-msgid "Cancel"
-msgstr "Cancelar"
-
 #: src/app/components/shell/clipboard_import/mod.rs:117
 msgid "Open"
 msgstr ""
@@ -904,7 +956,7 @@ msgid "Sleep Timer"
 msgstr "Timer para dormir"
 
 #: src/app/components/shell/command_palette/widget.rs:550
-#: src/app/components/shell/playback/playback_widget.rs:509
+#: src/app/components/shell/playback/playback_widget.rs:519
 msgid "Device"
 msgstr "Aparelho"
 
@@ -999,7 +1051,7 @@ msgstr "Mostrar a letra grande, sobre a capa"
 #. Translators: Tooltip of the player bar button that opens the small player window.
 #: src/app/components/shell/command_palette/widget.rs:691
 #: src/app/components/shell/playback/playback_widget.blp:389
-#: src/app/components/shell/playback/playback_widget.rs:522
+#: src/app/components/shell/playback/playback_widget.rs:532
 msgid "Mini Player"
 msgstr "Mini player"
 
@@ -1261,104 +1313,104 @@ msgid "Select a track to play"
 msgstr "Escolha uma faixa para tocar"
 
 #: src/app/components/shell/now_panel/mod.rs:54
-#: src/app/components/shell/now_panel/mod.rs:1236
+#: src/app/components/shell/now_panel/mod.rs:1242
 msgid "Go to Album"
 msgstr "Ir para o álbum"
 
 #. translators: Side panel view of the current track, when nothing plays.
-#: src/app/components/shell/now_panel/mod.rs:407
+#: src/app/components/shell/now_panel/mod.rs:413
 #: src/app/components/shell/now_panel/info_page.rs:90
 #: src/app/components/shell/mini_player.rs:254
 msgid "Nothing Playing"
 msgstr "Nada tocando"
 
-#: src/app/components/shell/now_panel/mod.rs:408
+#: src/app/components/shell/now_panel/mod.rs:414
 #: src/app/components/shell/now_panel/info_page.rs:91
 msgid "Play something and it shows up here."
 msgstr "Toque alguma coisa e ela aparece aqui."
 
 #. translators: Tooltip of the lyrics preview card in the Now Playing panel.
-#: src/app/components/shell/now_panel/mod.rs:453
+#: src/app/components/shell/now_panel/mod.rs:459
 msgid "Show Lyrics"
 msgstr "Mostrar letra"
 
 #. translators: Tooltip of the next track card in the Now Playing panel.
-#: src/app/components/shell/now_panel/mod.rs:483
+#: src/app/components/shell/now_panel/mod.rs:489
 msgid "Show Queue"
 msgstr "Mostrar fila"
 
-#: src/app/components/shell/now_panel/mod.rs:489
+#: src/app/components/shell/now_panel/mod.rs:495
 #: src/app/components/shell/now_panel/stats.rs:310
 msgid "Your Plays"
 msgstr "Suas reproduções"
 
 #. A click opens the Stats tab, with everything Last.fm knows
 #. translators: Tooltip of the "Your Plays" card in the Now Playing panel: it opens the Stats tab.
-#: src/app/components/shell/now_panel/mod.rs:495
+#: src/app/components/shell/now_panel/mod.rs:501
 msgid "Show Song Stats"
 msgstr "Ver estatísticas da música"
 
-#: src/app/components/shell/now_panel/mod.rs:499
+#: src/app/components/shell/now_panel/mod.rs:505
 #: src/app/components/shell/now_panel/about.rs:302
 msgid "Credits"
 msgstr "Créditos"
 
 #. A click opens the About tab, with the full credits and the story
 #. translators: Tooltip of the Credits card in the Now Playing panel: it opens the About tab.
-#: src/app/components/shell/now_panel/mod.rs:507
+#: src/app/components/shell/now_panel/mod.rs:513
 msgid "Show About This Song"
 msgstr "Ver sobre a música"
 
 #. translators: Credits row in the Now Playing panel: the track's artists.
-#: src/app/components/shell/now_panel/mod.rs:594
+#: src/app/components/shell/now_panel/mod.rs:600
 #: src/app/components/shell/now_panel/about.rs:305
 msgid "Performed by"
 msgstr "Interpretada por"
 
-#: src/app/components/shell/now_panel/mod.rs:597
+#: src/app/components/shell/now_panel/mod.rs:603
 #: src/app/components/shell/now_panel/about.rs:309
 msgid "Producer(s)"
 msgstr "Produção"
 
-#: src/app/components/shell/now_panel/mod.rs:598
+#: src/app/components/shell/now_panel/mod.rs:604
 #: src/app/components/shell/now_panel/about.rs:310
 msgid "Writer(s)"
 msgstr "Composição"
 
-#: src/app/components/shell/now_panel/mod.rs:608
+#: src/app/components/shell/now_panel/mod.rs:614
 msgid "No detailed credits were found on Genius for this track."
 msgstr "Nenhum crédito detalhado foi encontrado no Genius para esta faixa."
 
-#: src/app/components/shell/now_panel/mod.rs:618
+#: src/app/components/shell/now_panel/mod.rs:624
 msgid "this song"
 msgstr "esta música"
 
-#: src/app/components/shell/now_panel/mod.rs:619
+#: src/app/components/shell/now_panel/mod.rs:625
 msgid "this album"
 msgstr "este álbum"
 
-#: src/app/components/shell/now_panel/mod.rs:620
+#: src/app/components/shell/now_panel/mod.rs:626
 msgid "this artist"
 msgstr "este artista"
 
-#: src/app/components/shell/now_panel/mod.rs:909
+#: src/app/components/shell/now_panel/mod.rs:915
 msgid "Add a Genius token to see who produced and wrote this track."
 msgstr ""
 "Adicione um token do Genius para ver quem produziu e escreveu esta faixa."
 
-#: src/app/components/shell/now_panel/mod.rs:911
-#: src/app/components/shell/now_panel/mod.rs:939
+#: src/app/components/shell/now_panel/mod.rs:917
+#: src/app/components/shell/now_panel/mod.rs:945
 #: src/app/components/shell/now_panel/about.rs:109
 #: src/app/components/shell/now_panel/about.rs:156
 msgid "Set Up Genius"
 msgstr "Configurar o Genius"
 
 #. translators: Shown while the credits of the current track load.
-#: src/app/components/shell/now_panel/mod.rs:917
+#: src/app/components/shell/now_panel/mod.rs:923
 msgid "Loading credits…"
 msgstr "Carregando créditos…"
 
-#: src/app/components/shell/now_panel/mod.rs:937
+#: src/app/components/shell/now_panel/mod.rs:943
 #: src/app/components/shell/now_panel/about.rs:154
 msgid ""
 "Genius didn't accept your token. Paste a new one in Settings to see the "
@@ -1367,11 +1419,11 @@ msgstr ""
 "O Genius não aceitou seu token. Cole um novo nas Configurações para ver os "
 "créditos de novo."
 
-#: src/app/components/shell/now_panel/mod.rs:944
+#: src/app/components/shell/now_panel/mod.rs:950
 msgid "Couldn't load the credits from Genius."
 msgstr "Não foi possível carregar os créditos do Genius."
 
-#: src/app/components/shell/now_panel/mod.rs:946
+#: src/app/components/shell/now_panel/mod.rs:952
 #: src/app/components/shell/now_panel/about.rs:144
 #: src/app/components/shell/now_panel/about.rs:169
 msgid "Search on Genius"
@@ -2082,8 +2134,8 @@ msgstr "Idioma da tradução"
 #. translators: Button label. Selects all visible songs.
 #: src/app/components/pages/queue/queue_page.blp:34
 #: src/app/components/shell/headerbar/headerbar.blp:131
-#: src/app/components/pages/queue/widget.rs:205
-#: src/app/components/shell/headerbar/widget.rs:789
+#: src/app/components/pages/queue/widget.rs:204
+#: src/app/components/shell/headerbar/widget.rs:782
 #: src/app/components/shell/utility_panel/utility_panel.blp:135
 #: src/app/components/shell/utility_panel/widget.rs:192
 msgid "Select All"
@@ -2909,7 +2961,7 @@ msgstr ""
 
 #: src/app/components/shell/playback/playback_widget.blp:225
 #: src/app/components/shell/playback/playback_widget.blp:782
-#: src/app/components/shell/playback/playback_widget.rs:864
+#: src/app/components/shell/playback/playback_widget.rs:874
 msgid "Off"
 msgstr "Desativado"
 
@@ -2943,14 +2995,14 @@ msgid "Mute / Unmute"
 msgstr "Silenciar / reativar som"
 
 #: src/app/components/shell/playback/playback_widget.blp:359
-#: src/app/components/shell/playback/playback_widget.rs:516
+#: src/app/components/shell/playback/playback_widget.rs:526
 msgid "Volume"
 msgstr "Volume"
 
 #. Translators: Tooltip of the player bar button that opens the sleep timer, equalizer and audio options.
 #: src/app/components/shell/playback/playback_widget.blp:407
 #: src/app/components/widgets/details_page/header.blp:219
-#: src/app/components/shell/playback/playback_widget.rs:529
+#: src/app/components/shell/playback/playback_widget.rs:539
 msgid "More Options"
 msgstr "Mais opções"
 
@@ -2991,7 +3043,7 @@ msgstr "Acústico"
 
 #. Translators: Tooltip of the player bar button that shows or hides the right side panel (Now Playing, Queue, Lyrics).
 #: src/app/components/shell/playback/playback_widget.blp:869
-#: src/app/components/shell/playback/playback_widget.rs:535
+#: src/app/components/shell/playback/playback_widget.rs:545
 msgid "Side Panel"
 msgstr "Painel lateral"
 
@@ -3109,8 +3161,8 @@ msgid "Details"
 msgstr ""
 
 #. translators: Button label. Deselects all songs, once they are all selected.
-#: src/app/components/pages/queue/widget.rs:202
-#: src/app/components/shell/headerbar/widget.rs:786
+#: src/app/components/pages/queue/widget.rs:201
+#: src/app/components/shell/headerbar/widget.rs:779
 #: src/app/components/shell/utility_panel/widget.rs:189
 msgid "Deselect All"
 msgstr "Desmarcar todas"
@@ -3192,33 +3244,33 @@ msgid "Riff and Spot Artists"
 msgstr "Artistas do Riff e do Spot"
 
 #. translators: Heading of the popover that chooses which buttons the player bar shows.
-#: src/app/components/shell/playback/playback_widget.rs:545
+#: src/app/components/shell/playback/playback_widget.rs:555
 msgid "Show in the Bar"
 msgstr "Mostrar na barra"
 
 #. translators: Tooltip of the arrow that moves a button earlier in the player bar.
-#: src/app/components/shell/playback/playback_widget.rs:576
+#: src/app/components/shell/playback/playback_widget.rs:586
 msgid "Move Left"
 msgstr "Mover para a esquerda"
 
 #. translators: Tooltip of the arrow that moves a button later in the player bar.
-#: src/app/components/shell/playback/playback_widget.rs:579
+#: src/app/components/shell/playback/playback_widget.rs:589
 msgid "Move Right"
 msgstr "Mover para a direita"
 
 #. translators: What a screen reader says of the Repeat row in the player bar's More Options menu while the whole album or playlist repeats.
-#: src/app/components/shell/playback/playback_widget.rs:861
+#: src/app/components/shell/playback/playback_widget.rs:871
 msgid "Repeat All"
 msgstr "Repetir tudo"
 
 #. translators: What a screen reader says of the Repeat row in the player bar's More Options menu while the song playing repeats.
-#: src/app/components/shell/playback/playback_widget.rs:863
+#: src/app/components/shell/playback/playback_widget.rs:873
 msgid "Repeat This Song"
 msgstr "Repetir esta música"
 
 #. / The volume's tooltip: its level, and the keys that change it.
 #. translators: Tooltip of the volume slider. {} is the volume in percent (the % follows it); Ctrl+↑ and Ctrl+↓ are the keys that change it.
-#: src/app/components/shell/playback/playback_widget.rs:886
+#: src/app/components/shell/playback/playback_widget.rs:906
 #, rust-format
 msgid "Volume {}% · Ctrl+↑ / Ctrl+↓"
 msgstr "Volume {}% · Ctrl+↑ / Ctrl+↓"

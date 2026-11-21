@@ -5,6 +5,7 @@ src/app/components/pages/details_artist/widget.rs
 src/app/components/pages/details_playlist/model.rs
 src/app/components/pages/details_user/model.rs
 src/app/components/pages/details_user/widget.rs
+src/app/components/pages/lyrics/add_lyrics.rs
 src/app/components/pages/lyrics/component.rs
 src/app/components/pages/lyrics/widget.rs
 src/app/components/pages/queue/component.rs
