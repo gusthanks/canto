@@ -237,6 +237,32 @@ impl DetailsPage {
         page
     }
 
+    /// Adds the album's track list, with its first `count` tracks (up to
+    /// four), under the header.
+    #[cfg(test)]
+    pub(crate) fn add_sample_tracks_for_tests(&self, count: u32) {
+        self.content().append(&sample_tracks_for_tests(count));
+    }
+
+    /// The parts of the page that its layout checks read.
+    #[cfg(test)]
+    pub(crate) fn parts_for_tests(&self) -> PagePartsForTests {
+        let page = self.widget.imp();
+        let header = page.header.get();
+        let imp = header.imp();
+        PagePartsForTests {
+            scrolled_window: page.scrolled_window.get(),
+            scroll_child: page.scroll_child.get(),
+            breakpoint_bin: imp.breakpoint_bin.get(),
+            header_box: imp.header_box.get(),
+            image_box: imp.image_box.get(),
+            title: imp.title_label.get(),
+            buttons: imp.button_box.get(),
+            menu: imp.menu_button.get(),
+            header,
+        }
+    }
+
     pub fn connect_scrolled_past<F: Fn(bool) + 'static>(&self, widget: &gtk::Widget, f: F) {
         let past = Rc::new(Cell::new(false));
         let scroll_child = self.widget.imp().scroll_child.get();
@@ -270,4 +296,64 @@ impl DetailsPage {
             glib::idle_add_local_once(move || update(&adj));
         });
     }
+}
+
+/// The parts of a details page that its layout checks read.
+#[cfg(test)]
+pub(crate) struct PagePartsForTests {
+    pub scrolled_window: gtk::ScrolledWindow,
+    /// What scrolls: the header above the content
+    pub scroll_child: gtk::Box,
+    pub header: DetailsHeaderWidget,
+    pub breakpoint_bin: libadwaita::BreakpointBin,
+    /// The header's layout: the cover beside the text, or above it
+    pub header_box: gtk::Box,
+    pub image_box: gtk::Box,
+    pub title: gtk::Label,
+    pub buttons: gtk::Box,
+    pub menu: gtk::MenuButton,
+}
+
+/// An album's track list, as `DetailsPageComponent::create_track_list` and
+/// `TrackList` set it up, with its first `count` rows (one to four) filled
+/// like an album's.
+#[cfg(test)]
+fn sample_tracks_for_tests(count: u32) -> super::DetailsSectionWidget {
+    use crate::app::components::TrackRow;
+    let all = ["Intro", "Disco Voador", "Flowra FM", "Saideira"];
+    let count = count.clamp(1, all.len() as u32);
+    let titles = gtk::StringList::new(&all[..count as usize]);
+    let factory = gtk::SignalListItemFactory::new();
+    factory.connect_setup(|_, item| {
+        item.downcast_ref::<gtk::ListItem>()
+            .unwrap()
+            .set_selectable(false);
+    });
+    factory.connect_bind(move |_, item| {
+        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+        let title = item
+            .item()
+            .and_downcast::<gtk::StringObject>()
+            .map(|s| s.string().to_string())
+            .unwrap_or_default();
+        let row = TrackRow::new();
+        // One card, rounded at both ends, as an album's single disc
+        row.set_disc_position(item.position() == 0, item.position() + 1 == count);
+        row.fill_for_tests(
+            item.position() + 1,
+            &title,
+            &["Niink", "Supernova Ent"],
+            "3∶12",
+            item.position() == 1,
+        );
+        item.set_child(Some(&row));
+    });
+    let list = gtk::ListView::new(Some(gtk::NoSelection::new(Some(titles))), Some(factory));
+    list.add_css_class("playlist");
+    list.set_show_separators(false);
+    list.set_valign(gtk::Align::Start);
+    list.set_single_click_activate(true);
+    let section = super::DetailsSectionWidget::new(None, &list);
+    section.add_css_class("details-section--tracks");
+    section
 }

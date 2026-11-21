@@ -591,6 +591,41 @@ impl TrackRow {
         }
     }
 
+    /// Fills the row as an album's track list binds it (its number, no
+    /// cover, no album column, a menu), without a song model: for renders
+    /// of a page.
+    #[cfg(test)]
+    pub(crate) fn fill_for_tests(
+        &self,
+        number: u32,
+        title: &str,
+        artists: &[&str],
+        length: &str,
+        liked: bool,
+    ) {
+        let imp = self.imp();
+        self.set_skeleton(false);
+        imp.song_index.set_label(&number.to_string());
+        imp.song_title.set_label(title);
+        imp.song_artist.clear_links();
+        for (i, name) in artists.iter().enumerate() {
+            if i > 0 {
+                let separator = gtk::Label::new(Some(", "));
+                separator.set_css_classes(SECONDARY_TEXT_CLASSES);
+                imp.song_artist.append_link(&separator);
+            }
+            let label = gtk::Label::new(Some(name));
+            label.set_css_classes(SECONDARY_TEXT_CLASSES);
+            label.add_css_class(LINK_CLASS);
+            imp.song_artist.append_link(&label);
+        }
+        imp.song_length.set_label(length);
+        imp.show_album.set(false);
+        self.set_menu(Some(Rc::new(|| None)), None);
+        self.set_property("liked", liked);
+        self.update_layout();
+    }
+
     fn set_album_link(&self, song: &Track) {
         let label = &self.imp().song_album;
         let album = song.album.as_ref();

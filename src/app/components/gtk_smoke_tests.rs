@@ -169,6 +169,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
         assert!(icon_theme.has_icon(icon), "{} must resolve", icon);
     }
     assert_drawer_layout();
+    assert_album_page_fits();
 }
 
 /// The round "playing" badge on album cards must show the bars on top of
@@ -2548,4 +2549,288 @@ fn assert_drawer_behavior() {
         failed
     );
     eprintln!("drawer behavior ok");
+}
+
+/// A title that takes two lines beside the cover at the widths below.
+const TWO_LINE_TITLE: &str = "O Veneno do Escorpião V.2";
+
+/// Over this width (sp) the album header puts its cover beside the text
+/// (header.blp).
+const HEADER_BESIDE_OVER_SP: f64 = 510.0;
+
+/// A text scale of 0.91 (`text-scaling-factor` 0.9091) as GTK's font DPI
+/// (96 × 1024 × scale). The header's breakpoint is in sp: at that scale the
+/// cover sits beside the text from 464 px.
+const SMALL_TEXT_XFT_DPI: i32 = 89_367;
+
+/// The widths an album page gets, with the title it shows (`None`: the
+/// sample's): its least (the header's 280 inside its 24 px paddings), the
+/// window's least, 440, 499 (the page in half of a 1920 px screen at scale
+/// 1.6), and 607 and 900 with the cover beside the text; and with a title on
+/// two lines, both sides of where the header turns beside its cover (over
+/// 510 inside the paddings: a page of 558).
+const ALBUM_PAGE_SHOTS: &[(i32, Option<&str>)] = &[
+    (328, None),
+    (360, None),
+    (440, None),
+    (499, None),
+    (607, None),
+    (900, None),
+    (480, Some(TWO_LINE_TITLE)),
+    (500, Some(TWO_LINE_TITLE)),
+    (525, Some(TWO_LINE_TITLE)),
+    (560, Some(TWO_LINE_TITLE)),
+    (600, Some(TWO_LINE_TITLE)),
+];
+
+/// Where an album page's header and first track ended up (px).
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct AlbumPageShot {
+    /// The page's own width
+    page: i32,
+    /// The header's breakpoint bin, and the least its layout needs
+    bin: i32,
+    layout_min: i32,
+    /// The cover beside the text (not above it), and the bin's width over
+    /// which it belongs there (510 sp at the current text scale)
+    beside: bool,
+    beside_over: f64,
+    /// The header's height, and how far down it draws: the end of its
+    /// buttons' row (with its margin) or of the cover
+    header: i32,
+    drawn: f32,
+    title_lines: i32,
+    /// In the page's scrolled content: where the buttons end, and where
+    /// the first track row starts
+    buttons_end: f32,
+    first_row: f32,
+    /// The rightmost edge of the cover, the title and the menu button, in
+    /// a viewport this wide
+    right: f32,
+    viewport: i32,
+}
+
+fn shoot_album_page(page: &super::DetailsPage) -> AlbumPageShot {
+    let parts = page.parts_for_tests();
+    let viewport = parts.scrolled_window.child().expect("the page's viewport");
+    let bottom = |b: Option<gtk::graphene::Rect>| b.map_or(0.0, |b| b.y() + b.height());
+    let right = |w: &gtk::Widget| {
+        w.compute_bounds(&viewport)
+            .map_or(0.0, |b| b.x() + b.width())
+    };
+    let buttons_bottom = bottom(parts.buttons.compute_bounds(&parts.header));
+    let first_row = with_class(page.content().upcast_ref(), "song__card")
+        .iter()
+        .filter_map(|card| card.compute_bounds(&parts.scroll_child))
+        .map(|b| b.y())
+        .fold(f32::MAX, f32::min);
+    AlbumPageShot {
+        page: page.widget().width(),
+        bin: parts.breakpoint_bin.width(),
+        layout_min: parts.header_box.measure(gtk::Orientation::Horizontal, -1).0,
+        beside: parts.header_box.orientation() == gtk::Orientation::Horizontal,
+        beside_over: libadwaita::LengthUnit::Sp
+            .to_px(HEADER_BESIDE_OVER_SP, gtk::Settings::default().as_ref()),
+        header: parts.header.height(),
+        drawn: (buttons_bottom + parts.buttons.margin_bottom() as f32)
+            .max(bottom(parts.image_box.compute_bounds(&parts.header))),
+        title_lines: parts.title.layout().line_count(),
+        buttons_end: bottom(parts.buttons.compute_bounds(&parts.scroll_child)),
+        first_row,
+        right: [
+            parts.image_box.upcast_ref::<gtk::Widget>(),
+            parts.title.upcast_ref(),
+            parts.menu.upcast_ref(),
+        ]
+        .iter()
+        .map(|w| right(*w))
+        .fold(0.0, f32::max),
+        viewport: viewport.width(),
+    }
+}
+
+/// Reads the album page once it stays put: the same for 1.2 s and three
+/// frames (up to 10 s). A frame of the headless display can take a second,
+/// and a header that turns beside its cover (or under it) is measured again
+/// on the next frame.
+fn settle_album_page(window: &gtk::Window, page: &super::DetailsPage) -> AlbumPageShot {
+    let clock = window.frame_clock().expect("the window's frame clock");
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    let mut last = shoot_album_page(page);
+    let (mut same, mut since) = (0, clock.frame_counter());
+    while (same < 8 || clock.frame_counter() < since + 3) && std::time::Instant::now() < deadline {
+        window.queue_draw();
+        pump(150);
+        let now = shoot_album_page(page);
+        if now == last {
+            same += 1;
+        } else {
+            same = 0;
+            since = clock.frame_counter();
+        }
+        last = now;
+    }
+    last
+}
+
+/// The album page in the main window at 1200 px (all of a 1920 px screen at
+/// scale 1.6) with the side panel beside it and the full library (opened
+/// from its rail's icon), text at 0.91 and a title on two lines: the cover
+/// beside a title that wraps, where the first track covered the play
+/// button. Returns the layout and the page.
+fn shoot_album_page_beside_panels() -> (ShellShot, AlbumPageShot) {
+    let gtk_settings = gtk::Settings::default().unwrap();
+    let dpi = gtk_settings.gtk_xft_dpi();
+    let animations = gtk_settings.is_gtk_enable_animations();
+    gtk_settings.set_gtk_xft_dpi(SMALL_TEXT_XFT_DPI);
+    gtk_settings.set_gtk_enable_animations(false);
+    let shell = render_shell(1200, true);
+    WidgetExt::activate_action(&shell.window, "win.sidebar-rail", None)
+        .expect("the library's rail action");
+    let layout = shoot_shell(&shell, 1200, true);
+    shell.page.header().set_title(TWO_LINE_TITLE);
+    // One track, whole in view. The headless display's renderer assumes
+    // each render node sits in one place, but GTK shares one node between
+    // the same icons (the menu's dots of the header and of every row):
+    // with a copy cut off by the page's edge it can lose track of a node
+    // and abort the display server (broadway-server.c, node != NULL). The
+    // windows of `assert_album_page_fits` show their four tracks whole.
+    shell.page.add_sample_tracks_for_tests(1);
+    let page = settle_album_page(shell.window.upcast_ref(), &shell.page);
+    distinct_colors(&shell.frame, "album-page-1200-both-panels");
+    shell.window.destroy();
+    gtk_settings.set_gtk_xft_dpi(dpi);
+    gtk_settings.set_gtk_enable_animations(animations);
+    (layout, page)
+}
+
+/// An album page in its own parents (page > scrolled window > header and
+/// track list) fits every width it gets: its header's layout fits the
+/// header (nothing past the page's edge), the title keeps to two lines, the
+/// header is as tall as what it draws, and the first track starts under
+/// the header's buttons. Alone in a window at each width, with four tracks,
+/// and in the main window beside both panels with a two-line title and one
+/// track.
+fn assert_album_page_fits() {
+    let style = libadwaita::StyleManager::default();
+    let scheme = style.color_scheme();
+    style.set_color_scheme(libadwaita::ColorScheme::ForceDark);
+    let cover = sample_cover();
+    let mut shots = Vec::new();
+    for (width, title) in ALBUM_PAGE_SHOTS.iter().copied() {
+        let page = super::DetailsPage::sample_for_tests(cover.upcast_ref());
+        page.add_sample_tracks_for_tests(4);
+        if let Some(title) = title {
+            page.header().set_title(title);
+        }
+        let window = gtk::Window::new();
+        window.set_decorated(false);
+        window.set_default_size(width, 760);
+        window.set_child(Some(page.widget()));
+        window.present();
+        wait_mapped(page.widget(), 300);
+        let shot = settle_album_page(&window, &page);
+        let suffix = if title.is_some() { "-two-lines" } else { "" };
+        distinct_colors(
+            window.upcast_ref(),
+            &format!("album-page-{:04}{}", width, suffix),
+        );
+        window.destroy();
+        let label = format!(
+            "{}{}",
+            width,
+            if title.is_some() {
+                " (two-line title)"
+            } else {
+                ""
+            }
+        );
+        shots.push((label, shot));
+    }
+    let (layout, beside_panels) = shoot_album_page_beside_panels();
+    let in_shell = "1200 beside the side panel and the full library, text at 0.91 (two-line title)";
+    shots.push((in_shell.to_string(), beside_panels));
+    style.set_color_scheme(scheme);
+    for (label, s) in &shots {
+        eprintln!(
+            "album page {}: page {}, header {} in {} (its layout needs {}), {} tall, draws {}, title {} lines; buttons end at {}, first track at {}; right edge {} of {}",
+            label,
+            s.page,
+            if s.beside { "beside the cover" } else { "under the cover" },
+            s.bin,
+            s.layout_min,
+            s.header,
+            s.drawn,
+            s.title_lines,
+            s.buttons_end,
+            s.first_row,
+            s.right,
+            s.viewport
+        );
+    }
+    eprintln!(
+        "album page {}: side panel {} {}, library {}{}, page card {}",
+        in_shell,
+        layout.mode(),
+        layout.panel_card,
+        layout.library,
+        if layout.rail { " (rail)" } else { "" },
+        layout.page_card
+    );
+    assert!(
+        !layout.collapsed && layout.panel_shown && !layout.rail && layout.library > 200,
+        "album page {}: the side panel beside the page and the full library: {:?}",
+        in_shell,
+        layout
+    );
+    assert!(
+        beside_panels.beside && beside_panels.title_lines == 2,
+        "album page {}: the cover beside a title on two lines: {:?}",
+        in_shell,
+        beside_panels
+    );
+    for (label, s) in &shots {
+        assert!(
+            s.layout_min <= s.bin,
+            "album page {}: the header's layout needs {} px but gets {}: it spills past the page's edge",
+            label,
+            s.layout_min,
+            s.bin
+        );
+        assert!(
+            s.right <= s.viewport as f32 + 0.5,
+            "album page {}: the header reaches {} in a page {} wide: cut at its edge",
+            label,
+            s.right,
+            s.viewport
+        );
+        assert!(
+            s.title_lines <= 2,
+            "album page {}: the title takes {} lines",
+            label,
+            s.title_lines
+        );
+        assert!(
+            (s.drawn - s.header as f32).abs() <= 1.0,
+            "album page {}: the header is {} px tall but draws {}",
+            label,
+            s.header,
+            s.drawn
+        );
+        assert!(
+            s.first_row < f32::MAX && s.first_row >= s.buttons_end + 17.0,
+            "album page {}: the first track starts at {}, over the header's buttons (they end at {})",
+            label,
+            s.first_row,
+            s.buttons_end
+        );
+        assert_eq!(
+            s.beside,
+            f64::from(s.bin) > s.beside_over,
+            "album page {}: the header puts its cover beside the text only over {} px (510 sp)",
+            label,
+            s.beside_over
+        );
+    }
+    eprintln!("album page ok");
 }

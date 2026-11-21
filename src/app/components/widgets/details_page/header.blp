@@ -9,7 +9,10 @@ template $DetailsHeaderWidget : Widget {
   ]
 
   Adw.BreakpointBin breakpoint_bin {
-    width-request: 1;
+    // The narrow layout's least width: its row of buttons (play, shuffle,
+    // like and pin, share, menu) takes 266, plus room for the play button
+    // growing on hover. An album page is then at least 328 wide.
+    width-request: 280;
     height-request: 1;
     hexpand: true;
     // A BreakpointBin clips by default, which cut the cover's shadow into a

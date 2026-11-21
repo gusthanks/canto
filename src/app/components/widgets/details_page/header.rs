@@ -41,6 +41,9 @@ mod imp {
         pub breakpoint_bin: TemplateChild<libadwaita::BreakpointBin>,
 
         #[template_child]
+        pub header_box: TemplateChild<gtk::Box>,
+
+        #[template_child]
         pub image_box: TemplateChild<gtk::Box>,
 
         #[template_child]
@@ -109,18 +112,31 @@ mod imp {
     }
 
     impl WidgetImpl for DetailsHeaderWidget {
-        /// Report natural height as the minimum too. The child `AdwBreakpointBin`
-        /// is pinned to a 1px minimum so the breakpoint can shrink; without this
-        /// the scrolled box could squeeze the header down to that 1px.
+        /// Its height depends on its width: a narrower title wraps.
+        fn request_mode(&self) -> gtk::SizeRequestMode {
+            gtk::SizeRequestMode::HeightForWidth
+        }
+
+        /// The height is the layout's for the width it gets. Not the
+        /// `AdwBreakpointBin`'s: that trades no size, so GTK measures it for
+        /// its child's natural width, with the title on one line, and a
+        /// title that wrapped drew past that height, under the track list.
+        /// The natural height is the minimum too: the bin's 1px
+        /// height-request would let the scrolled box squeeze the header.
         fn measure(&self, orientation: gtk::Orientation, for_size: i32) -> (i32, i32, i32, i32) {
-            let bin = self.breakpoint_bin.get();
-            let (min, nat, min_baseline, nat_baseline) = bin.measure(orientation, for_size);
-
-            if orientation == gtk::Orientation::Vertical {
-                return (nat, nat, min_baseline, nat_baseline);
+            if orientation == gtk::Orientation::Horizontal {
+                return self.breakpoint_bin.measure(orientation, for_size);
             }
-
-            (min, nat, min_baseline, nat_baseline)
+            let layout = self.header_box.get();
+            // The bin lays it out at its width, or at the layout's least
+            // when that is more (spilling past the bin)
+            let width = if for_size < 0 {
+                for_size
+            } else {
+                for_size.max(layout.measure(gtk::Orientation::Horizontal, -1).0)
+            };
+            let (_, natural, _, _) = layout.measure(orientation, width);
+            (natural, natural, -1, -1)
         }
 
         fn size_allocate(&self, width: i32, height: i32, baseline: i32) {
