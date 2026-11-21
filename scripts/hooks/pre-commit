@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Pre-commit hook: staged Rust files must pass the same rustfmt check as the
+# "Rustfmt" job in the canto-quality CI workflow. It formats the staged content
+# (not the working copy) one file at a time, so it takes a second or two and
+# never compiles anything. generated/ is skipped, as in CI.
+#
+# Turn it on once per clone:  git config core.hooksPath scripts/hooks
+# Skip it for one commit:     git commit --no-verify
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+files=()
+while IFS= read -r -d '' f; do
+    [[ "$f" == generated/* ]] && continue
+    files+=("$f")
+done < <(git diff --cached --name-only --diff-filter=ACMR -z -- '*.rs')
+
+[[ ${#files[@]} -eq 0 ]] && exit 0
+
+RUSTFMT="${RUSTFMT:-rustfmt}"
+if ! command -v "$RUSTFMT" &>/dev/null; then
+    echo "pre-commit: rustfmt not found, so ${#files[@]} staged Rust file(s) cannot be checked." >&2
+    echo "Install it (rustup component add rustfmt) or commit with --no-verify." >&2
+    exit 1
+fi
+
+# The edition of the crate that owns a file: the nearest Cargo.toml above it
+edition_for() {
+    local dir edition
+    dir="$(dirname "$1")"
+    while [[ "$dir" != "." && ! -f "$dir/Cargo.toml" ]]; do
+        dir="$(dirname "$dir")"
+    done
+    edition="$(sed -nE 's/^edition[[:space:]]*=[[:space:]]*"([0-9]+)".*/\1/p' "$dir/Cargo.toml" 2>/dev/null | head -n 1)"
+    echo "${edition:-2021}"
+}
+
+config=()
+[[ -f "$ROOT/rustfmt.toml" ]] && config=(--config-path "$ROOT/rustfmt.toml")
+
+# rustfmt --check exits 0 on stdin even when it would change the input, so
+# compare its output with the staged content instead
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+bad=()
+for f in "${files[@]}"; do
+    git show ":$f" > "$tmp/staged.rs"
+    if ! "$RUSTFMT" --emit stdout --edition "$(edition_for "$f")" "${config[@]}" \
+        < "$tmp/staged.rs" > "$tmp/formatted.rs" 2> "$tmp/error.txt"; then
+        echo "rustfmt could not parse $f:" >&2
+        sed "s|<stdin>|$f|" "$tmp/error.txt" >&2
+        bad+=("$f")
+    elif ! diff -u --label "$f (staged)" --label "$f (rustfmt)" \
+        "$tmp/staged.rs" "$tmp/formatted.rs" >&2; then
+        bad+=("$f")
+    fi
+done
+
+if [[ ${#bad[@]} -ne 0 ]]; then
+    echo "" >&2
+    echo "pre-commit: rustfmt would change ${#bad[@]} staged file(s):" >&2
+    printf '  %s\n' "${bad[@]}" >&2
+    echo "Run 'cargo fmt --all' (or rustfmt on those files), stage them again and commit." >&2
+    exit 1
+fi

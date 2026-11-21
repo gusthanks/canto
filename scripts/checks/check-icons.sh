@@ -34,17 +34,28 @@ find_library() {
     echo "$lib"
 }
 
+# `gresource list FILE`, or the Python + GIO stand-in when GLib's development
+# tools are not installed
+list_resources() {
+    if command -v gresource >/dev/null; then
+        gresource list "$1"
+    else
+        python3 -I "$ROOT_DIR/scripts/checks/gresource-list.py" "$1"
+    fi
+}
+
 # Icon names under a resource prefix the library registers as an icon path
 builtin_icons() {
-    gresource list "$1" | sed -nE "s|^$2/(.*/)?([^/]+)\.(svg\|png)$|\2|p" | sort -u
+    list_resources "$1" | sed -nE "s|^$2/(.*/)?([^/]+)\.(svg\|png)$|\2|p" | sort -u
 }
 
 if [[ ! -f "$GRESOURCE" ]]; then
     echo "ERROR: $GRESOURCE not found"
     exit 1
 fi
-if ! command -v gresource >/dev/null; then
-    echo "ERROR: the gresource tool is not installed (it ships with GLib's development files)"
+if ! command -v gresource >/dev/null \
+    && ! python3 -I -c 'import gi; gi.require_version("Gio", "2.0"); from gi.repository import Gio' 2>/dev/null; then
+    echo "ERROR: neither the gresource tool (GLib's development files) nor Python with PyGObject is installed"
     exit 1
 fi
 

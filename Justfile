@@ -1,4 +1,4 @@
-build := "BUILD"
+build := "build"
 
 compile *ARGS:
     just meson compile {{ARGS}}

@@ -16,7 +16,7 @@ set -euo pipefail
 #
 # Options:
 #   --prefix PATH     Install prefix (default: $HOME/.local)
-#   --builddir DIR    Build directory name (default: target)
+#   --builddir DIR    Build directory name (default: build)
 #   --offline         Build in offline mode (no network fetches)
 #   --reconfigure     Force reconfigure even if build dir exists
 #   --features LIST   Comma-separated list of features to enable
@@ -25,7 +25,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Defaults
-BUILD_DIR="target"
+BUILD_DIR="build"
 PREFIX="$HOME/.local"
 OFFLINE="false"
 RECONFIGURE=0

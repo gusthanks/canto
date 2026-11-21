@@ -245,8 +245,8 @@ Alternatives to the build script:
 
 ```sh
 # Meson directly (use -Dbuildtype=release for an optimized build)
-meson setup target -Dbuildtype=debug -Doffline=false --prefix="$HOME/.local"
-ninja install -C target
+meson setup build -Dbuildtype=debug -Doffline=false --prefix="$HOME/.local"
+ninja install -C build
 
 # Justfile
 just init      # meson setup with debug defaults
@@ -295,7 +295,7 @@ See [Creating a New Feature Flag](#creating-a-new-feature-flag) for the flag-spe
 Strings live in `.blp` and `.rs` files listed in `po/POTFILES`. After adding translatable strings:
 
 ```sh
-ninja riff-pot -C target  # regenerate po/riff.pot
+ninja canto-pot -C build  # regenerate po/canto.pot
 ```
 
 [Weblate](https://hosted.weblate.org/projects/riff/) manages the `.po` files, so do not edit or regenerate them in your branch.

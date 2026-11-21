@@ -2,7 +2,7 @@
 /target/
 /build/
 /builddir/
-/cargo/
+/cargo
 /.flatpak-builder/
 
 # Generated files
