@@ -145,10 +145,10 @@ Proof:
   if it is a hard rule), in the same commit as the fix. A new way to test goes
   into `doc/Testing.md`.
 - A rule tied to one spot in the code goes in a comment at that line.
-- When a UI part moves, update the docs that name it in the same commit.
-  `scripts/checks/check-doc-refs.py` fails on a name in backticks that the
-  code no longer has; a path that does not exist yet goes right after
-  "planned:".
+- When a UI part moves, update the docs that name it in the same commit,
+  `doc/interface-map.md` first. `scripts/checks/check-doc-refs.py` fails on a
+  name in backticks that the code no longer has; a path that does not exist
+  yet goes right after "planned:".
 
 ## 7. More docs
 
@@ -157,6 +157,9 @@ Proof:
   waiting, the red proof and what tests cannot see. Read it before writing a check.
 - `doc/Pitfalls.md`: GTK, libadwaita, Rust 2018, translation, icon and Web API
   traps, each with symptom, cause, fix and file. Read it before touching an area.
+- `doc/interface-map.md`: where each part of the window lives, by file and
+  widget name, and what was decided about it. Read its section before
+  changing an area of the UI.
 - `doc/Development.md`: setup, layout, feature flags, translations, debugging.
 - `doc/Design.md`: data flow, the player, the audio engine, components.
 - `doc/Release.md`: cutting a release.
