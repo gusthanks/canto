@@ -111,6 +111,22 @@ impl LyricsPage {
                 open_genius_page(button, &model);
             }
         });
+        let weak_model = Rc::downgrade(&self.app_model);
+        self.widget.connect_web_search(move |button| {
+            let Some(track) = weak_model
+                .upgrade()
+                .and_then(|model| model.get_state().playback.current_song())
+            else {
+                return;
+            };
+            let artist = track
+                .artists
+                .first()
+                .map(|artist| artist.name.clone())
+                .unwrap_or_default();
+            let url = web_lyrics_search_url(&artist, &track.title);
+            crate::app::components::open_external_url(button, &url);
+        });
         self.widget
             .set_word_by_word(self.settings.string(LYRICS_HIGHLIGHT) != "line");
         self.widget
@@ -633,6 +649,29 @@ fn apply_lyrics_to_widget(
     }
 }
 
+/// A web search (Google) for the lyrics no source had: the main artist, the
+/// title without edition notes ("- Remastered", "(feat. ...)") and the word
+/// for lyrics in the app's language ("lyrics", "letra").
+fn web_lyrics_search_url(artist: &str, title: &str) -> String {
+    // translators: The word added to a web search for a song's lyrics ("Search the Web" under "No Lyrics Available"): what people type in a search engine in your language, like "letra" in Portuguese.
+    let word = gettext("lyrics");
+    let parts = vec![
+        artist.trim().to_string(),
+        canto_api::genius::normalize_genius_query_title(title),
+        word,
+    ];
+    let query = parts
+        .into_iter()
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+    url::Url::parse_with_params(WEB_SEARCH, &[("q", query.as_str())])
+        .map(|url| url.to_string())
+        .unwrap_or_else(|_| WEB_SEARCH.to_string())
+}
+
+const WEB_SEARCH: &str = "https://www.google.com/search";
+
 /// Opens the playing song's page on Genius (where its lyrics can be read,
 /// fixed or added), or a Genius search when there's no token or no match.
 fn open_genius_page(button: &gtk::Button, app_model: &Rc<AppModel>) {
@@ -861,7 +900,29 @@ impl EventListener for LyricsPage {
 
 #[cfg(test)]
 mod tests {
-    use super::switch_needs_lookup;
+    use super::{switch_needs_lookup, web_lyrics_search_url};
+
+    #[test]
+    fn the_web_search_asks_for_the_main_artist_the_clean_title_and_lyrics() {
+        let url = url::Url::parse(&web_lyrics_search_url("Torya", "Serpentes - Ao Vivo")).unwrap();
+        assert_eq!(url.host_str(), Some("www.google.com"));
+        let query: Vec<_> = url
+            .query_pairs()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect();
+        assert_eq!(
+            query,
+            vec![("q".to_string(), "Torya Serpentes lyrics".to_string())]
+        );
+        // No artist: the title and the word alone
+        let url =
+            url::Url::parse(&web_lyrics_search_url(" ", "Disco Voador (feat. Niink)")).unwrap();
+        let q = url
+            .query_pairs()
+            .find(|(k, _)| k == "q")
+            .map(|(_, v)| v.to_string());
+        assert_eq!(q.as_deref(), Some("Disco Voador lyrics"));
+    }
 
     #[test]
     fn the_genius_switch_looks_again_only_when_it_changes_what_shows() {

@@ -46,7 +46,7 @@ mod imp {
         #[template_child]
         pub genius_button: TemplateChild<gtk::Button>,
         #[template_child]
-        pub genius_empty_button: TemplateChild<gtk::Button>,
+        pub web_search_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub fullscreen_button: TemplateChild<gtk::Button>,
         #[template_child]
@@ -196,8 +196,8 @@ impl LyricsPageWidget {
         imp.empty_page.set_title(title);
         imp.empty_page.set_description(description);
         imp.reload_empty_button.set_visible(allow_reload);
-        // A song was looked up: its Genius page may have (or take) the lyrics
-        imp.genius_empty_button.set_visible(allow_reload);
+        // A song was looked up and no source had its lyrics: the web may
+        imp.web_search_button.set_visible(allow_reload);
         imp.sync_toolbar.set_visible(false);
         imp.lyrics_stack.set_visible_child_name("empty");
     }
@@ -232,14 +232,14 @@ impl LyricsPageWidget {
         self.imp().offset_reset_button.connect_clicked(move |_| f());
     }
 
-    /// Both Genius buttons: the one in the lyrics bar and the one shown
-    /// when no lyrics were found.
-    pub fn connect_open_genius<F: Fn(&gtk::Button) + Clone + 'static>(&self, f: F) {
-        let f2 = f.clone();
+    /// The Genius button in the lyrics bar.
+    pub fn connect_open_genius<F: Fn(&gtk::Button) + 'static>(&self, f: F) {
         self.imp().genius_button.connect_clicked(move |b| f(b));
-        self.imp()
-            .genius_empty_button
-            .connect_clicked(move |b| f2(b));
+    }
+
+    /// The button shown when no source had the lyrics.
+    pub fn connect_web_search<F: Fn(&gtk::Button) + 'static>(&self, f: F) {
+        self.imp().web_search_button.connect_clicked(move |b| f(b));
     }
 
     pub fn connect_reload<F: Fn() + Clone + 'static>(&self, f: F) {

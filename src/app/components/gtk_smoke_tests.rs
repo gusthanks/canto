@@ -827,6 +827,31 @@ fn assert_lyrics_source_line() {
     );
     assert!(!source.is_visible(), "a source line without lyrics");
     assert_eq!(lyrics.source(), None);
+    // No source had the lyrics: the way out is a web search, not Genius
+    // (Q13a, 20/11)
+    pump(300);
+    let mut labels = Vec::new();
+    let mut stack = vec![lyrics.clone().upcast::<gtk::Widget>()];
+    while let Some(widget) = stack.pop() {
+        if let Some(button) = widget.downcast_ref::<gtk::Button>() {
+            if button.is_mapped() {
+                if let Some(label) = button.label() {
+                    labels.push(label.to_string());
+                }
+            }
+        }
+        let mut child = widget.first_child();
+        while let Some(c) = child {
+            child = c.next_sibling();
+            stack.push(c);
+        }
+    }
+    check(
+        "with no lyrics found, the button searches the web, not Genius",
+        labels.iter().any(|label| label == "Search the Web")
+            && !labels.iter().any(|label| label.contains("Genius")),
+        format!("{:?}", labels),
+    );
     window.destroy();
 
     // Full screen: the lyrics are huge, the source line stays small

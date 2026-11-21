@@ -115,11 +115,11 @@ template $LyricsPageWidget : Adw.Bin {
               ]
             }
 
-            Button genius_empty_button {
+            Button web_search_button {
               halign: center;
               visible: false;
-              /* Translators: Button under "No Lyrics Available": opens the song's page on Genius, where its lyrics can be read or added. */
-              label: _("Search on Genius");
+              /* Translators: Button under "No Lyrics Available", when no lyrics source has the song: searches the web for its lyrics. */
+              label: _("Search the Web");
 
               styles [
                 "pill",
