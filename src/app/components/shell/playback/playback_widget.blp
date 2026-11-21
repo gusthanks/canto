@@ -153,147 +153,152 @@ template $PlaybackWidget : Box {
           }
         }
 
-        MenuButton sleep_timer_button {
-          // Only shows while a timer runs (the countdown); set from More Options
+        // Shows while a timer runs, with its countdown (playback_widget.rs);
+        // the bar's narrowest tier hides the button inside, and the timer
+        // stays in More Options
+        Box sleep_timer_slot {
           visible: false;
-          width-request: 36;
-          height-request: 36;
-          tooltip-text: _("Sleep Timer");
-          valign: center;
-          direction: up;
-          focus-on-click: false;
-          can-focus: false;
 
-          styles [
-            "flat",
-            "circular",
-          ]
-
-          child: Box {
-            orientation: horizontal;
-            spacing: 4;
-            halign: center;
+          MenuButton sleep_timer_button {
+            width-request: 36;
+            height-request: 36;
+            tooltip-text: _("Sleep Timer");
             valign: center;
+            direction: up;
+            focus-on-click: false;
+            can-focus: false;
 
-            Image {
-              icon-name: "alarm-symbolic";
-            }
+            styles [
+              "flat",
+              "circular",
+            ]
 
-            Label sleep_timer_label {
-              visible: false;
-
-              styles [
-                "sleep-timer-countdown",
-              ]
-            }
-          };
-
-          popover: Popover sleep_popover {
             child: Box {
-              orientation: vertical;
+              orientation: horizontal;
               spacing: 4;
-              margin-top: 6;
-              margin-bottom: 6;
-              margin-start: 6;
-              margin-end: 6;
+              halign: center;
+              valign: center;
 
-              Label {
-                label: _("Sleep Timer");
-                xalign: 0.0;
-                margin-start: 8;
-                margin-bottom: 4;
-
-                styles [
-                  "caption-heading",
-                  "dim-label",
-                ]
+              Image {
+                icon-name: "alarm-symbolic";
               }
 
-              Button sleep_off_btn {
-                halign: fill;
+              Label sleep_timer_label {
+                visible: false;
 
                 styles [
-                  "flat",
-                  "playback-preset-btn",
+                  "sleep-timer-countdown",
                 ]
-
-                child: Label {
-                  label: _("Off");
-                  xalign: 0.0;
-                };
-              }
-
-              Button sleep_track_btn {
-                halign: fill;
-
-                styles [
-                  "flat",
-                  "playback-preset-btn",
-                ]
-
-                child: Label {
-                  label: _("End of current track");
-                  xalign: 0.0;
-                };
-              }
-
-              Button sleep_15_btn {
-                halign: fill;
-
-                styles [
-                  "flat",
-                  "playback-preset-btn",
-                ]
-
-                child: Label {
-                  label: _("15 min");
-                  xalign: 0.0;
-                };
-              }
-
-              Button sleep_30_btn {
-                halign: fill;
-
-                styles [
-                  "flat",
-                  "playback-preset-btn",
-                ]
-
-                child: Label {
-                  label: _("30 min");
-                  xalign: 0.0;
-                };
-              }
-
-              Button sleep_45_btn {
-                halign: fill;
-
-                styles [
-                  "flat",
-                  "playback-preset-btn",
-                ]
-
-                child: Label {
-                  label: _("45 min");
-                  xalign: 0.0;
-                };
-              }
-
-              Button sleep_60_btn {
-                halign: fill;
-
-                styles [
-                  "flat",
-                  "playback-preset-btn",
-                ]
-
-                child: Label {
-                  label: _("60 min");
-                  xalign: 0.0;
-                };
               }
             };
-          };
+
+            popover: Popover sleep_popover {
+              child: Box {
+                orientation: vertical;
+                spacing: 4;
+                margin-top: 6;
+                margin-bottom: 6;
+                margin-start: 6;
+                margin-end: 6;
+
+                Label {
+                  label: _("Sleep Timer");
+                  xalign: 0.0;
+                  margin-start: 8;
+                  margin-bottom: 4;
+
+                  styles [
+                    "caption-heading",
+                    "dim-label",
+                  ]
+                }
+
+                Button sleep_off_btn {
+                  halign: fill;
+
+                  styles [
+                    "flat",
+                    "playback-preset-btn",
+                  ]
+
+                  child: Label {
+                    label: _("Off");
+                    xalign: 0.0;
+                  };
+                }
+
+                Button sleep_track_btn {
+                  halign: fill;
+
+                  styles [
+                    "flat",
+                    "playback-preset-btn",
+                  ]
+
+                  child: Label {
+                    label: _("End of current track");
+                    xalign: 0.0;
+                  };
+                }
+
+                Button sleep_15_btn {
+                  halign: fill;
+
+                  styles [
+                    "flat",
+                    "playback-preset-btn",
+                  ]
+
+                  child: Label {
+                    label: _("15 min");
+                    xalign: 0.0;
+                  };
+                }
+
+                Button sleep_30_btn {
+                  halign: fill;
+
+                  styles [
+                    "flat",
+                    "playback-preset-btn",
+                  ]
+
+                  child: Label {
+                    label: _("30 min");
+                    xalign: 0.0;
+                  };
+                }
+
+                Button sleep_45_btn {
+                  halign: fill;
+
+                  styles [
+                    "flat",
+                    "playback-preset-btn",
+                  ]
+
+                  child: Label {
+                    label: _("45 min");
+                    xalign: 0.0;
+                  };
+                }
+
+                Button sleep_60_btn {
+                  halign: fill;
+
+                  styles [
+                    "flat",
+                    "playback-preset-btn",
+                  ]
+
+                  child: Label {
+                    label: _("60 min");
+                    xalign: 0.0;
+                  };
+                }
+              };
+            };
+          }
         }
 
         // User can hide this from the bar (player-bar-* settings)
@@ -448,7 +453,8 @@ template $PlaybackWidget : Box {
                   }
 
                   Label {
-                    label: _("Shuffle");
+                    /* Translators: Row of the player bar's More Options menu in a narrow window, with a check mark while songs play in random order (the button's tooltip says "Shuffle" too). */
+                    label: C_("More Options menu", "Shuffle");
                     xalign: 0.0;
                     hexpand: true;
                   }
@@ -713,6 +719,137 @@ template $PlaybackWidget : Box {
 
                     child: Label {
                       label: _("Acoustic");
+                      xalign: 0.0;
+                    };
+                  }
+                };
+              }
+
+              // Sleep Timer ›: the same choices as the countdown's own menu,
+              // in this menu, so nothing shows in the bar until a timer runs
+              StackPage {
+                name: "sleep";
+
+                child: Box {
+                  orientation: vertical;
+                  spacing: 4;
+                  margin-top: 6;
+                  margin-bottom: 6;
+                  margin-start: 6;
+                  margin-end: 6;
+
+                  Button more_sleep_back {
+                    halign: fill;
+
+                    styles [
+                      "flat",
+                      "playback-preset-btn",
+                    ]
+
+                    child: Box {
+                      spacing: 10;
+
+                      Image {
+                        icon-name: "pan-start-symbolic";
+                      }
+
+                      Label {
+                        label: _("Sleep Timer");
+                        xalign: 0.0;
+                        hexpand: true;
+
+                        styles [
+                          "heading",
+                        ]
+                      }
+                    };
+                  }
+
+                  Separator {
+                    margin-top: 2;
+                    margin-bottom: 4;
+                  }
+
+                  Button more_sleep_off {
+                    halign: fill;
+
+                    styles [
+                      "flat",
+                      "playback-preset-btn",
+                    ]
+
+                    child: Label {
+                      label: _("Off");
+                      xalign: 0.0;
+                    };
+                  }
+
+                  Button more_sleep_track {
+                    halign: fill;
+
+                    styles [
+                      "flat",
+                      "playback-preset-btn",
+                    ]
+
+                    child: Label {
+                      label: _("End of current track");
+                      xalign: 0.0;
+                    };
+                  }
+
+                  Button more_sleep_15 {
+                    halign: fill;
+
+                    styles [
+                      "flat",
+                      "playback-preset-btn",
+                    ]
+
+                    child: Label {
+                      label: _("15 min");
+                      xalign: 0.0;
+                    };
+                  }
+
+                  Button more_sleep_30 {
+                    halign: fill;
+
+                    styles [
+                      "flat",
+                      "playback-preset-btn",
+                    ]
+
+                    child: Label {
+                      label: _("30 min");
+                      xalign: 0.0;
+                    };
+                  }
+
+                  Button more_sleep_45 {
+                    halign: fill;
+
+                    styles [
+                      "flat",
+                      "playback-preset-btn",
+                    ]
+
+                    child: Label {
+                      label: _("45 min");
+                      xalign: 0.0;
+                    };
+                  }
+
+                  Button more_sleep_60 {
+                    halign: fill;
+
+                    styles [
+                      "flat",
+                      "playback-preset-btn",
+                    ]
+
+                    child: Label {
+                      label: _("60 min");
                       xalign: 0.0;
                     };
                   }

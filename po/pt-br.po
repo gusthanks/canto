@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-20 14:07-0300\n"
+"POT-Creation-Date: 2026-11-21 02:05-0300\n"
 "Language: pt-br\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -17,7 +17,7 @@ msgstr "Ver álbum"
 
 #. translators: This is part of a contextual menu attached to a single track; the intent is to copy the link (public URL) to a specific track.
 #: src/app/components/labels.rs:11
-#: src/app/components/widgets/details_page/header.blp:196
+#: src/app/components/widgets/details_page/header.blp:202
 msgid "Copy Link"
 msgstr "Copiar link"
 
@@ -54,7 +54,7 @@ msgstr "Músicas Curtidas"
 #. translators: Header above the tracks the user added to the play queue, on the queue page.
 #. translators: Heading of the card showing the track that plays next.
 #: src/app/components/labels.rs:29
-#: src/app/components/shell/now_panel/mod.rs:418
+#: src/app/components/shell/now_panel/mod.rs:459
 msgid "Next in Queue"
 msgstr "A seguir na fila"
 
@@ -64,9 +64,8 @@ msgstr "A seguir na fila"
 #: src/app/components/labels.rs:32
 #: src/app/components/shell/command_palette/widget.rs:553
 #: src/app/components/pages/shortcuts/shortcuts.blp:84
-#: src/app/components/shell/playback/playback_info.blp:18
-#: src/app/components/shell/playback/playback_widget.blp:73
-#: src/app/components/shell/utility_panel/utility_panel.blp:44
+#: src/app/components/shell/playback/playback_info.blp:19
+#: src/app/components/shell/utility_panel/utility_panel.blp:48
 msgid "Now Playing"
 msgstr "Tocando agora"
 
@@ -147,13 +146,13 @@ msgstr "Você não tem listas de reprodução salvas."
 
 #. translators: This is part of a contextual menu attached to a playlist in the sidebar; this entry starts playing the playlist from the first track.
 #: src/app/components/labels.rs:74
-#: src/app/components/shell/playback/playback_controls.rs:71
+#: src/app/components/shell/playback/playback_controls.rs:80
 #: src/app/components/shell/now_panel/stats.rs:411
 #: src/app/components/shell/now_panel/stats.rs:435
 #: src/app/components/shell/mini_player.rs:171
 #: src/app/components/shell/mini_player.rs:245
-#: src/app/components/widgets/details_page/header.rs:250
-#: src/app/components/widgets/details_page/header.blp:157
+#: src/app/components/widgets/details_page/header.rs:266
+#: src/app/components/widgets/details_page/header.blp:163
 msgid "Play"
 msgstr "Tocar"
 
@@ -161,7 +160,7 @@ msgstr "Tocar"
 #: src/app/components/labels.rs:77
 #: src/app/components/pages/shortcuts/shortcuts.blp:50
 #: src/app/components/shell/playback/playback_controls.blp:15
-#: src/app/components/widgets/details_page/header.blp:170
+#: src/app/components/widgets/details_page/header.blp:176
 msgid "Shuffle"
 msgstr "Ativar a ordem aleatória"
 
@@ -198,8 +197,8 @@ msgstr "Nova lista de reprodução"
 #. translators: An album in the back/forward history menu, while its name is loading.
 #: src/app/components/labels.rs:95 src/app/components/labels.rs:180
 #: src/app/components/shell/command_palette/widget.rs:856
-#: src/app/components/shell/navigation_panel/model.rs:413
-#: src/app/components/shell/navigation_panel/model.rs:859
+#: src/app/components/shell/navigation_panel/model.rs:419
+#: src/app/components/shell/navigation_panel/model.rs:887
 #: src/app/components/pages/settings/settings.blp:291
 msgid "Album"
 msgstr "Álbum"
@@ -230,7 +229,7 @@ msgstr "Normal"
 #. translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
 #: src/app/components/labels.rs:110
 #: src/app/components/shell/command_palette/widget.rs:716
-#: src/app/components/shell/playback/playback_widget.blp:546 src/window.blp:428
+#: src/app/components/shell/playback/playback_widget.blp:575 src/window.blp:430
 msgid "Start Track Radio"
 msgstr "Iniciar Rádio da Faixa"
 
@@ -295,8 +294,8 @@ msgstr "{} por {}"
 #. translators: An artist in the back/forward history menu, while their name is loading.
 #: src/app/components/labels.rs:182
 #: src/app/components/shell/command_palette/widget.rs:857
-#: src/app/components/shell/navigation_panel/model.rs:415
-#: src/app/components/shell/navigation_panel/model.rs:884
+#: src/app/components/shell/navigation_panel/model.rs:421
+#: src/app/components/shell/navigation_panel/model.rs:912
 msgid "Artist"
 msgstr "Artista"
 
@@ -305,8 +304,8 @@ msgstr "Artista"
 #: src/app/components/pages/details_playlist/model.rs:155
 #: src/app/components/pages/saved_tracks/model.rs:63
 #: src/app/components/shell/command_palette/widget.rs:858
-#: src/app/components/shell/navigation_panel/model.rs:434
-#: src/app/components/shell/navigation_panel/model.rs:802
+#: src/app/components/shell/navigation_panel/model.rs:440
+#: src/app/components/shell/navigation_panel/model.rs:825
 msgid "Playlist"
 msgstr "Playlist"
 
@@ -318,8 +317,8 @@ msgstr ""
 #. translators: The search page in the back/forward history menu.
 #: src/app/components/labels.rs:188
 #: src/app/components/shell/command_palette/widget.rs:575
-#: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:194
-#: src/window.blp:222
+#: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:196
+#: src/window.blp:224
 msgid "Search"
 msgstr "Buscar"
 
@@ -374,19 +373,19 @@ msgstr "Todas as listas de reprodução"
 #. Translators: Tooltip of the player bar button that shows or hides synced lyrics.
 #. Translators: Tab label for lyrics in utility panel.
 #: src/app/components/pages/lyrics/component.rs:89
-#: src/app/components/shell/now_panel/mod.rs:403
+#: src/app/components/shell/now_panel/mod.rs:444
 #: src/app/components/shell/fullscreen_lyrics.rs:101
 #: src/app/components/pages/settings/settings.blp:509
-#: src/app/components/shell/playback/playback_widget.blp:168
-#: src/app/components/shell/utility_panel/utility_panel.blp:62
-#: src/app/components/shell/playback/playback_widget.rs:355
+#: src/app/components/shell/playback/playback_widget.blp:123
+#: src/app/components/shell/utility_panel/utility_panel.blp:66
+#: src/app/components/shell/playback/playback_widget.rs:460
 msgid "Lyrics"
 msgstr "Letra"
 
 #. translators: Short text displayed instead of a track title when nothing plays
 #: src/app/components/pages/lyrics/component.rs:461
 #: src/app/components/pages/lyrics/component.rs:851
-#: src/app/components/shell/playback/playback_info.rs:114
+#: src/app/components/shell/playback/playback_info.rs:122
 #: src/app/components/shell/fullscreen_lyrics.rs:212
 msgid "No Track Playing"
 msgstr "Nenhuma faixa tocando"
@@ -439,43 +438,43 @@ msgstr "Letra: {} · sem sincronia"
 #. translators: Title of the queue, listing what plays next, when it's shown beside the content.
 #. Translators: Tooltip of the playback bar button that shows or hides the queue.
 #. Translators: Tab label for the queue in utility panel.
-#: src/app/components/pages/queue/component.rs:78
-#: src/app/components/shell/playback/playback_widget.blp:188
-#: src/app/components/shell/utility_panel/utility_panel.blp:69
-#: src/app/components/shell/playback/playback_widget.rs:361
+#: src/app/components/pages/queue/component.rs:79
+#: src/app/components/shell/playback/playback_widget.blp:143
+#: src/app/components/shell/utility_panel/utility_panel.blp:73
+#: src/app/components/shell/playback/playback_widget.rs:466
 msgid "Queue"
 msgstr "Fila"
 
 #. translators: Shown in Recently Played, above the queue, when Spotify didn't answer.
-#: src/app/components/pages/queue/component.rs:206
+#: src/app/components/pages/queue/component.rs:216
 msgid "Couldn't load your recent songs."
 msgstr "Não foi possível carregar suas músicas recentes."
 
 #. translators: Shown in Recently Played, above the queue, when the account has no history yet.
-#: src/app/components/pages/queue/component.rs:221
+#: src/app/components/pages/queue/component.rs:231
 msgid "Songs you play will show up here."
 msgstr "As músicas que você tocar vão aparecer aqui."
 
 #. translators: When a song in Recently Played was played: less than a minute ago.
-#: src/app/components/pages/queue/component.rs:292
+#: src/app/components/pages/queue/component.rs:344
 msgid "Just now"
 msgstr "Agora mesmo"
 
-#: src/app/components/pages/queue/component.rs:296
+#: src/app/components/pages/queue/component.rs:348
 #, rust-format
 msgid "{} min ago"
 msgid_plural "{} min ago"
 msgstr[0] "há {} min"
 msgstr[1] "há {} min"
 
-#: src/app/components/pages/queue/component.rs:302
+#: src/app/components/pages/queue/component.rs:354
 #, rust-format
 msgid "{} h ago"
 msgid_plural "{} h ago"
 msgstr[0] "há {} h"
 msgstr[1] "há {} h"
 
-#: src/app/components/pages/queue/component.rs:308
+#: src/app/components/pages/queue/component.rs:360
 #, rust-format
 msgid "{} day ago"
 msgid_plural "{} days ago"
@@ -528,7 +527,7 @@ msgstr "Suas listas de reprodução serão mostradas aqui."
 #. translators: This is a navigation panel entry to browse to the songs the user liked (the heart).
 #: src/app/components/pages/saved_tracks/model.rs:59
 #: src/app/components/shell/command_palette/widget.rs:586
-#: src/app/components/shell/navigation_panel/model.rs:551
+#: src/app/components/shell/navigation_panel/model.rs:574
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:73
 msgid "Liked Songs"
 msgstr "Músicas Curtidas"
@@ -845,7 +844,7 @@ msgstr ""
 #: src/app/components/widgets/queue_list/model.rs:260
 #: src/app/components/pages/queue/queue_page.blp:19
 #: src/app/components/shell/headerbar/headerbar.blp:118
-#: src/app/components/shell/utility_panel/utility_panel.blp:122
+#: src/app/components/shell/utility_panel/utility_panel.blp:126
 #: src/app/components/utils.rs:226
 msgid "Cancel"
 msgstr "Cancelar"
@@ -855,7 +854,7 @@ msgid "Open"
 msgstr ""
 
 #: src/app/components/shell/command_palette/command_palette.blp:5
-#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:423
+#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:425
 msgid "Command Palette"
 msgstr "Paleta de Comandos"
 
@@ -889,14 +888,15 @@ msgstr "Ação"
 #: src/app/components/shell/command_palette/widget.rs:549
 #: src/app/components/shell/command_palette/widget.rs:758
 #: src/app/components/sleep_timer.rs:45 src/app/components/sleep_timer.rs:49
-#: src/app/components/shell/playback/playback_widget.blp:206
-#: src/app/components/shell/playback/playback_widget.blp:246
-#: src/app/components/shell/playback/playback_widget.blp:492
+#: src/app/components/shell/playback/playback_widget.blp:165
+#: src/app/components/shell/playback/playback_widget.blp:205
+#: src/app/components/shell/playback/playback_widget.blp:521
+#: src/app/components/shell/playback/playback_widget.blp:757
 msgid "Sleep Timer"
 msgstr "Timer para dormir"
 
 #: src/app/components/shell/command_palette/widget.rs:550
-#: src/app/components/shell/playback/playback_widget.rs:368
+#: src/app/components/shell/playback/playback_widget.rs:473
 msgid "Device"
 msgstr "Aparelho"
 
@@ -990,8 +990,8 @@ msgstr "Mostrar a letra grande, sobre a capa"
 
 #. Translators: Tooltip of the player bar button that opens the small player window.
 #: src/app/components/shell/command_palette/widget.rs:691
-#: src/app/components/shell/playback/playback_widget.blp:429
-#: src/app/components/shell/playback/playback_widget.rs:381
+#: src/app/components/shell/playback/playback_widget.blp:389
+#: src/app/components/shell/playback/playback_widget.rs:486
 msgid "Mini Player"
 msgstr "Mini player"
 
@@ -1001,7 +1001,7 @@ msgstr "Deixar os controles numa janela pequena"
 
 #. translators: Title of the window with the user's Last.fm listening stats.
 #: src/app/components/shell/command_palette/widget.rs:702
-#: src/app/components/shell/stats_dialog.rs:49 src/window.blp:433
+#: src/app/components/shell/stats_dialog.rs:49 src/window.blp:435
 msgid "Your Stats"
 msgstr "Suas estatísticas"
 
@@ -1241,116 +1241,116 @@ msgstr ""
 msgid "No previous track"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_controls.rs:69
+#: src/app/components/shell/playback/playback_controls.rs:78
 #: src/app/components/shell/mini_player.rs:243
-#: src/app/components/widgets/details_page/header.rs:248
+#: src/app/components/widgets/details_page/header.rs:264
 msgid "Pause"
 msgstr "Pausar"
 
 #. translators: Subtle hint displayed below "No Track Playing" in the bottom player bar
-#: src/app/components/shell/playback/playback_info.rs:118
+#: src/app/components/shell/playback/playback_info.rs:126
 msgid "Select a track to play"
 msgstr "Escolha uma faixa para tocar"
 
-#: src/app/components/shell/now_panel/mod.rs:45
-#: src/app/components/shell/now_panel/mod.rs:1178
+#: src/app/components/shell/now_panel/mod.rs:54
+#: src/app/components/shell/now_panel/mod.rs:1236
 msgid "Go to Album"
 msgstr "Ir para o álbum"
 
 #. translators: Side panel view of the current track, when nothing plays.
-#: src/app/components/shell/now_panel/mod.rs:366
+#: src/app/components/shell/now_panel/mod.rs:407
 #: src/app/components/shell/now_panel/info_page.rs:90
 #: src/app/components/shell/mini_player.rs:254
 msgid "Nothing Playing"
 msgstr "Nada tocando"
 
-#: src/app/components/shell/now_panel/mod.rs:367
+#: src/app/components/shell/now_panel/mod.rs:408
 #: src/app/components/shell/now_panel/info_page.rs:91
 msgid "Play something and it shows up here."
 msgstr "Toque alguma coisa e ela aparece aqui."
 
 #. translators: Tooltip of the lyrics preview card in the Now Playing panel.
-#: src/app/components/shell/now_panel/mod.rs:412
+#: src/app/components/shell/now_panel/mod.rs:453
 msgid "Show Lyrics"
 msgstr "Mostrar letra"
 
 #. translators: Tooltip of the next track card in the Now Playing panel.
-#: src/app/components/shell/now_panel/mod.rs:442
+#: src/app/components/shell/now_panel/mod.rs:483
 msgid "Show Queue"
 msgstr "Mostrar fila"
 
-#: src/app/components/shell/now_panel/mod.rs:448
+#: src/app/components/shell/now_panel/mod.rs:489
 #: src/app/components/shell/now_panel/stats.rs:310
 msgid "Your Plays"
 msgstr "Suas reproduções"
 
 #. A click opens the Stats tab, with everything Last.fm knows
 #. translators: Tooltip of the "Your Plays" card in the Now Playing panel: it opens the Stats tab.
-#: src/app/components/shell/now_panel/mod.rs:454
+#: src/app/components/shell/now_panel/mod.rs:495
 msgid "Show Song Stats"
 msgstr "Ver estatísticas da música"
 
-#: src/app/components/shell/now_panel/mod.rs:458
+#: src/app/components/shell/now_panel/mod.rs:499
 #: src/app/components/shell/now_panel/about.rs:302
 msgid "Credits"
 msgstr "Créditos"
 
 #. A click opens the About tab, with the full credits and the story
 #. translators: Tooltip of the Credits card in the Now Playing panel: it opens the About tab.
-#: src/app/components/shell/now_panel/mod.rs:466
+#: src/app/components/shell/now_panel/mod.rs:507
 msgid "Show About This Song"
 msgstr "Ver sobre a música"
 
 #. translators: Credits row in the Now Playing panel: the track's artists.
-#: src/app/components/shell/now_panel/mod.rs:553
+#: src/app/components/shell/now_panel/mod.rs:594
 #: src/app/components/shell/now_panel/about.rs:305
 msgid "Performed by"
 msgstr "Interpretada por"
 
-#: src/app/components/shell/now_panel/mod.rs:556
+#: src/app/components/shell/now_panel/mod.rs:597
 #: src/app/components/shell/now_panel/about.rs:309
 msgid "Producer(s)"
 msgstr "Produção"
 
-#: src/app/components/shell/now_panel/mod.rs:557
+#: src/app/components/shell/now_panel/mod.rs:598
 #: src/app/components/shell/now_panel/about.rs:310
 msgid "Writer(s)"
 msgstr "Composição"
 
-#: src/app/components/shell/now_panel/mod.rs:567
+#: src/app/components/shell/now_panel/mod.rs:608
 msgid "No detailed credits were found on Genius for this track."
 msgstr "Nenhum crédito detalhado foi encontrado no Genius para esta faixa."
 
-#: src/app/components/shell/now_panel/mod.rs:577
+#: src/app/components/shell/now_panel/mod.rs:618
 msgid "this song"
 msgstr "esta música"
 
-#: src/app/components/shell/now_panel/mod.rs:578
+#: src/app/components/shell/now_panel/mod.rs:619
 msgid "this album"
 msgstr "este álbum"
 
-#: src/app/components/shell/now_panel/mod.rs:579
+#: src/app/components/shell/now_panel/mod.rs:620
 msgid "this artist"
 msgstr "este artista"
 
-#: src/app/components/shell/now_panel/mod.rs:864
+#: src/app/components/shell/now_panel/mod.rs:909
 msgid "Add a Genius token to see who produced and wrote this track."
 msgstr ""
 "Adicione um token do Genius para ver quem produziu e escreveu esta faixa."
 
-#: src/app/components/shell/now_panel/mod.rs:866
-#: src/app/components/shell/now_panel/mod.rs:894
+#: src/app/components/shell/now_panel/mod.rs:911
+#: src/app/components/shell/now_panel/mod.rs:939
 #: src/app/components/shell/now_panel/about.rs:109
 #: src/app/components/shell/now_panel/about.rs:156
 msgid "Set Up Genius"
 msgstr "Configurar o Genius"
 
 #. translators: Shown while the credits of the current track load.
-#: src/app/components/shell/now_panel/mod.rs:872
+#: src/app/components/shell/now_panel/mod.rs:917
 msgid "Loading credits…"
 msgstr "Carregando créditos…"
 
-#: src/app/components/shell/now_panel/mod.rs:892
+#: src/app/components/shell/now_panel/mod.rs:937
 #: src/app/components/shell/now_panel/about.rs:154
 msgid ""
 "Genius didn't accept your token. Paste a new one in Settings to see the "
@@ -1359,12 +1359,12 @@ msgstr ""
 "O Genius não aceitou seu token. Cole um novo nas Configurações para ver os "
 "créditos de novo."
 
-#: src/app/components/shell/now_panel/mod.rs:899
+#: src/app/components/shell/now_panel/mod.rs:944
 msgid "Couldn't load the credits from Genius."
 msgstr "Não foi possível carregar os créditos do Genius."
 
 #. Translators: Button under "No Lyrics Available": opens the song's page on Genius, where its lyrics can be read or added.
-#: src/app/components/shell/now_panel/mod.rs:901
+#: src/app/components/shell/now_panel/mod.rs:946
 #: src/app/components/shell/now_panel/about.rs:144
 #: src/app/components/shell/now_panel/about.rs:169
 #: src/app/components/pages/lyrics/lyrics_page.blp:122
@@ -1665,65 +1665,65 @@ msgid "Open Canto"
 msgstr "Abrir o Canto"
 
 #. translators: Library order: what was played most recently first.
-#: src/app/components/shell/navigation_panel/model.rs:71
+#: src/app/components/shell/navigation_panel/model.rs:73
 msgid "Recents"
 msgstr "Recentes"
 
 #. translators: Library order: what was saved most recently first.
 #. Translators: Sort option. Shows items in the order they were saved,
 #. with the most recently added items appearing first.
-#: src/app/components/shell/navigation_panel/model.rs:73
+#: src/app/components/shell/navigation_panel/model.rs:75
 #: src/app/models/card_enums.rs:51
 msgid "Recently Added"
 msgstr "Adicionados recentemente"
 
 #. translators: Library order: by name.
-#: src/app/components/shell/navigation_panel/model.rs:75
+#: src/app/components/shell/navigation_panel/model.rs:77
 msgid "Alphabetical"
 msgstr "Ordem alfabética"
 
 #. translators: Library order: by who made it (playlist owner, album artist).
 #. Translators: Sort option. Groups items by their artist or creator name,
 #. sorted alphabetically.
-#: src/app/components/shell/navigation_panel/model.rs:77
+#: src/app/components/shell/navigation_panel/model.rs:79
 #: src/app/models/card_enums.rs:57
 msgid "Creator"
 msgstr "Criador"
 
 #. translators: "View As" option of Your Library: one item per row.
-#: src/app/components/shell/navigation_panel/model.rs:111
+#: src/app/components/shell/navigation_panel/model.rs:113
 msgid "List"
 msgstr "Lista"
 
 #. translators: "View As" option of Your Library: covers side by side.
-#: src/app/components/shell/navigation_panel/model.rs:113
+#: src/app/components/shell/navigation_panel/model.rs:115
 msgid "Grid"
 msgstr "Grade"
 
-#: src/app/components/shell/navigation_panel/model.rs:416
+#: src/app/components/shell/navigation_panel/model.rs:422
 msgid "Song"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:478
+#: src/app/components/shell/navigation_panel/model.rs:501
 msgid "Unnamed Playlist"
 msgstr "Lista de reprodução sem título"
 
-#: src/app/components/shell/navigation_panel/model.rs:895
+#: src/app/components/shell/navigation_panel/model.rs:923
 #, fuzzy
 msgid "Pinned Playlist"
 msgstr "Lista de reprodução sem título"
 
-#: src/app/components/shell/navigation_panel/model.rs:896
+#: src/app/components/shell/navigation_panel/model.rs:924
 #, fuzzy
 msgid "Pinned Album"
 msgstr "Ver álbum"
 
-#: src/app/components/shell/navigation_panel/model.rs:897
+#: src/app/components/shell/navigation_panel/model.rs:925
 #, fuzzy
 msgid "Pinned Artist"
 msgstr "Artistas"
 
-#: src/app/components/shell/navigation_panel/model.rs:898
+#: src/app/components/shell/navigation_panel/model.rs:926
 #, fuzzy
 msgid "Pinned Track"
 msgstr "Faixas salvas"
@@ -1776,7 +1776,7 @@ msgstr "Backend de áudio"
 
 #: src/app/components/shell/window/close_dialog.rs:17
 #: src/app/components/pages/settings/settings.blp:104
-#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:467
+#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:469
 msgid "Quit"
 msgstr "Fechar"
 
@@ -1784,8 +1784,8 @@ msgstr "Fechar"
 msgid "Remember my choice"
 msgstr ""
 
-#: src/app/components/widgets/details_page/header.rs:407
-#: src/app/components/widgets/details_page/header.blp:183
+#: src/app/components/widgets/details_page/header.rs:423
+#: src/app/components/widgets/details_page/header.blp:189
 #, fuzzy
 msgid "Add to Library"
 msgstr "Adicionar à biblioteca"
@@ -2071,9 +2071,9 @@ msgstr "Idioma da tradução"
 #. translators: Button label. Selects all visible songs.
 #: src/app/components/pages/queue/queue_page.blp:34
 #: src/app/components/shell/headerbar/headerbar.blp:131
-#: src/app/components/pages/queue/widget.rs:177
+#: src/app/components/pages/queue/widget.rs:199
 #: src/app/components/shell/headerbar/widget.rs:783
-#: src/app/components/shell/utility_panel/utility_panel.blp:130
+#: src/app/components/shell/utility_panel/utility_panel.blp:134
 #: src/app/components/shell/utility_panel/widget.rs:192
 msgid "Select All"
 msgstr "Selecionar todas"
@@ -2128,8 +2128,8 @@ msgstr "Digite para pesquisar."
 
 #. Translators: Item in the player bar's More Options menu that opens the equalizer presets.
 #: src/app/components/pages/settings/equalizer.blp:5
-#: src/app/components/shell/playback/playback_widget.blp:520
-#: src/app/components/shell/playback/playback_widget.blp:610
+#: src/app/components/shell/playback/playback_widget.blp:549
+#: src/app/components/shell/playback/playback_widget.blp:639
 msgid "Equalizer"
 msgstr "Equalizador"
 
@@ -2842,6 +2842,7 @@ msgstr ""
 
 #: src/app/components/pages/shortcuts/shortcuts.blp:55
 #: src/app/components/shell/playback/playback_controls.blp:67
+#: src/app/components/shell/playback/playback_widget.blp:487
 msgid "Repeat"
 msgstr "Repetir"
 
@@ -2860,15 +2861,15 @@ msgstr ""
 msgid "Toggle Sidebar"
 msgstr ""
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:118 src/window.blp:150
+#: src/app/components/pages/shortcuts/shortcuts.blp:118 src/window.blp:152
 msgid "Main Menu"
 msgstr "Menu principal"
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:440
+#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:442
 msgid "Preferences"
 msgstr "Preferências"
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:445
+#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:447
 msgid "Keyboard Shortcuts"
 msgstr "Atalhos de teclado"
 
@@ -2895,78 +2896,91 @@ msgstr ""
 msgid "Forward"
 msgstr ""
 
-#: src/app/components/shell/playback/playback_widget.blp:266
+#: src/app/components/shell/playback/playback_widget.blp:225
+#: src/app/components/shell/playback/playback_widget.blp:782
+#: src/app/components/shell/playback/playback_widget.rs:828
 msgid "Off"
 msgstr "Desativado"
 
-#: src/app/components/shell/playback/playback_widget.blp:280
+#: src/app/components/shell/playback/playback_widget.blp:239
+#: src/app/components/shell/playback/playback_widget.blp:796
 msgid "End of current track"
 msgstr "Fim da faixa atual"
 
-#: src/app/components/shell/playback/playback_widget.blp:294
+#: src/app/components/shell/playback/playback_widget.blp:253
+#: src/app/components/shell/playback/playback_widget.blp:810
 msgid "15 min"
 msgstr "15 min"
 
-#: src/app/components/shell/playback/playback_widget.blp:308
+#: src/app/components/shell/playback/playback_widget.blp:267
+#: src/app/components/shell/playback/playback_widget.blp:824
 msgid "30 min"
 msgstr "30 min"
 
-#: src/app/components/shell/playback/playback_widget.blp:322
+#: src/app/components/shell/playback/playback_widget.blp:281
+#: src/app/components/shell/playback/playback_widget.blp:838
 msgid "45 min"
 msgstr "45 min"
 
-#: src/app/components/shell/playback/playback_widget.blp:336
+#: src/app/components/shell/playback/playback_widget.blp:295
+#: src/app/components/shell/playback/playback_widget.blp:852
 msgid "60 min"
 msgstr "60 min"
 
-#: src/app/components/shell/playback/playback_widget.blp:364
+#: src/app/components/shell/playback/playback_widget.blp:324
 msgid "Mute / Unmute"
 msgstr "Silenciar / reativar som"
 
-#: src/app/components/shell/playback/playback_widget.blp:399
-#: src/app/components/shell/playback/playback_widget.rs:375
+#: src/app/components/shell/playback/playback_widget.blp:359
+#: src/app/components/shell/playback/playback_widget.rs:480
 msgid "Volume"
 msgstr "Volume"
 
 #. Translators: Tooltip of the player bar button that opens the sleep timer, equalizer and audio options.
-#: src/app/components/shell/playback/playback_widget.blp:447
-#: src/app/components/widgets/details_page/header.blp:213
-#: src/app/components/shell/playback/playback_widget.rs:388
+#: src/app/components/shell/playback/playback_widget.blp:407
+#: src/app/components/widgets/details_page/header.blp:219
+#: src/app/components/shell/playback/playback_widget.rs:493
 msgid "More Options"
 msgstr "Mais opções"
 
+#. Translators: Row of the player bar's More Options menu in a narrow window, with a check mark while songs play in random order (the button's tooltip says "Shuffle" too).
+#: src/app/components/shell/playback/playback_widget.blp:457
+msgctxt "More Options menu"
+msgid "Shuffle"
+msgstr "Aleatório"
+
 #. Translators: Item in the player bar's More Options menu: choose which buttons the bar shows.
-#: src/app/components/shell/playback/playback_widget.blp:561
+#: src/app/components/shell/playback/playback_widget.blp:590
 msgid "Customize Bar…"
 msgstr "Personalizar barra…"
 
-#: src/app/components/shell/playback/playback_widget.blp:576
+#: src/app/components/shell/playback/playback_widget.blp:605
 msgid "Audio Settings…"
 msgstr "Configurações de áudio…"
 
-#: src/app/components/shell/playback/playback_widget.blp:636
+#: src/app/components/shell/playback/playback_widget.blp:665
 msgid "Flat"
 msgstr "Plano"
 
-#: src/app/components/shell/playback/playback_widget.blp:650
+#: src/app/components/shell/playback/playback_widget.blp:679
 msgid "Bass Boost"
 msgstr "Reforço de graves"
 
-#: src/app/components/shell/playback/playback_widget.blp:664
+#: src/app/components/shell/playback/playback_widget.blp:693
 msgid "Vocal"
 msgstr "Vocal"
 
-#: src/app/components/shell/playback/playback_widget.blp:678
+#: src/app/components/shell/playback/playback_widget.blp:707
 msgid "Lo-Fi"
 msgstr "Lo-Fi"
 
-#: src/app/components/shell/playback/playback_widget.blp:692
+#: src/app/components/shell/playback/playback_widget.blp:721
 msgid "Acoustic"
 msgstr "Acústico"
 
 #. Translators: Tooltip of the player bar button that shows or hides the right side panel (Now Playing, Queue, Lyrics).
-#: src/app/components/shell/playback/playback_widget.blp:709
-#: src/app/components/shell/playback/playback_widget.rs:394
+#: src/app/components/shell/playback/playback_widget.blp:869
+#: src/app/components/shell/playback/playback_widget.rs:499
 msgid "Side Panel"
 msgstr "Painel lateral"
 
@@ -3036,30 +3050,30 @@ msgid "Remove"
 msgstr "Remover"
 
 #. Translators: Tooltip of the top bar button that opens the home page.
-#: src/window.blp:172
+#: src/window.blp:174
 msgid "Home"
 msgstr "Início"
 
 #. Translators: Placeholder of the search field in the top bar.
-#: src/window.blp:211
+#: src/window.blp:213
 msgid "What do you want to play?"
 msgstr "O que você quer ouvir?"
 
-#: src/window.blp:302
+#: src/window.blp:304
 msgid "Expand Your Library"
 msgstr "Abrir Sua Biblioteca"
 
 #. Translators: Title of the left panel, which lists the user's playlists, albums and artists.
-#: src/window.blp:324
+#: src/window.blp:326
 msgid "Your Library"
 msgstr "Sua Biblioteca"
 
-#: src/window.blp:335
+#: src/window.blp:337
 msgid "Collapse Sidebar"
 msgstr "Recolher barra lateral"
 
 #. Translators: One line under the app name in the About window.
-#: src/window.blp:414
+#: src/window.blp:416
 msgid ""
 "Your music services in one calm player, with synced lyrics, translations and "
 "listening stats."
@@ -3067,15 +3081,15 @@ msgstr ""
 "Seus serviços de música num player tranquilo, com letra sincronizada, "
 "tradução e estatísticas do que você ouve."
 
-#: src/window.blp:450
+#: src/window.blp:452
 msgid "Report Issue"
 msgstr ""
 
-#: src/window.blp:455
+#: src/window.blp:457
 msgid "About Canto"
 msgstr "Sobre o Canto"
 
-#: src/window.blp:462
+#: src/window.blp:464
 msgid "Log Out"
 msgstr "Sair"
 
@@ -3084,7 +3098,7 @@ msgid "Details"
 msgstr ""
 
 #. translators: Button label. Deselects all songs, once they are all selected.
-#: src/app/components/pages/queue/widget.rs:174
+#: src/app/components/pages/queue/widget.rs:196
 #: src/app/components/shell/headerbar/widget.rs:780
 #: src/app/components/shell/utility_panel/widget.rs:189
 msgid "Deselect All"
@@ -3096,17 +3110,17 @@ msgid "Cache cleared"
 msgstr ""
 
 #. Translators: Tab label for what Genius knows about the current song (credits, bio, artist) in utility panel.
-#: src/app/components/shell/utility_panel/utility_panel.blp:76
+#: src/app/components/shell/utility_panel/utility_panel.blp:80
 msgid "About"
 msgstr "Sobre"
 
 #. Translators: Tab label for the current song's Last.fm numbers (plays, listeners, tags) in utility panel.
-#: src/app/components/shell/utility_panel/utility_panel.blp:83
+#: src/app/components/shell/utility_panel/utility_panel.blp:87
 msgid "Stats"
 msgstr "Estatísticas"
 
 #. Translators: Tooltip of the button that hides the right side panel (Now Playing, Queue, Lyrics).
-#: src/app/components/shell/utility_panel/utility_panel.blp:93
+#: src/app/components/shell/utility_panel/utility_panel.blp:97
 msgid "Hide Side Panel"
 msgstr "Ocultar painel lateral"
 
@@ -3167,19 +3181,29 @@ msgid "Riff and Spot Artists"
 msgstr "Artistas do Riff e do Spot"
 
 #. translators: Heading of the popover that chooses which buttons the player bar shows.
-#: src/app/components/shell/playback/playback_widget.rs:404
+#: src/app/components/shell/playback/playback_widget.rs:509
 msgid "Show in the Bar"
 msgstr "Mostrar na barra"
 
 #. translators: Tooltip of the arrow that moves a button earlier in the player bar.
-#: src/app/components/shell/playback/playback_widget.rs:435
+#: src/app/components/shell/playback/playback_widget.rs:540
 msgid "Move Left"
 msgstr "Mover para a esquerda"
 
 #. translators: Tooltip of the arrow that moves a button later in the player bar.
-#: src/app/components/shell/playback/playback_widget.rs:438
+#: src/app/components/shell/playback/playback_widget.rs:543
 msgid "Move Right"
 msgstr "Mover para a direita"
+
+#. translators: What a screen reader says of the Repeat row in the player bar's More Options menu while the whole album or playlist repeats.
+#: src/app/components/shell/playback/playback_widget.rs:825
+msgid "Repeat All"
+msgstr "Repetir tudo"
+
+#. translators: What a screen reader says of the Repeat row in the player bar's More Options menu while the song playing repeats.
+#: src/app/components/shell/playback/playback_widget.rs:827
+msgid "Repeat This Song"
+msgstr "Repetir esta música"
 
 #~ msgid "Release Date"
 #~ msgstr "Data de lançamento"

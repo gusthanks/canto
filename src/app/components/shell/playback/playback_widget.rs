@@ -131,6 +131,20 @@ mod imp {
         #[template_child]
         pub more_sleep_timer: TemplateChild<gtk::Button>,
         #[template_child]
+        pub more_sleep_back: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub more_sleep_off: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub more_sleep_track: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub more_sleep_15: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub more_sleep_30: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub more_sleep_45: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub more_sleep_60: TemplateChild<gtk::Button>,
+        #[template_child]
         pub more_stack: TemplateChild<gtk::Stack>,
         #[template_child]
         pub eq_open_presets: TemplateChild<gtk::Button>,
@@ -178,6 +192,9 @@ mod imp {
         pub start_radio_button: TemplateChild<gtk::Button>,
 
         #[template_child]
+        pub sleep_timer_slot: TemplateChild<gtk::Box>,
+
+        #[template_child]
         pub sleep_timer_button: TemplateChild<gtk::MenuButton>,
 
         #[template_child]
@@ -215,7 +232,7 @@ mod imp {
         pub last_nonzero_volume: Cell<f64>,
         /// The bar's tiers, by width (see `BAR_TIER_WIDTHS`)
         pub bar_tiers: RefCell<Vec<(f64, libadwaita::Breakpoint)>>,
-        /// The room (px) the tiers keep for the sleep timer's button
+        /// The room (px) the tiers keep for the sleep timer's countdown
         pub bar_tier_room: Cell<i32>,
     }
 
@@ -244,6 +261,13 @@ mod imp {
                 more_toggles_separator: Default::default(),
                 eq_popover: Default::default(),
                 more_sleep_timer: Default::default(),
+                more_sleep_back: Default::default(),
+                more_sleep_off: Default::default(),
+                more_sleep_track: Default::default(),
+                more_sleep_15: Default::default(),
+                more_sleep_30: Default::default(),
+                more_sleep_45: Default::default(),
+                more_sleep_60: Default::default(),
                 more_stack: Default::default(),
                 eq_open_presets: Default::default(),
                 eq_presets_back: Default::default(),
@@ -264,6 +288,7 @@ mod imp {
                 eq_preset_acoustic: Default::default(),
                 eq_open_settings: Default::default(),
                 start_radio_button: Default::default(),
+                sleep_timer_slot: Default::default(),
                 sleep_timer_button: Default::default(),
                 sleep_timer_label: Default::default(),
                 sleep_popover: Default::default(),
@@ -315,46 +340,52 @@ mod imp {
             self.setup_customizable_bar();
             self.setup_bar_tiers();
 
-            // The tiers keep room for the sleep timer's button while it shows
-            // (measured once it has its style, on screen)
-            let weak_self = self.obj().downgrade();
-            self.sleep_timer_button.connect_visible_notify(move |_| {
-                if let Some(obj) = weak_self.upgrade() {
-                    obj.imp().retune_bar_tiers();
-                }
-            });
+            // The tiers keep room for the sleep timer's countdown while it
+            // shows (measured once it has its style, on screen). The
+            // narrowest tier hides its button: its slot follows
             let weak_self = self.obj().downgrade();
             self.sleep_timer_button.connect_map(move |_| {
                 if let Some(obj) = weak_self.upgrade() {
                     obj.imp().retune_bar_tiers();
                 }
             });
-
-            // The sleep timer lives in More Options; its own button only shows
-            // while a timer runs, or while its menu is open from there
-            let more = self.eq_popover.clone();
-            let sleep_button = self.sleep_timer_button.clone();
-            self.more_sleep_timer.connect_clicked(move |_| {
-                more.popdown();
-                sleep_button.set_visible(true);
-                sleep_button.popup();
-            });
-            let sleep_button = self.sleep_timer_button.clone();
-            let sleep_label = self.sleep_timer_label.clone();
-            self.sleep_popover.connect_closed(move |_| {
-                if !sleep_label.is_visible() {
-                    sleep_button.set_visible(false);
+            let weak_self = self.obj().downgrade();
+            self.sleep_timer_button.connect_visible_notify(move |_| {
+                if let Some(obj) = weak_self.upgrade() {
+                    obj.imp().sync_sleep_timer_slot();
                 }
             });
 
-            // The presets live one level down: Equalizer › slides to them, and
-            // the menu opens on its first page again next time
-            let stack = self.more_stack.clone();
-            self.eq_open_presets
-                .connect_clicked(move |_| stack.set_visible_child_name("presets"));
-            let stack = self.more_stack.clone();
-            self.eq_presets_back
-                .connect_clicked(move |_| stack.set_visible_child_name("main"));
+            // The presets and the sleep timer's choices live one level down:
+            // Equalizer › and Sleep Timer › slide to them, and the menu opens
+            // on its first page again next time. The timer's own button in
+            // the bar only shows while a timer runs: showing it to open its
+            // menu could push the bar into its next tier, which closes any
+            // menu open from the bar
+            for (open, page) in [
+                (&*self.eq_open_presets, "presets"),
+                (&*self.more_sleep_timer, "sleep"),
+            ] {
+                let stack = self.more_stack.clone();
+                open.connect_clicked(move |_| stack.set_visible_child_name(page));
+            }
+            for back in [&*self.eq_presets_back, &*self.more_sleep_back] {
+                let stack = self.more_stack.clone();
+                back.connect_clicked(move |_| stack.set_visible_child_name("main"));
+            }
+
+            // For screen readers, shuffle and repeat's rows are toggles from
+            // the start, and repeat's tells which repeat it is
+            self.more_shuffle
+                .update_state(&[gtk::accessible::State::Pressed(pressed(false))]);
+            self.more_repeat
+                .update_state(&[gtk::accessible::State::Pressed(pressed(false))]);
+            self.more_repeat
+                .update_property(
+                    &[gtk::accessible::Property::Description(&repeat_description(
+                        RepeatMode::Off,
+                    ))],
+                );
             let stack = self.more_stack.clone();
             self.eq_popover.connect_closed(move |_| {
                 stack.set_transition_type(gtk::StackTransitionType::None);
@@ -545,7 +576,7 @@ mod imp {
 
             // Lay the bar and the list out in the saved order, now and on change
             let bar_end = self.bar_end.get();
-            let sleep_button = self.sleep_timer_button.get();
+            let sleep_slot = self.sleep_timer_slot.get();
             let apply = {
                 let list = list.clone();
                 let title = title.clone();
@@ -568,8 +599,8 @@ mod imp {
                         // The sleep timer button, shown while a timer runs,
                         // stays right before the gear
                         if *id == "more" {
-                            bar_end.reorder_child_after(&sleep_button, prev_widget.as_ref());
-                            prev_widget = Some(sleep_button.clone().upcast());
+                            bar_end.reorder_child_after(&sleep_slot, prev_widget.as_ref());
+                            prev_widget = Some(sleep_slot.clone().upcast());
                         }
                         bar_end.reorder_child_after(widget, prev_widget.as_ref());
                         prev_widget = Some(widget.clone());
@@ -652,6 +683,9 @@ mod imp {
                     hide(self.controls.prev_button()),
                     hide(times[0].clone()),
                     hide(times[1].clone()),
+                    // No tier is left to make room for a timer's countdown:
+                    // it leaves (the timer stays in More Options)
+                    hide(self.sleep_timer_button.get().upcast()),
                 ],
             ];
             let mut setters: Vec<(gtk::Widget, &str, glib::Value)> = Vec::new();
@@ -670,13 +704,32 @@ mod imp {
             }
         }
 
-        /// Makes room in every tier for the sleep timer's button while it
-        /// shows: its countdown while a timer runs, or the round button its
-        /// menu opens from (More Options). Each tier starts that much wider.
+        /// The sleep timer's slot shows while a timer counts down and the
+        /// bar's tier leaves its button there.
+        pub(super) fn sync_sleep_timer_slot(&self) {
+            self.sleep_timer_slot.set_visible(
+                self.sleep_timer_label.get_visible() && self.sleep_timer_button.get_visible(),
+            );
+        }
+
+        /// Makes room in every tier for the sleep timer's countdown while a
+        /// timer runs: each tier starts that much wider. The room never
+        /// shrinks while it counts: its digits narrowing (10:00 to 9:59), or
+        /// the narrowest tier hiding it, must not move the tiers back, which
+        /// would close any menu open from the bar.
         pub(super) fn retune_bar_tiers(&self) {
-            let button = &self.sleep_timer_button;
-            let room = if button.is_visible() {
-                button.measure(gtk::Orientation::Horizontal, -1).1 + self.bar_end.spacing()
+            let room = if self.sleep_timer_label.get_visible() {
+                // Nothing while the narrowest tier hides its button
+                let width = self
+                    .sleep_timer_button
+                    .measure(gtk::Orientation::Horizontal, -1)
+                    .1;
+                let measured = if width > 0 {
+                    width + self.bar_end.spacing()
+                } else {
+                    0
+                };
+                measured.max(self.bar_tier_room.get())
             } else {
                 0
             };
@@ -764,6 +817,18 @@ fn children_show(widget: &gtk::Widget) -> bool {
         child = c.next_sibling();
     }
     false
+}
+
+/// Which repeat the More Options row stands for, for screen readers (its
+/// check mark shows for both repeats, its icon tells them apart).
+fn repeat_description(mode: RepeatMode) -> String {
+    match mode {
+        // translators: What a screen reader says of the Repeat row in the player bar's More Options menu while the whole album or playlist repeats.
+        RepeatMode::Context => gettext("Repeat All"),
+        // translators: What a screen reader says of the Repeat row in the player bar's More Options menu while the song playing repeats.
+        RepeatMode::Track => gettext("Repeat This Song"),
+        RepeatMode::Off => gettext("Off"),
+    }
 }
 
 /// A More Options row's state, for screen readers.
@@ -945,6 +1010,13 @@ impl PlaybackWidget {
         widget
             .more_repeat
             .update_state(&[gtk::accessible::State::Pressed(pressed(on))]);
+        widget
+            .more_repeat
+            .update_property(
+                &[gtk::accessible::Property::Description(&repeat_description(
+                    mode,
+                ))],
+            );
     }
 
     pub fn set_shuffled(&self, shuffled: bool) {
@@ -984,7 +1056,6 @@ impl PlaybackWidget {
             imp.sleep_timer_label.set_label(&text);
             imp.sleep_timer_label.set_visible(true);
             imp.sleep_timer_button.set_width_request(-1);
-            imp.sleep_timer_button.set_visible(true);
             imp.sleep_timer_button.remove_css_class("circular");
             imp.sleep_timer_button.add_css_class("pill");
         } else {
@@ -992,55 +1063,67 @@ impl PlaybackWidget {
             imp.sleep_timer_button.remove_css_class("pill");
             imp.sleep_timer_button.add_css_class("circular");
             imp.sleep_timer_button.set_width_request(36);
-            if !imp.sleep_popover.is_visible() {
-                imp.sleep_timer_button.set_visible(false);
-            }
         }
+        imp.sync_sleep_timer_slot();
 
-        let active_btn: Option<&gtk::Button> = match snap.mode {
-            SleepTimerMode::Off => Some(&*imp.sleep_off_btn),
-            SleepTimerMode::EndOfTrack => Some(&*imp.sleep_track_btn),
-            SleepTimerMode::Minutes(15) => Some(&*imp.sleep_15_btn),
-            SleepTimerMode::Minutes(30) => Some(&*imp.sleep_30_btn),
-            SleepTimerMode::Minutes(45) => Some(&*imp.sleep_45_btn),
-            SleepTimerMode::Minutes(60) => Some(&*imp.sleep_60_btn),
-            SleepTimerMode::Minutes(_) => None,
-        };
-        for btn in [
-            &*imp.sleep_off_btn,
-            &*imp.sleep_track_btn,
-            &*imp.sleep_15_btn,
-            &*imp.sleep_30_btn,
-            &*imp.sleep_45_btn,
-            &*imp.sleep_60_btn,
-        ] {
-            if active_btn == Some(btn) {
-                btn.add_css_class("suggested-action");
-            } else {
-                btn.remove_css_class("suggested-action");
+        // The choice that runs, in the countdown's menu and in More Options
+        for (mode, choices) in self.sleep_timer_choices() {
+            for btn in choices {
+                if mode == snap.mode {
+                    btn.add_css_class("suggested-action");
+                } else {
+                    btn.remove_css_class("suggested-action");
+                }
             }
         }
         // The countdown's width changes with its digits and its style
         imp.retune_bar_tiers();
     }
 
+    /// Each sleep timer choice, with its buttons in the countdown's menu and
+    /// in More Options.
+    fn sleep_timer_choices(&self) -> [(SleepTimerMode, [gtk::Button; 2]); 6] {
+        let imp = self.imp();
+        [
+            (
+                SleepTimerMode::Off,
+                [imp.sleep_off_btn.get(), imp.more_sleep_off.get()],
+            ),
+            (
+                SleepTimerMode::EndOfTrack,
+                [imp.sleep_track_btn.get(), imp.more_sleep_track.get()],
+            ),
+            (
+                SleepTimerMode::Minutes(15),
+                [imp.sleep_15_btn.get(), imp.more_sleep_15.get()],
+            ),
+            (
+                SleepTimerMode::Minutes(30),
+                [imp.sleep_30_btn.get(), imp.more_sleep_30.get()],
+            ),
+            (
+                SleepTimerMode::Minutes(45),
+                [imp.sleep_45_btn.get(), imp.more_sleep_45.get()],
+            ),
+            (
+                SleepTimerMode::Minutes(60),
+                [imp.sleep_60_btn.get(), imp.more_sleep_60.get()],
+            ),
+        ]
+    }
+
     pub fn connect_sleep_timer<F: Fn(SleepTimerMode) + Clone + 'static>(&self, on_select: F) {
         let imp = self.imp();
-        let presets = [
-            (&*imp.sleep_off_btn, SleepTimerMode::Off),
-            (&*imp.sleep_track_btn, SleepTimerMode::EndOfTrack),
-            (&*imp.sleep_15_btn, SleepTimerMode::Minutes(15)),
-            (&*imp.sleep_30_btn, SleepTimerMode::Minutes(30)),
-            (&*imp.sleep_45_btn, SleepTimerMode::Minutes(45)),
-            (&*imp.sleep_60_btn, SleepTimerMode::Minutes(60)),
-        ];
-        for (btn, mode) in presets {
-            let pop = imp.sleep_popover.clone();
-            let cb = on_select.clone();
-            btn.connect_clicked(move |_| {
-                cb(mode);
-                pop.popdown();
-            });
+        let menus = [imp.sleep_popover.get(), imp.eq_popover.get()];
+        for (mode, choices) in self.sleep_timer_choices() {
+            for (btn, menu) in choices.iter().zip(menus.iter()) {
+                let menu = menu.clone();
+                let cb = on_select.clone();
+                btn.connect_clicked(move |_| {
+                    cb(mode);
+                    menu.popdown();
+                });
+            }
         }
     }
 

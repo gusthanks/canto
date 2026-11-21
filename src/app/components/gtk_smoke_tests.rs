@@ -3267,6 +3267,11 @@ const BAR_WIDTHS_SMALL_TEXT: [i32; 6] = [401, 487, 561, 572, 661, 861];
 /// keep the times, and the window on half of the screen.
 const BAR_WIDTHS_LONG_TRACK: [i32; 3] = [401, 487, 572];
 
+/// Bars under what the narrowest tier and a sleep timer's countdown take
+/// together (477 px): the window's least, the narrowest tier's edge, and
+/// up to just under 477.
+const BAR_WIDTHS_NARROW_TIMER: [i32; 4] = [360, 400, 450, 476];
+
 /// The bar's parts that its tiers hide or show, by their ids in the
 /// templates.
 const BAR_PARTS: [&str; 16] = [
@@ -3520,6 +3525,29 @@ fn assert_bar_tiers() {
         gtk_settings.set_gtk_xft_dpi(dpi);
         shots.push((small_text, timer, shot));
     }
+    // A sleep timer's countdown in the narrowest bars, where no tier is left
+    // to make room for it: it leaves the bar (the timer stays in More
+    // Options) rather than push the row past the bar's end
+    for width in BAR_WIDTHS_NARROW_TIMER.iter().copied() {
+        let tag = format!("player-bar-{:04}-sleep-timer", width);
+        let (window, _bar, s) = render_bar(width, &tag, true, false);
+        distinct_colors(window.upcast_ref(), &tag);
+        window.destroy();
+        check(
+            &format!(
+                "{}: the row fits the bar with a sleep timer's countdown",
+                tag
+            ),
+            s.needs <= s.bar && s.end <= s.bar as f32 + 0.5,
+            format!(
+                "bar {}, its row needs {}, side panel button ends at {}; shows {}",
+                s.bar,
+                s.needs,
+                s.end,
+                s.shown.join(" ")
+            ),
+        );
+    }
     style.set_color_scheme(scheme);
     for (_, _, s) in &shots {
         eprintln!(
@@ -3737,7 +3765,92 @@ fn assert_more_options_rows() {
         "the shuffle mark follows the bar"
     );
     popover.popdown();
+    pump(300);
+
+    // More Options > Sleep Timer › shows the timer's choices, and they stay
+    // up: 572 is within 38 px of a tier's edge (560), where the round sleep
+    // timer button would push the bar into the next tier, and that bar
+    // hides its parts for a frame, closing any menu open from it
+    let chosen = std::rc::Rc::new(std::cell::Cell::new(None));
+    bar.connect_sleep_timer(clone!(
+        #[strong]
+        chosen,
+        move |mode| chosen.set(Some(mode))
+    ));
+    let sleep_row = part("more_sleep_timer").downcast::<gtk::Button>().unwrap();
+    // The menu slides to the timer's page, which the headless display may
+    // never finish drawing: without the slide, its render shows that page
+    let gtk_settings = gtk::Settings::default().unwrap();
+    let animations = gtk_settings.is_gtk_enable_animations();
+    gtk_settings.set_gtk_enable_animations(false);
+    popover.popup();
+    wait_mapped(&sleep_row, 500);
+    sleep_row.emit_clicked();
+    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(1500);
+    while std::time::Instant::now() < deadline {
+        window.queue_draw();
+        pump(100);
+    }
+    let choice = ["more_sleep_45", "sleep_45_btn"]
+        .iter()
+        .filter_map(|id| by_id(root, id))
+        .find(|button| button.is_mapped());
+    let after = shoot_bar(&bar, "player-bar-0572-sleep-timer-menu", 572);
+    let shows = |id: &str| after.shown.iter().any(|part| *part == id);
+    check(
+        "572: More Options > Sleep Timer shows the timer's choices, and they stay up over the same bar",
+        choice.is_some() && shows("lyrics_button") && after.needs <= after.bar,
+        format!(
+            "choices shown {}; bar {}, its row needs {}; shows {}",
+            choice.is_some(),
+            after.bar,
+            after.needs,
+            after.shown.join(" ")
+        ),
+    );
+    if let Some(choice) = &choice {
+        if let Some(menu) = choice.ancestor(gtk::Popover::static_type()) {
+            distinct_colors(&menu, "player-bar-0572-sleep-timer-menu");
+        }
+        if let Some(button) = choice.downcast_ref::<gtk::Button>() {
+            button.emit_clicked();
+        }
+        pump(300);
+    }
+    let sleep_popover = part("sleep_popover");
+    check(
+        "572: 45 min from there sets the timer and closes the menu",
+        chosen.get() == Some(super::SleepTimerMode::Minutes(45))
+            && !popover.is_visible()
+            && !sleep_popover.is_visible(),
+        format!(
+            "chose {:?}; More Options open {}, the timer's own menu open {}",
+            chosen.get(),
+            popover.is_visible(),
+            sleep_popover.is_visible()
+        ),
+    );
+    gtk_settings.set_gtk_enable_animations(animations);
     window.destroy();
+
+    // For screen readers the rows are toggles from the start, and repeat's
+    // row tells which repeat it is (all songs or this one)
+    let fresh: super::shell::playback::PlaybackWidget = glib::Object::new();
+    let fresh_root = fresh.upcast_ref::<gtk::Widget>();
+    let row = |id: &str| by_id(fresh_root, id).unwrap_or_else(|| panic!("the bar has no {}", id));
+    let toggles = ["more_shuffle", "more_repeat"]
+        .iter()
+        .all(|id| gtk::test_accessible_has_state(&row(id), gtk::AccessibleState::Pressed));
+    fresh.set_repeat_mode(RepeatMode::Track);
+    let told = gtk::test_accessible_has_property(
+        &row("more_repeat"),
+        gtk::AccessibleProperty::Description,
+    );
+    check(
+        "the shuffle and repeat rows are toggles for screen readers from the start, and repeat's tells its mode",
+        toggles && told,
+        format!("toggles from the start {}, repeat mode told {}", toggles, told),
+    );
     style.set_color_scheme(scheme);
-    eprintln!("bar more options rows ok");
+    eprintln!("bar more options rows checked");
 }
