@@ -1207,6 +1207,26 @@ fn assert_recently_played_opens_at_newest() {
             "the oldest songs scroll out above (rows first: {})",
             rows_first
         );
+        // Three songs at once, so Now Playing and the next one stay in view
+        // below it (20/11): whole rows, the fourth hidden
+        let rows_in_view = list_rows
+            .iter()
+            .filter_map(|row| row.compute_bounds(&scroller))
+            .filter(|b| b.y() >= -1.0 && b.y() + b.height() <= height + 1.0)
+            .count();
+        check(
+            "Recently Played shows three songs at once",
+            rows_in_view == super::RECENT_VISIBLE_ROWS as usize,
+            format!(
+                "{} rows in a {} px list (rows first: {})",
+                rows_in_view, height, rows_first
+            ),
+        );
+        check(
+            "Recently Played leaves no room for a fourth song",
+            height <= last.height() * 3.0 + 12.0,
+            format!("the list is {} px for {} px rows", height, last.height()),
+        );
         window.destroy();
     }
     gtk_settings.set_gtk_enable_animations(animations);

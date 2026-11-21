@@ -95,7 +95,8 @@ template $QueuePageWidget : Adw.Bin {
             child: ScrolledWindow recent_scroller {
               hscrollbar-policy: never;
               propagate-natural-height: true;
-              max-content-height: 280;
+              // Three songs; widget.rs sets it from the rows' real height
+              max-content-height: 150;
 
               child: ListBox recent_list {
                 selection-mode: none;

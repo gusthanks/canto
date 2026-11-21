@@ -214,12 +214,13 @@ bottom-sheet.bottom-sheet--padded > sheet {
   border-radius: 8px;
 }
 
+/* The bottom padding is RECENT_LIST_BOTTOM_PADDING in queue/widget.rs */
 .queue-page__recent-list {
   padding: 0 12px 6px 12px;
 }
 
 .queue-page__recent-list > row {
-  padding: 4px 6px;
+  padding: 3px 6px;
 }
 
 .queue-page__recent-cover {

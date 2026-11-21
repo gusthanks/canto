@@ -130,6 +130,12 @@ glib::wrapper! {
 }
 
 const LIST_MARGIN: i32 = 12;
+/// How many songs Recently Played shows at once when unfolded; the rest
+/// scroll. Three leave Now Playing and the next song in view below it
+/// (20/11, Gus).
+pub const RECENT_VISIBLE_ROWS: i32 = 3;
+/// The list's bottom padding (app.css, `.queue-page__recent-list`).
+const RECENT_LIST_BOTTOM_PADDING: i32 = 6;
 /// The size of a cover in the Recently Played list.
 pub const RECENT_COVER_PX: i32 = 36;
 
@@ -306,6 +312,9 @@ impl QueuePageWidget {
             };
             let imp = obj.imp();
             imp.recent_end_queued.set(false);
+            // The rows' real height is known once they're on screen (filled
+            // before, they may have been measured without their style)
+            obj.fit_recent_rows();
             let adj = imp.recent_scroller.vadjustment();
             adj.set_value(adj.upper() - adj.page_size());
             // Placed again even when the value was already right: that is
@@ -314,6 +323,21 @@ impl QueuePageWidget {
                 viewport.queue_allocate();
             }
         });
+    }
+
+    /// Lets the list show RECENT_VISIBLE_ROWS songs at most, measured from
+    /// the rows themselves (they follow the text size).
+    fn fit_recent_rows(&self) {
+        let imp = self.imp();
+        let heights: Vec<i32> = (0..RECENT_VISIBLE_ROWS)
+            .filter_map(|i| imp.recent_list.row_at_index(i))
+            .map(|row| row.measure(gtk::Orientation::Vertical, -1).1)
+            .collect();
+        let Some(&tallest) = heights.iter().max() else {
+            return;
+        };
+        imp.recent_scroller
+            .set_max_content_height(tallest * RECENT_VISIBLE_ROWS + RECENT_LIST_BOTTOM_PADDING);
     }
 
     /// The scroller and rows of Recently Played, for tests.
@@ -358,6 +382,7 @@ impl QueuePageWidget {
             })
             .collect();
         imp.recent_hearts.replace(hearts);
+        self.fit_recent_rows();
         imp.recent_stack.set_visible_child_name("list");
         self.scroll_recent_to_end();
         covers
