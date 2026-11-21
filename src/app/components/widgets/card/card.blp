@@ -52,8 +52,12 @@ template $CardWidget : Widget {
       ellipsize: end;
       width-chars: 1;
 
+      // Dim, and its artist links read as the text around them, as in
+      // the player bar
       styles [
         "body",
+        "dim-label",
+        "track-links",
       ]
     }
   }

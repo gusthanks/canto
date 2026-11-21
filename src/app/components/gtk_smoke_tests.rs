@@ -1696,6 +1696,12 @@ fn assert_card_artist_links() {
     window.set_child(Some(&card));
     window.present();
     wait_frames(&window, 2);
+    distinct_colors(window.upcast_ref(), "card-artist-links");
+    check(
+        "the artists under a cover are dim, their links read as the text around them",
+        label.has_css_class("dim-label") && label.has_css_class("track-links"),
+        format!("{:?}", label.css_classes()),
+    );
     // Stands in for the label's own handling, which would open the browser:
     // a link the card leaves alone ends here, and nothing is opened
     let left_to_label = std::rc::Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
