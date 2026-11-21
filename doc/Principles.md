@@ -49,8 +49,11 @@ the first release it rests on two pillars only.
 ## Nothing that puts the account at risk
 
 - Canto never does what could get a listener's Spotify account flagged: no
-  downloads, no lyrics pulled from Spotify through librespot, no copying from
-  sites without their permission.
+  downloads, no lyrics pulled from Spotify through librespot, and no unofficial
+  third-party audio sources.
+- External lyrics fallbacks beyond LRCLIB (such as Genius embeds) stay optional
+  with a clear source label and a switch in Preferences, and Canto never scrapes
+  full song pages from sites that block automated access.
 - Anything that writes to an account or publishes for the listener (loving
   a song on Last.fm, sending lyrics to LRCLIB) has its own switch or asks to
   confirm, and says that the result is public when it is.
