@@ -1135,11 +1135,14 @@ impl PlaybackWidget {
             imp.sleep_timer_label.set_label(&text);
             imp.sleep_timer_label.set_visible(true);
             imp.sleep_timer_button.set_width_request(-1);
+            // Its icon and time, without the pill's wide padding: a window
+            // on half of the screen keeps its like and volume buttons
             imp.sleep_timer_button.remove_css_class("circular");
-            imp.sleep_timer_button.add_css_class("pill");
+            imp.sleep_timer_button.add_css_class("sleep-timer-counting");
         } else {
             imp.sleep_timer_label.set_visible(false);
-            imp.sleep_timer_button.remove_css_class("pill");
+            imp.sleep_timer_button
+                .remove_css_class("sleep-timer-counting");
             imp.sleep_timer_button.add_css_class("circular");
             imp.sleep_timer_button.set_width_request(36);
         }

@@ -3887,10 +3887,20 @@ const BAR_WIDTHS_SMALL_TEXT: [i32; 6] = [401, 487, 561, 572, 661, 861];
 /// keep the times, and the window on half of the screen.
 const BAR_WIDTHS_LONG_TRACK: [i32; 3] = [401, 487, 572];
 
-/// Bars under what the narrowest tier and a sleep timer's countdown take
-/// together (477 px): the window's least, the narrowest tier's edge, and
-/// up to just under 477.
-const BAR_WIDTHS_NARROW_TIMER: [i32; 4] = [360, 400, 450, 476];
+/// A sleep timer's countdown in the bar: the window on half of a 1200 sp
+/// screen (572 and 583), and just past the edges where the slider and
+/// shuffle leave.
+const BAR_WIDTHS_TIMER: [i32; 4] = [572, 583, 661, 861];
+
+/// The edges of the bar's tiers (px): a bar at an edge or under it drops
+/// that tier's parts (`bar_part_shows`).
+const BAR_TIER_EDGES: [i32; 5] = [860, 660, 560, 486, 400];
+
+/// Bars around what the narrowest tier and a sleep timer's countdown take
+/// together (400 px and the countdown's 75 with its spacing): the window's
+/// least, the narrowest tier's edge, and both sides of 475, where the
+/// countdown comes back.
+const BAR_WIDTHS_NARROW_TIMER: [i32; 5] = [360, 400, 450, 475, 476];
 
 /// The bar's parts that its tiers hide or show, by their ids in the
 /// templates.
@@ -3977,6 +3987,8 @@ struct BarShot {
     /// The parts in `BAR_PARTS` that show, and those the templates lack
     shown: Vec<&'static str>,
     missing: Vec<&'static str>,
+    /// The sleep timer's countdown button, while it shows (else 0)
+    countdown: i32,
 }
 
 fn shoot_bar(bar: &super::shell::playback::PlaybackWidget, tag: &str, width: i32) -> BarShot {
@@ -4042,6 +4054,9 @@ fn shoot_bar(bar: &super::shell::playback::PlaybackWidget, tag: &str, width: i32
         end_gaps,
         shown,
         missing,
+        countdown: by_id(root, "sleep_timer_button")
+            .filter(|button| button.is_mapped())
+            .map_or(0, |button| button.width()),
     }
 }
 
@@ -4117,11 +4132,7 @@ fn assert_bar_tiers() {
                 .iter()
                 .map(|w| (*w, true, false, false)),
         )
-        .chain(
-            [(661, false, true, false), (861, false, true, false)]
-                .iter()
-                .copied(),
-        )
+        .chain(BAR_WIDTHS_TIMER.iter().map(|w| (*w, false, true, false)))
         .chain(
             BAR_WIDTHS_LONG_TRACK
                 .iter()
@@ -4233,18 +4244,39 @@ fn assert_bar_tiers() {
             s.missing.join(", ")
         );
         if *timer {
-            // The countdown takes room: the next tier down makes it
-            let (gone, from) = if s.width < 800 {
-                ("shuffle", "shuffle and repeat")
-            } else {
-                ("volume_box", "the volume slider")
-            };
-            assert!(
-                !s.shown.contains(&gone),
-                "{}: with the sleep timer's countdown in the bar, {} should leave: {:?}",
-                s.tag,
-                from,
-                s.shown
+            // The countdown is an icon and its time, with no pill padding,
+            // and takes room: the next tier down makes it, and no more (a
+            // window on half of the screen loses lyrics and queue, never
+            // the like and volume buttons)
+            check(
+                &format!(
+                    "{}: the sleep timer's countdown is compact (80 px at most)",
+                    s.tag
+                ),
+                s.countdown > 0 && s.countdown <= 80,
+                format!("{} px", s.countdown),
+            );
+            let down = BAR_TIER_EDGES
+                .iter()
+                .copied()
+                .find(|edge| *edge < s.width)
+                .unwrap_or(0);
+            let expected: Vec<&str> = BAR_PARTS
+                .iter()
+                .copied()
+                .filter(|part| bar_part_shows(part, down))
+                .collect();
+            check(
+                &format!(
+                    "{}: with a sleep timer's countdown the bar drops one tier, to the one at {} px, and no more",
+                    s.tag, down
+                ),
+                s.shown == expected,
+                format!(
+                    "shows {}; expected {}",
+                    s.shown.join(" "),
+                    expected.join(" ")
+                ),
             );
             continue;
         }

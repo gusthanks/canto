@@ -70,6 +70,13 @@
   min-height: 36px;
 }
 
+/* A running sleep timer: its icon and time (tabular, in app.css), rounded
+   but without the pill's 32px sides: about 73px of the bar, not 121 */
+menubutton.sleep-timer-counting > button {
+  padding: 0 8px;
+  border-radius: 9999px;
+}
+
 .playing-image {
   border-radius: 8px;
   min-height: 48px;
