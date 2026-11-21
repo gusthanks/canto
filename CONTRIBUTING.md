@@ -1,12 +1,12 @@
-# Contributing to Riff
+# Contributing to Canto
 
-Thank you for wanting to contribute to Riff! Whether you are a developer, designer, translator, tester, or just someone who wants to help out, there is a place for you here. Every contribution, big or small, helps make Riff a better experience.
+Thank you for wanting to contribute to Canto! Whether you are a developer, designer, translator, tester, or just someone who wants to help out, there is a place for you here. Every contribution, big or small, helps make Canto a better experience.
 
 > [!IMPORTANT]
 > The [GNOME Code of Conduct](https://conduct.gnome.org) applies to this project. Please be aware of it before interacting with this repository.
 
-> [!WARNING]
-> This project does not accept AI-generated contributions, as outlined by [Flathub's Generative AI Policy](https://docs.flathub.org/docs/for-app-authors/requirements/#generative-ai-policy) and [GNOME Circle's AI Policy](https://gitlab.gnome.org/Teams/Releng/AppOrganization/-/blob/main/AppCriteria.md#circle-app-criteria).
+> [!NOTE]
+> Canto is developed with AI assistance. AI-assisted changes are welcome when you built and tested them locally; say which parts were AI-written.
 
 ## Ways to Contribute
 
@@ -22,15 +22,15 @@ Design contributions are welcome, including mockups for new features, refinement
 
 ### 3. Developing Features or Fixing Bugs
 
-Contributors working on code should begin with the [Development Guide](doc/Development.md), which documents environment setup, the build process, testing, code style conventions, and the pull request workflow.
+Contributors working on code, people and AI agents alike, should begin with [AGENTS.md](AGENTS.md): the commands, the hard rules and what the tests cannot see. The [Development Guide](doc/Development.md) then covers environment setup, the build process, feature flags, translations and the pull request workflow.
 
 ### 4. Translating
 
-Translations are managed on [Weblate](https://hosted.weblate.org/projects/riff/).
+Translations are `.po` files in `po/`, sent as pull requests like any other change. There is no Weblate project. The [Translations](doc/Development.md#translations) section of the Development Guide has the commands. Review every entry marked fuzzy: gettext guesses those from similar strings, and they are often wrong.
 
 ### 5. Testing Releases
 
-Testing releases is a valuable way to contribute at any level. Trying pre-release builds, verifying that reported bugs have been fixed, and running Riff across different hardware and Linux distributions all help surface platform-specific issues. Please report any findings in an issue.
+Testing releases is a valuable way to contribute at any level. Trying pre-release builds, verifying that reported bugs have been fixed, and running Canto across different hardware and Linux distributions all help surface platform-specific issues. Please report any findings in an issue.
 
 ## How to Create an Issue
 
@@ -38,7 +38,7 @@ Before creating an issue, please check the tracker for an existing report of the
 
 - A clear, descriptive title summarizing the problem or suggestion
 - What you observed and what you expected to happen instead
-- For bugs, the steps to reproduce it, plus your operating system, desktop environment, and Riff version
+- For bugs, the steps to reproduce it, plus your operating system, desktop environment, and Canto version
 - Screenshots or logs, if they help illustrate the problem
 
 Clear, detailed issues are far easier to act on, so include as much relevant context as you can.
@@ -55,10 +55,8 @@ A good discussion post covers:
 
 You do not need all the answers up front. The goal is to start a conversation and gather input from others who might be affected by or interested in the change.
 
-For an example of what this looks like in practice, see the [Data Layer Refactoring](https://github.com/Diegovsky/riff/discussions/116) discussion. It lays out the reasoning, the proposed design, and invites feedback from the community before moving to implementation.
-
 ## Finding a Good First Issue
 
-Not sure where to start? Look for issues labeled ["Good first issue"](https://github.com/Diegovsky/riff/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22) in the tracker. These are approachable tasks for newcomers: well-scoped, limited in complexity, or with clear requirements.
+Not sure where to start? Look for issues labeled ["Good first issue"](https://github.com/gusthanks/canto/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22) in the tracker. These are approachable tasks for newcomers: well-scoped, limited in complexity, or with clear requirements.
 
 Do not hesitate to reach out if you need guidance. Leave a comment on the issue to ask questions, or reach out to a maintainer or contributor directly. Everyone was new to the project at some point, and we are happy to help you get started.

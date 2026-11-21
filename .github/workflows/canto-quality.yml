@@ -23,7 +23,8 @@ jobs:
       - name: Add empty config.rs
         run: echo > src/config.rs
 
-      # Create minimal stub of spotify-api crate as it is not committed.
+      # spotify-api is committed, but it is generator output, not hand-written
+      # code: swap in an empty stub so the format check skips it.
       - name: Create generated crate stub
         run: |
           mkdir -p generated/spotify-api/src

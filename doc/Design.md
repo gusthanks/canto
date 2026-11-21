@@ -1,4 +1,4 @@
-# Data flow within Riff
+# Data flow within Canto
 
 ## Overview
 
@@ -49,7 +49,7 @@ On the technical side: all actions being dispatched, synchronous or not, are eve
 
 ## A listener: the player subsystem
 
-Any element that wishes to update the state or react to changes from the state has to follow that same pattern. For instance, the "player" part of Riff receives `Commands` (mapped from events by a `PlayerNotifier`) to start playing music, and dispatches actions back to the app through a `SpotifyPlayerDelegate` (see the figure below).
+Any element that wishes to update the state or react to changes from the state has to follow that same pattern. For instance, the "player" part of Canto receives `Commands` (mapped from events by a `PlayerNotifier`) to start playing music, and dispatches actions back to the app through a `SpotifyPlayerDelegate` (see the figure below).
 
 These two extra elements add some indirection so that the player is not too strongly coupled to the rest of the app (it does not and should not care about most events, afterall!). Moreover, those commands are handled in a separate thread where the player lives.
 
@@ -91,8 +91,8 @@ flowchart TD
 The `SpotifyPlayer` drives librespot, which decodes compressed audio into
 interleaved `f64` PCM and hands each block to a librespot `Sink`. Rather than
 writing those samples straight to the audio backend (PulseAudio / ALSA /
-GStreamer), Riff inserts a processing layer, the **audio engine**
-(`crates/riff-audio-engine/`), between librespot and the backend.
+GStreamer), Canto inserts a processing layer, the **audio engine**
+(`crates/canto-audio-engine/`), between librespot and the backend.
 
 The audio engine is built around three pieces:
 
@@ -113,22 +113,27 @@ flowchart LR
     capture["CaptureSink\n(librespot Sink)"]
     eq["EqProcessor"]
     mono["MonoProcessor"]
+    pan["PanProcessor"]
     pitch["PitchProcessor"]
     mix["MixProcessor"]
+    limiter["LimiterProcessor"]
+    meter["LevelMeterProcessor"]
     backend["backend Sink\n(PulseAudio / ALSA / GStreamer)"]
 
     decoder -- AudioPacket --> capture
     capture -- AudioBuffer --> eq
-    eq --> mono --> pitch --> mix
-    mix -- AudioBuffer --> backend
+    eq --> mono --> pan --> pitch --> mix --> limiter --> meter
+    meter -- AudioBuffer --> backend
 
     style capture fill:#1DB954,color:#fff
 ```
 
 *The audio engine pipeline. Stages run in a fixed order.*
 
-The chain currently contains a 10-band parametric equalizer, a mono downmix,
-and stubs for pitch shifting and source mixing. New DSP features are added by
+The chain (built in `src/player/player.rs`) currently contains a 10-band
+parametric equalizer, a mono downmix, stereo pan, fine pitch shifting, a stub
+for mixing in other sources, a limiter that keeps EQ boosts from clipping, and
+a level meter for visualizers. New DSP features are added by
 implementing `Processor` and inserting a stage into the chain.
 
 **Live updates without interrupting playback.** Each processor is paired with a
@@ -145,15 +150,17 @@ recreating the librespot player.
 ## Authentication
 
 Everything related to obtaining and persisting Spotify credentials lives in
-`src/auth/`, a peer module to `player` and `api`:
+the `crates/canto-auth/` crate, used by the `player` module and by
+`crates/canto-api/`:
 
-- **`RiffOauthClient`** drives the OAuth2 authorization-code (PKCE) login flow,
+- **`CantoOauthClient`** drives the OAuth2 authorization-code (PKCE) login flow,
   spawning a short-lived local HTTP server to receive the redirect callback
-  (`login.html` is served as the browser-facing confirmation page).
+  (`crates/canto-auth/src/page.html` is served as the browser-facing
+  confirmation page).
 - **`TokenStore`** persists credentials securely via the Secret Service
   (libsecret / GNOME Keyring) and caches them in memory.
 
-The `player` subsystem uses `RiffOauthClient` to log in and refresh tokens,
+The `player` subsystem uses `CantoOauthClient` to log in and refresh tokens,
 while the `api` layer uses `TokenStore` to authenticate Web API requests.
 
 ## Another listener: the MPRIS subsystem
