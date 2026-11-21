@@ -307,7 +307,7 @@
       <summary>Show the side panel button in the player bar</summary>
     </key>
     <key name="player-bar-order" type="as">
-      <default>['lyrics', 'queue', 'device', 'volume', 'mini-player', 'more', 'side-panel']</default>
+      <default>['device', 'queue', 'lyrics', 'volume', 'mini-player', 'more', 'side-panel']</default>
       <summary>Order of the buttons at the end of the player bar</summary>
     </key>
     <key name="navigation-rail" type="b">

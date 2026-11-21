@@ -61,17 +61,18 @@ template $UtilityPanelWidget : Adw.Bin {
             };
           }
 
-          ToggleButton lyrics_tab {
-            /* Translators: Tab label for lyrics in utility panel. */
-            tooltip-text: _("Lyrics");
-            icon-name: "canto-lyrics-symbolic";
-            group: now_tab;
-          }
-
+          // Queue, then Lyrics: the order of their buttons in the player bar
           ToggleButton queue_tab {
             /* Translators: Tab label for the queue in utility panel. */
             tooltip-text: _("Queue");
             icon-name: "canto-queue-symbolic";
+            group: now_tab;
+          }
+
+          ToggleButton lyrics_tab {
+            /* Translators: Tab label for lyrics in utility panel. */
+            tooltip-text: _("Lyrics");
+            icon-name: "canto-lyrics-symbolic";
             group: now_tab;
           }
 

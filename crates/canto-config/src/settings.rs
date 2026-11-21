@@ -66,10 +66,12 @@ pub const PLAYER_BAR_MINI_PLAYER: &str = "player-bar-mini-player";
 pub const PLAYER_BAR_SIDE_PANEL: &str = "player-bar-side-panel";
 /// Order of the buttons at the end of the player bar, by id
 pub const PLAYER_BAR_ORDER: &str = "player-bar-order";
+/// Where the sound plays, then Queue and Lyrics (the side panel's tab
+/// order), then volume and the rest. Keep it equal to the gschema default.
 pub const PLAYER_BAR_DEFAULT_ORDER: [&str; 7] = [
-    "lyrics",
-    "queue",
     "device",
+    "queue",
+    "lyrics",
     "volume",
     "mini-player",
     "more",
@@ -141,16 +143,36 @@ mod player_bar_order_tests {
             player_bar_order(&saved),
             // A missing button comes back next to its neighbor in the default order
             vec![
+                "device",
+                "queue",
                 "volume",
                 "mini-player",
                 "more",
                 "side-panel",
-                "lyrics",
-                "queue",
-                "device"
+                "lyrics"
             ]
         );
         assert_eq!(player_bar_order(&[]), PLAYER_BAR_DEFAULT_ORDER.to_vec());
+    }
+
+    #[test]
+    fn the_gschema_default_is_the_same_order() {
+        let schema = include_str!("../../../data/io.github.gusthanks.Canto.gschema.xml");
+        let key = schema
+            .split("<key name=\"player-bar-order\"")
+            .nth(1)
+            .expect("the player-bar-order key");
+        let default = key
+            .split("<default>")
+            .nth(1)
+            .and_then(|d| d.split("</default>").next())
+            .expect("its default");
+        let ids: Vec<&str> = default
+            .trim_matches(|c| c == '[' || c == ']')
+            .split(',')
+            .map(|id| id.trim().trim_matches('\''))
+            .collect();
+        assert_eq!(ids, PLAYER_BAR_DEFAULT_ORDER.to_vec());
     }
 }
 pub const LYRICS_TRANSLATION: &str = "lyrics-translation";
