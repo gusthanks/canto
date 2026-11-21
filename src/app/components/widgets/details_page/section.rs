@@ -72,6 +72,12 @@ impl DetailsSectionWidget {
         imp.header_row.set_visible(true);
     }
 
+    /// A row of filter buttons (`FilterChips`) under the title.
+    pub fn set_filters(&self, filters: &impl IsA<gtk::Widget>) {
+        let imp = self.imp();
+        self.insert_child_after(filters, Some(&*imp.header_row));
+    }
+
     pub fn set_empty(&self, empty: bool) {
         self.imp().empty_label.set_visible(empty);
     }

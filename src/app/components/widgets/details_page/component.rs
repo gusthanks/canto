@@ -5,9 +5,9 @@ use std::rc::Rc;
 use super::header::DETAIL_SEPARATOR;
 use super::{is_playback_event, DetailsHeader, DetailsPage, DetailsSectionWidget, PinnedPageModel};
 use crate::app::components::{
-    filter_matches_nothing, labels, CardLayout, CardList, CardListModel, CardSize, Component,
-    EmbeddedCardList, EventListener, HeaderBarModel, PageHeader, SortOrder, TrackList,
-    TrackListModel,
+    categories_in, filter_matches_nothing, labels, CardLayout, CardList, CardListModel, CardSize,
+    Component, EmbeddedCardList, EventListener, FilterChips, HeaderBarModel, PageHeader, SortOrder,
+    TrackList, TrackListModel,
 };
 use crate::app::{AppEvent, Dispatcher};
 use canto_config::feature_flags::{is_enabled, FeatureFlag};
@@ -24,6 +24,8 @@ pub struct DetailsPageComponent<M> {
     header: PageHeader,
     // Header menu entries added by the page
     page_menu: Rc<RefCell<Vec<(String, String, Rc<dyn Fn()>)>>>,
+    /// The filter buttons of its card lists, kept while the page lives
+    filter_chips: Vec<Rc<FilterChips>>,
 }
 
 /// Sync the pin segment of the like+pin control from the model's current state.
@@ -66,6 +68,7 @@ impl<M: PinnedPageModel + 'static> DetailsPageComponent<M> {
             children: vec![],
             header,
             page_menu: Default::default(),
+            filter_chips: Vec::new(),
         };
         c.wire();
         c
@@ -123,14 +126,44 @@ impl<M: PinnedPageModel + 'static> DetailsPageComponent<M> {
         card_list.bind(&self.model, CardLayout::Vertical, CardSize::Large);
         card_list.show_placeholders();
 
+        // The filters as buttons under the title (an artist's Albums,
+        // Singles, EPs and Compilations), each shown while its kind is in
+        // the list; the view menu keeps size and order (20/11)
+        let filters = self.model.filter_options();
+        if !filters.is_empty() {
+            let chips = FilterChips::new(
+                &filters,
+                clone!(
+                    #[strong]
+                    card_list,
+                    move |category: &str| {
+                        card_list.set_filter(category);
+                        on_filter_changed(category, card_list.visible_count());
+                    }
+                ),
+            );
+            section.set_filters(chips.widget());
+            if let Some(store) = self.model.get_store() {
+                let store = store.inner().clone();
+                chips.show_categories(&categories_in(&store));
+                let weak = Rc::downgrade(&chips);
+                store.connect_items_changed(move |store, _, _, _| {
+                    if let Some(chips) = weak.upgrade() {
+                        chips.show_categories(&categories_in(store));
+                    }
+                });
+            }
+            self.filter_chips.push(chips);
+        }
+
         let embedded = EmbeddedCardList::new(
             card_list,
             page_id,
             available_sorts,
             shared_layout,
             shared_size,
-            &self.model.filter_options(),
-            on_filter_changed,
+            &[],
+            |_: &str, _: usize| {},
             {
                 let model = Rc::downgrade(&self.model);
                 move || model.upgrade().and_then(|m| m.playing_card())

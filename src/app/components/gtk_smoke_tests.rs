@@ -174,6 +174,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     assert_album_page_fits();
     assert_page_bar_covers_the_list();
     assert_volume_scrolls_in_steps();
+    assert_release_filters_are_buttons();
     assert_bar_tiers();
     let overflows = OVERFLOWS
         .lock()
@@ -1586,6 +1587,74 @@ fn assert_volume_scrolls_in_steps() {
         tips.0.as_deref() == Some("Volume 45% · Ctrl+↑ / Ctrl+↓") && tips.0 == tips.1,
         format!("{:?}", tips),
     );
+}
+
+/// An artist's release filters are buttons under the section's title, as
+/// the Library's are: each shows only while its kind is in the list (no
+/// Compilations on most artists), the row only with two kinds or more.
+/// Clicking one shows only its kind; clicking it again, everything. On a
+/// narrow page the row wraps (Q15, 20/11).
+fn assert_release_filters_are_buttons() {
+    let picked = std::rc::Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let chips = {
+        let picked = picked.clone();
+        super::FilterChips::new(
+            &crate::app::models::FilterOption::release_types(),
+            move |category| picked.borrow_mut().push(category.to_string()),
+        )
+    };
+    let window = gtk::Window::new();
+    window.set_default_size(160, 200);
+    window.set_child(Some(chips.widget()));
+    window.present();
+    wait_frames(&window, 3);
+    let kinds = |list: &[&str]| {
+        list.iter()
+            .map(|kind| kind.to_string())
+            .collect::<std::collections::HashSet<_>>()
+    };
+    chips.show_categories(&kinds(&["album", "single"]));
+    let two = chips.shown_for_tests();
+    chips.click_for_tests("Singles");
+    let singles = chips.shown_for_tests();
+    chips.click_for_tests("Albums");
+    let albums = chips.shown_for_tests();
+    chips.click_for_tests("Albums");
+    let all = chips.shown_for_tests();
+    chips.show_categories(&kinds(&["album"]));
+    let one = chips.shown_for_tests();
+    chips.show_categories(&kinds(&["album", "single", "ep", "compilation"]));
+    let four = chips.shown_for_tests();
+    check(
+        "an artist's release filters are buttons, each shown while its kind is there",
+        two == (
+            true,
+            vec!["Albums".to_string(), "Singles".to_string()],
+            None,
+        ) && singles.2.as_deref() == Some("Singles")
+            && albums.2.as_deref() == Some("Albums")
+            && all.2.is_none()
+            && !one.0
+            && four.0
+            && four.1.len() == 4,
+        format!(
+            "{:?} {:?} {:?} {:?} {:?} {:?}",
+            two, singles, albums, all, one, four
+        ),
+    );
+    check(
+        "clicking a release filter shows its kind, clicking it again shows everything",
+        *picked.borrow() == ["single", "album", ""],
+        format!("{:?}", picked.borrow()),
+    );
+    wait_frames(&window, 3);
+    let (min, _, _, _) = chips.widget().measure(gtk::Orientation::Horizontal, -1);
+    check(
+        "the four release filters wrap on a narrow page",
+        min > 0 && min <= 160,
+        format!("narrowest {} px", min),
+    );
+    window.destroy();
 }
 
 /// Pumps until `n` frames of `widget`'s window have started (a tick

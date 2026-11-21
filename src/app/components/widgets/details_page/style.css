@@ -224,6 +224,16 @@ headerbar.details__headerbar windowtitle {
   margin-bottom: 10px;
 }
 
+/* An artist's release filters, under the section's title: the Library's
+   pills, wrapping on a narrow page */
+.filter-chips {
+  margin-bottom: 12px;
+}
+
+.filter-chips > flowboxchild {
+  padding: 0;
+}
+
 .details-section--tracks .details-section__header {
   margin-bottom: 16px;
 }
