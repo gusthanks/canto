@@ -117,7 +117,7 @@ impl From<&Artist> for CardModel {
 impl From<&Track> for CardModel {
     fn from(desc: &Track) -> Self {
         let photo = desc.art.best_for_width(IMAGE_SIZE).map(str::to_owned);
-        CardModel::new(
+        let card = CardModel::new(
             &desc.rri.id,
             photo.as_ref(),
             &desc.title,
@@ -126,6 +126,11 @@ impl From<&Track> for CardModel {
             None,
             None,
             None,
-        )
+        );
+        // A song's artists link to their pages too (search, 21/11)
+        card.set_subtitle_markup(crate::app::components::now_panel::artist_links_markup(
+            &desc.artists,
+        ));
+        card
     }
 }

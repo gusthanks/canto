@@ -119,7 +119,7 @@ mod imp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::models::{make_album, make_artist, make_playlist};
+    use crate::app::models::{make_album, make_artist, make_playlist, make_track};
     use canto_api::models::{ArtistRef, Image, ImageSet, Provider, ResourceId, UserRef};
 
     #[test]
@@ -238,6 +238,21 @@ mod tests {
              <a href=\"https://open.spotify.com/artist/a2\">Artist B</a>"
         );
         assert_eq!(card.image(), Some("https://img.com/cover.jpg".to_string()));
+    }
+
+    #[test]
+    fn a_song_card_links_its_artists() {
+        let mut track = make_track("t1");
+        track.artists = vec![ArtistRef {
+            rri: ResourceId::new(Provider::Spotify, "teto"),
+            name: "Teto".to_string(),
+        }];
+        let card = CardModel::from(&track);
+        assert_eq!(card.subtitle(), "Teto");
+        assert_eq!(
+            card.subtitle_markup(),
+            "<a href=\"https://open.spotify.com/artist/teto\">Teto</a>"
+        );
     }
 
     #[test]
