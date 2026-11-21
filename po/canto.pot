@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: canto\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-21 10:15-0300\n"
+"POT-Creation-Date: 2026-11-21 12:23-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1301,13 +1301,13 @@ msgstr ""
 
 #. translators: Side panel view of the current track, when nothing plays.
 #: src/app/components/shell/now_panel/mod.rs:413
-#: src/app/components/shell/now_panel/info_page.rs:90
+#: src/app/components/shell/now_panel/info_page.rs:86
 #: src/app/components/shell/mini_player.rs:254
 msgid "Nothing Playing"
 msgstr ""
 
 #: src/app/components/shell/now_panel/mod.rs:414
-#: src/app/components/shell/now_panel/info_page.rs:91
+#: src/app/components/shell/now_panel/info_page.rs:87
 msgid "Play something and it shows up here."
 msgstr ""
 
@@ -1661,22 +1661,17 @@ msgstr ""
 msgid "Open Artist"
 msgstr ""
 
-#: src/app/components/shell/now_panel/info_page.rs:140
+#: src/app/components/shell/now_panel/info_page.rs:136
 msgid "Opens in your browser"
 msgstr ""
 
-#: src/app/components/shell/now_panel/info_page.rs:200
-#: src/app/components/shell/now_panel/info_page.rs:212
+#: src/app/components/shell/now_panel/info_page.rs:196
+#: src/app/components/shell/now_panel/info_page.rs:208
 msgid "Show More"
 msgstr ""
 
-#: src/app/components/shell/now_panel/info_page.rs:210
+#: src/app/components/shell/now_panel/info_page.rs:206
 msgid "Show Less"
-msgstr ""
-
-#. translators: Tooltip of a song or artist in the About and Stats tabs.
-#: src/app/components/shell/now_panel/info_page.rs:237
-msgid "Search in Canto"
 msgstr ""
 
 #. translators: Tooltip of the button leaving full-screen lyrics.

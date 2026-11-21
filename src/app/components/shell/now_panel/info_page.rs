@@ -4,12 +4,8 @@
 
 use gettextrs::gettext;
 use gtk::prelude::*;
-use std::rc::Rc;
 
 use super::{folded_bio, wrapping_label};
-
-/// Runs a search in the app (the Search page, with `query` typed in).
-pub(super) type OnSearch = Rc<dyn Fn(String)>;
 
 pub(super) struct InfoPage {
     pub stack: gtk::Stack,
@@ -217,29 +213,8 @@ pub(super) fn folding_text(full: String) -> gtk::Box {
     block
 }
 
-/// A song or an artist to look up in the app: a flat row with its name,
-/// a dim line under it, and an optional dim number at the end.
-pub(super) fn search_row(
-    rank: Option<usize>,
-    name: &str,
-    detail: Option<&str>,
-    trailing: Option<&str>,
-    query: String,
-    on_search: &OnSearch,
-) -> gtk::Button {
-    let on_search = Rc::clone(on_search);
-    action_row(
-        rank,
-        name,
-        detail,
-        trailing,
-        // translators: Tooltip of a song or artist in the About and Stats tabs.
-        &gettext("Search in Canto"),
-        move || on_search(query.clone()),
-    )
-}
-
-/// Same row as `search_row`, doing something else on click.
+/// A song or an artist in the About and Stats tabs: a flat row with its
+/// name, a dim line under it, and an optional dim number at the end.
 pub(super) fn action_row(
     rank: Option<usize>,
     name: &str,

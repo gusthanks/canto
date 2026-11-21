@@ -19,15 +19,17 @@ impl Type for LoopStatus {
     const SIGNATURE: &'static Signature = Str::SIGNATURE;
 }
 
-impl From<Value<'_>> for LoopStatus {
-    fn from(value: Value<'_>) -> Self {
-        String::try_from(value)
-            .map(|s| match s.as_str() {
-                "Track" => LoopStatus::Track,
-                "Playlist" => LoopStatus::Playlist,
-                _ => LoopStatus::None,
-            })
-            .unwrap_or(LoopStatus::None)
+// TryFrom, not From: zbus turns a property setter's conversion error into a
+// D-Bus error, and with an infallible From that error path was unreachable code.
+impl TryFrom<Value<'_>> for LoopStatus {
+    type Error = zbus::zvariant::Error;
+
+    fn try_from(value: Value<'_>) -> Result<Self, Self::Error> {
+        String::try_from(value).map(|s| match s.as_str() {
+            "Track" => LoopStatus::Track,
+            "Playlist" => LoopStatus::Playlist,
+            _ => LoopStatus::None,
+        })
     }
 }
 
@@ -238,5 +240,24 @@ impl MprisState {
                 self.position.set(0, false);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn loop_status_from_a_dbus_value() {
+        let status = |v: Value<'static>| LoopStatus::try_from(v).ok();
+        assert_eq!(status(Value::from("Track")), Some(LoopStatus::Track));
+        assert_eq!(status(Value::from("Playlist")), Some(LoopStatus::Playlist));
+        assert_eq!(status(Value::from("None")), Some(LoopStatus::None));
+        assert_eq!(status(Value::from("Shuffle")), Some(LoopStatus::None));
+        assert_eq!(
+            status(Value::from(3u32)),
+            None,
+            "a LoopStatus that is not a string is a D-Bus error, not None"
+        );
     }
 }

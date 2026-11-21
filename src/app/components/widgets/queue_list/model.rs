@@ -545,7 +545,7 @@ mod tests {
             );
             assert!(model.can_drop_row(&rows[2], &rows[1], false));
             model.drop_row(&rows[2], &rows[1], false);
-            let action = receiver.try_next().ok().flatten().expect("an action");
+            let action = receiver.try_recv().expect("an action");
             let AppAction::PlaybackAction(PlaybackAction::MoveEntry {
                 key,
                 target,
@@ -621,7 +621,7 @@ mod tests {
             assert_eq!(model.hides_row(&current), !show_now_playing);
             assert!(!model.hides_row(&view.index_continuous(1).unwrap()));
             model.play_id("2");
-            let action = receiver.try_next().ok().flatten().expect("an action");
+            let action = receiver.try_recv().expect("an action");
             let AppAction::PlaybackAction(PlaybackAction::PlayEntry(key)) = action else {
                 panic!("not PlayEntry: {:?}", action);
             };

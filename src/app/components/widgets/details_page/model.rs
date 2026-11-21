@@ -578,7 +578,7 @@ mod tests {
         }
 
         fn pump(&self) {
-            while let Ok(Some(action)) = self.receiver.borrow_mut().try_next() {
+            while let Ok(action) = self.receiver.borrow_mut().try_recv() {
                 self.received.borrow_mut().push(action);
             }
         }

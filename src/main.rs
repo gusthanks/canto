@@ -1,4 +1,7 @@
 #![allow(mismatched_lifetime_syntaxes)]
+// Edition 2018 traps, as errors: a lone "{x}" in assert!/panic! is printed
+// literally instead of formatted, and array.into_iter() yields references.
+#![deny(non_fmt_panics, array_into_iter)]
 #[macro_use(clone)]
 extern crate glib;
 #[macro_use]
