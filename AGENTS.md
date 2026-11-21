@@ -130,6 +130,7 @@ Proof:
 - A test sample must mount the real parent widgets (see the `sample_for_tests`
   functions). A widget alone in a window can pass while the app cuts it.
 - Always say what was not seen on a real screen.
+- More, with the helpers to use: `doc/Testing.md`.
 
 ## 5. Product rules
 
@@ -140,14 +141,19 @@ Proof:
 
 ## 6. Where things go
 
-- A new trap that anyone could hit goes into this file, or into the doc for
-  its area, in the same commit as the fix.
+- A new trap that anyone could hit goes into `doc/Pitfalls.md` (or this file,
+  if it is a hard rule), in the same commit as the fix. A new way to test goes
+  into `doc/Testing.md`.
 - A rule tied to one spot in the code goes in a comment at that line.
 - When a UI part moves, update the docs that name it in the same commit.
 
 ## 7. More docs
 
 - `CONTRIBUTING.md`: ways to contribute, issues, AI-assisted changes.
+- `doc/Testing.md`: the GTK tests, the headless recipe, renders, measuring,
+  waiting, the red proof and what tests cannot see. Read it before writing a check.
+- `doc/Pitfalls.md`: GTK, libadwaita, Rust 2018, translation, icon and Web API
+  traps, each with symptom, cause, fix and file. Read it before touching an area.
 - `doc/Development.md`: setup, layout, feature flags, translations, debugging.
 - `doc/Design.md`: data flow, the player, the audio engine, components.
 - `doc/Release.md`: cutting a release.

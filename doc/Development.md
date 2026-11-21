@@ -158,6 +158,8 @@ cargo test -p canto-api                 # another crate's tests
 
 The GTK tests are `#[ignore]` in a plain `cargo test`: they need a headless Broadway display, which `gtk-tests.sh` starts in an isolated session. `./scripts/build.sh test` runs `meson test`: `cargo test --workspace`, Clippy and the metainfo check, without the GTK tests. Machine settings (niceness, jobs, the cargo to use, a lock file) come from env; see `scripts/dev/lib.sh`.
 
+How the GTK tests work, how to write a check that proves something and what tests cannot see: [`Testing.md`](Testing.md). Traps that cost real time, with their fixes: [`Pitfalls.md`](Pitfalls.md).
+
 `cargo test` needs `src/config.rs`, which meson writes when it configures the build. Without a meson build, create a placeholder first:
 
 ```sh
