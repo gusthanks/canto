@@ -173,6 +173,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     assert_drawer_layout();
     assert_album_page_fits();
     assert_page_bar_covers_the_list();
+    assert_volume_scrolls_in_steps();
     assert_bar_tiers();
     let overflows = OVERFLOWS
         .lock()
@@ -1527,6 +1528,64 @@ fn assert_page_bar_covers_the_list() {
     window.destroy();
     gtk::style_context_remove_provider_for_display(&display, &red);
     gtk_settings.set_gtk_enable_animations(animations);
+}
+
+/// The wheel or the touchpad over the volume changes it 5% a step, as
+/// Ctrl+Up and Ctrl+Down do, over the speaker and the slider and over the
+/// narrow bar's volume button; the slider doesn't scroll again on its own.
+/// The tooltip says the level and the keys (Q12, 20/11).
+fn assert_volume_scrolls_in_steps() {
+    let bar: super::shell::playback::PlaybackWidget = glib::Object::new();
+    let (slider, volume_box, volume_button) = bar.volume_parts_for_tests();
+    for (name, target) in [
+        ("speaker and slider", &volume_box),
+        ("narrow bar's volume button", &volume_button),
+    ] {
+        let controllers = target.observe_controllers();
+        let scroll = (0..controllers.n_items())
+            .filter_map(|i| {
+                controllers
+                    .item(i)
+                    .and_downcast::<gtk::EventControllerScroll>()
+            })
+            .next();
+        let Some(scroll) = scroll else {
+            check(
+                &format!("the wheel over the {name} changes the volume"),
+                false,
+                "no scroll controller",
+            );
+            continue;
+        };
+        let mut seen = Vec::new();
+        for (from, steps) in [(0.40, -1.0), (0.40, 2.0), (0.98, -1.0), (0.02, 1.0)] {
+            slider.set_value(from);
+            let handled: bool = scroll.emit_by_name("scroll", &[&0.0f64, &steps]);
+            seen.push((
+                from,
+                steps,
+                (slider.value() * 100.0).round() as i32,
+                handled,
+            ));
+        }
+        let levels: Vec<i32> = seen.iter().map(|s| s.2).collect();
+        check(
+            &format!(
+                "the wheel over the {name} changes the volume 5% a step, before the slider scrolls"
+            ),
+            levels == [45, 30, 100, 0]
+                && seen.iter().all(|s| s.3)
+                && scroll.propagation_phase() == gtk::PropagationPhase::Capture,
+            format!("{:?}, {:?}", seen, scroll.propagation_phase()),
+        );
+    }
+    slider.set_value(0.45);
+    let tips = (slider.tooltip_text(), volume_button.tooltip_text());
+    check(
+        "the volume's tooltip says the level and the keys",
+        tips.0.as_deref() == Some("Volume 45% · Ctrl+↑ / Ctrl+↓") && tips.0 == tips.1,
+        format!("{:?}", tips),
+    );
 }
 
 /// Pumps until `n` frames of `widget`'s window have started (a tick

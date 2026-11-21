@@ -439,6 +439,40 @@ mod imp {
             };
             sync_volume_icon(&self.volume_slider);
             self.volume_slider.connect_value_changed(sync_volume_icon);
+
+            // The level and the keys that change it, on the slider and on
+            // the narrow bar's volume button
+            let volume_button = self.volume_button.clone();
+            let sync_volume_tooltip = move |scale: &gtk::Scale| {
+                let text = super::volume_tooltip(scale.value());
+                scale.set_tooltip_text(Some(&text));
+                volume_button.set_tooltip_text(Some(&text));
+            };
+            sync_volume_tooltip(&self.volume_slider);
+            self.volume_slider
+                .connect_value_changed(sync_volume_tooltip);
+
+            // The wheel or the touchpad over the speaker and the slider, or
+            // over the narrow bar's button: 5% a step, as Ctrl+Up and
+            // Ctrl+Down. Captured before the slider's own scrolling, which
+            // would move it again
+            let targets: [gtk::Widget; 2] = [
+                self.volume_box.get().upcast(),
+                self.volume_button.get().upcast(),
+            ];
+            for target in targets {
+                let scroll = gtk::EventControllerScroll::new(
+                    gtk::EventControllerScrollFlags::VERTICAL
+                        | gtk::EventControllerScrollFlags::DISCRETE,
+                );
+                scroll.set_propagation_phase(gtk::PropagationPhase::Capture);
+                let slider = self.volume_slider.clone();
+                scroll.connect_scroll(move |_, _, dy| {
+                    slider.set_value(super::volume_after_scroll(slider.value(), dy));
+                    glib::Propagation::Stop
+                });
+                target.add_controller(scroll);
+            }
         }
     }
 
@@ -840,6 +874,19 @@ fn pressed(on: bool) -> gtk::AccessibleTristate {
     }
 }
 
+/// The volume after `steps` of the wheel or the touchpad (negative: up),
+/// each the step of Ctrl+Up and Ctrl+Down.
+fn volume_after_scroll(value: f64, steps: f64) -> f64 {
+    (value - steps * crate::VOLUME_STEP).clamp(0.0, 1.0)
+}
+
+/// The volume's tooltip: its level, and the keys that change it.
+fn volume_tooltip(value: f64) -> String {
+    // translators: Tooltip of the volume slider. {} is the volume in percent (the % follows it); Ctrl+↑ and Ctrl+↓ are the keys that change it.
+    gettext("Volume {}% · Ctrl+↑ / Ctrl+↓")
+        .replace("{}", &((value * 100.0).round() as i32).to_string())
+}
+
 /// Standard speaker icon for a volume level in `0.0..=1.0`.
 fn volume_icon_name(value: f64) -> &'static str {
     if value <= 0.01 {
@@ -859,6 +906,18 @@ glib::wrapper! {
 }
 
 impl PlaybackWidget {
+    /// The volume slider, the box with the speaker and the slider, and the
+    /// narrow bar's volume button, for the GTK checks.
+    #[cfg(test)]
+    pub fn volume_parts_for_tests(&self) -> (gtk::Scale, gtk::Widget, gtk::Widget) {
+        let imp = self.imp();
+        (
+            imp.volume_slider.get(),
+            imp.volume_box.get().upcast(),
+            imp.volume_button.get().upcast(),
+        )
+    }
+
     pub fn device_selector(&self) -> DeviceSelectorWidget {
         self.imp().device_selector.clone()
     }
@@ -1190,6 +1249,17 @@ impl PlaybackWidget {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_wheel_moves_the_volume_a_key_step_at_a_time() {
+        let close = |a: f64, b: f64| (a - b).abs() < 1e-9;
+        assert!(close(volume_after_scroll(0.40, -1.0), 0.45));
+        assert!(close(volume_after_scroll(0.40, 2.0), 0.30));
+        assert!(close(volume_after_scroll(0.98, -1.0), 1.0));
+        assert!(close(volume_after_scroll(0.02, 1.0), 0.0));
+        assert_eq!(volume_tooltip(0.45), "Volume 45% · Ctrl+↑ / Ctrl+↓");
+        assert_eq!(volume_tooltip(0.0), "Volume 0% · Ctrl+↑ / Ctrl+↓");
+    }
 
     #[test]
     fn volume_icon_follows_level() {
