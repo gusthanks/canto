@@ -266,6 +266,14 @@ impl ApiService {
 
     /// Like [`Self::fetch_lyrics`], skipping the copies on disk (the reload
     /// button).
+    /// Sends a listener's lyrics to LRCLIB, after they confirmed them.
+    pub async fn publish_lyrics(
+        &self,
+        lyrics: &crate::lyrics::LyricsToPublish,
+    ) -> Result<(), String> {
+        self.lyrics_service.publish_lyrics(lyrics).await
+    }
+
     pub async fn refetch_lyrics(
         &self,
         key: &str,

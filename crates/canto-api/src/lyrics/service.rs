@@ -17,6 +17,7 @@ use crate::genius::lyrics::{fetch_genius_lyrics_from, GeniusEndpoints, GeniusLyr
 const USER_AGENT: &str = "Canto/0.1 (https://github.com/gusthanks/canto)";
 const LRCLIB_GET_URL: &str = "https://lrclib.net/api/get";
 const LRCLIB_SEARCH_URL: &str = "https://lrclib.net/api/search";
+const LRCLIB_BASE: &str = "https://lrclib.net";
 /// Each LRCLIB request gives up after this, so a stalled LRCLIB never keeps
 /// the lyrics (or Genius's in its place) from showing for minutes.
 const LRCLIB_TIMEOUT: Duration = Duration::from_secs(10);
@@ -41,6 +42,8 @@ pub struct LyricsService {
 struct Endpoints {
     lrclib_get: String,
     lrclib_search: String,
+    /// Where lyrics are published (`publish`)
+    lrclib_base: String,
     genius: GeniusEndpoints,
 }
 
@@ -49,6 +52,7 @@ impl Default for Endpoints {
         Self {
             lrclib_get: LRCLIB_GET_URL.to_string(),
             lrclib_search: LRCLIB_SEARCH_URL.to_string(),
+            lrclib_base: LRCLIB_BASE.to_string(),
             genius: GeniusEndpoints::default(),
         }
     }
@@ -370,6 +374,7 @@ impl LyricsService {
             endpoints: Endpoints {
                 lrclib_get: format!("{lrclib}/api/get"),
                 lrclib_search: format!("{lrclib}/api/search"),
+                lrclib_base: lrclib.to_string(),
                 genius: GeniusEndpoints {
                     public_search: format!("{genius}/api/search/song"),
                     api_search: format!("{genius}/official/search"),
@@ -378,6 +383,12 @@ impl LyricsService {
             },
             memory: Arc::default(),
         }
+    }
+
+    /// Sends a listener's lyrics to LRCLIB (`publish::publish`); the app
+    /// asks them to confirm first. The error is a sentence to show.
+    pub async fn publish_lyrics(&self, lyrics: &super::LyricsToPublish) -> Result<(), String> {
+        super::publish::publish(&self.client, &self.endpoints.lrclib_base, lyrics).await
     }
 
     pub fn cache(&self) -> &LyricsCache {

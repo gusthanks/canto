@@ -38,6 +38,27 @@ impl TestServer {
                         Ok(n) => head.extend_from_slice(&buf[..n]),
                     }
                 }
+                // The body too (a POST's), all of it before answering: a
+                // socket closed with unread bytes resets the connection
+                let length = String::from_utf8_lossy(&head)
+                    .lines()
+                    .find_map(|line| {
+                        let (name, value) = line.split_once(':')?;
+                        name.eq_ignore_ascii_case("content-length")
+                            .then(|| value.trim().parse::<usize>().ok())
+                            .flatten()
+                    })
+                    .unwrap_or(0);
+                let header_end = head
+                    .windows(4)
+                    .position(|w| w == b"\r\n\r\n")
+                    .map_or(head.len(), |i| i + 4);
+                while head.len() < header_end + length {
+                    match stream.read(&mut buf) {
+                        Ok(0) | Err(_) => break,
+                        Ok(n) => head.extend_from_slice(&buf[..n]),
+                    }
+                }
                 let head = String::from_utf8_lossy(&head).into_owned();
                 let target = head.split(' ').nth(1).unwrap_or_default().to_string();
                 seen.lock()
