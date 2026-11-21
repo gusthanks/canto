@@ -165,6 +165,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     assert_lastfm_love_switch();
     assert_recently_played();
     assert_recently_played_opens_at_newest();
+    assert_filtered_card_grid_keeps_its_columns();
     assert_library_keeps_rows_on_play();
     for icon in ["canto-heart-symbolic", "canto-heart-filled-symbolic"] {
         assert!(icon_theme.has_icon(icon), "{} must resolve", icon);
@@ -1296,6 +1297,145 @@ fn assert_library_keeps_rows_on_play() {
     for i in [0, 1, 2, 4, 5, 6, 7] {
         assert_eq!(now[i], after[i], "row {i} stays");
     }
+}
+
+/// An artist's releases with only "Albums" shown: the cards the filter hides
+/// don't take a column. 20/11: the shown cards moved a column right, the
+/// first column stayed empty and the last ones piled up on each other.
+fn assert_filtered_card_grid_keeps_its_columns() {
+    let (grid, flowbox) = super::widgets::card_list::aligned_grid_for_tests();
+    flowbox.set_min_children_per_line(1);
+    flowbox.set_max_children_per_line(24);
+    flowbox.set_selection_mode(gtk::SelectionMode::None);
+    // Albums and singles mixed, as on an artist page
+    // A single first: where it was, it ties with the first album, which
+    // then took the second column (Teto's page starts with singles)
+    let kinds = [
+        "single", "album", "single", "album", "album", "single", "album", "album", "album",
+    ];
+    for (i, kind) in kinds.iter().enumerate() {
+        let card = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        card.set_size_request(100, 120);
+        card.set_widget_name(&format!("{kind}-{i}"));
+        flowbox.append(&card);
+    }
+    let window = gtk::Window::new();
+    // Three 100 px cards fit, four don't
+    window.set_default_size(340, 600);
+    let scrolled = gtk::ScrolledWindow::new();
+    scrolled.set_hscrollbar_policy(gtk::PolicyType::Never);
+    scrolled.set_child(Some(&grid));
+    window.set_child(Some(&scrolled));
+    window.present();
+    let cells = || -> Vec<(String, f32, f32)> {
+        let mut out = Vec::new();
+        let mut child = flowbox.first_child();
+        while let Some(c) = child {
+            child = c.next_sibling();
+            if !c.is_child_visible() || !c.is_visible() {
+                continue;
+            }
+            let name = c
+                .first_child()
+                .map(|w| w.widget_name().to_string())
+                .unwrap_or_default();
+            if let Some(b) = c.compute_bounds(&grid) {
+                out.push((name, b.x().round(), b.y().round()));
+            }
+        }
+        out
+    };
+    // All laid out once (the hidden ones keep this place)
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    while cells().len() < kinds.len() && std::time::Instant::now() < deadline {
+        pump(50);
+    }
+    pump(300);
+    // Only albums, as the view filter does. The grid is laid out again on
+    // the next frames, slow on the headless display: a tick callback keeps
+    // frames coming, and three pass before the places are read. Waiting
+    // only for the places to hold still passed at once, on the places from
+    // before the filter
+    let ticks = std::rc::Rc::new(std::cell::Cell::new(0));
+    let ticker = {
+        let ticks = ticks.clone();
+        window.add_tick_callback(move |_, _| {
+            ticks.set(ticks.get() + 1);
+            glib::ControlFlow::Continue
+        })
+    };
+    flowbox.set_filter_func(|child| {
+        child
+            .first_child()
+            .is_some_and(|w| w.widget_name().starts_with("album"))
+    });
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    while ticks.get() < 3 && std::time::Instant::now() < deadline {
+        pump(50);
+    }
+    ticker.remove();
+    check(
+        "frames pass after filtering the card grid",
+        ticks.get() >= 3,
+        format!("{} frames", ticks.get()),
+    );
+    let settled = |cells: &[(String, f32, f32)]| cells.len() == 6;
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    let mut last = cells();
+    let mut same = 0;
+    while (same < 3 || !settled(&last)) && std::time::Instant::now() < deadline {
+        pump(100);
+        let now = cells();
+        same = if now == last { same + 1 } else { 0 };
+        last = now;
+    }
+    eprintln!("filtered card grid: {:?}", last);
+    check(
+        "the filtered card grid shows the six albums",
+        last.len() == 6,
+        last.len(),
+    );
+    // No two cards in the same place
+    let mut piled = Vec::new();
+    for (i, a) in last.iter().enumerate() {
+        for b in &last[i + 1..] {
+            if (a.1, a.2) == (b.1, b.2) {
+                piled.push(format!("{} and {} at x={} y={}", a.0, b.0, a.1, a.2));
+            }
+        }
+    }
+    check(
+        "no two filtered cards are drawn on top of each other",
+        piled.is_empty(),
+        format!("{:?}", piled),
+    );
+    // Every row starts at the left edge, and the rows are full: a hidden
+    // card left a hole where it used to be (the six took three rows)
+    let mut rows: Vec<f32> = last.iter().map(|c| c.2).collect();
+    rows.sort_by(|a, b| a.total_cmp(b));
+    rows.dedup();
+    check(
+        "the six filtered albums fill two rows of three",
+        rows.len() == 2,
+        format!("rows at y={:?}", rows),
+    );
+    let mut off_edge = Vec::new();
+    for y in rows {
+        let left = last
+            .iter()
+            .filter(|c| c.2 == y)
+            .map(|c| c.1)
+            .fold(f32::MAX, f32::min);
+        if left > 1.0 {
+            off_edge.push(format!("the row at y={} starts at x={}", y, left));
+        }
+    }
+    check(
+        "every row of the filtered card grid starts at the left edge",
+        off_edge.is_empty(),
+        format!("{:?}", off_edge),
+    );
+    window.destroy();
 }
 
 /// Number of distinct opaque-ish colors `widget` renders (rough content check).

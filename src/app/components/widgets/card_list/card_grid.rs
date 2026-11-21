@@ -95,7 +95,16 @@ mod imp {
         /// share the row, to their natural width at edge-aligned positions.
         fn align_cells(&self, width: i32) {
             let grid = &self.flowbox;
-            let Some(first) = grid.child_at_index(0) else {
+            // Cards the filter hid ("Albums" only) are child-invisible: the
+            // FlowBox skips them but they keep their old place. Counting
+            // them pushed the shown cards a column right, left the first
+            // column empty and piled the last ones up (20/11)
+            let shown = |c: &gtk::Widget| c.should_layout() && c.is_child_visible();
+            let mut first = grid.first_child();
+            while let Some(c) = first.as_ref().filter(|c| !shown(c)) {
+                first = c.next_sibling();
+            }
+            let Some(first) = first else {
                 return;
             };
             let (cell_min, cell, _, _) = first.measure(gtk::Orientation::Horizontal, -1);
@@ -113,7 +122,7 @@ mod imp {
             let mut child = grid.first_child();
             while let Some(c) = child {
                 child = c.next_sibling();
-                if !c.should_layout() {
+                if !shown(&c) {
                     continue;
                 }
                 if let Some(bounds) = c.compute_bounds(grid) {
@@ -159,6 +168,15 @@ pub fn align_cards_to_edges(grid: &gtk::Widget) {
     if let Some(grid) = grid.downcast_ref::<CardGrid>() {
         grid.set_align_to_edges();
     }
+}
+
+/// An edge-aligned grid, for the GTK checks.
+#[cfg(test)]
+pub(crate) fn aligned_grid_for_tests() -> (gtk::Widget, gtk::FlowBox) {
+    let grid = CardGrid::new();
+    grid.set_align_to_edges();
+    let flowbox = grid.flowbox().clone();
+    (grid.upcast(), flowbox)
 }
 
 #[cfg(test)]
