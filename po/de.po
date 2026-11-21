@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-21 08:59-0300\n"
+"POT-Creation-Date: 2026-11-21 10:15-0300\n"
 "PO-Revision-Date: 2025-07-09 09:28+0200\n"
 "Last-Translator: Sebastian Scherch\n"
 "Language: de\n"
@@ -379,19 +379,31 @@ msgstr ""
 msgid "Public Playlists"
 msgstr "Alle Playlists"
 
+#: src/app/components/pages/lyrics/add_lyrics.rs:83
+msgid "Preparing and sending… This can take a minute on a slower computer."
+msgstr ""
+
+#. translators: In "Add Lyrics" when sending failed. {} is the reason, from LRCLIB.
+#: src/app/components/pages/lyrics/add_lyrics.rs:113
+#, rust-format
+msgid "Couldn't publish: {}"
+msgstr ""
+
 #. translators: Title of the window where a listener adds the lyrics of a song no source has.
-#: src/app/components/pages/lyrics/add_lyrics.rs:84
+#. Translators: Button under "No Lyrics Available": opens a window to type or paste the song's lyrics and publish them to LRCLIB.
+#: src/app/components/pages/lyrics/add_lyrics.rs:135
+#: src/app/components/pages/lyrics/lyrics_page.blp:134
 #, fuzzy
 msgid "Add Lyrics"
 msgstr "Wiedergabe"
 
-#: src/app/components/pages/lyrics/add_lyrics.rs:116
+#: src/app/components/pages/lyrics/add_lyrics.rs:167
 msgid ""
 "Paste or type the lyrics, one line per line. Lines that start with a time, "
 "like [01:23.45], follow the song."
 msgstr ""
 
-#: src/app/components/pages/lyrics/add_lyrics.rs:139
+#: src/app/components/pages/lyrics/add_lyrics.rs:190
 msgid ""
 "Lyrics you add go to LRCLIB, a free public lyrics library, without an "
 "account: anyone can read and use them. Add only lyrics you typed yourself or "
@@ -399,29 +411,29 @@ msgid ""
 msgstr ""
 
 #. translators: Button in "Add Lyrics" that shows what will be sent, before sending it.
-#: src/app/components/pages/lyrics/add_lyrics.rs:148
+#: src/app/components/pages/lyrics/add_lyrics.rs:199
 msgid "Review and Publish…"
 msgstr ""
 
 #. translators: In the confirmation before publishing lyrics. {} is the number of lines.
-#: src/app/components/pages/lyrics/add_lyrics.rs:192
+#: src/app/components/pages/lyrics/add_lyrics.rs:266
 #, fuzzy, rust-format
 msgid "{} lines, following the song"
 msgstr "System"
 
 #. translators: In the confirmation before publishing lyrics. {} is the number of lines.
-#: src/app/components/pages/lyrics/add_lyrics.rs:195
+#: src/app/components/pages/lyrics/add_lyrics.rs:269
 #, rust-format
 msgid "{} lines, without times"
 msgstr ""
 
 #. translators: Last line of the confirmation before publishing lyrics to LRCLIB.
-#: src/app/components/pages/lyrics/add_lyrics.rs:206
+#: src/app/components/pages/lyrics/add_lyrics.rs:280
 msgid "Once published, anyone can see and use them."
 msgstr ""
 
 #. translators: Heading of the confirmation before publishing lyrics.
-#: src/app/components/pages/lyrics/add_lyrics.rs:209
+#: src/app/components/pages/lyrics/add_lyrics.rs:283
 msgid "Publish to LRCLIB?"
 msgstr ""
 
@@ -429,7 +441,7 @@ msgstr ""
 #. translators: Button of the dialog asking to confirm clearing the play queue: keeps the queue.
 #. Translators: Button label. Exits selection mode.
 #. translators: Button of a dialog asking to confirm something that cannot be undone: leaves things as they are.
-#: src/app/components/pages/lyrics/add_lyrics.rs:211
+#: src/app/components/pages/lyrics/add_lyrics.rs:285
 #: src/app/components/shell/clipboard_import/mod.rs:116
 #: src/app/components/widgets/queue_list/model.rs:260
 #: src/app/components/pages/queue/queue_page.blp:19
@@ -440,7 +452,7 @@ msgid "Cancel"
 msgstr "Abbrechen"
 
 #. translators: Button in the confirmation before publishing lyrics: sends them.
-#: src/app/components/pages/lyrics/add_lyrics.rs:213
+#: src/app/components/pages/lyrics/add_lyrics.rs:287
 msgid "Publish"
 msgstr ""
 
@@ -457,9 +469,14 @@ msgstr ""
 msgid "Lyrics"
 msgstr ""
 
+#. translators: Shown once lyrics the listener added were published.
+#: src/app/components/pages/lyrics/component.rs:174
+msgid "Lyrics published to LRCLIB"
+msgstr ""
+
 #. translators: Short text displayed instead of a track title when nothing plays
-#: src/app/components/pages/lyrics/component.rs:477
-#: src/app/components/pages/lyrics/component.rs:890
+#: src/app/components/pages/lyrics/component.rs:535
+#: src/app/components/pages/lyrics/component.rs:948
 #: src/app/components/shell/playback/playback_info.rs:122
 #: src/app/components/shell/fullscreen_lyrics.rs:212
 #, fuzzy
@@ -467,12 +484,12 @@ msgid "No Track Playing"
 msgstr "Wiedergabe"
 
 #. Translators: Shown when no lyrics are found.
-#: src/app/components/pages/lyrics/component.rs:645
+#: src/app/components/pages/lyrics/component.rs:703
 #: src/app/components/pages/lyrics/lyrics_page.blp:95
 msgid "No Lyrics Available"
 msgstr ""
 
-#: src/app/components/pages/lyrics/component.rs:646
+#: src/app/components/pages/lyrics/component.rs:704
 #: src/app/components/pages/lyrics/lyrics_page.blp:96
 msgid "Lyrics couldn't be found for this song."
 msgstr ""
@@ -481,40 +498,40 @@ msgstr ""
 #. / title without edition notes ("- Remastered", "(feat. ...)") and the word
 #. / for lyrics in the app's language ("lyrics", "letra").
 #. translators: The word added to a web search for a song's lyrics ("Search the Web" under "No Lyrics Available"): what people type in a search engine in your language, like "letra" in Portuguese.
-#: src/app/components/pages/lyrics/component.rs:657
+#: src/app/components/pages/lyrics/component.rs:715
 msgid "lyrics"
 msgstr ""
 
 #. Translators: Heading of the lyrics timing part of the lyrics options popover.
-#: src/app/components/pages/lyrics/widget.rs:215
-#: src/app/components/pages/lyrics/lyrics_page.blp:240
+#: src/app/components/pages/lyrics/widget.rs:219
+#: src/app/components/pages/lyrics/lyrics_page.blp:252
 msgid "Lyrics Timing"
 msgstr ""
 
 #. translators: Tooltip of the lyrics timing button while an offset is set. {} is like "+200 ms".
-#: src/app/components/pages/lyrics/widget.rs:219
+#: src/app/components/pages/lyrics/widget.rs:223
 #, rust-format
 msgid "Lyrics Timing ({})"
 msgstr ""
 
 #. translators: Tooltip of the mark on a lyric line that Genius explains.
-#: src/app/components/pages/lyrics/widget.rs:461
+#: src/app/components/pages/lyrics/widget.rs:476
 msgid "What This Line Means"
 msgstr ""
 
 #. translators: First entry of the lyrics translation languages: the app's own language.
-#: src/app/components/pages/lyrics/widget.rs:490
+#: src/app/components/pages/lyrics/widget.rs:505
 msgid "App Language"
 msgstr ""
 
 #. translators: Quiet line above the lyrics saying where they came from. {} is the source's name, "LRCLIB" or "Genius" (keep it as is).
-#: src/app/components/pages/lyrics/widget.rs:748
+#: src/app/components/pages/lyrics/widget.rs:763
 #, rust-format
 msgid "Lyrics: {}"
 msgstr ""
 
 #. translators: Quiet line above lyrics that have no timing, so they don't follow the song. {} is the source's name, "LRCLIB" or "Genius" (keep it as is).
-#: src/app/components/pages/lyrics/widget.rs:751
+#: src/app/components/pages/lyrics/widget.rs:766
 #, rust-format
 msgid "Lyrics: {} · not synced"
 msgstr ""
@@ -1039,7 +1056,7 @@ msgstr ""
 
 #. Translators: Tooltip of the button in the lyrics that shows them full screen.
 #: src/app/components/shell/command_palette/widget.rs:680
-#: src/app/components/pages/lyrics/lyrics_page.blp:334
+#: src/app/components/pages/lyrics/lyrics_page.blp:346
 msgid "Full-Screen Lyrics"
 msgstr ""
 
@@ -1583,7 +1600,7 @@ msgstr ""
 
 #. Translators: Tooltip of the lyrics button that opens the song's page on Genius (to read or fix its lyrics).
 #: src/app/components/shell/now_panel/about.rs:379
-#: src/app/components/pages/lyrics/lyrics_page.blp:157
+#: src/app/components/pages/lyrics/lyrics_page.blp:169
 #, fuzzy
 msgid "Open on Genius"
 msgstr "Auf Spotify suchen."
@@ -2093,71 +2110,71 @@ msgstr ""
 msgid "Search the Web"
 msgstr "Auf Spotify suchen."
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:146
+#: src/app/components/pages/lyrics/lyrics_page.blp:158
 msgid "Reload lyrics"
 msgstr ""
 
 #. Translators: Tooltip of the lyrics button that opens how lyrics light up, scroll and are timed.
-#: src/app/components/pages/lyrics/lyrics_page.blp:168
+#: src/app/components/pages/lyrics/lyrics_page.blp:180
 msgid "Lyrics Options"
 msgstr ""
 
 #. Translators: Heading in the lyrics options popover: how the line being sung lights up.
-#: src/app/components/pages/lyrics/lyrics_page.blp:187
+#: src/app/components/pages/lyrics/lyrics_page.blp:199
 #, fuzzy
 msgid "Highlight"
 msgstr "Hoch"
 
 #. Translators: Lyrics highlight choice: the words light up one by one as they are sung.
-#: src/app/components/pages/lyrics/lyrics_page.blp:201
+#: src/app/components/pages/lyrics/lyrics_page.blp:213
 msgid "Word by Word"
 msgstr ""
 
 #. Translators: Lyrics highlight choice: the whole line lights up at once.
-#: src/app/components/pages/lyrics/lyrics_page.blp:207
+#: src/app/components/pages/lyrics/lyrics_page.blp:219
 msgid "Whole Line"
 msgstr ""
 
 #. Translators: Heading in the lyrics options popover: what the lyrics do after you scroll them by hand.
-#: src/app/components/pages/lyrics/lyrics_page.blp:213
+#: src/app/components/pages/lyrics/lyrics_page.blp:225
 msgid "After You Scroll"
 msgstr ""
 
 #. Translators: Lyrics scroll choice: a few seconds after scrolling by hand, the lyrics go back to the line being sung.
-#: src/app/components/pages/lyrics/lyrics_page.blp:228
+#: src/app/components/pages/lyrics/lyrics_page.blp:240
 #, fuzzy
 msgid "Follow the Song"
 msgstr "System"
 
 #. Translators: Lyrics scroll choice: after scrolling by hand, the lyrics stay where you left them until you press Back to Current Line.
-#: src/app/components/pages/lyrics/lyrics_page.blp:234
+#: src/app/components/pages/lyrics/lyrics_page.blp:246
 msgid "Stay Put"
 msgstr ""
 
 #. Translators: Explanation in the lyrics timing popover.
-#: src/app/components/pages/lyrics/lyrics_page.blp:251
+#: src/app/components/pages/lyrics/lyrics_page.blp:263
 msgid "If the lyrics run ahead of or behind the song, nudge them here."
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:272
+#: src/app/components/pages/lyrics/lyrics_page.blp:284
 msgid "Delay lyrics (-100 ms)"
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:281
+#: src/app/components/pages/lyrics/lyrics_page.blp:293
 msgid "Reset lyrics sync offset"
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:291
+#: src/app/components/pages/lyrics/lyrics_page.blp:303
 msgid "Advance lyrics (+100 ms)"
 msgstr ""
 
 #. Translators: Tooltip of the lyrics button that shows a translation under each line.
-#: src/app/components/pages/lyrics/lyrics_page.blp:312
+#: src/app/components/pages/lyrics/lyrics_page.blp:324
 msgid "Translate Lyrics"
 msgstr ""
 
 #. Translators: Tooltip of the button that picks the language lyrics are translated into.
-#: src/app/components/pages/lyrics/lyrics_page.blp:322
+#: src/app/components/pages/lyrics/lyrics_page.blp:334
 msgid "Translation Language"
 msgstr ""
 

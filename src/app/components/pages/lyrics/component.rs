@@ -127,6 +127,64 @@ impl LyricsPage {
             let url = web_lyrics_search_url(&artist, &track.title);
             crate::app::components::open_external_url(button, &url);
         });
+        let weak_model = Rc::downgrade(&self.app_model);
+        let weak_widget = self.widget.downgrade();
+        let dispatcher = self.dispatcher.clone();
+        self.widget.connect_add_lyrics(move |button| {
+            let Some(model) = weak_model.upgrade() else {
+                return;
+            };
+            let Some(track) = model.get_state().playback.current_song() else {
+                return;
+            };
+            // The names the lyrics are looked up by, so the next look-up
+            // finds them
+            let song = super::add_lyrics::SongForLyrics {
+                title: track.title.clone(),
+                artist: track.artists_name(),
+                album: track
+                    .album
+                    .as_ref()
+                    .map(|album| album.name.clone())
+                    .unwrap_or_default(),
+                duration_ms: track.duration_ms,
+            };
+            let api = model.api();
+            let weak_widget = weak_widget.clone();
+            let dispatcher = dispatcher.clone();
+            let sent_song = song.clone();
+            super::add_lyrics::open(button, &song, move |draft, sending| {
+                let lyrics = canto_api::LyricsToPublish {
+                    track_name: sent_song.title.clone(),
+                    artist_name: sent_song.artist.clone(),
+                    album_name: sent_song.album.clone(),
+                    duration_secs: (sent_song.duration_ms + 500) / 1000,
+                    plain_lyrics: draft.plain,
+                    synced_lyrics: draft.synced,
+                };
+                let api = api.clone();
+                let weak_widget = weak_widget.clone();
+                let dispatcher = dispatcher.clone();
+                glib::spawn_future_local(async move {
+                    match api.publish_lyrics(&lyrics).await {
+                        Ok(()) => {
+                            sending.done();
+                            dispatcher.dispatch(crate::app::AppAction::ShowNotification(
+                                // translators: Shown once lyrics the listener added were published.
+                                gettext("Lyrics published to LRCLIB"),
+                            ));
+                            if let Some(widget) = weak_widget.upgrade() {
+                                widget.reload();
+                            }
+                        }
+                        Err(error) => {
+                            warn!("publishing lyrics to LRCLIB failed: {error}");
+                            sending.failed(&error);
+                        }
+                    }
+                });
+            });
+        });
         self.widget
             .set_word_by_word(self.settings.string(LYRICS_HIGHLIGHT) != "line");
         self.widget

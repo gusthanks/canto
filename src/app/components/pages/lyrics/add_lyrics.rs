@@ -2,8 +2,8 @@
 //! has, sent to LRCLIB (a free, public lyrics library) only after they
 //! confirm exactly what goes out. Nothing here fills the text in.
 //!
-//! Not reachable yet: nothing opens it outside the tests. The window is
-//! shown for approval first, and sending comes after it.
+//! Opened from the lyrics page when no source has the song. Each sending
+//! is confirmed first.
 
 use gettextrs::gettext;
 use gtk::glib;
@@ -64,17 +64,71 @@ pub fn parse_draft(text: &str) -> LyricsDraft {
     }
 }
 
+/// The window while its lyrics are being sent: `done` closes it, `failed`
+/// says why and lets the listener try again.
+#[derive(Clone)]
+pub struct Sending {
+    dialog: glib::WeakRef<libadwaita::Dialog>,
+    status: glib::WeakRef<gtk::Label>,
+    spinner: glib::WeakRef<libadwaita::Spinner>,
+    review: glib::WeakRef<gtk::Button>,
+    text: glib::WeakRef<gtk::TextView>,
+}
+
+impl Sending {
+    fn start(&self) {
+        if let Some(status) = self.status.upgrade() {
+            // translators: In "Add Lyrics" while the lyrics are sent; LRCLIB first asks the computer to solve a small puzzle.
+            status.set_label(&gettext(
+                "Preparing and sending… This can take a minute on a slower computer.",
+            ));
+            status.remove_css_class("error");
+            status.set_visible(true);
+        }
+        self.busy(true);
+    }
+
+    fn busy(&self, busy: bool) {
+        if let Some(spinner) = self.spinner.upgrade() {
+            spinner.set_visible(busy);
+        }
+        if let Some(review) = self.review.upgrade() {
+            review.set_sensitive(!busy);
+        }
+        if let Some(text) = self.text.upgrade() {
+            text.set_editable(!busy);
+        }
+    }
+
+    pub fn done(&self) {
+        if let Some(dialog) = self.dialog.upgrade() {
+            dialog.force_close();
+        }
+    }
+
+    pub fn failed(&self, error: &str) {
+        self.busy(false);
+        if let Some(status) = self.status.upgrade() {
+            // translators: In "Add Lyrics" when sending failed. {} is the reason, from LRCLIB.
+            status.set_label(&gettext("Couldn't publish: {}").replace("{}", error));
+            status.add_css_class("error");
+            status.set_visible(true);
+        }
+    }
+}
+
 fn duration_label(ms: u32) -> String {
     let seconds = ms / 1000;
     format!("{}:{:02}", seconds / 60, seconds % 60)
 }
 
 /// The window, over `parent`. `on_publish` gets the draft once the listener
-/// confirmed it; the text box starts empty.
+/// confirmed it, and the window's `Sending` to tell how it went; the text
+/// box starts empty.
 pub fn open(
     parent: &impl IsA<gtk::Widget>,
     song: &SongForLyrics,
-    on_publish: impl Fn(LyricsDraft) + 'static,
+    on_publish: impl Fn(LyricsDraft, Sending) + 'static,
 ) -> libadwaita::Dialog {
     let dialog = libadwaita::Dialog::builder()
         // translators: Title of the window where a listener adds the lyrics of a song no source has.
@@ -147,7 +201,26 @@ pub fn open(
     review.add_css_class("suggested-action");
     review.set_halign(gtk::Align::Center);
     review.set_sensitive(false);
+
+    let spinner = libadwaita::Spinner::new();
+    spinner.set_visible(false);
+    let status = gtk::Label::new(None);
+    status.set_wrap(true);
+    status.set_visible(false);
+    status.add_css_class("caption");
+    let sending_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    sending_row.set_halign(gtk::Align::Center);
+    sending_row.append(&spinner);
+    sending_row.append(&status);
+    body.append(&sending_row);
     body.append(&review);
+    let sending = Sending {
+        dialog: dialog.downgrade(),
+        status: status.downgrade(),
+        spinner: spinner.downgrade(),
+        review: review.downgrade(),
+        text: text.downgrade(),
+    };
 
     let buffer = text.buffer();
     buffer.connect_changed(glib::clone!(
@@ -170,7 +243,11 @@ pub fn open(
             let draft = parse_draft(&buffer.text(&start, &end, false));
             let confirm = confirmation(&song, &draft);
             let on_publish = on_publish.clone();
-            confirm.connect_response(Some("publish"), move |_, _| on_publish(draft.clone()));
+            let sending = sending.clone();
+            confirm.connect_response(Some("publish"), move |_, _| {
+                sending.start();
+                on_publish(draft.clone(), sending.clone());
+            });
             confirm.present(Some(&dialog));
         }
     ));

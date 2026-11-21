@@ -126,6 +126,18 @@ template $LyricsPageWidget : Adw.Bin {
                 "flat",
               ]
             }
+
+            Button add_lyrics_button {
+              halign: center;
+              visible: false;
+              /* Translators: Button under "No Lyrics Available": opens a window to type or paste the song's lyrics and publish them to LRCLIB. */
+              label: _("Add Lyrics");
+
+              styles [
+                "pill",
+                "flat",
+              ]
+            }
           };
         };
       }

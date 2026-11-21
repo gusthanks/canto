@@ -851,8 +851,9 @@ fn assert_lyrics_source_line() {
         }
     }
     check(
-        "with no lyrics found, the button searches the web, not Genius",
+        "with no lyrics found, the buttons search the web and add lyrics, not Genius",
         labels.iter().any(|label| label == "Search the Web")
+            && labels.iter().any(|label| label == "Add Lyrics")
             && !labels.iter().any(|label| label.contains("Genius")),
         format!("{:?}", labels),
     );
@@ -1752,7 +1753,7 @@ fn assert_add_lyrics_window() {
     let sent = std::rc::Rc::new(std::cell::Cell::new(0));
     let dialog = {
         let sent = sent.clone();
-        add_lyrics::open(&window, &song, move |_| sent.set(sent.get() + 1))
+        add_lyrics::open(&window, &song, move |_, _| sent.set(sent.get() + 1))
     };
     wait_frames(&window, 3);
     pump(300);

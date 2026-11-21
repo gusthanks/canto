@@ -48,6 +48,8 @@ mod imp {
         #[template_child]
         pub web_search_button: TemplateChild<gtk::Button>,
         #[template_child]
+        pub add_lyrics_button: TemplateChild<gtk::Button>,
+        #[template_child]
         pub fullscreen_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub translate_button: TemplateChild<gtk::ToggleButton>,
@@ -198,6 +200,8 @@ impl LyricsPageWidget {
         imp.reload_empty_button.set_visible(allow_reload);
         // A song was looked up and no source had its lyrics: the web may
         imp.web_search_button.set_visible(allow_reload);
+        // ...or the listener, who can add them to LRCLIB
+        imp.add_lyrics_button.set_visible(allow_reload);
         imp.sync_toolbar.set_visible(false);
         imp.lyrics_stack.set_visible_child_name("empty");
     }
@@ -240,6 +244,17 @@ impl LyricsPageWidget {
     /// The button shown when no source had the lyrics.
     pub fn connect_web_search<F: Fn(&gtk::Button) + 'static>(&self, f: F) {
         self.imp().web_search_button.connect_clicked(move |b| f(b));
+    }
+
+    /// The button that opens "Add Lyrics", shown when no source had them.
+    pub fn connect_add_lyrics<F: Fn(&gtk::Button) + 'static>(&self, f: F) {
+        self.imp().add_lyrics_button.connect_clicked(move |b| f(b));
+    }
+
+    /// Looks the lyrics up again, as the reload button does (after the
+    /// listener published some).
+    pub fn reload(&self) {
+        self.imp().reload_empty_button.emit_clicked();
     }
 
     pub fn connect_reload<F: Fn() + Clone + 'static>(&self, f: F) {
