@@ -22,7 +22,7 @@ use crate::app::components::card::IMAGE_SIZE;
 impl From<&Album> for CardModel {
     fn from(album: &Album) -> Self {
         let art = album.art.best_for_width(IMAGE_SIZE).map(str::to_owned);
-        CardModel::new(
+        let card = CardModel::new(
             &album.rri.id,
             art.as_ref(),
             &album.title,
@@ -31,7 +31,12 @@ impl From<&Album> for CardModel {
             Some(album.popularity.unwrap_or(0)),
             None,
             album.album_type_string().as_deref(),
-        )
+        );
+        // Under the cover, each artist links to its page (20/11)
+        card.set_subtitle_markup(crate::app::components::now_panel::artist_links_markup(
+            &album.artists,
+        ));
+        card
     }
 }
 

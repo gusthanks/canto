@@ -87,6 +87,10 @@ mod imp {
         title: RefCell<String>,
         #[property(get, set)]
         subtitle: RefCell<String>,
+        /// The subtitle as markup with links (an album's artists, each to
+        /// its page), or empty: the card shows `subtitle` then
+        #[property(get, set, name = "subtitle-markup")]
+        subtitle_markup: RefCell<String>,
         #[property(get, set, name = "release-date")]
         release_date: RefCell<String>,
         #[property(get, set)]
@@ -227,6 +231,12 @@ mod tests {
         assert_eq!(card.id(), "album1");
         assert_eq!(card.title(), "Album Title");
         assert_eq!(card.subtitle(), "Artist A, Artist B");
+        // Each artist links to its own page
+        assert_eq!(
+            card.subtitle_markup(),
+            "<a href=\"https://open.spotify.com/artist/a1\">Artist A</a>, \
+             <a href=\"https://open.spotify.com/artist/a2\">Artist B</a>"
+        );
         assert_eq!(card.image(), Some("https://img.com/cover.jpg".to_string()));
     }
 

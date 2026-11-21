@@ -12,7 +12,7 @@ use std::rc::Rc;
 
 use crate::app::components::utils::Clock;
 use crate::app::components::{dispatch_api_call, labels, remember_app_copied_link, EventListener};
-use crate::app::models::{Track, TrackExt};
+use crate::app::models::{ArtistRef, Track, TrackExt};
 use crate::app::state::PlaybackEvent;
 use crate::app::{load, AppAction, AppEvent, AppModel, BrowserAction, BrowserEvent, Dispatcher};
 use canto_api::models::is_resource_url;
@@ -61,8 +61,14 @@ pub fn title_markup(title: &str, track_id: &str, has_album: bool) -> String {
 
 /// Markup for the artists of a track, each linking to its page.
 pub fn artists_markup(track: &Track) -> String {
-    track
-        .artists
+    artist_links_markup(&track.artists)
+}
+
+/// Markup for `artists`, each linking to its page (a name without an id
+/// stays plain text). The links are the artists' own addresses, which
+/// "Copy Link Address" copies; a click opens the page in the app.
+pub fn artist_links_markup(artists: &[ArtistRef]) -> String {
+    artists
         .iter()
         .map(|artist| {
             let name = glib::markup_escape_text(&artist.name);

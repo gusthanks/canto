@@ -137,6 +137,25 @@ mod imp {
     }
 
     impl ObjectImpl for CardWidget {
+        fn constructed(&self) {
+            self.parent_constructed();
+            // An artist's link under an album's cover opens the artist's
+            // page in the app, not the browser (20/11)
+            self.subtitle_label.connect_activate_link(|label, uri| {
+                use crate::app::components::now_panel::{parse_track_link, TrackLink};
+                match parse_track_link(uri) {
+                    Some(TrackLink::Artist(id))
+                        if label
+                            .activate_action("app.view_artist", Some(&id.to_variant()))
+                            .is_ok() =>
+                    {
+                        glib::Propagation::Stop
+                    }
+                    _ => glib::Propagation::Proceed,
+                }
+            });
+        }
+
         // Required for composite templates with ParentType = gtk::Widget.
         // GTK does not automatically unparent children of plain widgets.
         fn dispose(&self) {
@@ -256,6 +275,12 @@ glib::wrapper! {
 
 impl CardWidget {
     /// Create a new empty card with the given image shape and layout.
+    /// The label under the title, for the GTK checks.
+    #[cfg(test)]
+    pub fn subtitle_label_for_tests(&self) -> gtk::Label {
+        self.imp().subtitle_label.get()
+    }
+
     pub fn new(shape: ImageShape, layout: CardLayout) -> Self {
         display_add_css_provider(resource!("/components/card.css"));
         let widget: Self = glib::Object::new();
@@ -394,6 +419,7 @@ impl CardWidget {
         if let Some(url) = model.image() {
             let title = model.title();
             let subtitle = model.subtitle();
+            let subtitle_markup = model.subtitle_markup();
             let position = model.insertion_position();
             let is_visible = position <= VISIBLE_THRESHOLD as i64;
             // Captured now, since the off-screen branch defers to an idle
@@ -411,8 +437,15 @@ impl CardWidget {
                 artwork.await;
                 if let Some(this) = weak.upgrade() {
                     this.imp().title_label.set_label(&title);
-                    this.imp().subtitle_label.set_label(&subtitle);
-                    this.imp().subtitle_label.set_visible(!subtitle.is_empty());
+                    let subtitle_label = &this.imp().subtitle_label;
+                    if subtitle_markup.is_empty() {
+                        subtitle_label.set_use_markup(false);
+                        subtitle_label.set_label(&subtitle);
+                    } else {
+                        // An album's artists, each a link to its page
+                        subtitle_label.set_markup(&subtitle_markup);
+                    }
+                    subtitle_label.set_visible(!subtitle.is_empty());
                     this.set_tooltip_text(Some(&title));
                     this.set_loaded();
                 }

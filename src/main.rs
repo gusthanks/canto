@@ -475,6 +475,19 @@ fn register_actions(app: &gtk::Application, sender: UnboundedSender<AppAction>) 
         sender.clone(),
     ));
 
+    // An artist's page by id: the artist links under album covers
+    let view_artist = SimpleAction::new("view_artist", Some(glib::VariantTy::STRING));
+    view_artist.connect_activate(clone!(
+        #[strong]
+        sender,
+        move |_, parameter| {
+            if let Some(id) = parameter.and_then(|p| p.get::<String>()) {
+                sender.unbounded_send(AppAction::ViewArtist(id)).unwrap();
+            }
+        }
+    ));
+    app.add_action(&view_artist);
+
     for (name, page) in [
         ("nav_artists", HomePage::SavedArtists),
         ("nav_albums", HomePage::Library),

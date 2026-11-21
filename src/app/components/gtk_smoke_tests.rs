@@ -175,6 +175,7 @@ fn instantiate_wave2_gtk_widgets_and_icons_when_configured() {
     assert_page_bar_covers_the_list();
     assert_volume_scrolls_in_steps();
     assert_release_filters_are_buttons();
+    assert_card_artist_links();
     assert_bar_tiers();
     let overflows = OVERFLOWS
         .lock()
@@ -1653,6 +1654,72 @@ fn assert_release_filters_are_buttons() {
         "the four release filters wrap on a narrow page",
         min > 0 && min <= 160,
         format!("narrowest {} px", min),
+    );
+    window.destroy();
+}
+
+/// The artists under an album's cover are links: each opens its artist's
+/// page in the app (the app.view_artist action), not the browser; any
+/// other link is left to the label (Q14, 20/11).
+fn assert_card_artist_links() {
+    use canto_api::models::{ArtistRef, Provider, ResourceId};
+    let card = super::card::CardWidget::new(
+        super::card::ImageShape::Square,
+        crate::app::models::CardLayout::Vertical,
+    );
+    let label = card.subtitle_label_for_tests();
+    let artists = [
+        ArtistRef {
+            rri: ResourceId::new(Provider::Spotify, "a1"),
+            name: "Niink".to_string(),
+        },
+        ArtistRef {
+            rri: ResourceId::new(Provider::Spotify, "a2"),
+            name: "Supernova Ent".to_string(),
+        },
+    ];
+    label.set_markup(&super::now_panel::artist_links_markup(&artists));
+    let opened = std::rc::Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let group = gio::SimpleActionGroup::new();
+    let view_artist = gio::SimpleAction::new("view_artist", Some(glib::VariantTy::STRING));
+    {
+        let opened = opened.clone();
+        view_artist.connect_activate(move |_, parameter| {
+            if let Some(id) = parameter.and_then(|p| p.get::<String>()) {
+                opened.borrow_mut().push(id);
+            }
+        });
+    }
+    group.add_action(&view_artist);
+    let window = gtk::Window::new();
+    window.insert_action_group("app", Some(&group));
+    window.set_child(Some(&card));
+    window.present();
+    wait_frames(&window, 2);
+    // Stands in for the label's own handling, which would open the browser:
+    // a link the card leaves alone ends here, and nothing is opened
+    let left_to_label = std::rc::Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    {
+        let left_to_label = left_to_label.clone();
+        label.connect_activate_link(move |_, uri| {
+            left_to_label.borrow_mut().push(uri.to_string());
+            glib::Propagation::Stop
+        });
+    }
+    let _: bool = label.emit_by_name("activate-link", &[&"https://open.spotify.com/artist/a2"]);
+    let _: bool = label.emit_by_name("activate-link", &[&"https://example.org/"]);
+    check(
+        "the artists under an album's cover link to their pages in the app",
+        label.text().as_str() == "Niink, Supernova Ent"
+            && label.uses_markup()
+            && *opened.borrow() == ["a2"]
+            && *left_to_label.borrow() == ["https://example.org/"],
+        format!(
+            "text {:?}, opened in the app {:?}, left to the label {:?}",
+            label.text(),
+            opened.borrow(),
+            left_to_label.borrow()
+        ),
     );
     window.destroy();
 }
