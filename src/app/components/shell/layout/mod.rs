@@ -170,6 +170,10 @@ pub struct WindowLayout {
     /// Where the keyboard focus was on the content when the utility panel
     /// opened over it: it goes back there when the panel closes
     focus_before_utility: RefCell<Option<glib::WeakRef<gtk::Widget>>>,
+    /// The page's viewports kept from scrolling to the focus while it comes
+    /// back from the floating utility panel (`focus_page`): their own
+    /// setting, and the frames left
+    scroll_pause: Rc<RefCell<Option<(Vec<(gtk::Viewport, bool)>, u32)>>>,
     /// The utility panel, closed beside the content, is still sliding out:
     /// until it has, the library is laid out as beside it
     utility_sliding_out: Cell<bool>,
@@ -255,6 +259,7 @@ impl WindowLayout {
             opening_navigation_overlay: Cell::new(false),
             pages: pages.clone(),
             focus_before_utility: RefCell::new(None),
+            scroll_pause: Rc::default(),
             utility_sliding_out: Cell::new(false),
             auto_rail: Cell::new(None),
             expanded_by_hand: Cell::new(false),
@@ -494,8 +499,33 @@ impl WindowLayout {
         let Some(page) = self.pages.visible_child() else {
             return;
         };
+        // The page doesn't scroll to the focus coming back, now or on the
+        // next three frames: GTK can still hand the focus on as the panel's
+        // widgets leave, and the page jumped to its first widget (seen twice
+        // in the tests)
         let viewports = viewports_in(&page);
-        let scrolling: Vec<bool> = viewports.iter().map(|v| v.is_scroll_to_focus()).collect();
+        let start = {
+            let mut pause = self.scroll_pause.borrow_mut();
+            match pause.as_mut() {
+                Some((saved, frames)) => {
+                    for viewport in &viewports {
+                        if !saved.iter().any(|(v, _)| v == viewport) {
+                            saved.push((viewport.clone(), viewport.is_scroll_to_focus()));
+                        }
+                    }
+                    *frames = SCROLL_PAUSE_FRAMES;
+                    false
+                }
+                None => {
+                    let saved = viewports
+                        .iter()
+                        .map(|v| (v.clone(), v.is_scroll_to_focus()))
+                        .collect();
+                    *pause = Some((saved, SCROLL_PAUSE_FRAMES));
+                    true
+                }
+            }
+        };
         for viewport in &viewports {
             viewport.set_scroll_to_focus(false);
         }
@@ -505,8 +535,22 @@ impl WindowLayout {
         if !back {
             page.child_focus(gtk::DirectionType::TabForward);
         }
-        for (viewport, scroll) in viewports.iter().zip(scrolling) {
-            viewport.set_scroll_to_focus(scroll);
+        if start {
+            let pause = Rc::clone(&self.scroll_pause);
+            page.add_tick_callback(move |_, _| {
+                let mut pause = pause.borrow_mut();
+                if let Some((saved, frames)) = pause.as_mut() {
+                    if *frames > 1 {
+                        *frames -= 1;
+                        return glib::ControlFlow::Continue;
+                    }
+                    for (viewport, scroll) in saved.iter() {
+                        viewport.set_scroll_to_focus(*scroll);
+                    }
+                }
+                *pause = None;
+                glib::ControlFlow::Break
+            });
         }
     }
 
@@ -1139,6 +1183,9 @@ fn max_width_breakpoint(width_sp: f64) -> Breakpoint {
 
 /// The viewports in `widget`, each scrolling to the widget that takes the
 /// focus. Not inside lists: their rows hold none.
+/// Frames the page doesn't scroll to the focus coming back to it.
+const SCROLL_PAUSE_FRAMES: u32 = 3;
+
 fn viewports_in(widget: &gtk::Widget) -> Vec<gtk::Viewport> {
     let mut found = Vec::new();
     let mut stack = vec![widget.clone()];
