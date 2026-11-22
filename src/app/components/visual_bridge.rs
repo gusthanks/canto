@@ -1,18 +1,20 @@
-//! Opt-in Visual & Audio Bridge for external visualizers.
+//! Opt-in Visual & Audio Bridge for status bars, widgets, and external visualizers.
 //!
 //! Strictly dormant when `visual-bridge-enabled` is `false` (default):
-//! zero timers, zero disk I/O, and zero audio-thread metering cost.
+//! zero timers, zero disk I/O, zero lyrics fetches, and zero audio-thread metering cost.
 
 use std::cell::{Cell, RefCell};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use canto_api::Lyrics;
 use canto_audio_engine::LevelMeterController;
-use canto_config::settings::{SETTINGS, VISUAL_BRIDGE_ENABLED};
+use canto_config::settings::{LYRICS_OFFSET_MS, SETTINGS, VISUAL_BRIDGE_ENABLED};
 use gio::prelude::*;
 
 use crate::app::components::EventListener;
+use crate::app::models::TrackExt;
 use crate::app::state::PlaybackEvent;
 use crate::app::theme::{ThemeEngine, ThemeSnapshot};
 use crate::app::{AppEvent, AppModel};
@@ -68,6 +70,7 @@ pub struct VisualBridgeState {
     pub active: bool,
     pub playing: bool,
     pub track: Option<VisualBridgeTrack>,
+    pub lyric: Option<String>,
     pub audio: VisualBridgeAudio,
     pub theme: VisualBridgeTheme,
     pub updated_at_ms: u64,
@@ -92,6 +95,7 @@ impl VisualBridgeState {
             "active": self.active,
             "playing": self.playing,
             "track": track_val,
+            "lyric": self.lyric,
             "audio": {
                 "rms": self.audio.rms,
                 "peak": self.audio.peak,
@@ -108,6 +112,25 @@ impl VisualBridgeState {
             "updated_at_ms": self.updated_at_ms,
         })
     }
+}
+
+/// Returns the currently active synced lyric line at `progress_ms` (shifted by
+/// `offset_ms`), or `None` when lyrics are missing, unsynced, before the first
+/// line, or on a blank instrumental break line.
+pub fn active_synced_lyric(
+    lyrics: Option<&Lyrics>,
+    progress_ms: u64,
+    offset_ms: i32,
+) -> Option<String> {
+    let lyrics = lyrics?;
+    let Lyrics::Synced(lines) = lyrics else {
+        return None;
+    };
+    let adjusted =
+        (progress_ms as i128 + i128::from(offset_ms)).clamp(0, i128::from(u64::MAX)) as u64;
+    let index = lyrics.active_line_index(adjusted)?;
+    let text = lines.get(index)?.text.trim();
+    (!text.is_empty()).then(|| text.to_string())
 }
 
 pub fn runtime_state_path() -> PathBuf {
@@ -141,6 +164,9 @@ struct Inner {
     enabled: Cell<bool>,
     timer: RefCell<Option<glib::SourceId>>,
     state_path: PathBuf,
+    lyrics_track_id: RefCell<Option<String>>,
+    lyrics: RefCell<Option<Lyrics>>,
+    lyrics_offset_ms: Cell<i32>,
 }
 
 pub struct VisualBridge {
@@ -155,6 +181,7 @@ impl VisualBridge {
     ) -> Self {
         let settings = gio::Settings::new(SETTINGS);
         let enabled = settings.boolean(VISUAL_BRIDGE_ENABLED);
+        let lyrics_offset_ms = settings.int(LYRICS_OFFSET_MS);
         level_meter.set_enabled(enabled);
 
         let inner = Rc::new(Inner {
@@ -165,12 +192,25 @@ impl VisualBridge {
             enabled: Cell::new(enabled),
             timer: RefCell::new(None),
             state_path: runtime_state_path(),
+            lyrics_track_id: RefCell::new(None),
+            lyrics: RefCell::new(None),
+            lyrics_offset_ms: Cell::new(lyrics_offset_ms),
         });
 
         let weak = Rc::downgrade(&inner);
         settings.connect_changed(Some(VISUAL_BRIDGE_ENABLED), move |s, key| {
             if let Some(inner) = weak.upgrade() {
                 inner.set_enabled(s.boolean(key));
+            }
+        });
+
+        let weak_offset = Rc::downgrade(&inner);
+        settings.connect_changed(Some(LYRICS_OFFSET_MS), move |s, key| {
+            if let Some(inner) = weak_offset.upgrade() {
+                inner.lyrics_offset_ms.set(s.int(key));
+                if inner.enabled.get() {
+                    inner.write_snapshot(true);
+                }
             }
         });
 
@@ -197,6 +237,8 @@ impl Inner {
         self.level_meter.set_enabled(enabled);
         if !enabled {
             self.stop_timer();
+            *self.lyrics_track_id.borrow_mut() = None;
+            *self.lyrics.borrow_mut() = None;
             if was_enabled {
                 // Publish a clean inactive/zeroed frame once when turned off.
                 self.write_snapshot(false);
@@ -212,11 +254,79 @@ impl Inner {
         }
     }
 
+    fn ensure_lyrics_loaded(self: &Rc<Self>) {
+        if !self.enabled.get() {
+            return;
+        }
+        let Some(track) = self.app_model.get_state().playback.current_song() else {
+            *self.lyrics_track_id.borrow_mut() = None;
+            *self.lyrics.borrow_mut() = None;
+            return;
+        };
+
+        let track_id = track.rri.id.clone();
+        if self.lyrics_track_id.borrow().as_deref() == Some(track_id.as_str()) {
+            return;
+        }
+        *self.lyrics_track_id.borrow_mut() = Some(track_id.clone());
+        *self.lyrics.borrow_mut() = None;
+
+        let key = track
+            .rri
+            .uri
+            .clone()
+            .unwrap_or_else(|| track.rri.id.clone());
+        let api = self.app_model.api();
+
+        // Check disk cache synchronously first (no Genius fallback: Genius is unsynced).
+        if let Some(cached) = api.cached_lyrics(&key, false) {
+            if cached.lyrics.is_synced() {
+                *self.lyrics.borrow_mut() = Some(cached.lyrics);
+            }
+            return;
+        }
+
+        let title = track.title.clone();
+        let artist = track.artists_name();
+        let album = track.album.as_ref().map(|a| a.name.clone());
+        let duration_secs = track.duration_ms / 1000;
+        let weak = Rc::downgrade(self);
+
+        glib::spawn_future_local(async move {
+            let fetched = api
+                .fetch_lyrics(
+                    &key,
+                    &title,
+                    &artist,
+                    album.as_deref(),
+                    Some(duration_secs),
+                    None,
+                )
+                .await;
+            let Some(inner) = weak.upgrade() else {
+                return;
+            };
+            if !inner.enabled.get() {
+                return;
+            }
+            if inner.lyrics_track_id.borrow().as_deref() != Some(track_id.as_str()) {
+                return;
+            }
+            if let Some(found) = fetched {
+                if found.lyrics.is_synced() {
+                    *inner.lyrics.borrow_mut() = Some(found.lyrics);
+                    inner.write_snapshot(true);
+                }
+            }
+        });
+    }
+
     fn sync_timer_and_write(self: &Rc<Self>) {
         if !self.enabled.get() {
             self.stop_timer();
             return;
         }
+        self.ensure_lyrics_loaded();
         let is_playing = self.app_model.get_state().playback.is_playing();
         if !is_playing {
             self.level_meter.reset();
@@ -252,12 +362,13 @@ impl Inner {
     }
 
     fn build_snapshot(&self, active: bool) -> VisualBridgeState {
-        let (playing, track) = if active {
+        let (playing, track, lyric) = if active {
             let state = self.app_model.get_state();
             let playback = &state.playback;
             let playing = playback.is_playing();
             let progress_ms = playback.seek_position();
-            let track = playback.current_song().map(|t| VisualBridgeTrack {
+            let current_song = playback.current_song();
+            let track = current_song.as_ref().map(|t| VisualBridgeTrack {
                 id: t.rri.id.clone(),
                 title: t.title.clone(),
                 artists: t.artists.iter().map(|a| a.name.clone()).collect(),
@@ -266,9 +377,20 @@ impl Inner {
                 progress_ms,
                 artwork_url: t.art.best_for_width(300).map(ToString::to_string),
             });
-            (playing, track)
+            let lyric = if current_song.as_ref().is_some_and(|t| {
+                self.lyrics_track_id.borrow().as_deref() == Some(t.rri.id.as_str())
+            }) {
+                active_synced_lyric(
+                    self.lyrics.borrow().as_ref(),
+                    progress_ms,
+                    self.lyrics_offset_ms.get(),
+                )
+            } else {
+                None
+            };
+            (playing, track, lyric)
         } else {
-            (false, None)
+            (false, None, None)
         };
 
         let (rms, peak) = if active && playing {
@@ -283,6 +405,7 @@ impl Inner {
             active,
             playing,
             track,
+            lyric,
             audio: VisualBridgeAudio { rms, peak },
             theme: self.theme_engine.current_snapshot().into(),
             updated_at_ms: now_unix_ms(),
@@ -323,6 +446,19 @@ fn now_unix_ms() -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use canto_api::LyricLine;
+
+    fn sample_theme() -> VisualBridgeTheme {
+        VisualBridgeTheme {
+            kind: "omarchy".into(),
+            is_dark: true,
+            background: "#111111".into(),
+            surface: "#222222".into(),
+            foreground: "#eeeeee".into(),
+            accent: "#ff8800".into(),
+            highlight: "#ff8800".into(),
+        }
+    }
 
     #[test]
     fn writes_valid_atomic_state_json_without_leftover_temp_file() {
@@ -346,19 +482,12 @@ mod tests {
                 progress_ms: 42_000,
                 artwork_url: None,
             }),
+            lyric: Some("Overhead the albatross".into()),
             audio: VisualBridgeAudio {
                 rms: 0.42,
                 peak: 0.88,
             },
-            theme: VisualBridgeTheme {
-                kind: "omarchy".into(),
-                is_dark: true,
-                background: "#111111".into(),
-                surface: "#222222".into(),
-                foreground: "#eeeeee".into(),
-                accent: "#ff8800".into(),
-                highlight: "#ff8800".into(),
-            },
+            theme: sample_theme(),
             updated_at_ms: 1_700_000_000_000,
         };
 
@@ -368,6 +497,7 @@ mod tests {
         assert_eq!(parsed["app"], "canto");
         assert_eq!(parsed["playing"], true);
         assert_eq!(parsed["track"]["title"], "Echoes");
+        assert_eq!(parsed["lyric"], "Overhead the albatross");
         assert!((parsed["audio"]["rms"].as_f64().unwrap() - 0.42).abs() < 1e-4);
 
         let entries: Vec<_> = std::fs::read_dir(&dir)
@@ -378,5 +508,63 @@ mod tests {
         assert_eq!(entries, vec!["state.json".to_string()]);
 
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn serializes_lyric_null_when_unavailable_or_inactive() {
+        let state = VisualBridgeState {
+            app: "canto",
+            version: 1,
+            active: false,
+            playing: false,
+            track: None,
+            lyric: None,
+            audio: VisualBridgeAudio {
+                rms: 0.0,
+                peak: 0.0,
+            },
+            theme: sample_theme(),
+            updated_at_ms: 1_700_000_000_001,
+        };
+
+        let json = state.to_json_value();
+        assert!(json["lyric"].is_null());
+        assert!(json["track"].is_null());
+        assert_eq!(json["active"], false);
+    }
+
+    #[test]
+    fn active_synced_lyric_handles_synced_plain_offset_and_empty_lines() {
+        let synced = Lyrics::Synced(vec![
+            LyricLine::new(10_000, "First line"),
+            LyricLine::new(20_000, "   "),
+            LyricLine::new(25_000, "  Second line  "),
+        ]);
+
+        // Before the first line -> None.
+        assert_eq!(active_synced_lyric(Some(&synced), 5_000, 0), None);
+        // Active line matches and trims surrounding whitespace.
+        assert_eq!(
+            active_synced_lyric(Some(&synced), 12_000, 0).as_deref(),
+            Some("First line")
+        );
+        // Blank instrumental break line -> None (not empty string).
+        assert_eq!(active_synced_lyric(Some(&synced), 22_000, 0), None);
+        assert_eq!(
+            active_synced_lyric(Some(&synced), 25_000, 0).as_deref(),
+            Some("Second line")
+        );
+        // Positive offset advances lyrics earlier; negative delays and clamps at 0.
+        assert_eq!(
+            active_synced_lyric(Some(&synced), 9_500, 600).as_deref(),
+            Some("First line")
+        );
+        assert_eq!(active_synced_lyric(Some(&synced), 10_500, -1_000), None);
+        assert_eq!(active_synced_lyric(Some(&synced), 100, -5_000), None);
+
+        // Plain (unsynced) lyrics and None -> always None.
+        let plain = Lyrics::Plain(vec!["Unsynced verse".into()]);
+        assert_eq!(active_synced_lyric(Some(&plain), 15_000, 0), None);
+        assert_eq!(active_synced_lyric(None, 15_000, 0), None);
     }
 }
