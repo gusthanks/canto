@@ -480,17 +480,8 @@ impl App {
         let button: gtk::MenuButton = builder.object("user").unwrap();
         let main_menu: gio::Menu = builder.object("main_menu").unwrap();
         let about: libadwaita::AboutDialog = builder.object("about").unwrap();
-        let shortcuts_dialog = make_shortcuts_dialog();
         let model = UserMenuModel::new(app_model, dispatcher);
-        let user_menu = UserMenu::new(
-            button,
-            main_menu,
-            settings,
-            about,
-            shortcuts_dialog,
-            parent,
-            model,
-        );
+        let user_menu = UserMenu::new(button, main_menu, settings, about, parent, model);
         Box::new(user_menu)
     }
 
@@ -542,12 +533,12 @@ impl App {
         ));
         std::mem::forget(rt.enter());
 
-        // Evict any disk cache left over-budget by a previous session. Run
-        // here (rather than at construction in `App::new`) because this is
-        // where the app's Tokio runtime is entered; the data layer's async
-        // disk I/O requires one.
+        // Evict any disk cache left over-budget by a previous session, after
+        // startup settles so cache scans never compete with initial library and
+        // cover-art reads on low-core machines.
         let maintenance = self.model.api();
         rt.spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_secs(45)).await;
             maintenance.run_cache_maintenance().await;
         });
 

@@ -536,12 +536,16 @@ impl TrackRow {
             imp.song_cover.set_paintable(None::<&gdk::Paintable>);
             return;
         };
+        let size = decode_px(COVER_SIZE);
+        if let Some(texture) = api_service.cached_texture(url, size, size) {
+            imp.song_cover.set_paintable(Some(&texture));
+            return;
+        }
         let url = url.to_owned();
         let row = self.downgrade();
         let tag = load::visible();
-        let size = decode_px(COVER_SIZE);
         glib::MainContext::default().spawn_local_with_priority(
-            glib::Priority::DEFAULT_IDLE,
+            glib::Priority::HIGH_IDLE,
             async move {
                 let Some(row) = row.upgrade() else { return };
                 if row.imp().skeleton.get() {

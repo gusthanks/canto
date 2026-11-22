@@ -477,11 +477,8 @@ impl NavigationPanelModel {
         let covers = Rc::downgrade(&self.covers);
         let url = url.to_owned();
         let weak = image.downgrade();
-        // Behind whatever page is loading
-        let tag = canto_api::Load::new(
-            canto_api::LoadPriority::Visible,
-            canto_api::BACKGROUND_EPOCH,
-        );
+        // Sidebar covers are always visible at startup; load them at visible priority.
+        let tag = crate::app::load::visible();
         glib::MainContext::default().spawn_local(async move {
             let Some(texture) = api.load_image(&url, px, px, tag).await else {
                 return;
@@ -848,6 +845,19 @@ impl NavigationPanelModel {
         self.covers
             .borrow_mut()
             .retain(|(url, _), _| shown.contains(url));
+        let cover_px =
+            crate::app::components::utils::decode_px(super::navigation_panel_row::COVER_PX);
+        let warm: Vec<(String, i32, i32)> = items
+            .iter()
+            .filter_map(|item| {
+                let url = item.image();
+                (!url.is_empty()).then_some((url, cover_px, cover_px))
+            })
+            .take(24)
+            .collect();
+        if !warm.is_empty() {
+            self.app_model.api().warm_cached_images(warm);
+        }
         update_store(list_store, &items);
     }
 

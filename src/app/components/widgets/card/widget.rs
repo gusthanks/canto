@@ -318,17 +318,27 @@ impl CardWidget {
         self.queue_resize();
 
         let imp = self.imp();
-        if decode_px(size.pixel_size()) > imp.decoded_px.get() {
+        let target_px = decode_px(size.pixel_size());
+        if target_px > imp.decoded_px.get() {
             let artwork = imp.artwork.borrow().clone();
             if let Some((url, api_service, is_visible)) = artwork {
+                if let Some(texture) = api_service.cached_texture(&url, target_px, target_px) {
+                    imp.decoded_px.set(target_px);
+                    imp.cover_image.set_paintable(Some(&texture));
+                    return;
+                }
                 let tag = if is_visible {
                     load::visible()
                 } else {
                     load::offscreen()
                 };
                 let load = self.load_artwork(url, api_service, tag);
-                glib::MainContext::default()
-                    .spawn_local_with_priority(glib::Priority::DEFAULT_IDLE, load);
+                let prio = if is_visible {
+                    glib::Priority::HIGH_IDLE
+                } else {
+                    glib::Priority::DEFAULT_IDLE
+                };
+                glib::MainContext::default().spawn_local_with_priority(prio, load);
             }
         }
     }
@@ -431,6 +441,26 @@ impl CardWidget {
             };
 
             *imp.artwork.borrow_mut() = Some((url.clone(), api_service.clone(), is_visible));
+
+            let decode_size = decode_px(imp.icon_size.get());
+            if let Some(texture) = api_service.cached_texture(&url, decode_size, decode_size) {
+                imp.decoded_px.set(decode_size);
+                set_missing_art(&*imp.cover_image, false);
+                imp.cover_image.set_paintable(Some(&texture));
+                imp.title_label.set_label(&title);
+                let subtitle_label = &imp.subtitle_label;
+                if subtitle_markup.is_empty() {
+                    subtitle_label.set_use_markup(false);
+                    subtitle_label.set_label(&subtitle);
+                } else {
+                    subtitle_label.set_markup(&subtitle_markup);
+                }
+                subtitle_label.set_visible(!subtitle.is_empty());
+                self.set_tooltip_text(Some(&title));
+                self.set_loaded();
+                return;
+            }
+
             let artwork = self.load_artwork(url, api_service, tag);
             let weak = self.downgrade();
             let load = async move {
@@ -451,11 +481,9 @@ impl CardWidget {
                 }
             };
 
-            // DEFAULT_IDLE sits below GTK's redraw priority, so artwork never
-            // delays a frame; `Priority::DEFAULT` would sit above it.
             let ctx = glib::MainContext::default();
             if is_visible {
-                ctx.spawn_local_with_priority(glib::Priority::DEFAULT_IDLE, load);
+                ctx.spawn_local_with_priority(glib::Priority::HIGH_IDLE, load);
             } else {
                 // Yield once more so a long list doesn't front-load the queue.
                 glib::idle_add_local_once(move || {

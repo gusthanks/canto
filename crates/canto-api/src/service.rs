@@ -1623,6 +1623,52 @@ impl ApiService {
         }
     }
 
+    /// Pre-decodes already-cached disk covers into the in-memory texture LRU
+    /// without touching the network, bounded to low concurrency so cold startup
+    /// stays snappy without spiking CPU on low-core machines.
+    pub fn warm_cached_images(self: &Arc<Self>, items: Vec<(String, i32, i32)>) {
+        let Ok(handle) = tokio::runtime::Handle::try_current() else {
+            return;
+        };
+        let mut seen = HashSet::new();
+        let pending: Vec<(String, String, String, i32, i32)> = items
+            .into_iter()
+            .filter(|(url, w, h)| *w > 0 && *h > 0 && !is_resource_url(url))
+            .filter_map(|(url, width, height)| {
+                let disk_key = Self::image_key(&url);
+                let tex_key = format!("{disk_key}:{width}x{height}");
+                if !seen.insert(tex_key.clone()) || self.texture_cache.get(&tex_key).is_some() {
+                    return None;
+                }
+                Some((url, disk_key, tex_key, width, height))
+            })
+            .collect();
+        if pending.is_empty() {
+            return;
+        }
+        let service = Arc::clone(self);
+        handle.spawn(async move {
+            let sem = Arc::new(tokio::sync::Semaphore::new(4));
+            let mut tasks = Vec::with_capacity(pending.len());
+            for (url, disk_key, tex_key, width, height) in pending {
+                let permit = match sem.clone().acquire_owned().await {
+                    Ok(permit) => permit,
+                    Err(_) => break,
+                };
+                let svc = Arc::clone(&service);
+                tasks.push(tokio::spawn(async move {
+                    let _permit = permit;
+                    let _ = svc
+                        .cached_image(&url, &disk_key, &tex_key, width, height)
+                        .await;
+                }));
+            }
+            for task in tasks {
+                let _ = task.await;
+            }
+        });
+    }
+
     async fn cached_image(
         &self,
         url: &str,
@@ -1634,8 +1680,8 @@ impl ApiService {
         if let Some(texture) = self.texture_cache.get(tex_key) {
             return Some(texture);
         }
-        let entry = self.image_disk.read(disk_key).await?;
-        self.decode_image(url, tex_key, entry.data, width, height)
+        let bytes = self.image_disk.read_raw(disk_key).await?;
+        self.decode_image(url, tex_key, bytes.into_boxed_slice(), width, height)
             .await
     }
 
@@ -1843,5 +1889,40 @@ mod tests {
         let mut tracks = vec![track(Some("A"), image_set(own))];
         backfill_album_tracks(&mut tracks, &album("A", image_set(REAL)));
         assert_eq!(tracks[0].art, image_set(own));
+    }
+
+    #[tokio::test]
+    async fn warm_cached_images_decodes_disk_entry_into_memory_without_network() {
+        let provider: Arc<dyn crate::TokenProvider> = Arc::new(|| None::<String>);
+        let service = Arc::new(crate::spotify_service(
+            Arc::clone(&provider),
+            provider,
+            4 * 1024 * 1024,
+            4 * 1024 * 1024,
+        ));
+        let url = "https://example.invalid/canto-warm-test-cover";
+        let disk_key = ApiService::image_key(url);
+
+        // Minimal valid 1x1 PNG bytes written directly to the image disk cache.
+        let pixbuf = gdk_pixbuf::Pixbuf::new(gdk_pixbuf::Colorspace::Rgb, true, 8, 2, 2).unwrap();
+        let png_bytes = pixbuf.save_to_bufferv("png", &[]).unwrap();
+        service
+            .image_disk
+            .write(&disk_key, &png_bytes, IMAGE_TTL, None)
+            .await;
+
+        assert!(service.cached_texture(url, 32, 32).is_none());
+        service.warm_cached_images(vec![(url.to_string(), 32, 32)]);
+
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        while service.cached_texture(url, 32, 32).is_none() && std::time::Instant::now() < deadline
+        {
+            tokio::time::sleep(Duration::from_millis(15)).await;
+        }
+        assert!(
+            service.cached_texture(url, 32, 32).is_some(),
+            "warm_cached_images should populate RAM texture cache from disk"
+        );
+        service.image_disk.invalidate(&disk_key).await;
     }
 }

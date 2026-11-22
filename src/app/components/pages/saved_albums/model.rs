@@ -47,10 +47,24 @@ impl CardListModel for SavedAlbumsModel {
         if let Some(state) = self.state() {
             let batch_size = state.next_albums_page.batch_size;
             drop(state);
+            let card_px = crate::app::components::utils::decode_px(
+                crate::app::models::CardSize::Large.pixel_size(),
+            );
             dispatch_api_read(&self.dispatcher, move |tag| async move {
-                api.get_saved_albums(0, batch_size, tag)
-                    .await
-                    .map(|page| BrowserAction::SetLibraryContent(page.items).into())
+                let page = api.get_saved_albums(0, batch_size, tag).await?;
+                let warm: Vec<(String, i32, i32)> = page
+                    .items
+                    .iter()
+                    .filter_map(|album| {
+                        album
+                            .art
+                            .best_for_width(crate::app::components::card::IMAGE_SIZE)
+                            .map(|url| (url.to_owned(), card_px, card_px))
+                    })
+                    .take(18)
+                    .collect();
+                api.warm_cached_images(warm);
+                Ok(BrowserAction::SetLibraryContent(page.items).into())
             });
         }
     }

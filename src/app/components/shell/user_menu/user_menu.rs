@@ -1,10 +1,11 @@
 use gio::{prelude::ActionMapExt, SimpleAction, SimpleActionGroup};
 use gtk::prelude::*;
 use libadwaita::prelude::AdwDialogExt;
+use std::cell::OnceCell;
 use std::rc::Rc;
 
 use super::UserMenuModel;
-use crate::app::components::{EventListener, Settings};
+use crate::app::components::{make_shortcuts_dialog, EventListener, Settings};
 use crate::app::{state::LoginEvent, AppEvent};
 
 pub struct UserMenu {
@@ -17,7 +18,6 @@ impl UserMenu {
         main_menu: gio::Menu,
         settings: Settings,
         about: libadwaita::AboutDialog,
-        shortcuts_dialog: libadwaita::ShortcutsDialog,
         parent: libadwaita::ApplicationWindow,
         model: UserMenuModel,
     ) -> Self {
@@ -79,14 +79,16 @@ impl UserMenu {
 
         parent.add_action(&{
             let show_shortcuts_action = SimpleAction::new("show-shortcuts", None);
+            let shortcuts_dialog: Rc<OnceCell<libadwaita::ShortcutsDialog>> =
+                Rc::new(OnceCell::new());
             show_shortcuts_action.connect_activate(clone!(
-                // Nothing else keeps the dialog alive
                 #[strong]
                 shortcuts_dialog,
                 #[weak]
                 parent,
                 move |_, _| {
-                    shortcuts_dialog.present(Some(&parent));
+                    let dialog = shortcuts_dialog.get_or_init(make_shortcuts_dialog);
+                    dialog.present(Some(&parent));
                 }
             ));
             show_shortcuts_action

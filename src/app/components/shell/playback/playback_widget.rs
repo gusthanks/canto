@@ -969,10 +969,14 @@ impl PlaybackWidget {
             self.imp().now_playing.set_missing_artwork();
             return;
         }
+        let size = decode_px(ARTWORK_SIZE);
+        if let Some(texture) = api_service.cached_texture(&url, size, size) {
+            self.set_artwork(&texture);
+            return;
+        }
         let weak_self = self.downgrade();
         // Not part of any page, so it rides the current epoch.
         let tag = load::transport();
-        let size = decode_px(ARTWORK_SIZE);
         glib::MainContext::default().spawn_local(async move {
             let result = api_service.load_image(&url, size, size, tag).await;
             if let (Some(ref _self), Some(ref texture)) = (weak_self.upgrade(), result) {

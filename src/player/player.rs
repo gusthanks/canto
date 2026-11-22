@@ -611,32 +611,32 @@ impl SpotifyPlayer {
                 info!("Attempting to restore session from stored credentials");
                 self.oauth_client
                     .set_client_id(crate::settings::spotify_client_id().as_deref());
-                let credentials =
-                    self.oauth_client
-                        .get_valid_token()
-                        .await
-                        .map_err(|e| match e {
-                            // Having no stored credentials is the expected first-run
-                            // state, not a failure: just show the login screen.
-                            OAuthError::LoggedOut => {
-                                info!("No stored credentials to restore; showing login");
-                                SpotifyError::LoggedOut
-                            }
-                            e => {
-                                error!("Failed to get valid token during restore: {e:?}");
-                                SpotifyError::LoginFailed
-                            }
-                        })?;
+                if !session_cache_usable() {
+                    info!("No usable session credentials on disk; showing login");
+                    return Err(SpotifyError::LoggedOut);
+                }
+                let (token_res, session_ok) = tokio::join!(
+                    self.oauth_client.get_valid_token(),
+                    self.oauth_client.restore_session_credentials()
+                );
+                let credentials = token_res.map_err(|e| match e {
+                    // Having no stored credentials is the expected first-run
+                    // state, not a failure: just show the login screen.
+                    OAuthError::LoggedOut => {
+                        info!("No stored credentials to restore; showing login");
+                        SpotifyError::LoggedOut
+                    }
+                    e => {
+                        error!("Failed to get valid token during restore: {e:?}");
+                        SpotifyError::LoginFailed
+                    }
+                })?;
 
                 info!(
                     "Restoring session (token expires at {:?})",
                     credentials.token_expiry_time
                 );
-                if !session_cache_usable() {
-                    info!("No usable session credentials on disk; showing login");
-                    return Err(SpotifyError::LoggedOut);
-                }
-                if !self.oauth_client.restore_session_credentials().await {
+                if !session_ok {
                     info!("No stored session token; showing login");
                     return Err(SpotifyError::LoggedOut);
                 }
@@ -813,18 +813,45 @@ impl SpotifyPlayer {
         // a DRM block. has_played_since_login is seeded per-account below.
         self.consecutive_load_failures.store(0, Ordering::Relaxed);
 
-        // Check if the account is premium before connecting to librespot.
-        // librespot will crash the process for free accounts, so we must
-        // catch this early and report a graceful error instead.
-        let profile = match canto_api::check_user_profile(&credentials.access_token).await {
+        // Check if the account is premium before using the librespot session.
+        // On normal startup restores (`session_credentials.is_none()`), overlap
+        // the Spotify profile HTTP request with the cached session connection
+        // so both complete in one round-trip window; if the account turns out
+        // non-premium, shut the session down before installing it.
+        let (profile_res, cached_session_res) = if session_credentials.is_none() {
+            info!(
+                "Reusing cached session credentials (ap_port: {:?})",
+                self.settings.ap_port
+            );
+            let (profile, session) = tokio::join!(
+                canto_api::check_user_profile(&credentials.access_token),
+                connect_session_from_cache(self.settings.ap_port)
+            );
+            (profile, Some(session))
+        } else {
+            (
+                canto_api::check_user_profile(&credentials.access_token).await,
+                None,
+            )
+        };
+
+        let shutdown_speculative = |res: Option<Result<Session, SpotifyError>>| {
+            if let Some(Ok(session)) = res {
+                session.shutdown();
+            }
+        };
+
+        let profile = match profile_res {
             Ok(p) => p,
             Err(e) => {
+                shutdown_speculative(cached_session_res);
                 error!("User profile check failed: {e:?}");
                 return Err(SpotifyError::LoginFailed);
             }
         };
 
         if !profile.is_premium {
+            shutdown_speculative(cached_session_res);
             warn!("Account is not premium, aborting login");
             return Err(SpotifyError::NotPremium);
         }
@@ -853,13 +880,13 @@ impl SpotifyPlayer {
         self.delegate
             .set_explicit_filter_locked(profile.explicit_filter_locked);
 
-        self.oauth_client.save_credentials(&credentials).await;
-
         let session = match session_credentials {
             Some(session_credentials) => {
-                self.oauth_client
-                    .save_session_credentials(&session_credentials)
-                    .await;
+                tokio::join!(
+                    self.oauth_client.save_credentials(&credentials),
+                    self.oauth_client
+                        .save_session_credentials(&session_credentials)
+                );
                 let session = connect_session_from_token(
                     &session_credentials.access_token,
                     self.settings.ap_port,
@@ -868,13 +895,7 @@ impl SpotifyPlayer {
                 note_session_minted();
                 session
             }
-            None => {
-                info!(
-                    "Reusing cached session credentials (ap_port: {:?})",
-                    self.settings.ap_port
-                );
-                connect_session_from_cache(self.settings.ap_port).await?
-            }
+            None => cached_session_res.expect("cached session requested on restore")?,
         };
         self.finish_login(session);
         Ok(())

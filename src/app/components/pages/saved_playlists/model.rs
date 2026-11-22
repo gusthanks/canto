@@ -50,10 +50,24 @@ impl CardListModel for SavedPlaylistsModel {
         if let Some(state) = self.state() {
             let batch_size = state.next_playlists_page.batch_size;
             drop(state);
+            let card_px = crate::app::components::utils::decode_px(
+                crate::app::models::CardSize::Large.pixel_size(),
+            );
             dispatch_api_read(&self.dispatcher, move |tag| async move {
-                api.get_saved_playlists(0, batch_size, tag)
-                    .await
-                    .map(|page| BrowserAction::SetPlaylistsContent(page.items).into())
+                let page = api.get_saved_playlists(0, batch_size, tag).await?;
+                let warm: Vec<(String, i32, i32)> = page
+                    .items
+                    .iter()
+                    .filter_map(|playlist| {
+                        playlist
+                            .art
+                            .best_for_width(crate::app::components::card::IMAGE_SIZE)
+                            .map(|url| (url.to_owned(), card_px, card_px))
+                    })
+                    .take(18)
+                    .collect();
+                api.warm_cached_images(warm);
+                Ok(BrowserAction::SetPlaylistsContent(page.items).into())
             });
         }
     }

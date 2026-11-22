@@ -54,7 +54,7 @@ async fn connect_server(
         // moment ago shows up in about two seconds, not after a long wait
         // chosen while nothing played
         let mut waited = Duration::ZERO;
-        let mut delay = Duration::from_secs(4);
+        let mut delay = Duration::from_secs(1);
         loop {
             time::sleep(Duration::from_secs(1)).await;
             waited += Duration::from_secs(1);

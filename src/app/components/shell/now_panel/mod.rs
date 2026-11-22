@@ -819,11 +819,17 @@ impl NowPanel {
 }
 
 fn load_image(app_model: &AppModel, image: &gtk::Image, url: Option<&str>, px: i32) {
-    image.set_paintable(None::<&gtk::gdk::Paintable>);
-    let Some(url) = url.filter(|url| !is_resource_url(url)).map(str::to_owned) else {
+    let Some(url) = url.filter(|url| !is_resource_url(url)) else {
+        image.set_paintable(None::<&gtk::gdk::Paintable>);
         return;
     };
     let api = app_model.api();
+    if let Some(texture) = api.cached_texture(url, px, px) {
+        image.set_paintable(Some(&texture));
+        return;
+    }
+    image.set_paintable(None::<&gtk::gdk::Paintable>);
+    let url = url.to_owned();
     let weak = image.downgrade();
     let tag = load::transport();
     glib::MainContext::default().spawn_local(async move {
@@ -835,11 +841,17 @@ fn load_image(app_model: &AppModel, image: &gtk::Image, url: Option<&str>, px: i
 }
 
 fn load_picture(app_model: &AppModel, picture: &gtk::Picture, url: Option<&str>, px: i32) {
-    picture.set_paintable(None::<&gtk::gdk::Paintable>);
-    let Some(url) = url.filter(|url| !is_resource_url(url)).map(str::to_owned) else {
+    let Some(url) = url.filter(|url| !is_resource_url(url)) else {
+        picture.set_paintable(None::<&gtk::gdk::Paintable>);
         return;
     };
     let api = app_model.api();
+    if let Some(texture) = api.cached_texture(url, px, px) {
+        picture.set_paintable(Some(&texture));
+        return;
+    }
+    picture.set_paintable(None::<&gtk::gdk::Paintable>);
+    let url = url.to_owned();
     let weak = picture.downgrade();
     let tag = load::transport();
     glib::MainContext::default().spawn_local(async move {
