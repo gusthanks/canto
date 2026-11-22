@@ -66,7 +66,7 @@ impl CantoMpris {
 
     #[zbus(property)]
     fn supported_uri_schemes(&self) -> Vec<String> {
-        vec![]
+        vec!["spotify".to_string()]
     }
 
     #[zbus(property)]
@@ -138,7 +138,9 @@ impl CantoMprisPlayer {
     }
 
     pub fn open_uri(&self, Uri: &str) -> Result<()> {
-        Err(Error::NotSupported("Not implemented".to_string()))
+        self.sender
+            .unbounded_send(AppAction::OpenLink(Uri.to_string()))
+            .map_err(|_| Error::Failed("Could not send action".to_string()))
     }
 
     pub fn pause(&self) -> Result<()> {

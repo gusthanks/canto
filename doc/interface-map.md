@@ -441,6 +441,12 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   `playback-16-symbolic`, plus `playback-paused-symbolic`) behind
   `.playback-indicator`; they move with the sound only when it plays through
   this computer.
+- Spotify links: a copied `open.spotify.com` link is offered when the window
+  gains focus (`ClipboardImport`, `src/app/components/shell/clipboard_import/mod.rs`).
+  Links from outside (the desktop's `spotify:` handler in `src/main.rs`,
+  MPRIS `OpenUri` in `src/dbus/mpris.rs`) send `AppAction::OpenLink`; the
+  state answers `LinkOpenRequested` and `ClipboardImport` opens it the same
+  way: albums, artists and playlists open their page, a song opens its album.
 
 ## 11. Decided, do not redo
 

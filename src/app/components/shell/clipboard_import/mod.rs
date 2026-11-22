@@ -7,14 +7,14 @@ use libadwaita::prelude::*;
 
 use crate::app::components::{dispatch_api_read, is_app_copied_link, EventListener};
 use crate::app::state::SpotifyLink;
-use crate::app::{AppAction, AppModel, Dispatcher};
+use crate::app::{AppAction, AppEvent, AppModel, Dispatcher};
 
 /// Watches the system clipboard and, when the Canto window is focused, offers to
 /// open a Spotify link the user copied from somewhere other than Canto.
 pub struct ClipboardImport {
     // Kept alive for the lifetime of the component; the window signal holds a
     // weak reference to it.
-    _watcher: Rc<ClipboardWatcher>,
+    watcher: Rc<ClipboardWatcher>,
 }
 
 impl ClipboardImport {
@@ -43,11 +43,19 @@ impl ClipboardImport {
             }
         });
 
-        Self { _watcher: watcher }
+        Self { watcher }
     }
 }
 
-impl EventListener for ClipboardImport {}
+impl EventListener for ClipboardImport {
+    // Links from outside Canto (the desktop's spotify: handler, MPRIS
+    // OpenUri) open the same way as a copied one, songs included
+    fn on_event(&mut self, event: &AppEvent) {
+        if let AppEvent::LinkOpenRequested(link) = event {
+            self.watcher.open_link(link.clone());
+        }
+    }
+}
 
 struct ClipboardWatcher {
     window: libadwaita::ApplicationWindow,

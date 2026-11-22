@@ -1,3 +1,4 @@
+use gettextrs::gettext;
 use std::borrow::Cow;
 
 use crate::app::components::labels;
@@ -27,6 +28,10 @@ pub enum AppAction {
     Start,
     Raise,
     ShowNotification(String),
+    // A Spotify link from outside Canto (a `spotify:` URI handed to the app,
+    // or MPRIS OpenUri): albums, artists and playlists open their page; a
+    // song opens its album (resolved by ClipboardImport, which has the API)
+    OpenLink(String),
     ShowRestartRequired,
     // Account can't be decrypted by librespot (PlayPlay DRM): play through
     // the official Spotify client over Connect instead.
@@ -50,22 +55,6 @@ pub enum AppAction {
 
 // Not actual actions, just neat wrappers
 impl AppAction {
-    // An action to open a Spotify URI or an open.spotify.com URL.
-    // Track links are not resolvable synchronously (they need an API lookup to
-    // find the containing album), so they are handled separately by the caller.
-    #[allow(non_snake_case)]
-    pub fn OpenURI(uri: String) -> Option<Self> {
-        debug!("parsing {}", &uri);
-        match SpotifyLink::parse(&uri)? {
-            SpotifyLink::Album(id) => Some(Self::ViewAlbum(id)),
-            SpotifyLink::Artist(id) => Some(Self::ViewArtist(id)),
-            SpotifyLink::Playlist(id) => Some(Self::ViewPlaylist(id)),
-            SpotifyLink::User(id) => Some(Self::ViewUser(id)),
-            // Tracks require an async album lookup; not handled here.
-            SpotifyLink::Track(_) => None,
-        }
-    }
-
     #[allow(non_snake_case)]
     pub fn ViewAlbum(id: String) -> Self {
         BrowserAction::Navigate(Route::Album(id)).into()
@@ -103,6 +92,7 @@ pub enum AppEvent {
     Started,
     Raised,
     NotificationShown(String),
+    LinkOpenRequested(SpotifyLink),
     RestartRequiredShown,
     OfficialClientRequested,
     OfficialClientFailed,
@@ -147,6 +137,10 @@ impl AppState {
             // Couple of actions that don't mutate the state (not intested in keeping track of what they change)
             // they're here just to have a consistent way of doing things (always an Action)
             AppAction::ShowNotification(c) => vec![AppEvent::NotificationShown(c)],
+            AppAction::OpenLink(text) => match SpotifyLink::parse(&text) {
+                Some(link) => vec![AppEvent::LinkOpenRequested(link)],
+                None => vec![AppEvent::NotificationShown(gettext("Failed to open link!"))],
+            },
             AppAction::ShowRestartRequired => vec![AppEvent::RestartRequiredShown],
             AppAction::UseOfficialClient => vec![AppEvent::OfficialClientRequested],
             AppAction::OfficialClientFailed => vec![AppEvent::OfficialClientFailed],
@@ -470,5 +464,32 @@ mod tests {
         assert!(events
             .iter()
             .any(|e| matches!(e, AppEvent::NotificationShown(_))));
+    }
+
+    #[test]
+    fn a_link_from_outside_asks_to_open_it_songs_included() {
+        // A song link from outside used to open nothing: "Failed to open link!"
+        let mut state = AppState::new();
+        let song = state.update_state(AppAction::OpenLink(
+            "https://open.spotify.com/intl-pt/track/6V961El0b1aLA0HAFuuab9?si=x".into(),
+        ));
+        assert!(
+            matches!(&song[..], [AppEvent::LinkOpenRequested(SpotifyLink::Track(id))]
+                if id == "6V961El0b1aLA0HAFuuab9"),
+            "{:?}",
+            song
+        );
+        let album = state.update_state(AppAction::OpenLink("spotify:album:abc".into()));
+        assert!(
+            matches!(&album[..], [AppEvent::LinkOpenRequested(SpotifyLink::Album(id))] if id == "abc"),
+            "{:?}",
+            album
+        );
+        let junk = state.update_state(AppAction::OpenLink("https://example.com".into()));
+        assert!(
+            matches!(&junk[..], [AppEvent::NotificationShown(_)]),
+            "{:?}",
+            junk
+        );
     }
 }

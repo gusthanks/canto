@@ -116,9 +116,7 @@ fn main() {
             return;
         };
         let uri = target.uri().to_string();
-        let action = AppAction::OpenURI(uri)
-            .unwrap_or_else(|| AppAction::ShowNotification(gettext("Failed to open link!")));
-        sender.unbounded_send(action).unwrap();
+        sender.unbounded_send(AppAction::OpenLink(uri)).unwrap();
     });
 
     context.invoke_local(move || {
