@@ -52,11 +52,37 @@ fn device_id_path() -> PathBuf {
         .join("soloist-device-id")
 }
 
+/// Non-empty `CANTO_SOLOIST_CMD` override from the environment.
+fn custom_cmd() -> Option<std::ffi::OsString> {
+    std::env::var_os("CANTO_SOLOIST_CMD").filter(|v| !v.to_string_lossy().trim().is_empty())
+}
+
+/// Resolves a user-supplied `CANTO_SOLOIST_CMD` value to an existing file:
+/// paths with a separator are checked directly; bare names are looked up in `PATH`.
+fn resolve_custom_binary(
+    cmd: &std::ffi::OsStr,
+    path_env: Option<&std::ffi::OsStr>,
+) -> Option<PathBuf> {
+    let trimmed = cmd.to_string_lossy();
+    let trimmed = trimmed.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let path = PathBuf::from(trimmed);
+    if path.components().count() > 1 {
+        return path.is_file().then_some(path);
+    }
+    let paths = path_env?;
+    std::env::split_paths(paths)
+        .map(|dir| dir.join(&path))
+        .find(|candidate| candidate.is_file())
+}
+
 /// The Soloist program: `CANTO_SOLOIST_CMD`, the copy Canto downloaded, or
 /// one installed by the user.
 pub fn binary() -> Option<PathBuf> {
-    if let Some(cmd) = std::env::var_os("CANTO_SOLOIST_CMD") {
-        return Some(PathBuf::from(cmd));
+    if let Some(cmd) = custom_cmd() {
+        return resolve_custom_binary(&cmd, std::env::var_os("PATH").as_deref());
     }
     let mut candidates = vec![managed_dir().join("soloist")];
     if let Some(home) = std::env::var_os("HOME") {
@@ -420,7 +446,7 @@ pub enum AutoDownloadSupport {
 
 /// Reports whether automatic Soloist downloads are supported in this environment.
 pub fn auto_download_support() -> AutoDownloadSupport {
-    if std::env::var_os("CANTO_SOLOIST_CMD").is_some() {
+    if custom_cmd().is_some() {
         AutoDownloadSupport::CustomBinary
     } else if cfg!(target_arch = "x86_64") {
         AutoDownloadSupport::Available
@@ -622,7 +648,7 @@ pub fn status_text(report: &Report, key_saved: bool) -> String {
         gettext("Running and logged in")
     };
     match report.days_left {
-        Some(days) if days < 0 => {
+        Some(days) if days <= 0 => {
             text.push_str(" · ");
             text.push_str(&match report.auto_download {
                 AutoDownloadSupport::Available => gettext(
@@ -805,5 +831,50 @@ mod tests {
             ..Default::default()
         };
         assert!(status_text(&custom_missing, true).contains("CANTO_SOLOIST_CMD"));
+
+        // days_left == 0 is already expired (matching player.rs and should_check)
+        let expires_today = Report {
+            installed: true,
+            days_left: Some(0),
+            auto_download: AutoDownloadSupport::UnsupportedArch,
+            ..Default::default()
+        };
+        let today_text = status_text(&expires_today, true);
+        assert!(
+            today_text.contains("expired") && !today_text.contains("0 days"),
+            "days_left == 0 must report expired, got: {}",
+            today_text
+        );
+    }
+
+    #[test]
+    fn custom_binary_must_exist() {
+        let exe = std::env::current_exe().expect("current_exe");
+        let exe_dir = exe.parent().expect("exe parent");
+        let exe_name = exe.file_name().expect("exe file_name");
+
+        assert_eq!(
+            resolve_custom_binary(exe.as_os_str(), None),
+            Some(exe.clone())
+        );
+        assert_eq!(
+            resolve_custom_binary(exe_name, Some(exe_dir.as_os_str())),
+            Some(exe.clone())
+        );
+        assert_eq!(
+            resolve_custom_binary(std::ffi::OsStr::new("/nonexistent/canto/soloist"), None),
+            None
+        );
+        assert_eq!(
+            resolve_custom_binary(
+                std::ffi::OsStr::new("definitely-missing-soloist-bin"),
+                Some(exe_dir.as_os_str())
+            ),
+            None
+        );
+        assert_eq!(
+            resolve_custom_binary(std::ffi::OsStr::new("   "), None),
+            None
+        );
     }
 }
