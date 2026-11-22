@@ -85,6 +85,7 @@ pub fn build_song_menu(
         pinned,
         removable_from_playlist,
         false,
+        false,
     )
 }
 
@@ -106,6 +107,31 @@ pub fn build_song_menu_with_radio(
         pinned,
         removable_from_playlist,
         true,
+        false,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn build_queue_song_menu(
+    song: &Track,
+    show_view_album: bool,
+    exclude_artist_id: Option<&str>,
+    queue_entry: QueueMenuEntry,
+    liked: Option<bool>,
+    pinned: Option<bool>,
+    removable_from_playlist: bool,
+    movable_in_queue: bool,
+) -> gio::MenuModel {
+    build_song_menu_impl(
+        song,
+        show_view_album,
+        exclude_artist_id,
+        queue_entry,
+        liked,
+        pinned,
+        removable_from_playlist,
+        true,
+        movable_in_queue,
     )
 }
 
@@ -119,6 +145,7 @@ fn build_song_menu_impl(
     pinned: Option<bool>,
     removable_from_playlist: bool,
     include_radio: bool,
+    movable_in_queue: bool,
 ) -> gio::MenuModel {
     let track_section = gio::Menu::new();
     if song.rri.uri.is_some() {
@@ -164,6 +191,14 @@ fn build_song_menu_impl(
             track_section.append(Some(&*labels::ADD_TO_QUEUE), Some("song.queue"));
             track_section.append(Some(&*labels::REMOVE_FROM_QUEUE), Some("song.dequeue"));
         }
+    }
+    if movable_in_queue {
+        let up = gio::MenuItem::new(Some(&*labels::MOVE_UP), Some("song.move_up"));
+        up.set_attribute_value("hidden-when", Some(&"action-disabled".to_variant()));
+        track_section.append_item(&up);
+        let down = gio::MenuItem::new(Some(&*labels::MOVE_DOWN), Some("song.move_down"));
+        down.set_attribute_value("hidden-when", Some(&"action-disabled".to_variant()));
+        track_section.append_item(&down);
     }
     if include_radio {
         track_section.append(Some(&*labels::START_TRACK_RADIO), Some("song.radio"));
@@ -244,6 +279,10 @@ pub trait TrackListModel: ProvidesApi {
     }
 
     fn menu_opening(&self, _actions: &SimpleActionGroup) {}
+
+    fn menu_opening_for(&self, _row: &SongModel, actions: &SimpleActionGroup) {
+        self.menu_opening(actions);
+    }
 
     fn select_song(&self, _id: &str) {}
     fn select_songs(&self, keys: &[String]) {
@@ -1128,9 +1167,11 @@ fn bind_track<Model: TrackListModel + 'static>(
         opening: Rc::new(clone!(
             #[weak]
             model,
+            #[weak]
+            song,
             #[strong]
             actions,
-            move || model.menu_opening(&actions)
+            move || model.menu_opening_for(&song, &actions)
         )),
         picker: Rc::new(clone!(
             #[weak]

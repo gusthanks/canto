@@ -7,13 +7,14 @@ use std::time::{Duration, Instant};
 use super::{QueuePageWidget, RecentRow, RECENT_COVER_PX};
 use crate::app::components::now_panel::toggle_track_like;
 use crate::app::components::{
-    dispatch_api_read_many, labels, play_in_album_actions, Component, EventListener, QueueList,
-    QueueListModel,
+    dispatch_api_call_many, dispatch_api_read_many, labels, play_in_album_actions, Component,
+    EventListener, PlaylistDialog, QueueList, QueueListModel, Saved,
 };
 use crate::app::models::{Track, TrackExt};
 use crate::app::state::{liked_statuses, PlaybackEvent};
-use crate::app::{load, AppEvent, AppModel, BrowserAction, BrowserEvent, Dispatcher};
+use crate::app::{load, AppAction, AppEvent, AppModel, BrowserAction, BrowserEvent, Dispatcher};
 use canto_api::models::is_resource_url;
+use libadwaita::prelude::AdwDialogExt;
 
 /// How many songs Recently Played lists (Spotify keeps 50).
 const RECENT_LIMIT: usize = 50;
@@ -46,12 +47,31 @@ impl QueuePage {
             queue_list.model(),
             move || model.toggle_select_all()
         ));
+        widget.connect_save_playlist(clone!(
+            #[weak(rename_to = model)]
+            queue_list.model(),
+            #[weak]
+            app_model,
+            #[strong]
+            dispatcher,
+            move |button| {
+                save_queue_as_playlist(button, &model, &app_model, &dispatcher);
+            }
+        ));
         let recent = RecentlyPlayed::new(widget.clone(), app_model, dispatcher);
-        Self {
+        let page = Self {
             widget,
             queue_list,
             recent,
-        }
+        };
+        page.update_save_playlist();
+        page
+    }
+
+    fn update_save_playlist(&self) {
+        let model = self.queue_list.model();
+        let visible = model.can_save_as_playlist() && !model.is_selecting();
+        self.widget.set_save_playlist_visible(visible);
     }
 
     pub fn model(&self) -> &Rc<QueueListModel> {
@@ -91,6 +111,7 @@ impl EventListener for QueuePage {
         self.queue_list.on_event(event);
         if let AppEvent::SelectionEvent(_) = event {
             self.update_selection();
+            self.update_save_playlist();
         }
         if let AppEvent::PlaybackEvent(
             PlaybackEvent::TrackChanged(_)
@@ -103,6 +124,10 @@ impl EventListener for QueuePage {
             self.widget
                 .set_queue_empty(!self.queue_list.model().has_queue());
             self.update_selection();
+            self.update_save_playlist();
+        }
+        if let AppEvent::LoginEvent(_) = event {
+            self.update_save_playlist();
         }
         if let AppEvent::PlaybackEvent(PlaybackEvent::TrackChanged(_)) = event {
             self.recent.track_changed();
@@ -111,6 +136,60 @@ impl EventListener for QueuePage {
             self.recent.refresh_likes();
         }
     }
+}
+
+fn save_queue_as_playlist(
+    button: &gtk::Button,
+    model: &Rc<QueueListModel>,
+    app_model: &Rc<AppModel>,
+    dispatcher: &Dispatcher,
+) {
+    let dialog = PlaylistDialog::for_saving_queue(&gettext("Queue"));
+    let weak_model = Rc::downgrade(model);
+    let weak_app = Rc::downgrade(app_model);
+    let dispatcher = dispatcher.clone();
+    dialog.connect_save(move |form| {
+        let (saved, saved_rx) = Saved::channel();
+        let (Some(model), Some(app_model)) = (weak_model.upgrade(), weak_app.upgrade()) else {
+            return saved_rx;
+        };
+        let Some(user_id) = app_model.get_state().logged_user.user.clone() else {
+            return saved_rx;
+        };
+        let uris = model.playable_uris();
+        if uris.is_empty() {
+            return saved_rx;
+        }
+        let api = app_model.api();
+        let cover_dispatcher = dispatcher.clone();
+        let load = load::visible();
+        dispatch_api_call_many(&dispatcher, move || async move {
+            let playlist = api
+                .create_playlist(
+                    &user_id,
+                    &form.name,
+                    form.description.as_deref(),
+                    form.public,
+                )
+                .await?;
+            for chunk in uris.chunks(100) {
+                api.add_to_playlist(&playlist.rri.id, chunk.to_vec(), load)
+                    .await?;
+            }
+            saved.tell();
+            let id = playlist.rri.id.clone();
+            if let Some(cover) = form.cover {
+                crate::app::components::upload_playlist_cover(&cover_dispatcher, api, id, cover);
+            }
+            Ok(vec![
+                AppAction::CreatePlaylist(playlist),
+                // translators: Toast shown after saving the current play queue as a new playlist.
+                AppAction::ShowNotification(gettext("Queue saved as playlist")),
+            ])
+        });
+        saved_rx
+    });
+    dialog.present(Some(button));
 }
 
 /// The songs played lately, folded above the queue. Loaded only while

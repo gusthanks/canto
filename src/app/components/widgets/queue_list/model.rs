@@ -7,8 +7,8 @@ use std::ops::Deref;
 use std::rc::Rc;
 
 use crate::app::components::{
-    build_song_menu_with_radio, fetch_queue_page, labels, DetailsPageModel, GroupButton,
-    QueueMenuEntry, SongActions, TrackListModel,
+    build_queue_song_menu, fetch_queue_page, labels, DetailsPageModel, GroupButton, QueueMenuEntry,
+    SongActions, TrackListModel,
 };
 use crate::app::models::{QueueRole, SongListModel, SongModel, Track};
 use crate::app::state::{
@@ -126,6 +126,57 @@ impl QueueListModel {
     fn drop_keys(key: &str, target: &str) -> Option<(EntryKey, EntryKey)> {
         Some((key.parse().ok()?, target.parse().ok()?))
     }
+
+    pub fn playable_uris(&self) -> Vec<String> {
+        let queue = self.queue();
+        queue
+            .view_keys()
+            .iter()
+            .filter_map(|&key| queue.view_track(key)?.rri.uri)
+            .collect()
+    }
+
+    pub fn can_save_as_playlist(&self) -> bool {
+        self.base.app_model.get_state().logged_user.user.is_some()
+            && !self.playable_uris().is_empty()
+    }
+
+    pub fn move_targets(
+        &self,
+        key: EntryKey,
+    ) -> (Option<(EntryKey, bool)>, Option<(EntryKey, bool)>) {
+        move_targets_for(&self.base.app_model, self.show_now_playing, key)
+    }
+}
+
+fn move_targets_for(
+    app_model: &AppModel,
+    show_now_playing: bool,
+    key: EntryKey,
+) -> (Option<(EntryKey, bool)>, Option<(EntryKey, bool)>) {
+    let queue = app_model.map_state(|s| &s.playback);
+    if !matches!(queue.current_device(), Device::Local) || !queue.is_movable(key) {
+        return (None, None);
+    }
+    let keys = if show_now_playing {
+        queue.view_keys()
+    } else {
+        queue.upcoming_keys()
+    };
+    let Some(idx) = keys.iter().position(|&k| k == key) else {
+        return (None, None);
+    };
+    let up = idx
+        .checked_sub(1)
+        .and_then(|p| keys.get(p).copied())
+        .filter(|&prev| queue.can_move_entry(key, prev, false, show_now_playing))
+        .map(|prev| (prev, false));
+    let down = keys
+        .get(idx + 1)
+        .copied()
+        .filter(|&next| queue.can_move_entry(key, next, true, show_now_playing))
+        .map(|next| (next, true));
+    (up, down)
 }
 
 fn queue_entry(row: &SongModel) -> Option<(EntryKey, QueueRole)> {
@@ -327,11 +378,72 @@ impl TrackListModel for QueueListModel {
         for a in actions {
             group.add_action(&a);
         }
+        if let Some((key, QueueRole::Queued | QueueRole::Context)) = queue_entry(row) {
+            let show_now_playing = self.show_now_playing;
+            let move_up = gio::SimpleAction::new("move_up", None);
+            let app_model_up = Rc::clone(&self.base.app_model);
+            let disp_up = dispatcher.clone();
+            move_up.connect_activate(move |_, _| {
+                if let (Some((target, after)), _) =
+                    move_targets_for(&app_model_up, show_now_playing, key)
+                {
+                    disp_up.dispatch(
+                        PlaybackAction::MoveEntry {
+                            key,
+                            target,
+                            after,
+                            current_listed: show_now_playing,
+                        }
+                        .into(),
+                    );
+                }
+            });
+            group.add_action(&move_up);
+
+            let move_down = gio::SimpleAction::new("move_down", None);
+            let app_model_down = Rc::clone(&self.base.app_model);
+            let disp_down = dispatcher.clone();
+            move_down.connect_activate(move |_, _| {
+                if let (_, Some((target, after))) =
+                    move_targets_for(&app_model_down, show_now_playing, key)
+                {
+                    disp_down.dispatch(
+                        PlaybackAction::MoveEntry {
+                            key,
+                            target,
+                            after,
+                            current_listed: show_now_playing,
+                        }
+                        .into(),
+                    );
+                }
+            });
+            group.add_action(&move_down);
+        }
         Some(group)
     }
 
     fn playlist_picker(&self, song: &Track) -> Option<gtk::Widget> {
         self.base.playlist_picker(song)
+    }
+
+    fn menu_opening_for(&self, row: &SongModel, actions: &SimpleActionGroup) {
+        let (up, down) = queue_entry(row)
+            .filter(|(_, role)| matches!(role, QueueRole::Queued | QueueRole::Context))
+            .map(|(key, _)| self.move_targets(key))
+            .unwrap_or((None, None));
+        if let Some(action) = actions
+            .lookup_action("move_up")
+            .and_downcast::<gio::SimpleAction>()
+        {
+            action.set_enabled(up.is_some());
+        }
+        if let Some(action) = actions
+            .lookup_action("move_down")
+            .and_downcast::<gio::SimpleAction>()
+        {
+            action.set_enabled(down.is_some());
+        }
     }
 
     fn menu_for(
@@ -341,13 +453,15 @@ impl TrackListModel for QueueListModel {
         liked: bool,
         pinned: Option<bool>,
     ) -> Option<gio::MenuModel> {
-        let queue_entry = match queue_entry(row) {
+        let entry = queue_entry(row);
+        let queue_entry = match entry {
             Some((_, QueueRole::Queued)) => QueueMenuEntry::Queued,
             Some((_, QueueRole::Context)) => QueueMenuEntry::Context,
             Some((_, QueueRole::Current)) => QueueMenuEntry::Add,
             _ => QueueMenuEntry::None,
         };
-        Some(build_song_menu_with_radio(
+        let movable_in_queue = matches!(entry, Some((_, QueueRole::Queued | QueueRole::Context)));
+        Some(build_queue_song_menu(
             song,
             true,
             None,
@@ -355,6 +469,7 @@ impl TrackListModel for QueueListModel {
             Some(liked),
             pinned,
             false,
+            movable_in_queue,
         ))
     }
 }
@@ -598,6 +713,83 @@ mod tests {
         assert_eq!(enabled(model.is_selecting()), (false, false, true));
         assert_eq!(model.selected_count(), 0);
         assert!(!model.all_selected());
+    }
+
+    #[test]
+    fn test_move_up_and_down_menu_actions_and_playable_uris() {
+        let (sender, mut receiver) = futures::channel::mpsc::unbounded();
+        let app_model = Rc::new(AppModel::new(AppState::new(), test_api_service()));
+        let make_uri_track = |id: &str| {
+            let mut t = make_track(id);
+            t.rri.uri = Some(format!("spotify:track:{id}"));
+            t
+        };
+        let tracks = ["1", "2"].iter().map(|id| make_uri_track(id)).collect();
+        app_model.update_state(
+            PlaybackAction::LoadContextSongs(SongsSource::Album("a".into()), tracks).into(),
+        );
+        app_model.update_state(PlaybackAction::Load("1".to_string()).into());
+        app_model.update_state(AppAction::QueueTracks {
+            tracks: vec![make_uri_track("p1"), make_uri_track("p2")],
+        });
+
+        let model = QueueListModel::new(app_model.clone(), Dispatcher::new(sender), true);
+        assert_eq!(
+            model.playable_uris(),
+            vec![
+                "spotify:track:1",
+                "spotify:track:p1",
+                "spotify:track:p2",
+                "spotify:track:2",
+            ]
+        );
+        // Without a logged user, Save as Playlist stays disabled.
+        assert!(!model.can_save_as_playlist());
+
+        let view = app_model.get_state().playback.queue_view().clone();
+        let row = |i| view.index_continuous(i).unwrap();
+        let first_queued = row(1);
+        let second_queued = row(2);
+
+        let group_first = model
+            .actions_for(&first_queued, &first_queued.into_description())
+            .unwrap();
+        model.menu_opening_for(&first_queued, &group_first);
+        assert!(!group_first.lookup_action("move_up").unwrap().is_enabled());
+        assert!(group_first.lookup_action("move_down").unwrap().is_enabled());
+
+        let group_second = model
+            .actions_for(&second_queued, &second_queued.into_description())
+            .unwrap();
+        model.menu_opening_for(&second_queued, &group_second);
+        assert!(group_second.lookup_action("move_up").unwrap().is_enabled());
+        assert!(!group_second
+            .lookup_action("move_down")
+            .unwrap()
+            .is_enabled());
+
+        group_second.activate_action("move_up", None);
+        let action = receiver.try_recv().expect("MoveEntry action");
+        assert!(matches!(
+            action,
+            AppAction::PlaybackAction(PlaybackAction::MoveEntry { after: false, .. })
+        ));
+
+        // Remote Connect device disables row moves.
+        let remote = canto_api::models::Device {
+            id: "r".into(),
+            label: "Living Room".into(),
+            kind: canto_api::DeviceKind::Speaker,
+            is_active: true,
+            volume_percent: Some(50),
+        };
+        app_model.update_state(PlaybackAction::SwitchDevice(Device::Connect(remote)).into());
+        model.menu_opening_for(&second_queued, &group_second);
+        assert!(!group_second.lookup_action("move_up").unwrap().is_enabled());
+        assert!(!group_second
+            .lookup_action("move_down")
+            .unwrap()
+            .is_enabled());
     }
 
     #[test]

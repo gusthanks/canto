@@ -164,6 +164,18 @@ impl PlaylistDialog {
         dialog
     }
 
+    pub fn for_saving_queue(suggested_name: &str) -> Self {
+        let dialog = Self::new();
+        let imp = dialog.imp();
+        // translators: Title of the dialog saving the current play queue into a new playlist.
+        dialog.set_title(&gettext("Save Queue as Playlist"));
+        imp.save_label.set_label(&gettext("Create"));
+        imp.error_label
+            .set_label(&gettext("The playlist could not be created."));
+        imp.name_entry.set_text(suggested_name);
+        dialog
+    }
+
     pub fn set_current_cover(&self, cover: &gdk::Texture) {
         let imp = self.imp();
         if imp.cover.borrow().is_none() {

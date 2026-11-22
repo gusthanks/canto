@@ -42,6 +42,10 @@ mod imp {
         #[template_child]
         pub queue_stack: TemplateChild<gtk::Stack>,
         #[template_child]
+        pub queue_actions: TemplateChild<gtk::Box>,
+        #[template_child]
+        pub save_playlist_button: TemplateChild<gtk::Button>,
+        #[template_child]
         pub queue_scroller: TemplateChild<gtk::ScrolledWindow>,
 
         pub queue_list: RefCell<Option<gtk::Widget>>,
@@ -167,6 +171,25 @@ impl QueuePageWidget {
     pub fn set_queue_empty(&self, empty: bool) {
         let page = if empty { "empty" } else { "list" };
         self.imp().queue_stack.set_visible_child_name(page);
+    }
+
+    pub fn set_save_playlist_visible(&self, visible: bool) {
+        self.imp().queue_actions.set_visible(visible);
+    }
+
+    pub fn is_save_playlist_visible(&self) -> bool {
+        self.imp().queue_actions.is_visible()
+    }
+
+    pub fn connect_save_playlist<F: Fn(&gtk::Button) + 'static>(&self, f: F) {
+        self.imp()
+            .save_playlist_button
+            .connect_clicked(move |button| f(button));
+    }
+
+    #[cfg(test)]
+    pub fn save_playlist_button_for_tests(&self) -> gtk::Button {
+        self.imp().save_playlist_button.get()
     }
 
     pub fn connect_selection_cancel<F: Fn() + 'static>(&self, f: F) {

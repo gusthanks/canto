@@ -5,6 +5,7 @@ use super::*;
 gtk_tests! {
     recently_played => assert_recently_played,
     recently_played_opens_at_newest => assert_recently_played_opens_at_newest,
+    save_queue_as_playlist_button => assert_save_queue_as_playlist_button,
 }
 
 /// Recently Played sits folded above the queue; unfolded, it lists songs
@@ -265,4 +266,49 @@ fn assert_recently_played_opens_at_newest() {
         window.destroy();
     }
     gtk_settings.set_gtk_enable_animations(animations);
+}
+
+/// The Queue page's "Save as Playlist…" action bar toggles visibility
+/// cleanly and opens PlaylistDialog prefilled when activated.
+fn assert_save_queue_as_playlist_button() {
+    use crate::app::components::{PlaylistDialog, QueuePageWidget};
+    use libadwaita::prelude::{AdwDialogExt, AdwWindowExt};
+
+    force_dark();
+    let window = libadwaita::Window::new();
+    window.set_default_size(420, 720);
+
+    let page = QueuePageWidget::default();
+    let queue = gtk::Label::new(Some("(the queue)"));
+    queue.set_vexpand(true);
+    page.set_queue_list(&queue);
+    page.set_queue_empty(false);
+    assert!(!page.is_save_playlist_visible());
+    page.set_save_playlist_visible(true);
+    assert!(page.is_save_playlist_visible());
+
+    let opened = std::rc::Rc::new(std::cell::Cell::new(false));
+    page.connect_save_playlist({
+        let opened = opened.clone();
+        move |btn| {
+            opened.set(true);
+            let dialog = PlaylistDialog::for_saving_queue("Queue");
+            dialog.present(Some(btn));
+        }
+    });
+
+    window.set_content(Some(&page));
+    window.present();
+    wait_mapped(&page, 200);
+
+    page.save_playlist_button_for_tests().emit_clicked();
+    pump(200);
+    assert!(opened.get(), "clicking Save as Playlist opens dialog");
+    let dialog = window
+        .visible_dialog()
+        .expect("PlaylistDialog should be presented");
+    assert_eq!(dialog.title().as_str(), "Save Queue as Playlist");
+    dialog.force_close();
+    window.destroy();
+    eprintln!("save queue as playlist ok");
 }

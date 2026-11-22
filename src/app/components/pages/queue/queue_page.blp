@@ -145,9 +145,37 @@ template $QueuePageWidget : Adw.Bin {
       StackPage {
         name: "list";
 
-        child: ScrolledWindow queue_scroller {
-          hscrollbar-policy: never;
-          vexpand: true;
+        child: Box {
+          orientation: vertical;
+
+          Box queue_actions {
+            visible: false;
+            margin-start: 12;
+            margin-end: 12;
+            margin-top: 6;
+            margin-bottom: 2;
+
+            Button save_playlist_button {
+              halign: end;
+              hexpand: true;
+              focus-on-click: false;
+
+              styles [
+                "flat",
+              ]
+
+              child: Adw.ButtonContent {
+                icon-name: "list-add-symbolic";
+                /* Translators: Button on the queue page that saves the current play queue into a new playlist. */
+                label: _("Save as Playlist…");
+              };
+            }
+          }
+
+          ScrolledWindow queue_scroller {
+            hscrollbar-policy: never;
+            vexpand: true;
+          }
         };
       }
 

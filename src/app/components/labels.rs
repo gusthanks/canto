@@ -40,6 +40,12 @@ lazy_static! {
     // translators: This is part of a contextual menu attached to a single track; this entry removes a track from the play queue.
     pub static ref REMOVE_FROM_QUEUE: String = gettext("Remove from Queue");
 
+    // translators: Contextual menu entry moving a queued track one step earlier in the play queue.
+    pub static ref MOVE_UP: String = gettext("Move Up");
+
+    // translators: Contextual menu entry moving a queued track one step later in the play queue.
+    pub static ref MOVE_DOWN: String = gettext("Move Down");
+
     // translators: This is part of a contextual menu attached to a single track; this entry saves the track to the user's saved tracks.
     pub static ref LIKE: String = gettext("Add to Saved Tracks");
 
