@@ -569,8 +569,8 @@ bottom-sheet.bottom-sheet--padded > sheet {
 
 /* Saved Tracks' own cover in the sidebar */
 .navigation-row__liked {
-  background: linear-gradient(135deg, @accent_bg_color, shade(@accent_bg_color, 0.55));
-  color: white;
+  background: linear-gradient(135deg, @accent_bg_color, shade(@accent_bg_color, 0.78));
+  color: @accent_fg_color;
 }
 
 /* The collapsed sidebar's "+" (new playlist) */

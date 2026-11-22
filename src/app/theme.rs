@@ -16,10 +16,11 @@ use crate::app::{AppEvent, AppModel};
 const THEME_PROVIDER_PRIORITY: u32 = gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 1;
 const WCAG_AA_TEXT_CONTRAST: f64 = 4.5;
 const WCAG_UI_COMPONENT_CONTRAST: f64 = 3.0;
-const ADWAITA_DARK_VIEW_BG: &str = "#1e1e1e";
-const ADWAITA_DARK_CARD_BG: &str = "#2b2b2b";
+const ADWAITA_DARK_VIEW_BG: &str = "#1d1d20";
+const ADWAITA_DARK_CARD_BG: &str = "#36363a";
 const ADWAITA_LIGHT_VIEW_BG: &str = "#ffffff";
 const ADWAITA_LIGHT_CARD_BG: &str = "#ffffff";
+const ADWAITA_LIGHT_HEADER_BG: &str = "#ebebed";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ThemeKind {
@@ -415,11 +416,13 @@ fn extract_flat_hex_map(
     map
 }
 
-fn extract_matugen_tokens(
+fn extract_matugen_candidates(
     root: &serde_json::Value,
     prefer_dark: bool,
-) -> Option<(HashMap<String, String>, Option<bool>, bool)> {
-    let root_obj = root.as_object()?;
+) -> Vec<(HashMap<String, String>, Option<bool>, bool)> {
+    let Some(root_obj) = root.as_object() else {
+        return Vec::new();
+    };
     let explicit_mode = root_obj
         .get("mode")
         .and_then(serde_json::Value::as_str)
@@ -434,26 +437,45 @@ fn extract_matugen_tokens(
         .and_then(serde_json::Value::as_object)
         .unwrap_or(root_obj);
 
-    // Format 1: mode-first (`colors.dark` / `colors.light`).
+    // Format 1: mode-first (`colors.dark` / `colors.light` / `colors.default`).
     let dark_section = colors_obj
         .get("dark")
         .and_then(serde_json::Value::as_object);
     let light_section = colors_obj
         .get("light")
         .and_then(serde_json::Value::as_object);
-    if dark_section.is_some() || light_section.is_some() {
+    let default_section = colors_obj
+        .get("default")
+        .and_then(serde_json::Value::as_object);
+    if dark_section.is_some() || light_section.is_some() || default_section.is_some() {
         let has_both = dark_section.is_some() && light_section.is_some();
         let want_dark = explicit_mode.unwrap_or(prefer_dark);
-        let (picked, picked_dark) = match (want_dark, dark_section, light_section) {
-            (true, Some(d), _) => (d, true),
-            (false, _, Some(l)) => (l, false),
-            (_, Some(d), None) => (d, true),
-            (_, None, Some(l)) => (l, false),
-            (_, None, None) => return None,
+        let mut out = Vec::new();
+        let order: [(
+            &str,
+            Option<&serde_json::Map<String, serde_json::Value>>,
+            Option<bool>,
+        ); 3] = if want_dark {
+            [
+                ("dark", dark_section, Some(true)),
+                ("default", default_section, explicit_mode),
+                ("light", light_section, Some(false)),
+            ]
+        } else {
+            [
+                ("light", light_section, Some(false)),
+                ("default", default_section, explicit_mode),
+                ("dark", dark_section, Some(true)),
+            ]
         };
-        let map = extract_flat_hex_map(picked);
-        let follows_system_scheme = explicit_mode.is_none() && has_both;
-        return Some((map, Some(picked_dark), follows_system_scheme));
+        for (idx, (_, section, mode_hint)) in order.iter().enumerate() {
+            if let Some(sec) = section {
+                let map = extract_flat_hex_map(sec);
+                let follows_system_scheme = idx == 0 && explicit_mode.is_none() && has_both;
+                out.push((map, *mode_hint, follows_system_scheme));
+            }
+        }
+        return out;
     }
 
     // Format 2: color-first (`colors.primary.dark` / `colors.primary.light` / `colors.primary.default`).
@@ -499,20 +521,18 @@ fn extract_matugen_tokens(
             }
         });
         let follows_system_scheme = explicit_mode.is_none() && has_both;
-        return Some((map, chosen_mode, follows_system_scheme));
+        return vec![(map, chosen_mode, follows_system_scheme)];
     }
 
     // Format 3: flat token object (either under `colors` or at top level).
     let map = extract_flat_hex_map(colors_obj);
-    Some((map, explicit_mode, false))
+    vec![(map, explicit_mode, false)]
 }
 
-/// Parses Matugen `colors.json` (mode-first, color-first, or flat JSON).
-/// Returns `(palette, follows_system_scheme)`.
-pub fn parse_matugen_colors_json(content: &str, prefer_dark: bool) -> Option<(ThemePalette, bool)> {
-    let root: serde_json::Value = serde_json::from_str(content).ok()?;
-    let (map, mode_hint, follows_system_scheme) = extract_matugen_tokens(&root, prefer_dark)?;
-
+fn build_matugen_palette(
+    map: &HashMap<String, String>,
+    mode_hint: Option<bool>,
+) -> Option<ThemePalette> {
     let bg = map
         .get("background")
         .or_else(|| map.get("surface"))
@@ -549,7 +569,11 @@ pub fn parse_matugen_colors_json(content: &str, prefer_dark: bool) -> Option<(Th
         .cloned()
         .unwrap_or(default_popover);
 
-    let computed = compute_accessible_cover_accent(&accent_raw, is_dark, &bg, &card_bg)?;
+    let computed = compute_accessible_cover_accent_on_surfaces(
+        &accent_raw,
+        is_dark,
+        &[&bg, &card_bg, &headerbar_bg, &popover_bg],
+    )?;
     let accent_fg = map
         .get("on_primary")
         .filter(|on_primary| {
@@ -559,23 +583,32 @@ pub fn parse_matugen_colors_json(content: &str, prefer_dark: bool) -> Option<(Th
         .cloned()
         .unwrap_or(computed.accent_fg);
 
-    Some((
-        ThemePalette {
-            is_dark,
-            window_bg: bg.clone(),
-            window_fg: fg.clone(),
-            view_bg: bg,
-            view_fg: fg,
-            headerbar_bg,
-            sidebar_bg,
-            card_bg,
-            popover_bg,
-            accent_bg: computed.accent_bg,
-            accent: computed.accent,
-            accent_fg,
-        },
-        follows_system_scheme,
-    ))
+    Some(ThemePalette {
+        is_dark,
+        window_bg: bg.clone(),
+        window_fg: fg.clone(),
+        view_bg: bg,
+        view_fg: fg,
+        headerbar_bg,
+        sidebar_bg,
+        card_bg,
+        popover_bg,
+        accent_bg: computed.accent_bg,
+        accent: computed.accent,
+        accent_fg,
+    })
+}
+
+/// Parses Matugen `colors.json` (mode-first, color-first, or flat JSON).
+/// Returns `(palette, follows_system_scheme)`.
+pub fn parse_matugen_colors_json(content: &str, prefer_dark: bool) -> Option<(ThemePalette, bool)> {
+    let root: serde_json::Value = serde_json::from_str(content).ok()?;
+    for (map, mode_hint, follows_system_scheme) in extract_matugen_candidates(&root, prefer_dark) {
+        if let Some(palette) = build_matugen_palette(&map, mode_hint) {
+            return Some((palette, follows_system_scheme));
+        }
+    }
+    None
 }
 
 /// Parses pywal `~/.cache/wal/colors.json`.
@@ -619,7 +652,8 @@ fn parse_wal_style_colors_json(
         .or_else(|| lookup("color7"))?;
 
     let candidates = [
-        "accent", "color4", "color2", "color1", "color6", "color5", "color3", "color12",
+        "accent", "color4", "color2", "color1", "color6", "color5", "color3", "color12", "color10",
+        "color9", "color14", "color13", "color11",
     ];
     let accent_raw = candidates
         .iter()
@@ -629,7 +663,11 @@ fn parse_wal_style_colors_json(
 
     let is_dark = is_dark_hex(&bg);
     let (headerbar_bg, sidebar_bg, card_bg, popover_bg) = derive_surfaces(&bg, is_dark);
-    let computed = compute_accessible_cover_accent(&accent_raw, is_dark, &bg, &card_bg)?;
+    let computed = compute_accessible_cover_accent_on_surfaces(
+        &accent_raw,
+        is_dark,
+        &[&bg, &card_bg, &headerbar_bg, &popover_bg],
+    )?;
 
     Some(ThemePalette {
         is_dark,
@@ -849,15 +887,27 @@ pub fn compute_accessible_cover_accent(
     view_bg: &str,
     card_bg: &str,
 ) -> Option<ComputedAccent> {
+    compute_accessible_cover_accent_on_surfaces(cover_hex, is_dark, &[view_bg, card_bg])
+}
+
+pub fn compute_accessible_cover_accent_on_surfaces(
+    cover_hex: &str,
+    is_dark: bool,
+    surface_hexes: &[&str],
+) -> Option<ComputedAccent> {
     let raw = parse_rgb_hex(cover_hex)?;
     let default_bg = if is_dark {
         (18, 18, 18)
     } else {
         (250, 250, 250)
     };
-    let vbg = parse_rgb_hex(view_bg).unwrap_or(default_bg);
-    let cbg = parse_rgb_hex(card_bg).unwrap_or(vbg);
-    let surfaces = [vbg, cbg];
+    let mut surfaces: Vec<(u8, u8, u8)> = surface_hexes
+        .iter()
+        .filter_map(|hex| parse_rgb_hex(hex))
+        .collect();
+    if surfaces.is_empty() {
+        surfaces.push(default_bg);
+    }
 
     let accent_bg_rgb =
         ensure_contrast_against(raw, &surfaces, WCAG_UI_COMPONENT_CONTRAST, is_dark);
@@ -872,6 +922,34 @@ pub fn compute_accessible_cover_accent(
         accent,
         accent_fg,
     })
+}
+
+fn compute_accessible_cover_accent_for_theme(
+    cover_hex: &str,
+    palette: Option<&ThemePalette>,
+    is_dark: bool,
+) -> Option<ComputedAccent> {
+    match palette {
+        Some(p) => compute_accessible_cover_accent_on_surfaces(
+            cover_hex,
+            p.is_dark,
+            &[&p.view_bg, &p.card_bg, &p.headerbar_bg, &p.popover_bg],
+        ),
+        None if is_dark => compute_accessible_cover_accent_on_surfaces(
+            cover_hex,
+            true,
+            &[ADWAITA_DARK_VIEW_BG, ADWAITA_DARK_CARD_BG],
+        ),
+        None => compute_accessible_cover_accent_on_surfaces(
+            cover_hex,
+            false,
+            &[
+                ADWAITA_LIGHT_VIEW_BG,
+                ADWAITA_LIGHT_CARD_BG,
+                ADWAITA_LIGHT_HEADER_BG,
+            ],
+        ),
+    }
 }
 
 pub fn extract_cover_accent_from_rgba(rgba: &[u8]) -> Option<String> {
@@ -927,32 +1005,37 @@ pub fn build_theme_css_with_options(
     is_dark: bool,
     system_accent: Option<&str>,
 ) -> String {
-    let mut css = String::new();
     let valid_cover = cover_accent.and_then(valid_hex_color);
+    let ui_cover_accent = if apply_cover_accent_to_ui {
+        valid_cover
+            .as_deref()
+            .and_then(|hex| compute_accessible_cover_accent_for_theme(hex, palette, is_dark))
+    } else {
+        None
+    };
+    build_theme_css_inner(
+        palette,
+        valid_cover.as_deref(),
+        ui_cover_accent.as_ref(),
+        system_accent,
+    )
+}
+
+fn build_theme_css_inner(
+    palette: Option<&ThemePalette>,
+    valid_cover: Option<&str>,
+    ui_cover_accent: Option<&ComputedAccent>,
+    system_accent: Option<&str>,
+) -> String {
+    let mut css = String::new();
     let cover_color = valid_cover
-        .clone()
+        .map(str::to_string)
         .or_else(|| palette.map(|p| p.accent.clone()))
         .or_else(|| system_accent.and_then(valid_hex_color))
         .unwrap_or_else(|| "#1ed760".to_string());
 
-    let ui_cover_accent = if apply_cover_accent_to_ui {
-        valid_cover.as_deref().and_then(|hex| match palette {
-            Some(p) => compute_accessible_cover_accent(hex, p.is_dark, &p.view_bg, &p.card_bg),
-            None => {
-                let (vbg, cbg) = if is_dark {
-                    (ADWAITA_DARK_VIEW_BG, ADWAITA_DARK_CARD_BG)
-                } else {
-                    (ADWAITA_LIGHT_VIEW_BG, ADWAITA_LIGHT_CARD_BG)
-                };
-                compute_accessible_cover_accent(hex, is_dark, vbg, cbg)
-            }
-        })
-    } else {
-        None
-    };
-
     if let Some(p) = palette {
-        let (accent_bg, accent, accent_fg) = match &ui_cover_accent {
+        let (accent_bg, accent, accent_fg) = match ui_cover_accent {
             Some(c) => (
                 c.accent_bg.as_str(),
                 c.accent.as_str(),
@@ -1020,7 +1103,7 @@ pub fn build_theme_css_with_options(
             accent = accent,
             accent_fg = accent_fg,
         ));
-    } else if let Some(c) = &ui_cover_accent {
+    } else if let Some(c) = ui_cover_accent {
         // Native libadwaita theme: override only accent tokens so system
         // light/dark surfaces remain completely untouched.
         css.push_str(&format!(
@@ -1060,7 +1143,9 @@ fn is_reload_monitor_event(event: gio::FileMonitorEvent) -> bool {
         gio::FileMonitorEvent::Changed
             | gio::FileMonitorEvent::ChangesDoneHint
             | gio::FileMonitorEvent::Created
+            | gio::FileMonitorEvent::Moved
             | gio::FileMonitorEvent::MovedIn
+            | gio::FileMonitorEvent::MovedOut
             | gio::FileMonitorEvent::Renamed
             | gio::FileMonitorEvent::Deleted
     )
@@ -1076,6 +1161,7 @@ pub struct ThemeEngine {
     observers: RefCell<Vec<Rc<dyn Fn()>>>,
     applying: Cell<bool>,
     pending_reload: Cell<bool>,
+    pending_reattach: Cell<bool>,
 }
 
 impl Drop for ThemeEngine {
@@ -1121,6 +1207,7 @@ impl ThemeEngine {
             observers: RefCell::new(Vec::new()),
             applying: Cell::new(false),
             pending_reload: Cell::new(false),
+            pending_reattach: Cell::new(false),
         });
 
         engine.apply();
@@ -1202,15 +1289,19 @@ impl ThemeEngine {
     }
 
     fn schedule_reload(self: &Rc<Self>, reattach_monitors: bool) {
-        if self.pending_reload.replace(true) && !reattach_monitors {
+        if reattach_monitors {
+            self.pending_reattach.set(true);
+        }
+        if self.pending_reload.replace(true) {
             return;
         }
         glib::idle_add_local_once(glib::clone!(
             #[weak(rename_to = engine)]
             self,
             move || {
+                let reattach = engine.pending_reattach.replace(false);
                 engine.pending_reload.set(false);
-                if reattach_monitors {
+                if reattach {
                     engine.refresh_system_monitors(true);
                 }
                 engine.apply();
@@ -1234,7 +1325,7 @@ impl ThemeEngine {
         let theme_dir = path.parent().unwrap_or(path.as_path());
         if theme_dir.is_dir() {
             if let Ok(mon) = gio::File::for_path(theme_dir)
-                .monitor_directory(gio::FileMonitorFlags::NONE, gio::Cancellable::NONE)
+                .monitor_directory(gio::FileMonitorFlags::WATCH_MOVES, gio::Cancellable::NONE)
             {
                 mon.connect_changed(glib::clone!(
                     #[weak(rename_to = engine)]
@@ -1260,7 +1351,7 @@ impl ThemeEngine {
         // `omarchy-theme-set` can replace `theme/` or update `theme.generation` / `theme.name`.
         if let Some(current_dir) = theme_dir.parent().filter(|d| d.is_dir()) {
             if let Ok(parent_mon) = gio::File::for_path(current_dir)
-                .monitor_directory(gio::FileMonitorFlags::NONE, gio::Cancellable::NONE)
+                .monitor_directory(gio::FileMonitorFlags::WATCH_MOVES, gio::Cancellable::NONE)
             {
                 parent_mon.connect_changed(glib::clone!(
                     #[weak(rename_to = engine)]
@@ -1287,24 +1378,37 @@ impl ThemeEngine {
             }
         }
 
-        // 2. Matugen, pywal, and wallust directories (only watched when present).
+        // 2. Matugen, pywal, and wallust directories (watched directly when
+        // present, plus their immediate existing parent so first-time creation
+        // or directory replacement attaches a monitor live).
         let mut watched_dirs: HashMap<PathBuf, HashSet<String>> = HashMap::new();
+        let mut watched_parents: HashMap<PathBuf, HashSet<String>> = HashMap::new();
         for file_path in self.paths.optional_palette_files() {
-            let Some(dir) = file_path.parent().filter(|d| d.is_dir()) else {
+            let Some(dir) = file_path.parent() else {
                 continue;
             };
-            let Some(file_name) = file_path.file_name().and_then(|n| n.to_str()) else {
-                continue;
-            };
-            watched_dirs
-                .entry(dir.to_path_buf())
-                .or_default()
-                .insert(file_name.to_string());
+            if dir.is_dir() {
+                if let Some(file_name) = file_path.file_name().and_then(|n| n.to_str()) {
+                    watched_dirs
+                        .entry(dir.to_path_buf())
+                        .or_default()
+                        .insert(file_name.to_string());
+                }
+            }
+            if let (Some(parent), Some(dir_name)) = (
+                dir.parent().filter(|p| p.is_dir()),
+                dir.file_name().and_then(|n| n.to_str()),
+            ) {
+                watched_parents
+                    .entry(parent.to_path_buf())
+                    .or_default()
+                    .insert(dir_name.to_string());
+            }
         }
 
         for (dir, target_names) in watched_dirs {
             if let Ok(mon) = gio::File::for_path(&dir)
-                .monitor_directory(gio::FileMonitorFlags::NONE, gio::Cancellable::NONE)
+                .monitor_directory(gio::FileMonitorFlags::WATCH_MOVES, gio::Cancellable::NONE)
             {
                 mon.connect_changed(glib::clone!(
                     #[weak(rename_to = engine)]
@@ -1323,6 +1427,30 @@ impl ThemeEngine {
                     }
                 ));
                 self.monitors.borrow_mut().push(mon);
+            }
+        }
+
+        for (parent_dir, subdir_names) in watched_parents {
+            if let Ok(parent_mon) = gio::File::for_path(&parent_dir)
+                .monitor_directory(gio::FileMonitorFlags::WATCH_MOVES, gio::Cancellable::NONE)
+            {
+                parent_mon.connect_changed(glib::clone!(
+                    #[weak(rename_to = engine)]
+                    self,
+                    move |_, changed_file, other_file, event_type| {
+                        let matches = |f: &gio::File| {
+                            f.basename()
+                                .and_then(|n| n.to_str().map(|s| subdir_names.contains(s)))
+                                .unwrap_or(false)
+                        };
+                        let matches_subdir =
+                            matches(changed_file) || other_file.is_some_and(matches);
+                        if matches_subdir && is_reload_monitor_event(event_type) {
+                            engine.schedule_reload(true);
+                        }
+                    }
+                ));
+                self.monitors.borrow_mut().push(parent_mon);
             }
         }
     }
@@ -1423,30 +1551,21 @@ impl ThemeEngine {
             None
         };
 
-        let css = build_theme_css_with_options(
-            palette.as_ref(),
-            cover_accent.as_deref(),
-            apply_cover_accent,
-            is_dark,
-            Some(&system_accent),
-        );
-        self.provider.load_from_string(&css);
-
         let computed_cover = if apply_cover_accent {
-            cover_accent.as_deref().and_then(|hex| match &palette {
-                Some(p) => compute_accessible_cover_accent(hex, p.is_dark, &p.view_bg, &p.card_bg),
-                None => {
-                    let (vbg, cbg) = if is_dark {
-                        (ADWAITA_DARK_VIEW_BG, ADWAITA_DARK_CARD_BG)
-                    } else {
-                        (ADWAITA_LIGHT_VIEW_BG, ADWAITA_LIGHT_CARD_BG)
-                    };
-                    compute_accessible_cover_accent(hex, is_dark, vbg, cbg)
-                }
+            cover_accent.as_deref().and_then(|hex| {
+                compute_accessible_cover_accent_for_theme(hex, palette.as_ref(), is_dark)
             })
         } else {
             None
         };
+
+        let css = build_theme_css_inner(
+            palette.as_ref(),
+            cover_accent.as_deref(),
+            computed_cover.as_ref(),
+            Some(&system_accent),
+        );
+        self.provider.load_from_string(&css);
 
         let snapshot = match palette {
             Some(p) => {
@@ -1575,11 +1694,18 @@ fn refresh_cover_accent_for(
 
     glib::spawn_future_local(async move {
         let tag = Load::background();
-        if let Some(texture) = api.load_image(&url, 32, 32, tag).await {
-            if url_cell.borrow().as_deref() == Some(url.as_str()) {
-                let accent = extract_cover_accent_from_texture(&texture);
-                engine.set_cover_accent(accent);
-            }
+        let loaded = api.load_image(&url, 32, 32, tag).await;
+        if url_cell.borrow().as_deref() != Some(url.as_str()) {
+            return;
+        }
+        if let Some(texture) = loaded {
+            let accent = extract_cover_accent_from_texture(&texture);
+            engine.set_cover_accent(accent);
+        } else {
+            // Clear the failed URL and any previous track's cover accent so the
+            // old track's color does not linger and later TrackSynced can retry.
+            *url_cell.borrow_mut() = None;
+            engine.set_cover_accent(None);
         }
     });
 }
@@ -1587,7 +1713,8 @@ fn refresh_cover_accent_for(
 impl EventListener for ThemeController {
     fn on_event(&mut self, event: &AppEvent) {
         match event {
-            AppEvent::PlaybackEvent(
+            AppEvent::Started
+            | AppEvent::PlaybackEvent(
                 PlaybackEvent::TrackChanged(_) | PlaybackEvent::TrackSynced,
             ) => self.refresh_cover_accent(),
             AppEvent::PlaybackEvent(PlaybackEvent::PlaybackStopped) => {
@@ -1726,6 +1853,43 @@ foreground = "#0f172a"
         assert!(!follows_flat);
         assert_eq!(flat_pal.window_bg, "#181214");
         assert_eq!(flat_pal.accent_bg, "#ffb1c4");
+
+        // Mode-first `colors.default` without `dark` / `light`.
+        let default_only = r##"{
+            "colors": {
+                "default": {
+                    "background": "#121318",
+                    "on_background": "#e2e2e9",
+                    "primary": "#b4c5ff"
+                }
+            }
+        }"##;
+        let (def_pal, follows_def) =
+            parse_matugen_colors_json(default_only, true).expect("default-only matugen");
+        assert!(def_pal.is_dark);
+        assert!(!follows_def);
+        assert_eq!(def_pal.window_bg, "#121318");
+        assert_eq!(def_pal.accent_bg, "#b4c5ff");
+
+        // Partial dual-mode JSON where preferred `light` lacks `primary` falls back to valid `dark`.
+        let partial_dual = r##"{
+            "colors": {
+                "light": {
+                    "background": "#f9f9ff",
+                    "on_background": "#191c20"
+                },
+                "dark": {
+                    "background": "#111318",
+                    "on_background": "#e2e2e9",
+                    "primary": "#adc6ff"
+                }
+            }
+        }"##;
+        let (fallback_pal, follows_fallback) =
+            parse_matugen_colors_json(partial_dual, false).expect("fallback to valid dark mode");
+        assert!(fallback_pal.is_dark);
+        assert!(!follows_fallback);
+        assert_eq!(fallback_pal.window_bg, "#111318");
     }
 
     #[test]
@@ -1947,26 +2111,42 @@ foreground = "#0f172a"
     #[test]
     fn builds_css_with_dynamic_cover_accent_on_preset_and_native_themes() {
         let p = ThemePalette::spotify_green();
-        // When enabled on a preset palette, accent variables use the contrast-safe cover accent.
+        // When enabled on a preset palette, accent variables use the contrast-safe cover accent
+        // across view, card, headerbar, and popover surfaces.
         let css = build_theme_css_with_options(Some(&p), Some("#182448"), true, true, None);
         let expected =
-            compute_accessible_cover_accent("#182448", true, &p.view_bg, &p.card_bg).unwrap();
+            compute_accessible_cover_accent_for_theme("#182448", Some(&p), true).unwrap();
+        assert!(
+            wcag_contrast_ratio_hex(&expected.accent, &p.popover_bg).unwrap()
+                >= WCAG_AA_TEXT_CONTRAST
+        );
         assert!(css.contains(&format!("--accent-bg-color: {};", expected.accent_bg)));
         assert!(css.contains(&format!("--accent-color: {};", expected.accent)));
         assert!(css.contains(&format!("--accent-fg-color: {};", expected.accent_fg)));
         assert!(!css.contains("--accent-bg-color: #1db954;"));
 
-        // On native system theme (None) with cover accent on controls enabled:
-        // overrides only accent tokens, never window_bg_color.
+        // On native Adwaita dark, contrast holds against real 1.6+ card/popover surface (#36363a).
+        let native_dark =
+            build_theme_css_with_options(None, Some("#182448"), true, true, Some("#3584e4"));
+        let expected_dark =
+            compute_accessible_cover_accent_for_theme("#182448", None, true).unwrap();
+        assert!(
+            wcag_contrast_ratio_hex(&expected_dark.accent, ADWAITA_DARK_CARD_BG).unwrap()
+                >= WCAG_AA_TEXT_CONTRAST
+        );
+        assert!(native_dark.contains(&format!("--accent-color: {};", expected_dark.accent)));
+
+        // On native system theme (None) light with cover accent on controls enabled:
+        // overrides only accent tokens (never window_bg_color) and holds >= 4.5:1 on both
+        // white views and the Adwaita light headerbar/playback bar (#ebebed).
         let native_light =
             build_theme_css_with_options(None, Some("#f0e27b"), true, false, Some("#1c71d8"));
-        let expected_light = compute_accessible_cover_accent(
-            "#f0e27b",
-            false,
-            ADWAITA_LIGHT_VIEW_BG,
-            ADWAITA_LIGHT_CARD_BG,
-        )
-        .unwrap();
+        let expected_light =
+            compute_accessible_cover_accent_for_theme("#f0e27b", None, false).unwrap();
+        assert!(
+            wcag_contrast_ratio_hex(&expected_light.accent, ADWAITA_LIGHT_HEADER_BG).unwrap()
+                >= WCAG_AA_TEXT_CONTRAST
+        );
         assert!(!native_light.contains("window_bg_color"));
         assert!(native_light.contains(&format!("--accent-bg-color: {};", expected_light.accent_bg)));
         assert!(native_light.contains(&format!("--accent-color: {};", expected_light.accent)));
