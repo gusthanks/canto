@@ -625,9 +625,17 @@ impl PlaybackState {
         }
     }
 
+    /// Starts a queue that has no current track yet (a list just loaded by
+    /// Play on a search result or a page header). This loads the list on
+    /// the device (TrackChanged), never the remote "next" shortcut of
+    /// `play_next_events`: a next press on Soloist skipped the new list's
+    /// first song (Q28).
     fn start_from_queue(&mut self) -> Vec<PlaybackEvent> {
         if self.queue.current().is_none() && self.has_next() {
-            self.play_next_events(false)
+            match self.play_next_skippable(false) {
+                Some(id) => vec![PlaybackEvent::TrackChanged(id)],
+                None => vec![PlaybackEvent::PlaybackStopped],
+            }
         } else {
             vec![]
         }
@@ -2173,6 +2181,37 @@ mod tests {
             .iter()
             .any(|e| matches!(e, PlaybackEvent::PlaybackStopped)));
         assert_eq!(state.is_playing(), was_playing);
+    }
+
+    #[test]
+    fn starting_a_new_list_on_a_connect_device_loads_it_instead_of_skipping() {
+        // Play on a search result or an album header: the queue is replaced
+        // and Play starts it. That must load the list on the device
+        // (TrackChanged), not send "next" to it: on Soloist a next press
+        // skipped the new song and Spotify fell into recommendations (Q28).
+        let mut state = PlaybackState::default();
+        state.act(PlaybackAction::SwitchDevice(connect_device("Soloist")));
+        state.act(PlaybackAction::ReplaceQueue);
+        state.act(PlaybackAction::LoadContextSongs(
+            SongsSource::Search("make noise".to_string()),
+            vec![song("make-noise"), song("this-sound")],
+        ));
+
+        let play = state.act(PlaybackAction::Play);
+        assert_eq!(state.current_song_id().as_deref(), Some("make-noise"));
+        assert!(
+            play.iter()
+                .any(|e| matches!(e, PlaybackEvent::TrackChanged(id) if id == "make-noise")),
+            "events: {:?}",
+            play
+        );
+        assert!(
+            !play
+                .iter()
+                .any(|e| matches!(e, PlaybackEvent::RemoteSkip(_))),
+            "events: {:?}",
+            play
+        );
     }
 
     #[test]
