@@ -1226,6 +1226,17 @@ impl PlaybackWidget {
         widget.seek_row.set_visible(visible);
     }
 
+    /// Shows or hides the Equalizer entry in More Options. The equalizer acts
+    /// only on the built-in local player (librespot), never on Soloist, the
+    /// hidden Spotify app, or remote Spotify Connect devices.
+    pub fn set_equalizer_available(&self, available: bool) {
+        let imp = self.imp();
+        imp.eq_open_presets.set_visible(available);
+        if !available && imp.more_stack.visible_child_name().as_deref() == Some("presets") {
+            imp.more_stack.set_visible_child_name("main");
+        }
+    }
+
     pub fn set_volume(&self, value: f64) {
         let widget = self.imp();
         if value > 0.01 {

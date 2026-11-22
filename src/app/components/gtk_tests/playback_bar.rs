@@ -10,6 +10,7 @@ gtk_tests! {
     },
     bar_tiers => assert_bar_tiers,
     more_options_rows => assert_more_options_rows,
+    more_options_equalizer_visibility => assert_more_options_equalizer_visibility,
 }
 
 /// The wheel or the touchpad over the volume changes it 5% a step, as
@@ -762,4 +763,63 @@ fn assert_more_options_rows() {
     );
     style.set_color_scheme(scheme);
     eprintln!("bar more options rows checked");
+}
+
+/// The Equalizer entry in More Options hides whenever playback uses Soloist
+/// or a remote Spotify Connect device, and exits the presets subpage if it
+/// was open; Audio Settings points directly at Preferences > Audio.
+fn assert_more_options_equalizer_visibility() {
+    force_dark();
+    no_animations();
+    let bar: crate::app::components::shell::playback::PlaybackWidget = glib::Object::new();
+    let root = bar.upcast_ref::<gtk::Widget>();
+    let eq_row = by_id(root, "eq_open_presets")
+        .expect("eq_open_presets button")
+        .downcast::<gtk::Button>()
+        .unwrap();
+    let audio_settings = by_id(root, "eq_open_settings")
+        .expect("eq_open_settings button")
+        .downcast::<gtk::Button>()
+        .unwrap();
+    let stack = by_id(root, "more_stack")
+        .expect("more_stack")
+        .downcast::<gtk::Stack>()
+        .unwrap();
+
+    check(
+        "Audio Settings opens Preferences directly on the Audio page",
+        audio_settings.action_name().as_deref() == Some("win.preferences-audio"),
+        format!("{:?}", audio_settings.action_name()),
+    );
+    check(
+        "Equalizer row starts visible for local playback",
+        eq_row.get_visible(),
+        format!("visible={}", eq_row.get_visible()),
+    );
+
+    eq_row.emit_clicked();
+    pump(50);
+    check(
+        "clicking Equalizer opens the presets subpage",
+        stack.visible_child_name().as_deref() == Some("presets"),
+        format!("{:?}", stack.visible_child_name()),
+    );
+
+    bar.set_equalizer_available(false);
+    check(
+        "hiding the Equalizer removes the row and returns the menu from presets to main",
+        !eq_row.get_visible() && stack.visible_child_name().as_deref() == Some("main"),
+        format!(
+            "visible={}, page={:?}",
+            eq_row.get_visible(),
+            stack.visible_child_name()
+        ),
+    );
+
+    bar.set_equalizer_available(true);
+    check(
+        "re-enabling the Equalizer restores the row",
+        eq_row.get_visible(),
+        format!("visible={}", eq_row.get_visible()),
+    );
 }

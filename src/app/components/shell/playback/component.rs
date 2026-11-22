@@ -8,7 +8,9 @@ use crate::app::components::{
     DeviceSelector, DeviceSelectorModel, EventListener, SleepTimerController, SleepTimerMode,
 };
 use crate::app::models::*;
-use crate::app::state::{PlaybackAction, PlaybackEvent, SelectionEvent};
+use crate::app::state::{
+    Device as PlaybackDevice, LoginEvent, PlaybackAction, PlaybackEvent, SelectionEvent,
+};
 use crate::app::{AppEvent, AppModel, AppState, BrowserEvent, Dispatcher};
 use canto_config::feature_flags::FeatureFlag;
 use canto_config::settings::SETTINGS;
@@ -94,12 +96,24 @@ impl PlaybackModel {
         self.dispatcher
             .dispatch(PlaybackAction::SetVolume(value).into())
     }
+
+    fn current_device(&self) -> PlaybackDevice {
+        self.state().playback.current_device().clone()
+    }
+}
+
+/// Whether the built-in equalizer affects the current playback route.
+/// It applies only to local librespot playback, never to Soloist, the hidden
+/// official Spotify app, or remote Spotify Connect devices.
+pub(crate) fn equalizer_available(device: &PlaybackDevice, needs_official_client: bool) -> bool {
+    matches!(device, PlaybackDevice::Local) && !needs_official_client
 }
 
 pub struct PlaybackControl {
     model: Rc<PlaybackModel>,
     widget: PlaybackWidget,
     device_selector: DeviceSelector,
+    official_client_detected: bool,
 }
 
 impl PlaybackControl {
@@ -185,11 +199,21 @@ impl PlaybackControl {
             }
         });
 
-        Self {
+        let control = Self {
             model,
             widget,
             device_selector,
-        }
+            official_client_detected: crate::connect::account_needs_official_client(),
+        };
+        control.update_equalizer_availability();
+        control
+    }
+
+    fn update_equalizer_availability(&self) {
+        let needs_official =
+            self.official_client_detected || crate::connect::account_needs_official_client();
+        let available = equalizer_available(&self.model.current_device(), needs_official);
+        self.widget.set_equalizer_available(available);
     }
 
     fn update_repeat(&self, mode: &RepeatMode) {
@@ -285,8 +309,44 @@ impl EventListener for PlaybackControl {
             AppEvent::ConnectionLostChanged(lost) => {
                 self.set_connection_lost(*lost);
             }
+            AppEvent::PlaybackEvent(PlaybackEvent::SwitchedDevice(_))
+            | AppEvent::LoginEvent(LoginEvent::LoginCompleted) => {
+                self.update_equalizer_availability();
+            }
+            AppEvent::OfficialClientRequested => {
+                self.official_client_detected = true;
+                self.update_equalizer_availability();
+            }
+            AppEvent::LoginEvent(LoginEvent::LogoutCompleted) => {
+                self.official_client_detected = crate::connect::account_needs_official_client();
+                self.update_equalizer_availability();
+            }
             _ => {}
         }
         self.device_selector.on_event(event);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn remote_device(label: &str) -> PlaybackDevice {
+        PlaybackDevice::Connect(Device {
+            id: "dev-1".to_string(),
+            label: label.to_string(),
+            kind: DeviceKind::Speaker,
+            is_active: true,
+            volume_percent: Some(50),
+        })
+    }
+
+    #[test]
+    fn equalizer_is_available_only_for_local_librespot_playback() {
+        assert!(equalizer_available(&PlaybackDevice::Local, false));
+        assert!(!equalizer_available(&PlaybackDevice::Local, true));
+        assert!(!equalizer_available(&remote_device("Canto"), false));
+        assert!(!equalizer_available(&remote_device("Canto"), true));
+        assert!(!equalizer_available(&remote_device("Living Room"), false));
     }
 }
