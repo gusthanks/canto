@@ -880,7 +880,7 @@ msgstr "1. Abra o painel do Spotify Soloist abaixo e crie uma chave de API gratu
 msgid ""
 "2. In Canto, go to Preferences → Audio → Spotify Soloist, paste the key into "
 "Soloist API Key, and press Apply."
-msgstr "2. No Canto, abra Preferências → Áudio → Spotify Soloist, cole a chave em Chave da API do Soloist e clique em Aplicar."
+msgstr "2. No Canto, abra Preferências → Áudio → Spotify Soloist, cole a chave em Chave do Soloist e clique em Aplicar."
 
 #: src/app/components/pages/settings/settings.rs:1741
 msgid ""
@@ -2485,9 +2485,8 @@ msgstr "Mostrar a fila em um painel na lateral da janela"
 #. Translators: Header for a group of preference items regarding playback and window behavior
 #: src/app/components/pages/settings/settings.blp:84
 #: src/app/components/pages/shortcuts/shortcuts.blp:7
-#, fuzzy
 msgid "Playback"
-msgstr "Reprodução sem intervalos"
+msgstr "Reprodução"
 
 #. Translators: Title for an item in preferences
 #: src/app/components/pages/settings/settings.blp:89

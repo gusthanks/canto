@@ -132,12 +132,12 @@ Canto works out of the box for browsing your library, LRCLIB synced lyrics, lyri
 
 ### 0. Spotify Soloist (playback)
 
-Some accounts can't play audio inside Canto itself (Spotify's DRM blocks it). For those, Canto plays through **Spotify Soloist**, Spotify's official windowless player for Linux (x86_64), which Canto downloads and keeps up to date on its own. Soloist needs a free developer key:
+Some accounts can't play audio inside Canto itself (Spotify's DRM blocks it). For those, Canto plays through **Spotify Soloist**, Spotify's official windowless player for Linux (x86_64 builds are downloaded and updated automatically by Canto; on other architectures such as ARM64, install Soloist manually or point `CANTO_SOLOIST_CMD` at it). Soloist needs a free developer key:
 
 1. Follow Spotify's guide at [developer.spotify.com/documentation/soloist](https://developer.spotify.com/documentation/soloist) to create the key (Premium account).
-2. Paste it into **Preferences -> Spotify Soloist -> Soloist API Key** and turn on **Play Through Soloist**.
+2. Paste it into **Preferences -> Audio -> Spotify Soloist -> Soloist API Key** and turn on **Play Through Soloist**.
 
-Without a key, Canto falls back to the official Spotify app running hidden in the background (it must be installed).
+Without a key, Canto shows a setup banner with an in-app guide and falls back to the official Spotify app running hidden in the background (it must be installed).
 
 
 ### 1. Spotify OAuth & Connect
@@ -148,12 +148,12 @@ Canto uses Spotify's OAuth 2.0 PKCE flow (`crates/canto-auth/src/oauth2.rs`) and
 http://127.0.0.1:8898/login
 ```
 
-Default builds ship with an OAuth Client ID (`782ae96ea60f4cdf986a766049607005`) pre-configured. If you are building Canto with your own Spotify Developer application:
+Default builds ship with an OAuth Client ID (`782ae96ea60f4cdf986a766049607005`) pre-configured. To use your own Spotify Developer application without rebuilding:
 
 1. Open the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and click **Create app**.
 2. Under **Redirect URIs**, add `http://127.0.0.1:8898/login` and select **Web API**.
-3. Copy your **Client ID** into `CLIENT_ID` in `crates/canto-auth/src/oauth2.rs` and rebuild.
-4. Launch Canto and click **Log in with Spotify**. Approve in your browser and it will redirect back to `127.0.0.1:8898/login` automatically.
+3. On the Canto login window, click **Use my own Client ID** and paste your **Client ID** (stored in GSettings), or launch Canto with `CANTO_SPOTIFY_CLIENT_ID=<your-client-id>` (overrides the saved setting).
+4. Click **Log in with Spotify**. Approve in your browser and it will redirect back to `127.0.0.1:8898/login` automatically.
 
 Note: Spotify restricted `/v1/recommendations` and `/v1/artists/{id}/related-artists` for many newer Client IDs starting in November 2024. Canto detects 403/404 responses automatically and builds Track Radio from artist top tracks and catalog searches with deduplication.
 
