@@ -24,6 +24,20 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # The GNOME SDK comes installed in the image's layers. Updating it moves
+      # files across overlay layers, which fails ("Invalid cross-device link",
+      # then flatpak-builder exits 139). Copying the installation first puts
+      # it all in the container's own layer, where the update works.
+      - name: Put the image's Flatpak installation on one layer
+        run: |
+          for dir in $(flatpak --installations); do
+            df -h "$dir"
+            cp -a "$dir" "$dir.copy"
+            rm -rf "$dir"
+            mv "$dir.copy" "$dir"
+          done
+          flatpak update --noninteractive --assumeyes
+
       - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: canto-${{ matrix.variant.arch }}.flatpak
