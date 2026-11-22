@@ -324,6 +324,11 @@ pub struct SpotifyPlayer {
 
     // Receives feedback from commands or various events in the player
     delegate: AppPlayerDelegate,
+
+    // Native symphonia/WAV PCM stream player for Local and Subsonic sources,
+    // routed through the same ProcessorChain DSP pipeline.
+    stream_player: super::stream_player::StreamPlayer,
+    active_stream: bool,
 }
 
 impl SpotifyPlayer {
@@ -340,6 +345,16 @@ impl SpotifyPlayer {
         let pan_controller = PanController::new(settings.pan);
         let pitch_controller = PitchController::new(settings.pitch_cents);
         let mix_controller = MixController::with_duration_secs(settings.crossfade_seconds);
+        let stream_player = super::stream_player::StreamPlayer::new(
+            settings.volume,
+            eq_controller.clone(),
+            mono_controller.clone(),
+            pan_controller.clone(),
+            pitch_controller.clone(),
+            mix_controller.clone(),
+            level_meter_controller.clone(),
+            delegate.clone(),
+        );
         Self {
             settings,
             mixer: None,
@@ -382,6 +397,8 @@ impl SpotifyPlayer {
 
             explicit_filter_locked: false,
             delegate,
+            stream_player,
+            active_stream: false,
         }
     }
 
@@ -403,6 +420,8 @@ impl SpotifyPlayer {
     async fn handle(&mut self, action: Command) -> Result<(), SpotifyError> {
         match action {
             Command::PlayerSetVolume(volume) => {
+                self.settings.volume = volume;
+                self.stream_player.set_volume(volume);
                 if let Some(mixer) = self.mixer.as_mut() {
                     mixer_set_volume(&mut **mixer, volume);
                 }
@@ -434,13 +453,21 @@ impl SpotifyPlayer {
                 Ok(())
             }
             Command::PlayerResume => {
-                self.ensure_session_alive().await?;
                 self.is_paused = false;
+                if self.active_stream {
+                    self.stream_player.play();
+                    return Ok(());
+                }
+                self.ensure_session_alive().await?;
                 self.get_player()?.play();
                 Ok(())
             }
             Command::PlayerPause => {
                 self.is_paused = true;
+                if self.active_stream {
+                    self.stream_player.pause();
+                    return Ok(());
+                }
                 self.get_player()?.pause();
                 Ok(())
             }
@@ -450,18 +477,33 @@ impl SpotifyPlayer {
                 self.track_needs_reload = false;
                 self.advance_after_reconnect.store(false, Ordering::Relaxed);
                 self.mix_controller.reset();
-                self.get_player()?.stop();
+                if self.active_stream {
+                    self.active_stream = false;
+                    self.stream_player.stop();
+                    return Ok(());
+                }
+                if let Ok(p) = self.get_player() {
+                    p.stop();
+                }
                 Ok(())
             }
             Command::PlayerSeek(position) => {
                 self.last_position_ms.store(position, Ordering::Relaxed);
                 self.mix_controller.reset();
+                if self.active_stream {
+                    self.stream_player.seek(position);
+                    return Ok(());
+                }
                 self.ensure_session_alive().await?;
                 self.get_player()?.seek(position);
                 Ok(())
             }
             Command::PlayerLoad { track, resume } => {
                 debug!("Player: playing track {track}");
+                if self.active_stream {
+                    self.stream_player.stop();
+                    self.active_stream = false;
+                }
                 self.ensure_session_alive().await?;
                 if self.current_track.is_some()
                     && !self.is_paused
@@ -478,6 +520,33 @@ impl SpotifyPlayer {
                 self.advance_after_reconnect.store(false, Ordering::Relaxed);
                 self.last_position_ms.store(0, Ordering::Relaxed);
                 self.get_player_mut()?.load(track, resume, 0);
+                Ok(())
+            }
+            Command::PlayerLoadStream { url, resume } => {
+                debug!("StreamPlayer: playing {url}");
+                if let Ok(player) = self.get_player() {
+                    player.stop();
+                }
+                self.current_track = None;
+                if self.active_stream
+                    && !self.is_paused
+                    && resume
+                    && self.settings.crossfade_seconds > 0
+                {
+                    self.mix_controller.trigger_transition();
+                } else if !resume {
+                    self.mix_controller.reset();
+                }
+                self.active_stream = true;
+                self.is_paused = !resume;
+                self.stream_player.set_volume(self.settings.volume);
+                self.stream_player.load(
+                    url,
+                    resume,
+                    self.settings.backend.clone(),
+                    self.settings.audio_format,
+                    self.settings.volume_curve,
+                );
                 Ok(())
             }
             Command::PlayerPreload(track) => {
@@ -523,6 +592,8 @@ impl SpotifyPlayer {
                     session.shutdown();
                 }
                 let _ = self.player.take();
+                self.active_stream = false;
+                self.stream_player.stop();
                 self.current_track = None;
                 self.is_paused = false;
                 self.track_needs_reload = false;

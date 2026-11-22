@@ -90,4 +90,5 @@ src/app/state/app_state.rs
 src/settings.rs
 src/app/components/pages/about/about.rs
 src/app/components/pages/login/login.rs
+src/app/components/pages/login/login_model.rs
 src/app/components/shell/playback/playback_widget.rs

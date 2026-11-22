@@ -12,12 +12,19 @@ mod request;
 
 use domain::SpotifyDomain;
 
+pub fn spotify_provider(
+    token_provider: Arc<dyn TokenProvider>,
+    session_token_provider: Arc<dyn TokenProvider>,
+) -> Arc<dyn crate::providers::MusicProvider> {
+    Arc::new(SpotifyDomain::new(token_provider, session_token_provider))
+}
+
 pub fn spotify_service(
     token_provider: Arc<dyn TokenProvider>,
     session_token_provider: Arc<dyn TokenProvider>,
     memory_cache_bytes: usize,
     disk_cache_bytes: usize,
 ) -> ApiService {
-    let provider = Arc::new(SpotifyDomain::new(token_provider, session_token_provider));
+    let provider = spotify_provider(token_provider, session_token_provider);
     ApiService::new(provider, memory_cache_bytes, disk_cache_bytes)
 }

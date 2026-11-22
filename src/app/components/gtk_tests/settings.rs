@@ -148,7 +148,7 @@ fn assert_lastfm_love_switch() {
 /// while skipping hidden librespot rows in external-player mode, and is
 /// organized into three pages: General, Audio, and Integrations.
 fn assert_preferences_pages_and_search() {
-    use libadwaita::prelude::{AdwDialogExt, PreferencesDialogExt};
+    use libadwaita::prelude::{AdwDialogExt, ComboRowExt, PreferencesDialogExt};
     force_dark();
     no_animations();
     let dialog = SettingsDialog::new();
@@ -200,6 +200,55 @@ fn assert_preferences_pages_and_search() {
         ),
     );
     gsettings_cf.reset(canto_config::settings::CROSSFADE_SECONDS);
+
+    // Verify Music Source switcher in Integrations hides/shows Local vs Subsonic rows and Spotify-only Soloist group.
+    let gsettings_src = gio::Settings::new(canto_config::settings::SETTINGS);
+    gsettings_src.reset(canto_config::settings::MUSIC_SOURCE);
+    let source_combo = dialog.music_source_combo_row();
+    let local_row = dialog.local_folders_action_row();
+    let subsonic_row = dialog.subsonic_url_entry_row();
+    let soloist_group = dialog.soloist_group_for_tests();
+    check(
+        "Music source starts on Spotify with Local/Subsonic rows hidden",
+        source_combo.selected() == 0
+            && !local_row.is_visible()
+            && !subsonic_row.is_visible()
+            && soloist_group.parent().is_some(),
+        format!(
+            "sel={}, local={}, sub={}, soloist={}",
+            source_combo.selected(),
+            local_row.is_visible(),
+            subsonic_row.is_visible(),
+            soloist_group.parent().is_some()
+        ),
+    );
+    source_combo.set_selected(1);
+    pump(50);
+    check(
+        "Selecting Local Files shows local folder row and detaches Spotify Soloist group",
+        local_row.is_visible() && !subsonic_row.is_visible() && soloist_group.parent().is_none(),
+        format!(
+            "local={}, sub={}, soloist_parent={}",
+            local_row.is_visible(),
+            subsonic_row.is_visible(),
+            soloist_group.parent().is_some()
+        ),
+    );
+    source_combo.set_selected(2);
+    pump(50);
+    check(
+        "Selecting Navidrome / Subsonic shows Subsonic fields and hides local row",
+        !local_row.is_visible() && subsonic_row.is_visible() && soloist_group.parent().is_none(),
+        format!(
+            "local={}, sub={}, soloist_parent={}",
+            local_row.is_visible(),
+            subsonic_row.is_visible(),
+            soloist_group.parent().is_some()
+        ),
+    );
+    source_combo.set_selected(0);
+    gsettings_src.reset(canto_config::settings::MUSIC_SOURCE);
+    pump(50);
 
     dialog.set_external_player_for_tests(true);
     wait_frames(&window, 3);

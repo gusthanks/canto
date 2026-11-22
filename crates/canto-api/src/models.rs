@@ -13,6 +13,8 @@ pub enum Provider {
     AppleMusic,
     Tidal,
     YouTubeMusic,
+    Local,
+    Subsonic,
     Other(String),
 }
 

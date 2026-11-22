@@ -21,8 +21,9 @@ use super::SettingsModel;
 use canto_config::settings::{
     GENIUS_ACCESS_TOKEN, LASTFM_API_KEY, LASTFM_API_SECRET, LASTFM_LOVE_ON_LIKE,
     LASTFM_SESSION_KEY, LASTFM_SESSION_REJECTED, LASTFM_USERNAME, LISTENBRAINZ_TOKEN,
-    LYRICS_GENIUS_FALLBACK, RESTART_REQUIRED_KEYS, SCROBBLE_ENABLED, SCROBBLE_RESPECT_REMOTE,
-    SETTINGS, SMART_QUEUE_CONTINUATION, VISUAL_BRIDGE_ENABLED,
+    LYRICS_GENIUS_FALLBACK, MUSIC_SOURCE, RESTART_REQUIRED_KEYS, SCROBBLE_ENABLED,
+    SCROBBLE_RESPECT_REMOTE, SETTINGS, SMART_QUEUE_CONTINUATION, SUBSONIC_PASSWORD, SUBSONIC_URL,
+    SUBSONIC_USERNAME, VISUAL_BRIDGE_ENABLED,
 };
 
 mod imp {
@@ -39,6 +40,24 @@ mod imp {
         }
     }
 
+    #[derive(Default)]
+    pub struct SourceChangedCallback(pub RefCell<Option<Box<dyn Fn(&str)>>>);
+
+    impl std::fmt::Debug for SourceChangedCallback {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str("SourceChangedCallback")
+        }
+    }
+
+    #[derive(Default)]
+    pub struct FoldersChangedCallback(pub RefCell<Option<Box<dyn Fn(Vec<std::path::PathBuf>)>>>);
+
+    impl std::fmt::Debug for FoldersChangedCallback {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str("FoldersChangedCallback")
+        }
+    }
+
     #[derive(Debug)]
     pub struct DynamicAudioLayout {
         pub audio_group: libadwaita::PreferencesGroup,
@@ -52,6 +71,8 @@ mod imp {
         pub clear_cache_row: libadwaita::ActionRow,
         pub local_attached: bool,
         pub normalisation_attached: bool,
+        pub spotify_network_attached: bool,
+        pub soloist_attached: bool,
         pub audio_cache_attached: bool,
     }
 
@@ -248,9 +269,44 @@ mod imp {
         #[template_child]
         pub visual_bridge_switch: TemplateChild<libadwaita::SwitchRow>,
 
+        #[template_child]
+        pub music_source_combo: TemplateChild<libadwaita::ComboRow>,
+
+        #[template_child]
+        pub local_folders_row: TemplateChild<libadwaita::ActionRow>,
+
+        #[template_child]
+        pub add_local_folder_button: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub rescan_local_button: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub settings_subsonic_url: TemplateChild<libadwaita::EntryRow>,
+
+        #[template_child]
+        pub settings_subsonic_username: TemplateChild<libadwaita::EntryRow>,
+
+        #[template_child]
+        pub settings_subsonic_password: TemplateChild<libadwaita::PasswordEntryRow>,
+
+        #[template_child]
+        pub settings_subsonic_test_row: TemplateChild<libadwaita::ActionRow>,
+
+        #[template_child]
+        pub settings_subsonic_test_button: TemplateChild<gtk::Button>,
+
         pub lastfm_pending_token: RefCell<Option<String>>,
 
         pub soloist_key_changed: SoloistKeyCallback,
+
+        pub source_changed: SourceChangedCallback,
+
+        pub folders_changed: FoldersChangedCallback,
+
+        pub rescan_local: SoloistKeyCallback,
+
+        pub syncing_music_source: Cell<bool>,
 
         pub external_player: Cell<bool>,
 
@@ -308,6 +364,26 @@ impl SettingsDialog {
     }
 
     #[cfg(test)]
+    pub fn music_source_combo_row(&self) -> libadwaita::ComboRow {
+        self.imp().music_source_combo.get()
+    }
+
+    #[cfg(test)]
+    pub fn local_folders_action_row(&self) -> libadwaita::ActionRow {
+        self.imp().local_folders_row.get()
+    }
+
+    #[cfg(test)]
+    pub fn subsonic_url_entry_row(&self) -> libadwaita::EntryRow {
+        self.imp().settings_subsonic_url.get()
+    }
+
+    #[cfg(test)]
+    pub fn soloist_group_for_tests(&self) -> libadwaita::PreferencesGroup {
+        self.imp().soloist_group.get()
+    }
+
+    #[cfg(test)]
     pub fn page_names_for_tests(&self) -> Vec<String> {
         let imp = self.imp();
         [
@@ -345,6 +421,7 @@ impl SettingsDialog {
         dialog.setup_bitrate_lossless_factory();
         dialog.bind_feature_flags();
         dialog.connect_theme_select();
+        dialog.setup_music_source();
         dialog.setup_integrations();
         dialog.setup_soloist();
         dialog
@@ -364,6 +441,8 @@ impl SettingsDialog {
             clear_cache_row: imp.clear_cache_row.get(),
             local_attached: true,
             normalisation_attached: true,
+            spotify_network_attached: true,
+            soloist_attached: true,
             audio_cache_attached: true,
         });
     }
@@ -1167,6 +1246,182 @@ impl SettingsDialog {
         *self.imp().soloist_key_changed.0.borrow_mut() = Some(Box::new(on_change));
     }
 
+    pub fn connect_music_source_changed<F>(&self, on_change: F)
+    where
+        F: Fn(&str) + 'static,
+    {
+        *self.imp().source_changed.0.borrow_mut() = Some(Box::new(on_change));
+    }
+
+    pub fn connect_local_folders_changed<F>(&self, on_change: F)
+    where
+        F: Fn(Vec<std::path::PathBuf>) + 'static,
+    {
+        *self.imp().folders_changed.0.borrow_mut() = Some(Box::new(on_change));
+    }
+
+    pub fn connect_rescan_local<F>(&self, on_rescan: F)
+    where
+        F: Fn() + 'static,
+    {
+        *self.imp().rescan_local.0.borrow_mut() = Some(Box::new(on_rescan));
+    }
+
+    fn sync_music_source_rows(&self) {
+        let imp = self.imp();
+        let selected = imp.music_source_combo.selected();
+        let is_local = selected == 1;
+        let is_subsonic = selected == 2;
+        imp.local_folders_row.set_visible(is_local);
+        imp.settings_subsonic_url.set_visible(is_subsonic);
+        imp.settings_subsonic_username.set_visible(is_subsonic);
+        imp.settings_subsonic_password.set_visible(is_subsonic);
+        imp.settings_subsonic_test_row.set_visible(is_subsonic);
+        self.refresh_local_folders_subtitle();
+    }
+
+    fn refresh_local_folders_subtitle(&self) {
+        let folders = canto_config::settings::local_music_folders();
+        let label = if folders.is_empty() {
+            gettext("No folder selected")
+        } else {
+            folders
+                .iter()
+                .map(|p| p.display().to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
+        self.imp().local_folders_row.set_subtitle(&label);
+    }
+
+    fn setup_music_source(&self) {
+        let imp = self.imp();
+        let settings = gio::Settings::new(SETTINGS);
+
+        settings
+            .bind(SUBSONIC_URL, &*imp.settings_subsonic_url, "text")
+            .build();
+        settings
+            .bind(SUBSONIC_USERNAME, &*imp.settings_subsonic_username, "text")
+            .build();
+        settings
+            .bind(SUBSONIC_PASSWORD, &*imp.settings_subsonic_password, "text")
+            .build();
+
+        imp.syncing_music_source.set(true);
+        let idx = match settings.string(MUSIC_SOURCE).as_str() {
+            "local" => 1,
+            "subsonic" => 2,
+            _ => 0,
+        };
+        imp.music_source_combo.set_selected(idx);
+        imp.syncing_music_source.set(false);
+        self.sync_music_source_rows();
+
+        let weak_self = self.downgrade();
+        let settings_combo = settings.clone();
+        imp.music_source_combo
+            .connect_selected_notify(move |combo| {
+                let Some(dialog) = weak_self.upgrade() else {
+                    return;
+                };
+                let source = match combo.selected() {
+                    1 => "local",
+                    2 => "subsonic",
+                    _ => "spotify",
+                };
+                let _ = settings_combo.set_string(MUSIC_SOURCE, source);
+                dialog.sync_music_source_rows();
+                dialog.sync_audio_page_layout();
+                if !dialog.imp().syncing_music_source.get() {
+                    if let Some(cb) = dialog.imp().source_changed.0.borrow().as_ref() {
+                        cb(source);
+                    }
+                }
+            });
+
+        let weak_self = self.downgrade();
+        imp.add_local_folder_button.connect_clicked(move |btn| {
+            let Some(dialog_self) = weak_self.upgrade() else {
+                return;
+            };
+            let parent = btn.root().and_then(|r| r.downcast::<gtk::Window>().ok());
+            let chooser = gtk::FileDialog::builder()
+                .title(gettext("Choose Music Folder"))
+                .modal(true)
+                .build();
+            let weak2 = dialog_self.downgrade();
+            chooser.select_folder(parent.as_ref(), gio::Cancellable::NONE, move |res| {
+                let Ok(folder) = res else {
+                    return;
+                };
+                let Some(path) = folder.path() else {
+                    return;
+                };
+                let folders = vec![path];
+                canto_config::settings::set_local_music_folders(&folders);
+                if let Some(d) = weak2.upgrade() {
+                    d.refresh_local_folders_subtitle();
+                    if let Some(cb) = d.imp().folders_changed.0.borrow().as_ref() {
+                        cb(folders);
+                    }
+                }
+            });
+        });
+
+        let weak_self = self.downgrade();
+        imp.rescan_local_button.connect_clicked(move |_| {
+            if let Some(d) = weak_self.upgrade() {
+                if let Some(cb) = d.imp().rescan_local.0.borrow().as_ref() {
+                    cb();
+                }
+            }
+        });
+
+        let weak_self = self.downgrade();
+        imp.settings_subsonic_test_button
+            .connect_clicked(move |btn| {
+                let Some(d) = weak_self.upgrade() else {
+                    return;
+                };
+                let (server_url, username, password) = canto_config::settings::subsonic_settings();
+                let cfg = canto_api::SubsonicConfig {
+                    server_url,
+                    username,
+                    password,
+                };
+                if !cfg.is_valid() {
+                    d.imp()
+                        .settings_subsonic_test_row
+                        .set_subtitle(&gettext("Enter server URL, username, and password first"));
+                    return;
+                }
+                btn.set_sensitive(false);
+                d.imp()
+                    .settings_subsonic_test_row
+                    .set_subtitle(&gettext("Testing connection…"));
+                let btn_clone = btn.clone();
+                let weak2 = d.downgrade();
+                glib::spawn_future_local(async move {
+                    let res =
+                        tokio::spawn(
+                            async move { canto_api::test_subsonic_connection(&cfg).await },
+                        )
+                        .await;
+                    btn_clone.set_sensitive(true);
+                    let Some(d) = weak2.upgrade() else {
+                        return;
+                    };
+                    let msg = match res {
+                        Ok(Ok(ver)) => gettext("Connected ({})").replace("{}", &ver),
+                        Ok(Err(e)) => format!("{e}"),
+                        Err(e) => format!("{e}"),
+                    };
+                    d.imp().settings_subsonic_test_row.set_subtitle(&msg);
+                });
+            });
+    }
+
     /// Attaches or detaches the librespot-only audio/DSP/network groups and the
     /// audio-cache row according to `external_player` and `FeatureFlag::Normalisation`.
     ///
@@ -1175,28 +1430,41 @@ impl SettingsDialog {
     /// Preferences search stops indexing inactive settings.
     fn sync_audio_page_layout(&self) {
         let imp = self.imp();
+        let gsettings = gio::Settings::new(SETTINGS);
+        let is_spotify_source = gsettings.string(MUSIC_SOURCE) == "spotify";
         let show_local = !imp.external_player.get();
-        let norm_enabled = gio::Settings::new(SETTINGS).boolean(FeatureFlag::Normalisation.key());
+        let norm_enabled = gsettings.boolean(FeatureFlag::Normalisation.key());
         let show_norm = show_local && norm_enabled;
+        let show_network = show_local && is_spotify_source;
+        let show_cache = show_local && is_spotify_source;
+        let show_soloist = is_spotify_source;
 
         let mut layout_guard = imp.dynamic_audio.borrow_mut();
         let Some(layout) = layout_guard.as_mut() else {
             return;
         };
 
-        if layout.local_attached != show_local || layout.normalisation_attached != show_norm {
+        if layout.local_attached != show_local
+            || layout.normalisation_attached != show_norm
+            || layout.spotify_network_attached != show_network
+            || layout.soloist_attached != show_soloist
+        {
             let audio_page = imp.audio_page.get();
             if layout.local_attached {
                 audio_page.remove(&layout.audio_group);
                 audio_page.remove(&layout.equalizer);
                 audio_page.remove(&layout.pan);
                 audio_page.remove(&layout.pitch);
-                audio_page.remove(&layout.network_group);
             }
             if layout.normalisation_attached {
                 audio_page.remove(&layout.normalisation_group);
             }
-            audio_page.remove(&layout.soloist_group);
+            if layout.spotify_network_attached {
+                audio_page.remove(&layout.network_group);
+            }
+            if layout.soloist_attached {
+                audio_page.remove(&layout.soloist_group);
+            }
 
             if show_local {
                 audio_page.add(&layout.audio_group);
@@ -1206,24 +1474,30 @@ impl SettingsDialog {
                 audio_page.add(&layout.equalizer);
                 audio_page.add(&layout.pan);
                 audio_page.add(&layout.pitch);
+            }
+            if show_network {
                 audio_page.add(&layout.network_group);
             }
-            audio_page.add(&layout.soloist_group);
+            if show_soloist {
+                audio_page.add(&layout.soloist_group);
+            }
 
             layout.local_attached = show_local;
             layout.normalisation_attached = show_norm;
+            layout.spotify_network_attached = show_network;
+            layout.soloist_attached = show_soloist;
         }
 
-        if layout.audio_cache_attached != show_local {
+        if layout.audio_cache_attached != show_cache {
             let caching_group = imp.caching_group.get();
-            if show_local {
+            if show_cache {
                 caching_group.remove(&layout.clear_cache_row);
                 caching_group.add(&layout.audio_cache_size);
                 caching_group.add(&layout.clear_cache_row);
             } else {
                 caching_group.remove(&layout.audio_cache_size);
             }
-            layout.audio_cache_attached = show_local;
+            layout.audio_cache_attached = show_cache;
         }
     }
 
@@ -1605,6 +1879,21 @@ impl Settings {
         let soloist_model = model.clone();
         settings_dialog.connect_soloist_key_changed(move || {
             soloist_model.soloist_key_changed();
+        });
+
+        let source_model = model.clone();
+        settings_dialog.connect_music_source_changed(move |source| {
+            source_model.switch_music_source(source);
+        });
+
+        let folders_model = model.clone();
+        settings_dialog.connect_local_folders_changed(move |folders| {
+            folders_model.set_local_folders(folders);
+        });
+
+        let rescan_model = model.clone();
+        settings_dialog.connect_rescan_local(move || {
+            rescan_model.rescan_local_library();
         });
 
         let notify_model = model.clone();

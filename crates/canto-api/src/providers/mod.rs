@@ -6,7 +6,9 @@
 mod provider;
 pub use provider::{MusicProvider, ProviderCapabilities, ProviderKind};
 
+pub mod local;
 pub mod spotify;
+pub mod subsonic;
 
 use crate::models::{AlbumType, ContentRating, Image, ImageSet, ReleaseDate};
 

@@ -200,15 +200,36 @@ impl PlayerNotifier {
 
     fn notify_login(&self, event: &LoginEvent) {
         info!("notify_login: {:?}", event);
-        let command = match event {
-            LoginEvent::LoginStarted(LoginStartedEvent::Restore) => Some(Command::Restore),
-            LoginEvent::LoginStarted(LoginStartedEvent::InitLogin) => Some(Command::InitLogin),
-            LoginEvent::LogoutCompleted => Some(Command::Logout),
-            _ => None,
-        };
-
-        if let Some(command) = command {
-            self.send_command_to_local_player(command);
+        match event {
+            LoginEvent::LoginStarted(LoginStartedEvent::Restore) => {
+                match self.app_model.api().provider_kind() {
+                    canto_api::ProviderKind::Local => {
+                        self.dispatcher.dispatch(
+                            LoginAction::SetLoginSuccess("Local Library".to_string()).into(),
+                        );
+                    }
+                    canto_api::ProviderKind::Subsonic => {
+                        let (_, username, _) = canto_config::settings::subsonic_settings();
+                        let label = if username.trim().is_empty() {
+                            "Subsonic".to_string()
+                        } else {
+                            username
+                        };
+                        self.dispatcher
+                            .dispatch(LoginAction::SetLoginSuccess(label).into());
+                    }
+                    canto_api::ProviderKind::Spotify | canto_api::ProviderKind::YouTubeMusic => {
+                        self.send_command_to_local_player(Command::Restore);
+                    }
+                }
+            }
+            LoginEvent::LoginStarted(LoginStartedEvent::InitLogin) => {
+                self.send_command_to_local_player(Command::InitLogin);
+            }
+            LoginEvent::LogoutCompleted => {
+                self.send_command_to_local_player(Command::Logout);
+            }
+            _ => {}
         }
     }
 
@@ -286,6 +307,7 @@ impl PlayerNotifier {
     }
 
     fn notify_local_player(&self, event: &PlaybackEvent) {
+        let is_spotify = self.app_model.api().provider_kind() == canto_api::ProviderKind::Spotify;
         let command = match event {
             PlaybackEvent::PlaybackPaused => Some(Command::PlayerPause),
             PlaybackEvent::PlaybackResumed => Some(Command::PlayerResume),
@@ -301,24 +323,37 @@ impl PlayerNotifier {
             }
             PlaybackEvent::TrackChanged(id) => {
                 info!("track changed: {}", id);
-                SpotifyId::from_base62(id)
-                    .ok()
-                    .map(|track| Command::PlayerLoad {
-                        track: SpotifyUri::Track { id: track },
-                        resume: true,
-                    })
+                if is_spotify {
+                    SpotifyId::from_base62(id)
+                        .ok()
+                        .map(|track| Command::PlayerLoad {
+                            track: SpotifyUri::Track { id: track },
+                            resume: true,
+                        })
+                } else {
+                    self.app_model
+                        .api()
+                        .stream_url(id)
+                        .map(|url| Command::PlayerLoadStream { url, resume: true })
+                }
             }
             PlaybackEvent::SourceChanged => {
                 let resume = self.is_playing();
-                self.currently_playing()
-                    .and_then(|c| SpotifyId::from_base62(c.song_id()).ok())
-                    .map(|track| Command::PlayerLoad {
-                        track: SpotifyUri::Track { id: track },
-                        resume,
-                    })
+                if is_spotify {
+                    self.currently_playing()
+                        .and_then(|c| SpotifyId::from_base62(c.song_id()).ok())
+                        .map(|track| Command::PlayerLoad {
+                            track: SpotifyUri::Track { id: track },
+                            resume,
+                        })
+                } else {
+                    self.currently_playing()
+                        .and_then(|c| self.app_model.api().stream_url(c.song_id()))
+                        .map(|url| Command::PlayerLoadStream { url, resume })
+                }
             }
             PlaybackEvent::TrackSeeked(position) => Some(Command::PlayerSeek(*position)),
-            PlaybackEvent::Preload(id) => SpotifyId::from_base62(id)
+            PlaybackEvent::Preload(id) if is_spotify => SpotifyId::from_base62(id)
                 .ok()
                 .map(|track| SpotifyUri::Track { id: track })
                 .map(Command::PlayerPreload),

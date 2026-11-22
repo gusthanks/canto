@@ -31,8 +31,12 @@ pub use genius::{
 pub use lyrics::{
     FoundLyrics, LyricLine, Lyrics, LyricsCache, LyricsService, LyricsSource, LyricsToPublish,
 };
+pub use providers::local::{local_provider, LocalProvider};
 pub use providers::spotify::domain::{check_user_profile, UserProfileCheck};
-pub use providers::spotify::spotify_service;
+pub use providers::spotify::{spotify_provider, spotify_service};
+pub use providers::subsonic::{
+    subsonic_provider, test_subsonic_connection, SubsonicConfig, SubsonicProvider,
+};
 pub use providers::{ProviderCapabilities, ProviderKind};
 pub use radio::{build_radio_queue, DEFAULT_RADIO_TARGET_COUNT};
 pub use reqwest::Client as HttpClient;

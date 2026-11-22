@@ -145,6 +145,75 @@ template $LoginWindow : Adw.Window {
 
           Box {
             orientation: vertical;
+            spacing: 10;
+
+            Button use_local_folder_button {
+              /* Translators: Login screen option to browse and play a local music folder without Spotify. */
+              label: _("Use Local Music Folder…");
+              halign: center;
+              styles ["pill"]
+            }
+
+            ToggleButton connect_subsonic_toggle {
+              /* Translators: Login screen toggle revealing fields to connect to a Navidrome or OpenSubsonic server. */
+              label: _("Connect Navidrome / Subsonic…");
+              halign: center;
+              styles ["flat", "caption"]
+            }
+
+            Revealer subsonic_revealer {
+              reveal-child: bind connect_subsonic_toggle.active;
+              transition-type: slide_down;
+
+              child: Box {
+                orientation: vertical;
+                spacing: 8;
+
+                ListBox {
+                  selection-mode: none;
+                  styles ["boxed-list"]
+
+                  Adw.EntryRow subsonic_url_entry {
+                    /* Translators: Server URL field on Login screen for Navidrome / Subsonic. */
+                    title: _("Server URL");
+                  }
+
+                  Adw.EntryRow subsonic_user_entry {
+                    /* Translators: Username field on Login screen for Navidrome / Subsonic. */
+                    title: _("Username");
+                  }
+
+                  Adw.PasswordEntryRow subsonic_pass_entry {
+                    /* Translators: Password field on Login screen for Navidrome / Subsonic. */
+                    title: _("Password");
+                  }
+                }
+
+                Box {
+                  orientation: horizontal;
+                  spacing: 8;
+
+                  Label subsonic_status_label {
+                    hexpand: true;
+                    xalign: 0;
+                    wrap: true;
+                    wrap-mode: word_char;
+                    styles ["caption", "dim-label"]
+                  }
+
+                  Button subsonic_connect_button {
+                    /* Translators: Connect button for Navidrome / Subsonic server on Login screen. */
+                    label: _("Connect");
+                    halign: end;
+                    styles ["pill", "suggested-action"]
+                  }
+                }
+              };
+            }
+          }
+
+          Box {
+            orientation: vertical;
             spacing: 12;
 
             ToggleButton custom_client_id_toggle {

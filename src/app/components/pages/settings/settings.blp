@@ -521,6 +521,64 @@ template $SettingsWindow : Adw.PreferencesDialog {
     title: _("Integrations");
     icon-name: "view-app-grid-symbolic";
 
+    Adw.PreferencesGroup music_source_group {
+      title: _("Music Source");
+      description: _("Switch between Spotify, local audio folders, or a Navidrome / OpenSubsonic server");
+
+      Adw.ComboRow music_source_combo {
+        title: _("Active Source");
+        model: StringList {
+          strings [
+            "Spotify",
+            _("Local Files"),
+            "Navidrome / Subsonic"
+          ]
+        };
+      }
+
+      Adw.ActionRow local_folders_row {
+        title: _("Local Music Folders");
+        subtitle: _("No folder selected");
+
+        Box {
+          spacing: 6;
+          valign: center;
+
+          Button add_local_folder_button {
+            label: _("Choose Folder…");
+          }
+
+          Button rescan_local_button {
+            icon-name: "view-refresh-symbolic";
+            tooltip-text: _("Rescan local library");
+            styles ["flat"]
+          }
+        }
+      }
+
+      Adw.EntryRow settings_subsonic_url {
+        title: _("Server URL");
+      }
+
+      Adw.EntryRow settings_subsonic_username {
+        title: _("Username");
+      }
+
+      Adw.PasswordEntryRow settings_subsonic_password {
+        title: _("Password");
+      }
+
+      Adw.ActionRow settings_subsonic_test_row {
+        title: _("Subsonic Connection");
+        subtitle: _("Not tested yet");
+
+        Button settings_subsonic_test_button {
+          label: _("Test Connection");
+          valign: center;
+        }
+      }
+    }
+
     Adw.PreferencesGroup {
       title: _("Genius (Credits and Liner Notes)");
       description: _("Optional Client Access Token to show producers, writers and featured artists in the Now Playing panel.");

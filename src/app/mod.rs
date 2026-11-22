@@ -57,6 +57,8 @@ pub struct App {
     sleep_timer: Rc<SleepTimerController>,
     // Likes and unlikes, mirrored as loves on Last.fm
     lastfm_love: LastFmLove,
+    token_provider: Arc<dyn canto_api::TokenProvider>,
+    session_token_provider: Arc<dyn canto_api::TokenProvider>,
     _live_settings: gio::Settings,
 }
 
@@ -86,11 +88,31 @@ impl App {
         let memory_cache_mb = gsettings.uint("memory-cache-size-mb").max(1) as usize;
         let disk_cache_mb = gsettings.uint("disk-cache-size-mb").max(1) as usize;
         let api_service = Arc::new(canto_api::spotify_service(
-            token_provider,
-            session_token_provider,
+            Arc::clone(&token_provider),
+            Arc::clone(&session_token_provider),
             memory_cache_mb * 1024 * 1024,
             disk_cache_mb * 1024 * 1024,
         ));
+        match canto_config::settings::music_source().as_str() {
+            "local" => {
+                let folders = canto_config::settings::local_music_folders();
+                if !folders.is_empty() {
+                    api_service.set_provider(canto_api::local_provider(folders));
+                }
+            }
+            "subsonic" => {
+                let (server_url, username, password) = canto_config::settings::subsonic_settings();
+                let cfg = canto_api::SubsonicConfig {
+                    server_url,
+                    username,
+                    password,
+                };
+                if cfg.is_valid() {
+                    api_service.set_provider(canto_api::subsonic_provider(cfg));
+                }
+            }
+            _ => {}
+        }
 
         let live_settings =
             App::watch_live_settings(gsettings, Arc::clone(&api_service), sender.clone());
@@ -151,6 +173,8 @@ impl App {
             theme_engine,
             sleep_timer,
             lastfm_love,
+            token_provider,
+            session_token_provider,
             _live_settings: live_settings,
         }
     }
@@ -220,7 +244,13 @@ impl App {
                 Rc::clone(model),
                 dispatcher.clone(),
             ),
-            App::make_login(builder, dispatcher.clone()),
+            App::make_login(
+                builder,
+                Rc::clone(model),
+                dispatcher.clone(),
+                Arc::clone(&self.token_provider),
+                Arc::clone(&self.session_token_provider),
+            ),
             App::make_navigation(builder, Rc::clone(model), dispatcher.clone(), registrar),
             // After navigation, so a pushed screen registers before the header
             // refreshes.
@@ -232,7 +262,13 @@ impl App {
             ),
             App::make_search_button(builder, dispatcher.clone()),
             App::make_clipboard_import(builder, Rc::clone(model), dispatcher.clone()),
-            App::make_user_menu(builder, Rc::clone(model), dispatcher.clone()),
+            App::make_user_menu(
+                builder,
+                Rc::clone(model),
+                dispatcher.clone(),
+                Arc::clone(&self.token_provider),
+                Arc::clone(&self.session_token_provider),
+            ),
             App::make_notification(builder),
             Box::new(theme::ThemeController::new(
                 Rc::clone(model),
@@ -358,9 +394,20 @@ impl App {
         ))
     }
 
-    fn make_login(builder: &gtk::Builder, dispatcher: Dispatcher) -> Box<Login> {
+    fn make_login(
+        builder: &gtk::Builder,
+        app_model: Rc<AppModel>,
+        dispatcher: Dispatcher,
+        token_provider: Arc<dyn canto_api::TokenProvider>,
+        session_token_provider: Arc<dyn canto_api::TokenProvider>,
+    ) -> Box<Login> {
         let parent: gtk::Window = builder.object("window").unwrap();
-        let model = LoginModel::new(dispatcher);
+        let model = LoginModel::new(
+            dispatcher,
+            app_model,
+            token_provider,
+            session_token_provider,
+        );
         Box::new(Login::new(parent, model))
     }
 
@@ -418,9 +465,16 @@ impl App {
         builder: &gtk::Builder,
         app_model: Rc<AppModel>,
         dispatcher: Dispatcher,
+        token_provider: Arc<dyn canto_api::TokenProvider>,
+        session_token_provider: Arc<dyn canto_api::TokenProvider>,
     ) -> Box<UserMenu> {
         let parent: libadwaita::ApplicationWindow = builder.object("window").unwrap();
-        let settings_model = SettingsModel::new(app_model.clone(), dispatcher.clone());
+        let settings_model = SettingsModel::new(
+            app_model.clone(),
+            dispatcher.clone(),
+            token_provider,
+            session_token_provider,
+        );
         let settings = Settings::new(parent.clone().upcast(), settings_model);
 
         let button: gtk::MenuButton = builder.object("user").unwrap();

@@ -1,8 +1,12 @@
+use canto_api::SubsonicConfig;
+use canto_config::settings::subsonic_settings;
 use gettextrs::gettext;
+use gio::prelude::*;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::CompositeTemplate;
 use std::cell::Cell;
+use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::Duration;
 use url::Url;
@@ -23,6 +27,30 @@ mod imp {
     pub struct LoginWindow {
         #[template_child]
         pub login_with_spotify_button: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub use_local_folder_button: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub connect_subsonic_toggle: TemplateChild<gtk::ToggleButton>,
+
+        #[template_child]
+        pub subsonic_revealer: TemplateChild<gtk::Revealer>,
+
+        #[template_child]
+        pub subsonic_url_entry: TemplateChild<libadwaita::EntryRow>,
+
+        #[template_child]
+        pub subsonic_user_entry: TemplateChild<libadwaita::EntryRow>,
+
+        #[template_child]
+        pub subsonic_pass_entry: TemplateChild<libadwaita::PasswordEntryRow>,
+
+        #[template_child]
+        pub subsonic_connect_button: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub subsonic_status_label: TemplateChild<gtk::Label>,
 
         #[template_child]
         pub status_stack: TemplateChild<gtk::Stack>,
@@ -196,6 +224,101 @@ impl LoginWindow {
             .connect_clicked(move |_| on_login_with_spotify_button());
     }
 
+    fn connect_local_folder<F>(&self, on_choose: F)
+    where
+        F: Fn(Vec<PathBuf>) + 'static,
+    {
+        let weak_win = self.downgrade();
+        let on_choose = Rc::new(on_choose);
+        self.imp()
+            .use_local_folder_button
+            .connect_clicked(move |_| {
+                let Some(win) = weak_win.upgrade() else {
+                    return;
+                };
+                let dialog = gtk::FileDialog::builder()
+                    .title(gettext("Choose Music Folder"))
+                    .modal(true)
+                    .build();
+                let cb = Rc::clone(&on_choose);
+                dialog.select_folder(Some(&win), gio::Cancellable::NONE, move |res| {
+                    if let Ok(folder) = res {
+                        if let Some(path) = folder.path() {
+                            cb(vec![path]);
+                        }
+                    }
+                });
+            });
+    }
+
+    fn connect_subsonic<F>(&self, on_connect: F)
+    where
+        F: Fn(SubsonicConfig) + 'static,
+    {
+        let weak_win = self.downgrade();
+        let on_connect = Rc::new(on_connect);
+        self.imp()
+            .subsonic_connect_button
+            .connect_clicked(move |btn| {
+                let Some(win) = weak_win.upgrade() else {
+                    return;
+                };
+                let imp = win.imp();
+                let cfg = SubsonicConfig {
+                    server_url: imp.subsonic_url_entry.text().trim().to_string(),
+                    username: imp.subsonic_user_entry.text().trim().to_string(),
+                    password: imp.subsonic_pass_entry.text().to_string(),
+                };
+                if !cfg.is_valid() {
+                    imp.subsonic_status_label
+                        .set_label(&gettext("Enter URL, username, and password."));
+                    return;
+                }
+                btn.set_sensitive(false);
+                imp.subsonic_status_label.set_label(&gettext("Connecting…"));
+                let weak_win2 = win.downgrade();
+                let btn_clone = btn.clone();
+                let cb = Rc::clone(&on_connect);
+                glib::spawn_future_local(async move {
+                    let test_cfg = cfg.clone();
+                    let res = tokio::spawn(async move {
+                        canto_api::test_subsonic_connection(&test_cfg).await
+                    })
+                    .await;
+                    btn_clone.set_sensitive(true);
+                    let Some(win) = weak_win2.upgrade() else {
+                        return;
+                    };
+                    match res {
+                        Ok(Ok(_ver)) => {
+                            win.imp().subsonic_status_label.set_label("");
+                            cb(cfg);
+                        }
+                        Ok(Err(e)) => {
+                            win.imp().subsonic_status_label.set_label(&format!("{e}"));
+                        }
+                        Err(e) => {
+                            win.imp().subsonic_status_label.set_label(&format!("{e}"));
+                        }
+                    }
+                });
+            });
+    }
+
+    fn sync_subsonic_fields(&self) {
+        let (url, user, pass) = subsonic_settings();
+        let imp = self.imp();
+        if !url.is_empty() && imp.subsonic_url_entry.text().is_empty() {
+            imp.subsonic_url_entry.set_text(&url);
+        }
+        if !user.is_empty() && imp.subsonic_user_entry.text().is_empty() {
+            imp.subsonic_user_entry.set_text(&user);
+        }
+        if !pass.is_empty() && imp.subsonic_pass_entry.text().is_empty() {
+            imp.subsonic_pass_entry.set_text(&pass);
+        }
+    }
+
     fn show_auth_error(&self, shown: bool) {
         let widget = self.imp();
         widget
@@ -244,6 +367,22 @@ impl Login {
             }
         ));
 
+        login_window.connect_local_folder(clone!(
+            #[weak]
+            model,
+            move |folders| {
+                model.login_with_local_folders(folders);
+            }
+        ));
+
+        login_window.connect_subsonic(clone!(
+            #[weak]
+            model,
+            move |cfg| {
+                model.login_with_subsonic(cfg);
+            }
+        ));
+
         Self {
             parent,
             login_window,
@@ -257,6 +396,7 @@ impl Login {
 
     fn show_self(&self) {
         self.login_window.sync_custom_client_id();
+        self.login_window.sync_subsonic_fields();
         self.window().set_transient_for(Some(&self.parent));
         self.window().set_modal(true);
         self.window().set_visible(true);

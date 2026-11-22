@@ -13,6 +13,8 @@ use crate::models::*;
 pub enum ProviderKind {
     Spotify,
     YouTubeMusic,
+    Local,
+    Subsonic,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -48,10 +50,34 @@ impl ProviderCapabilities {
         }
     }
 
+    pub const fn local() -> Self {
+        Self {
+            supports_connect: false,
+            supports_recommendations: true,
+            supports_audio_engine_dsp: true,
+            supports_lyrics: true,
+            supports_search: true,
+            supports_library_sync: false,
+        }
+    }
+
+    pub const fn subsonic() -> Self {
+        Self {
+            supports_connect: false,
+            supports_recommendations: true,
+            supports_audio_engine_dsp: true,
+            supports_lyrics: true,
+            supports_search: true,
+            supports_library_sync: true,
+        }
+    }
+
     pub const fn for_kind(kind: ProviderKind) -> Self {
         match kind {
             ProviderKind::Spotify => Self::spotify(),
             ProviderKind::YouTubeMusic => Self::youtube_music(),
+            ProviderKind::Local => Self::local(),
+            ProviderKind::Subsonic => Self::subsonic(),
         }
     }
 }
@@ -251,4 +277,14 @@ pub trait MusicProvider: Send + Sync + 'static {
 
     /// Drop any cached auth configuration (e.g. after a 401).
     fn invalidate_config(&self);
+
+    /// Resolve a playable local file path or HTTP stream URL for non-Spotify providers.
+    fn stream_url(&self, _track_id: &str) -> Option<String> {
+        None
+    }
+
+    /// Rescan library folders on local providers.
+    async fn rescan(&self) -> Result<(), DomainError> {
+        Ok(())
+    }
 }

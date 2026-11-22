@@ -10,6 +10,7 @@ use crate::app::AppAction;
 use canto_auth::{SessionTokens, TokenStore};
 #[allow(clippy::module_inception)]
 mod player;
+mod stream_player;
 pub use player::*;
 
 #[derive(Debug, Clone)]
@@ -20,6 +21,10 @@ pub enum Command {
     Logout,
     PlayerLoad {
         track: SpotifyUri,
+        resume: bool,
+    },
+    PlayerLoadStream {
+        url: String,
         resume: bool,
     },
     PlayerResume,
@@ -96,7 +101,7 @@ pub(crate) struct AppPlayerDelegate {
 }
 
 impl AppPlayerDelegate {
-    fn new(sender: UnboundedSender<AppAction>) -> Self {
+    pub(crate) fn new(sender: UnboundedSender<AppAction>) -> Self {
         Self { sender }
     }
 

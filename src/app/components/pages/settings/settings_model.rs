@@ -1,20 +1,111 @@
-use crate::app::state::{PlaybackAction, SettingsAction};
+use crate::app::state::{LoginAction, PlaybackAction, SettingsAction, TryLoginAction};
 use crate::app::{AppAction, AppModel, Dispatcher};
 use crate::settings::CantoSettings;
+use canto_api::{SubsonicConfig, TokenProvider};
 use gettextrs::gettext;
+use std::path::PathBuf;
 use std::rc::Rc;
+use std::sync::Arc;
 
 pub struct SettingsModel {
     app_model: Rc<AppModel>,
     dispatcher: Dispatcher,
+    token_provider: Arc<dyn TokenProvider>,
+    session_token_provider: Arc<dyn TokenProvider>,
 }
 
 impl SettingsModel {
-    pub fn new(app_model: Rc<AppModel>, dispatcher: Dispatcher) -> Self {
+    pub fn new(
+        app_model: Rc<AppModel>,
+        dispatcher: Dispatcher,
+        token_provider: Arc<dyn TokenProvider>,
+        session_token_provider: Arc<dyn TokenProvider>,
+    ) -> Self {
         Self {
             app_model,
             dispatcher,
+            token_provider,
+            session_token_provider,
         }
+    }
+
+    pub fn switch_music_source(&self, source: &str) {
+        self.stop_player();
+        canto_config::settings::set_music_source(source);
+        match source {
+            "local" => {
+                let folders = canto_config::settings::local_music_folders();
+                if folders.is_empty() {
+                    self.notify(gettext(
+                        "Choose a local music folder to browse your library",
+                    ));
+                    return;
+                }
+                self.app_model
+                    .api()
+                    .set_provider(canto_api::local_provider(folders));
+                self.dispatcher
+                    .dispatch(LoginAction::SetLoginSuccess(gettext("Local Library")).into());
+                self.notify(gettext("Switched to Local Music Library"));
+            }
+            "subsonic" => {
+                let (server_url, username, password) = canto_config::settings::subsonic_settings();
+                let cfg = SubsonicConfig {
+                    server_url,
+                    username: username.clone(),
+                    password,
+                };
+                if !cfg.is_valid() {
+                    self.notify(gettext(
+                        "Enter server URL, username, and password to connect Navidrome / Subsonic",
+                    ));
+                    return;
+                }
+                self.app_model
+                    .api()
+                    .set_provider(canto_api::subsonic_provider(cfg));
+                self.dispatcher
+                    .dispatch(LoginAction::SetLoginSuccess(username).into());
+                self.notify(gettext("Connected to Navidrome / Subsonic"));
+            }
+            _ => {
+                self.app_model
+                    .api()
+                    .set_provider(canto_api::spotify_provider(
+                        Arc::clone(&self.token_provider),
+                        Arc::clone(&self.session_token_provider),
+                    ));
+                self.dispatcher
+                    .dispatch(LoginAction::TryLogin(TryLoginAction::Restore).into());
+                self.notify(gettext("Switched to Spotify"));
+            }
+        }
+    }
+
+    pub fn set_local_folders(&self, folders: Vec<PathBuf>) {
+        canto_config::settings::set_local_music_folders(&folders);
+        if canto_config::settings::music_source() == "local" && !folders.is_empty() {
+            self.switch_music_source("local");
+        }
+    }
+
+    pub fn rescan_local_library(&self) {
+        let api = self.app_model.api();
+        let dispatcher = self.dispatcher.clone();
+        glib::spawn_future_local(async move {
+            match api.rescan_provider().await {
+                Ok(()) => {
+                    dispatcher
+                        .dispatch(LoginAction::SetLoginSuccess(gettext("Local Library")).into());
+                    dispatcher.dispatch(AppAction::ShowNotification(gettext(
+                        "Local library rescanned",
+                    )));
+                }
+                Err(e) => {
+                    dispatcher.dispatch(AppAction::ShowNotification(format!("{e}")));
+                }
+            }
+        });
     }
 
     pub fn stop_player(&self) {

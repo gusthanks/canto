@@ -1,4 +1,4 @@
-use gio::prelude::SettingsExt;
+use gio::prelude::{SettingsExt, SettingsExtManual};
 use log::error;
 use std::collections::HashMap;
 
@@ -249,6 +249,56 @@ pub const SMART_QUEUE_CONTINUATION: &str = "smart-queue-continuation";
 pub const VISUAL_BRIDGE_ENABLED: &str = "visual-bridge-enabled";
 pub const SPOTIFY_CLIENT_ID: &str = "spotify-client-id";
 pub const CROSSFADE_SECONDS: &str = "crossfade-seconds";
+pub const MUSIC_SOURCE: &str = "music-source";
+pub const LOCAL_MUSIC_FOLDERS: &str = "local-music-folders";
+pub const SUBSONIC_URL: &str = "subsonic-url";
+pub const SUBSONIC_USERNAME: &str = "subsonic-username";
+pub const SUBSONIC_PASSWORD: &str = "subsonic-password";
+
+pub fn music_source() -> String {
+    gio::Settings::new(SETTINGS)
+        .string(MUSIC_SOURCE)
+        .as_str()
+        .to_string()
+}
+
+pub fn set_music_source(source: &str) {
+    let _ = gio::Settings::new(SETTINGS).set_string(MUSIC_SOURCE, source);
+}
+
+pub fn local_music_folders() -> Vec<std::path::PathBuf> {
+    gio::Settings::new(SETTINGS)
+        .strv(LOCAL_MUSIC_FOLDERS)
+        .into_iter()
+        .filter(|s| !s.trim().is_empty())
+        .map(std::path::PathBuf::from)
+        .collect()
+}
+
+pub fn set_local_music_folders(folders: &[std::path::PathBuf]) {
+    let strs: Vec<String> = folders
+        .iter()
+        .map(|p| p.to_string_lossy().into_owned())
+        .collect();
+    let refs: Vec<&str> = strs.iter().map(String::as_str).collect();
+    let _ = gio::Settings::new(SETTINGS).set_strv(LOCAL_MUSIC_FOLDERS, refs);
+}
+
+pub fn subsonic_settings() -> (String, String, String) {
+    let s = gio::Settings::new(SETTINGS);
+    (
+        s.string(SUBSONIC_URL).trim().to_string(),
+        s.string(SUBSONIC_USERNAME).trim().to_string(),
+        s.string(SUBSONIC_PASSWORD).to_string(),
+    )
+}
+
+pub fn set_subsonic_settings(url: &str, username: &str, password: &str) {
+    let s = gio::Settings::new(SETTINGS);
+    let _ = s.set_string(SUBSONIC_URL, url.trim());
+    let _ = s.set_string(SUBSONIC_USERNAME, username.trim());
+    let _ = s.set_string(SUBSONIC_PASSWORD, password);
+}
 
 pub fn spotify_client_id() -> Option<String> {
     let value = gio::Settings::new(SETTINGS)

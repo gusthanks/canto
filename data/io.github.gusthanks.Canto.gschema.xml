@@ -511,6 +511,33 @@
       <summary>Crossfade duration in seconds</summary>
       <description>Smooth equal-power overlap between tracks in seconds (0 disables crossfade).</description>
     </key>
+    <key name="music-source" type="s">
+      <choices>
+        <choice value='spotify'/>
+        <choice value='local'/>
+        <choice value='subsonic'/>
+      </choices>
+      <default>'spotify'</default>
+      <summary>Active music source</summary>
+      <description>Which backend supplies Canto's catalog and audio: Spotify, a local folder, or an OpenSubsonic/Navidrome server.</description>
+    </key>
+    <key name="local-music-folders" type="as">
+      <default>[]</default>
+      <summary>Local music folders</summary>
+      <description>Filesystem folders scanned for local MP3, FLAC, Ogg Vorbis, and WAV audio when using the local music source.</description>
+    </key>
+    <key name="subsonic-url" type="s">
+      <default>""</default>
+      <summary>Navidrome / Subsonic server URL</summary>
+    </key>
+    <key name="subsonic-username" type="s">
+      <default>""</default>
+      <summary>Navidrome / Subsonic username</summary>
+    </key>
+    <key name="subsonic-password" type="s">
+      <default>""</default>
+      <summary>Navidrome / Subsonic password</summary>
+    </key>
     <key name="migrated-from-riff" type="b">
       <default>false</default>
       <summary>Settings copied from the old app id</summary>
