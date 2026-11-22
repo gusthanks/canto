@@ -127,10 +127,13 @@ Files: `src/app/components/shell/playback/` (`playback_widget.blp` and `.rs`,
   never leaves, as the way back. A new bar button needs a slot, a gschema key,
   a constant and a row in `items`.
 - More Options holds the sleep timer (`more_sleep_timer`, which slides to its
-  choices inside the menu), the equalizer, the audio settings and "Customize
+  choices inside the menu), the equalizer (`eq_open_presets`), the audio
+  settings (`eq_open_settings`, `win.preferences-audio`) and "Customize
   Bar…". The round timer button shows only while a timer counts down. The
-  equalizer acts only on the built-in player (librespot), not on sound played
-  by another Spotify player.
+  equalizer acts only on the built-in player (librespot), so `eq_open_presets`
+  is hidden (`set_equalizer_available`, `equalizer_available`) whenever
+  playback uses Soloist, the hidden Spotify app, or a remote Spotify Connect
+  device.
 - Device (`device_selector`, `src/app/components/shell/device_selector/`): an
   icon only, the name in the tooltip. `device-selector--away` paints it in the
   accent color when the sound plays on another device. `device_icon` picks
@@ -324,8 +327,26 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   (`LastFmClient::listening_stats`). Last.fm has only album art: artist and
   song images come from a Spotify search, which also decides the click.
 
-## 10. Theme and small things
+## 10. Theme, preferences, login and small things
 
+- Preferences (`src/app/components/pages/settings/settings.blp`, `settings.rs`)
+  has built-in search enabled and is split into three pages: `general_page`
+  (Appearance, Playback, Caching, Experimental Features), `audio_page`
+  (`win.preferences-audio`, holding `soloist_group` plus the librespot audio,
+  normalisation, equalizer, pan, pitch and network controls when the account
+  can play locally), and `integrations_page` (`win.preferences-integrations`).
+- Soloist onboarding: when an account needs Soloist and has no API key saved,
+  `soloist_banner_revealer` under `top_bar` in `src/window.blp` shows a
+  dismissible contextual banner (`should_show_soloist_banner` in
+  `src/app/components/shell/window/mod.rs`) whose action (`win.soloist-guide`)
+  opens `present_soloist_guide_dialog`. On non-x86_64 architectures,
+  `status_text` in `src/connect/soloist.rs` notes that automatic downloads are
+  unavailable.
+- Login (`src/app/components/pages/login/login.blp`, `login.rs`) includes a
+  collapsed-by-default advanced option (`custom_client_id_toggle`,
+  `custom_client_id_entry`) backed by `spotify-client-id` and overridden by
+  `CANTO_SPOTIFY_CLIENT_ID` (`resolve_client_id` in
+  `crates/canto-auth/src/oauth2.rs`).
 - "Follow System" (the first option of `app_theme` in
   `src/app/components/pages/settings/settings.blp`) is `ThemeKind::Omarchy` in
   `src/app/theme.rs`: it reads the current Omarchy theme's colors file

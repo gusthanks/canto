@@ -46,6 +46,7 @@ src/app/components/widgets/track_list/track_list.rs
 src/app/models/card_enums.rs
 src/app/mod.rs
 src/connect/player.rs
+src/connect/soloist.rs
 src/inhibitor.rs
 src/main.rs
 src/player/mod.rs
@@ -87,4 +88,5 @@ src/app/components/widgets/playlist_dialog/widget.rs
 src/app/state/app_state.rs
 src/settings.rs
 src/app/components/pages/about/about.rs
+src/app/components/pages/login/login.rs
 src/app/components/shell/playback/playback_widget.rs
