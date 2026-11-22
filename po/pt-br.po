@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-22 01:14-0300\n"
+"POT-Creation-Date: 2026-11-22 10:36-0300\n"
 "Language: pt-br\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -35,16 +35,14 @@ msgstr "Adicionar à lista de reprodução..."
 
 #. translators: This is part of a contextual menu attached to a single track; this entry starts selecting tracks, with this one.
 #: src/app/components/labels.rs:20
-#, fuzzy
 msgid "Select Track"
-msgstr "Faixas salvas"
+msgstr "Selecionar faixa"
 
 #. translators: This is part of a contextual menu attached to a single track; this entry removes the track from the playlist being viewed.
 #: src/app/components/labels.rs:23
 #: src/app/components/widgets/selection/selection_toolbar.blp:72
-#, fuzzy
 msgid "Remove from Playlist"
-msgstr "Remover da fila"
+msgstr "Remover da playlist"
 
 #. translators: Name of the user's saved tracks, as the source of what's playing (e.g. "Next from: Saved Tracks").
 #: src/app/components/labels.rs:26
@@ -62,7 +60,7 @@ msgstr "A seguir na fila"
 #. Translators: Tooltip on the cover art in the player bar.
 #. Translators: Tab label for the current track in utility panel.
 #: src/app/components/labels.rs:32
-#: src/app/components/shell/command_palette/widget.rs:553
+#: src/app/components/shell/command_palette/widget.rs:568
 #: src/app/components/pages/shortcuts/shortcuts.blp:84
 #: src/app/components/shell/playback/playback_info.blp:19
 #: src/app/components/shell/utility_panel/utility_panel.blp:48
@@ -72,21 +70,30 @@ msgstr "Tocando agora"
 #. translators: Tooltip of the button in the header of the queued tracks, on the queue page. It removes all queued tracks.
 #: src/app/components/labels.rs:35
 msgid "Clear Queue"
-msgstr ""
+msgstr "Limpar fila"
 
 #. translators: Notification shown after tracks were added to the play queue.
 #: src/app/components/labels.rs:38
-#, fuzzy
 msgid "Added to queue"
-msgstr "Adicionar a fila"
+msgstr "Adicionada à fila"
 
 #. translators: This is part of a contextual menu attached to a single track; this entry removes a track from the play queue.
 #: src/app/components/labels.rs:41
 msgid "Remove from Queue"
 msgstr "Remover da fila"
 
-#. translators: This is part of a contextual menu attached to a single track; this entry saves the track to the user's saved tracks.
+#. translators: Contextual menu entry moving a queued track one step earlier in the play queue.
 #: src/app/components/labels.rs:44
+msgid "Move Up"
+msgstr "Mover para cima"
+
+#. translators: Contextual menu entry moving a queued track one step later in the play queue.
+#: src/app/components/labels.rs:47
+msgid "Move Down"
+msgstr "Mover para baixo"
+
+#. translators: This is part of a contextual menu attached to a single track; this entry saves the track to the user's saved tracks.
+#: src/app/components/labels.rs:50
 #: src/app/components/widgets/track_list/track_row.blp:159
 #: src/app/components/widgets/selection/selection_toolbar.blp:83
 #, fuzzy
@@ -94,70 +101,70 @@ msgid "Add to Saved Tracks"
 msgstr "Faixas salvas"
 
 #. translators: This is part of a contextual menu attached to a single track; this entry removes the track from the user's saved tracks.
-#: src/app/components/labels.rs:47
+#: src/app/components/labels.rs:53
 #, fuzzy
 msgid "Remove from Saved Tracks"
 msgstr "Faixas salvas"
 
 #. translators: This is part of a contextual menu attached to a single track, and the tooltip of the pin button on a detail page; this entry pins the item to the sidebar.
-#: src/app/components/labels.rs:50
+#: src/app/components/labels.rs:56
 msgid "Pin to Sidebar"
 msgstr ""
 
 #. translators: This is part of a contextual menu attached to a single track, and the tooltip of the pin button on a detail page; this entry removes the item from the sidebar.
-#: src/app/components/labels.rs:53
+#: src/app/components/labels.rs:59
 msgid "Unpin from Sidebar"
 msgstr ""
 
 #. translators: This is the tooltip for the like/star button on an album's detail page; it saves the album to the user's saved albums.
-#: src/app/components/labels.rs:56
+#: src/app/components/labels.rs:62
 msgid "Add to Saved Albums"
 msgstr ""
 
 #. translators: This is the tooltip for the like/star button on an album's detail page; it removes the album from the user's saved albums.
-#: src/app/components/labels.rs:59
+#: src/app/components/labels.rs:65
 #, fuzzy
 msgid "Remove from Saved Albums"
 msgstr "Remover da fila"
 
 #. translators: This is the tooltip for the like/star button on an artist's detail page; it follows the artist, adding them to the user's saved artists.
-#: src/app/components/labels.rs:62
+#: src/app/components/labels.rs:68
 #, fuzzy
 msgid "Add to Saved Artists"
 msgstr "Adicionar à lista de reprodução..."
 
 #. translators: This is the tooltip for the like/star button on an artist's detail page; it unfollows the artist, removing them from the user's saved artists.
-#: src/app/components/labels.rs:65
+#: src/app/components/labels.rs:71
 #, fuzzy
 msgid "Remove from Saved Artists"
 msgstr "Você não tem listas de reprodução salvas."
 
 #. translators: This is the tooltip for the like/star button on a playlist's detail page; it saves the playlist to the user's saved playlists.
-#: src/app/components/labels.rs:68
+#: src/app/components/labels.rs:74
 #, fuzzy
 msgid "Add to Saved Playlists"
 msgstr "Adicionar à lista de reprodução..."
 
 #. translators: This is the tooltip for the like/star button on a playlist's detail page; it removes the playlist from the user's saved playlists.
-#: src/app/components/labels.rs:71
+#: src/app/components/labels.rs:77
 #, fuzzy
 msgid "Remove from Saved Playlists"
 msgstr "Você não tem listas de reprodução salvas."
 
 #. translators: This is part of a contextual menu attached to a playlist in the sidebar; this entry starts playing the playlist from the first track.
-#: src/app/components/labels.rs:74
+#: src/app/components/labels.rs:80
 #: src/app/components/shell/playback/playback_controls.rs:80
 #: src/app/components/shell/now_panel/stats.rs:411
 #: src/app/components/shell/now_panel/stats.rs:435
-#: src/app/components/shell/mini_player.rs:171
-#: src/app/components/shell/mini_player.rs:245
+#: src/app/components/shell/mini_player.rs:587
+#: src/app/components/shell/mini_player.rs:715
 #: src/app/components/widgets/details_page/header.rs:266
 #: src/app/components/widgets/details_page/header.blp:163
 msgid "Play"
 msgstr "Tocar"
 
 #. translators: This is part of a contextual menu attached to a playlist in the sidebar; this entry starts playing the playlist in shuffle mode.
-#: src/app/components/labels.rs:77
+#: src/app/components/labels.rs:83
 #: src/app/components/pages/shortcuts/shortcuts.blp:50
 #: src/app/components/shell/playback/playback_controls.blp:15
 #: src/app/components/widgets/details_page/header.blp:176
@@ -165,38 +172,39 @@ msgid "Shuffle"
 msgstr "Ativar a ordem aleatória"
 
 #. translators: This is part of a contextual menu attached to a playlist in the sidebar; this entry deletes a playlist owned by the user.
-#: src/app/components/labels.rs:80
+#: src/app/components/labels.rs:86
 #, fuzzy
 msgid "Delete Playlist"
 msgstr "Nova lista de reprodução"
 
 #. translators: This is part of a contextual menu attached to a playlist in the sidebar; this entry unfollows a playlist the user does not own.
-#: src/app/components/labels.rs:83
+#: src/app/components/labels.rs:89
 #, fuzzy
 msgid "Unfollow Playlist"
 msgstr "Todas as listas de reprodução"
 
 #. translators: This is part of the menu of a playlist's page; this entry opens a dialog to edit the name, description, cover and visibility of a playlist owned by the user.
-#: src/app/components/labels.rs:86
+#: src/app/components/labels.rs:92
 msgid "Edit Details"
 msgstr ""
 
 #. translators: This is the caption shown in the header of a playlist's detail page when anyone can open the playlist.
-#: src/app/components/labels.rs:89
+#: src/app/components/labels.rs:95
 #, fuzzy
 msgid "Public Playlist"
 msgstr "Todas as listas de reprodução"
 
 #. translators: This is the caption shown in the header of a playlist's detail page when nobody but its owner can open the playlist.
-#: src/app/components/labels.rs:92
+#: src/app/components/labels.rs:98
 #, fuzzy
 msgid "Private Playlist"
 msgstr "Nova lista de reprodução"
 
 #. translators: This is the caption shown in the header of an album's detail page when the release is a full album.
 #. translators: An album in the back/forward history menu, while its name is loading.
-#: src/app/components/labels.rs:95 src/app/components/labels.rs:180
-#: src/app/components/shell/command_palette/widget.rs:861
+#: src/app/components/labels.rs:101 src/app/components/labels.rs:186
+#: src/app/components/shell/command_palette/widget.rs:880
+#: src/app/components/shell/command_palette/widget.rs:964
 #: src/app/components/shell/navigation_panel/model.rs:419
 #: src/app/components/shell/navigation_panel/model.rs:887
 #: src/app/components/pages/settings/settings.blp:360
@@ -204,49 +212,49 @@ msgid "Album"
 msgstr "Álbum"
 
 #. translators: This is the caption shown in the header of an album's detail page when the release is a single.
-#: src/app/components/labels.rs:98
+#: src/app/components/labels.rs:104
 msgid "Single"
 msgstr ""
 
 #. translators: This is the caption shown in the header of an album's detail page when the release is an EP (extended play).
-#: src/app/components/labels.rs:101
+#: src/app/components/labels.rs:107
 msgid "EP"
 msgstr ""
 
 #. translators: Shown in place of a card list when the selected filter (e.g. "EPs") matches nothing.
 #. Translators: Shown in place of a card list when the selected filter (e.g. "EPs") matches nothing.
-#: src/app/components/labels.rs:104
+#: src/app/components/labels.rs:110
 #: src/app/components/widgets/details_page/details_section.blp:39
 msgid "No items found for this filter"
 msgstr ""
 
 #. translators: This is the caption shown in the header of an album's detail page when the release is a compilation.
-#: src/app/components/labels.rs:107
+#: src/app/components/labels.rs:113
 #, fuzzy
 msgid "Compilation"
 msgstr "Normal"
 
 #. translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
-#: src/app/components/labels.rs:110
-#: src/app/components/shell/command_palette/widget.rs:716
+#: src/app/components/labels.rs:116
+#: src/app/components/shell/command_palette/widget.rs:735
 #: src/app/components/shell/playback/playback_widget.blp:576 src/window.blp:514
 msgid "Start Track Radio"
 msgstr "Iniciar Rádio da Faixa"
 
 #. translators: This notification is shown when a track was added to a playlist; {} is the name of the playlist.
-#: src/app/components/labels.rs:115
+#: src/app/components/labels.rs:121
 #, fuzzy, rust-format
 msgid "Added to {}"
 msgstr "Adicionar a {}"
 
 #. translators: This notification is shown when nothing was added to a playlist, as it already lists the tracks; {} is the name of the playlist.
-#: src/app/components/labels.rs:120
+#: src/app/components/labels.rs:126
 #, rust-format
 msgid "Already in {}"
 msgstr ""
 
 #. translators: This notification is shown when tracks were added to a playlist, except those it already lists; the first {} is the name of the playlist, the second {} is how many tracks were left out.
-#: src/app/components/labels.rs:126
+#: src/app/components/labels.rs:132
 #, rust-format
 msgid "Added to {}, skipping {} track already in it"
 msgid_plural "Added to {}, skipping {} tracks already in it"
@@ -254,7 +262,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: This shows up when in selection mode. This text should be as short as possible.
-#: src/app/components/labels.rs:135
+#: src/app/components/labels.rs:141
 #, fuzzy, rust-format
 msgid "{} track selected"
 msgid_plural "{} tracks selected"
@@ -262,13 +270,13 @@ msgstr[0] "{} música selecionada"
 msgstr[1] "{} músicas selecionadas"
 
 #. translators: Header above the rest of the album, playlist or artist being played, on the queue page. {} is its name.
-#: src/app/components/labels.rs:153
+#: src/app/components/labels.rs:159
 #, fuzzy, rust-format
 msgid "Next from: {}"
 msgstr "Mais de {}"
 
 #. translators: Description of the shuffle separation preference. {} is the number of other songs, chosen by the user. "When possible" because an album or playlist can have too few songs.
-#: src/app/components/labels.rs:159
+#: src/app/components/labels.rs:165
 #, rust-format
 msgid ""
 "When possible, shuffle and repeat mode will play at least {} other song "
@@ -280,44 +288,47 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: This is part of a contextual menu attached to a single track; the full text is "More from <artist>".
-#: src/app/components/labels.rs:168
+#: src/app/components/labels.rs:174
 #, rust-format
 msgid "More from {}"
 msgstr "Mais de {}"
 
 #. translators: This is part of a larger label that reads "<Album> by <Artist>"
-#: src/app/components/labels.rs:173
+#: src/app/components/labels.rs:179
 #, rust-format
 msgid "{} by {}"
 msgstr "{} por {}"
 
 #. translators: An artist in the back/forward history menu, while their name is loading.
-#: src/app/components/labels.rs:182
-#: src/app/components/shell/command_palette/widget.rs:862
+#. translators: Track sort option sorting alphabetically by artist name.
+#: src/app/components/labels.rs:188
+#: src/app/components/shell/command_palette/widget.rs:881
+#: src/app/components/shell/command_palette/widget.rs:965
 #: src/app/components/shell/navigation_panel/model.rs:421
 #: src/app/components/shell/navigation_panel/model.rs:912
+#: src/app/components/widgets/details_page/component.rs:107
 msgid "Artist"
 msgstr "Artista"
 
 #. translators: A playlist in the back/forward history menu, while its name is loading.
-#: src/app/components/labels.rs:184
+#: src/app/components/labels.rs:190
 #: src/app/components/pages/details_playlist/model.rs:155
 #: src/app/components/pages/saved_tracks/model.rs:63
-#: src/app/components/shell/command_palette/widget.rs:863
+#: src/app/components/shell/command_palette/widget.rs:882
+#: src/app/components/shell/command_palette/widget.rs:963
 #: src/app/components/shell/navigation_panel/model.rs:440
 #: src/app/components/shell/navigation_panel/model.rs:825
 msgid "Playlist"
 msgstr "Playlist"
 
 #. translators: A user's page in the back/forward history menu, while their name is loading.
-#: src/app/components/labels.rs:186
+#: src/app/components/labels.rs:192
 msgid "User"
 msgstr ""
 
 #. translators: The search page in the back/forward history menu.
-#: src/app/components/labels.rs:188
-#: src/app/components/shell/command_palette/widget.rs:575
-#: src/app/components/pages/shortcuts/shortcuts.blp:64 src/window.blp:196
+#: src/app/components/labels.rs:194
+#: src/app/components/shell/command_palette/widget.rs:590 src/window.blp:196
 #: src/window.blp:224
 msgid "Search"
 msgstr "Buscar"
@@ -369,24 +380,35 @@ msgstr ""
 msgid "Public Playlists"
 msgstr "Todas as listas de reprodução"
 
-#: src/app/components/pages/lyrics/add_lyrics.rs:183
+#: src/app/components/pages/lyrics/add_lyrics.rs:349
 msgid "Preparing and sending… This can take a minute on a slower computer."
 msgstr "Preparando e enviando… Pode levar um minuto num computador mais lento."
 
 #. translators: In "Add Lyrics" when sending failed. {} is the reason, from LRCLIB.
-#: src/app/components/pages/lyrics/add_lyrics.rs:217
+#: src/app/components/pages/lyrics/add_lyrics.rs:383
 #, rust-format
 msgid "Couldn't publish: {}"
 msgstr "Não deu para publicar: {}"
 
 #. translators: Title of the window where a listener adds the lyrics of a song no source has.
 #. Translators: Button under "No Lyrics Available": opens a window to type or paste the song's lyrics and publish them to LRCLIB.
-#: src/app/components/pages/lyrics/add_lyrics.rs:239
+#: src/app/components/pages/lyrics/add_lyrics.rs:416
 #: src/app/components/pages/lyrics/lyrics_page.blp:134
 msgid "Add Lyrics"
 msgstr "Adicionar letra"
 
-#: src/app/components/pages/lyrics/add_lyrics.rs:271
+#. translators: Mode toggle in Add Lyrics for typing or pasting text.
+#: src/app/components/pages/lyrics/add_lyrics.rs:451
+msgid "Write / Paste"
+msgstr "Escrever / Colar"
+
+#. translators: Mode toggle in Add Lyrics opening the 1-button Lyrics Sync Studio.
+#: src/app/components/pages/lyrics/add_lyrics.rs:454
+#: src/app/components/pages/lyrics/add_lyrics.rs:1058
+msgid "Sync While Listening"
+msgstr "Sincronizar ouvindo"
+
+#: src/app/components/pages/lyrics/add_lyrics.rs:470
 msgid ""
 "Paste or type the lyrics, one line per line. Lines that start with a time, "
 "like [01:23.45], follow the song."
@@ -394,7 +416,38 @@ msgstr ""
 "Cole ou digite a letra, uma linha por verso. As linhas que começam com um "
 "tempo, como [01:23.45], acompanham a música."
 
-#: src/app/components/pages/lyrics/add_lyrics.rs:294
+#. translators: Play/pause button inside the Lyrics Sync Studio.
+#: src/app/components/pages/lyrics/add_lyrics.rs:535
+msgid "Play / Pause"
+msgstr "Reproduzir / Pausar"
+
+#. translators: Rewind 3 seconds button inside the Lyrics Sync Studio.
+#: src/app/components/pages/lyrics/add_lyrics.rs:544
+msgid "Rewind 3 seconds (Left arrow)"
+msgstr "Voltar 3 segundos (seta esquerda)"
+
+#. translators: Primary button in the Lyrics Sync Studio that stamps the current song time onto the active lyric line.
+#: src/app/components/pages/lyrics/add_lyrics.rs:556
+#: src/app/components/pages/lyrics/add_lyrics.rs:1059
+msgid "Stamp Line"
+msgstr "Marcar verso"
+
+#. translators: Tooltip of the Stamp Line button in the Lyrics Sync Studio.
+#: src/app/components/pages/lyrics/add_lyrics.rs:561
+msgid "Stamp current time (Space)"
+msgstr "Marcar tempo atual (Espaço)"
+
+#. translators: Undo button in the Lyrics Sync Studio clearing the last timestamp.
+#: src/app/components/pages/lyrics/add_lyrics.rs:568
+msgid "Undo last line (Backspace)"
+msgstr "Desfazer último verso (Backspace)"
+
+#. translators: Reset button in the Lyrics Sync Studio clearing all line timestamps.
+#: src/app/components/pages/lyrics/add_lyrics.rs:576
+msgid "Clear all timestamps"
+msgstr "Limpar todos os tempos"
+
+#: src/app/components/pages/lyrics/add_lyrics.rs:584
 msgid ""
 "Lyrics you add go to LRCLIB, a free public lyrics library, without an "
 "account: anyone can read and use them. Add only lyrics you typed yourself or "
@@ -405,29 +458,41 @@ msgstr ""
 "letras que você mesmo digitou ou que pode compartilhar."
 
 #. translators: Button in "Add Lyrics" that shows what will be sent, before sending it.
-#: src/app/components/pages/lyrics/add_lyrics.rs:303
+#: src/app/components/pages/lyrics/add_lyrics.rs:593
 msgid "Review and Publish…"
 msgstr "Revisar e publicar…"
 
+#. translators: Shown in Lyrics Sync Studio once all lines have timestamps.
+#: src/app/components/pages/lyrics/add_lyrics.rs:648
+#, rust-format
+msgid "All {} lines synced · ready to review"
+msgstr "Todos os {} versos sincronizados · pronto para revisar"
+
+#. translators: Status line in Lyrics Sync Studio. First {} is line index, second {} is total lines.
+#: src/app/components/pages/lyrics/add_lyrics.rs:655
+#, rust-format
+msgid "Line {} of {} · Press Space on each line"
+msgstr "Verso {} de {} · Aperte Espaço em cada verso"
+
 #. translators: In the confirmation before publishing lyrics. {} is the number of lines.
-#: src/app/components/pages/lyrics/add_lyrics.rs:398
+#: src/app/components/pages/lyrics/add_lyrics.rs:1005
 #, rust-format
 msgid "{} lines, following the song"
 msgstr "{} linhas, acompanhando a música"
 
 #. translators: In the confirmation before publishing lyrics. {} is the number of lines.
-#: src/app/components/pages/lyrics/add_lyrics.rs:401
+#: src/app/components/pages/lyrics/add_lyrics.rs:1008
 #, rust-format
 msgid "{} lines, without times"
 msgstr "{} linhas, sem tempos"
 
 #. translators: Last line of the confirmation before publishing lyrics to LRCLIB.
-#: src/app/components/pages/lyrics/add_lyrics.rs:412
+#: src/app/components/pages/lyrics/add_lyrics.rs:1019
 msgid "Once published, anyone can see and use them."
 msgstr "Depois de publicada, qualquer pessoa pode ver e usar."
 
 #. translators: Heading of the confirmation before publishing lyrics.
-#: src/app/components/pages/lyrics/add_lyrics.rs:415
+#: src/app/components/pages/lyrics/add_lyrics.rs:1022
 msgid "Publish to LRCLIB?"
 msgstr "Publicar no LRCLIB?"
 
@@ -435,9 +500,9 @@ msgstr "Publicar no LRCLIB?"
 #. translators: Button of the dialog asking to confirm clearing the play queue: keeps the queue.
 #. Translators: Button label. Exits selection mode.
 #. translators: Button of a dialog asking to confirm something that cannot be undone: leaves things as they are.
-#: src/app/components/pages/lyrics/add_lyrics.rs:417
+#: src/app/components/pages/lyrics/add_lyrics.rs:1024
 #: src/app/components/shell/clipboard_import/mod.rs:116
-#: src/app/components/widgets/queue_list/model.rs:260
+#: src/app/components/widgets/queue_list/model.rs:311
 #: src/app/components/pages/queue/queue_page.blp:19
 #: src/app/components/shell/headerbar/headerbar.blp:118
 #: src/app/components/shell/utility_panel/utility_panel.blp:127
@@ -446,7 +511,7 @@ msgid "Cancel"
 msgstr "Cancelar"
 
 #. translators: Button in the confirmation before publishing lyrics: sends them.
-#: src/app/components/pages/lyrics/add_lyrics.rs:419
+#: src/app/components/pages/lyrics/add_lyrics.rs:1026
 msgid "Publish"
 msgstr "Publicar"
 
@@ -459,30 +524,30 @@ msgstr "Publicar"
 #: src/app/components/pages/settings/settings.blp:531
 #: src/app/components/shell/playback/playback_widget.blp:124
 #: src/app/components/shell/utility_panel/utility_panel.blp:74
-#: src/app/components/shell/playback/playback_widget.rs:550
+#: src/app/components/shell/playback/playback_widget.rs:528
 msgid "Lyrics"
 msgstr "Letra"
 
 #. translators: Shown once lyrics the listener added were published.
-#: src/app/components/pages/lyrics/component.rs:180
+#: src/app/components/pages/lyrics/component.rs:206
 msgid "Lyrics published to LRCLIB"
 msgstr "Letra publicada no LRCLIB"
 
 #. translators: Short text displayed instead of a track title when nothing plays
-#: src/app/components/pages/lyrics/component.rs:541
-#: src/app/components/pages/lyrics/component.rs:954
+#: src/app/components/pages/lyrics/component.rs:568
+#: src/app/components/pages/lyrics/component.rs:986
 #: src/app/components/shell/playback/playback_info.rs:122
 #: src/app/components/shell/fullscreen_lyrics.rs:212
 msgid "No Track Playing"
 msgstr "Nenhuma faixa tocando"
 
 #. Translators: Shown when no lyrics are found.
-#: src/app/components/pages/lyrics/component.rs:709
+#: src/app/components/pages/lyrics/component.rs:741
 #: src/app/components/pages/lyrics/lyrics_page.blp:95
 msgid "No Lyrics Available"
 msgstr "Letra indisponível"
 
-#: src/app/components/pages/lyrics/component.rs:710
+#: src/app/components/pages/lyrics/component.rs:742
 #: src/app/components/pages/lyrics/lyrics_page.blp:96
 msgid "Lyrics couldn't be found for this song."
 msgstr "Não foi possível encontrar a letra desta música."
@@ -491,7 +556,7 @@ msgstr "Não foi possível encontrar a letra desta música."
 #. / title without edition notes ("- Remastered", "(feat. ...)") and the word
 #. / for lyrics in the app's language ("lyrics", "letra").
 #. translators: The word added to a web search for a song's lyrics ("Search the Web" under "No Lyrics Available"): what people type in a search engine in your language, like "letra" in Portuguese.
-#: src/app/components/pages/lyrics/component.rs:721
+#: src/app/components/pages/lyrics/component.rs:753
 msgid "lyrics"
 msgstr "letra"
 
@@ -532,43 +597,49 @@ msgstr "Letra: {} · sem sincronia"
 #. translators: Title of the queue, listing what plays next, when it's shown beside the content.
 #. Translators: Tooltip of the playback bar button that shows or hides the queue.
 #. Translators: Tab label for the queue in utility panel.
-#: src/app/components/pages/queue/component.rs:79
+#: src/app/components/pages/queue/component.rs:99
+#: src/app/components/pages/queue/component.rs:147
 #: src/app/components/shell/playback/playback_widget.blp:144
 #: src/app/components/shell/utility_panel/utility_panel.blp:67
-#: src/app/components/shell/playback/playback_widget.rs:556
+#: src/app/components/shell/playback/playback_widget.rs:534
 msgid "Queue"
 msgstr "Fila"
 
+#. translators: Toast shown after saving the current play queue as a new playlist.
+#: src/app/components/pages/queue/component.rs:187
+msgid "Queue saved as playlist"
+msgstr "Fila salva como playlist"
+
 #. translators: Shown in Recently Played, above the queue, when Spotify didn't answer.
-#: src/app/components/pages/queue/component.rs:216
+#: src/app/components/pages/queue/component.rs:295
 msgid "Couldn't load your recent songs."
 msgstr "Não foi possível carregar suas músicas recentes."
 
 #. translators: Shown in Recently Played, above the queue, when the account has no history yet.
-#: src/app/components/pages/queue/component.rs:231
+#: src/app/components/pages/queue/component.rs:310
 msgid "Songs you play will show up here."
 msgstr "As músicas que você tocar vão aparecer aqui."
 
 #. translators: When a song in Recently Played was played: less than a minute ago.
-#: src/app/components/pages/queue/component.rs:344
+#: src/app/components/pages/queue/component.rs:423
 msgid "Just now"
 msgstr "Agora mesmo"
 
-#: src/app/components/pages/queue/component.rs:348
+#: src/app/components/pages/queue/component.rs:427
 #, rust-format
 msgid "{} min ago"
 msgid_plural "{} min ago"
 msgstr[0] "há {} min"
 msgstr[1] "há {} min"
 
-#: src/app/components/pages/queue/component.rs:354
+#: src/app/components/pages/queue/component.rs:433
 #, rust-format
 msgid "{} h ago"
 msgid_plural "{} h ago"
 msgstr[0] "há {} h"
 msgstr[1] "há {} h"
 
-#: src/app/components/pages/queue/component.rs:360
+#: src/app/components/pages/queue/component.rs:439
 #, rust-format
 msgid "{} day ago"
 msgid_plural "{} days ago"
@@ -620,7 +691,7 @@ msgstr "Suas listas de reprodução serão mostradas aqui."
 
 #. translators: This is a navigation panel entry to browse to the songs the user liked (the heart).
 #: src/app/components/pages/saved_tracks/model.rs:59
-#: src/app/components/shell/command_palette/widget.rs:586
+#: src/app/components/shell/command_palette/widget.rs:601
 #: src/app/components/shell/navigation_panel/model.rs:574
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:73
 msgid "Liked Songs"
@@ -639,7 +710,7 @@ msgstr "Faixas"
 
 #. translators: This is a navigation panel entry to browse to followed artists.
 #: src/app/components/pages/search/search.rs:433
-#: src/app/components/shell/command_palette/widget.rs:597
+#: src/app/components/shell/command_palette/widget.rs:612
 #: src/app/components/shell/navigation/factory.rs:82
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:77
 #: src/app/components/shell/navigation_panel/navigation_panel.rs:417
@@ -656,7 +727,7 @@ msgstr "Álbuns"
 
 #. translators: This is a navigation panel entry that marks that the entries below are playlists.
 #: src/app/components/pages/search/search.rs:453
-#: src/app/components/shell/command_palette/widget.rs:608
+#: src/app/components/shell/command_palette/widget.rs:623
 #: src/app/components/shell/navigation/factory.rs:71
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:75
 #: src/app/components/shell/navigation_panel/navigation_panel.rs:415
@@ -967,21 +1038,21 @@ msgstr "Nenhum comando correspondente"
 msgid "Try a different keyword or search for an artist, album, or song."
 msgstr "Tente outra palavra-chave ou busque um artista, álbum ou faixa."
 
-#: src/app/components/shell/command_palette/widget.rs:546
+#: src/app/components/shell/command_palette/widget.rs:561
 #: src/app/components/pages/shortcuts/shortcuts.blp:61
 msgid "Navigation"
 msgstr "Navegação"
 
-#: src/app/components/shell/command_palette/widget.rs:547
+#: src/app/components/shell/command_palette/widget.rs:562
 msgid "Theme"
 msgstr "Tema"
 
-#: src/app/components/shell/command_palette/widget.rs:548
+#: src/app/components/shell/command_palette/widget.rs:563
 msgid "Action"
 msgstr "Ação"
 
-#: src/app/components/shell/command_palette/widget.rs:549
-#: src/app/components/shell/command_palette/widget.rs:758
+#: src/app/components/shell/command_palette/widget.rs:564
+#: src/app/components/shell/command_palette/widget.rs:777
 #: src/app/components/sleep_timer.rs:45 src/app/components/sleep_timer.rs:49
 #: src/app/components/shell/playback/playback_widget.blp:166
 #: src/app/components/shell/playback/playback_widget.blp:206
@@ -990,214 +1061,220 @@ msgstr "Ação"
 msgid "Sleep Timer"
 msgstr "Timer para dormir"
 
-#: src/app/components/shell/command_palette/widget.rs:550
-#: src/app/components/shell/playback/playback_widget.rs:563
+#: src/app/components/shell/command_palette/widget.rs:565
+#: src/app/components/shell/playback/playback_widget.rs:541
 msgid "Device"
 msgstr "Aparelho"
 
-#: src/app/components/shell/command_palette/widget.rs:554
+#: src/app/components/shell/command_palette/widget.rs:569
 msgid "Show the current track in the side panel"
 msgstr "Mostrar a faixa atual no painel lateral"
 
 #. translators: This is a navigation panel entry to browse to saved albums.
-#: src/app/components/shell/command_palette/widget.rs:564
+#: src/app/components/shell/command_palette/widget.rs:579
+#: src/app/components/shell/command_palette/widget.rs:962
 #: src/app/components/shell/navigation/factory.rs:55
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:71
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:140
 msgid "Library"
 msgstr "Biblioteca"
 
-#: src/app/components/shell/command_palette/widget.rs:565
+#: src/app/components/shell/command_palette/widget.rs:580
 msgid "Browse saved albums"
 msgstr "Explorar álbuns salvos"
 
-#: src/app/components/shell/command_palette/widget.rs:576
+#: src/app/components/shell/command_palette/widget.rs:591
 msgid "Open search page"
 msgstr "Abrir página de busca"
 
-#: src/app/components/shell/command_palette/widget.rs:587
+#: src/app/components/shell/command_palette/widget.rs:602
 msgid "Open your saved tracks"
 msgstr "Abrir suas músicas salvas"
 
-#: src/app/components/shell/command_palette/widget.rs:598
+#: src/app/components/shell/command_palette/widget.rs:613
 msgid "Open followed artists"
 msgstr "Abrir artistas seguidos"
 
-#: src/app/components/shell/command_palette/widget.rs:609
+#: src/app/components/shell/command_palette/widget.rs:624
 msgid "Open saved playlists"
 msgstr "Abrir playlists salvas"
 
-#: src/app/components/shell/command_palette/widget.rs:619
+#: src/app/components/shell/command_palette/widget.rs:634
 msgid "Settings"
 msgstr "Configurações"
 
-#: src/app/components/shell/command_palette/widget.rs:620
+#: src/app/components/shell/command_palette/widget.rs:635
 msgid "Open Preferences dialog"
 msgstr "Abrir janela de Preferências"
 
-#: src/app/components/shell/command_palette/widget.rs:632
+#: src/app/components/shell/command_palette/widget.rs:647
 msgid "Toggle Queue"
 msgstr "Alternar Fila"
 
-#: src/app/components/shell/command_palette/widget.rs:633
+#: src/app/components/shell/command_palette/widget.rs:648
 msgid "Show or hide the playback queue panel"
 msgstr "Mostrar ou ocultar o painel da fila de reprodução"
 
-#: src/app/components/shell/command_palette/widget.rs:643
+#: src/app/components/shell/command_palette/widget.rs:658
 msgid "Toggle Lyrics"
 msgstr "Alternar Letras"
 
-#: src/app/components/shell/command_palette/widget.rs:644
+#: src/app/components/shell/command_palette/widget.rs:659
 msgid "Show or hide Lyrics and Track Notes"
 msgstr "Mostrar ou ocultar Letras e Notas da Faixa"
 
 #. translators: Command palette entry: opens the side panel's About tab.
 #. translators: Heading of the Genius song bio.
-#: src/app/components/shell/command_palette/widget.rs:655
+#: src/app/components/shell/command_palette/widget.rs:670
 #: src/app/components/shell/now_panel/about.rs:294
 msgid "About This Song"
 msgstr "Sobre a música"
 
 #. translators: Subtitle of the "About This Song" command palette entry.
-#: src/app/components/shell/command_palette/widget.rs:657
+#: src/app/components/shell/command_palette/widget.rs:672
 msgid "Credits, story and artist, from Genius"
 msgstr "Créditos, história e artista, pelo Genius"
 
-#. translators: Command palette entry: opens the side panel's Stats tab.
-#: src/app/components/shell/command_palette/widget.rs:668
-msgid "Song Stats"
-msgstr "Estatísticas da música"
+#. translators: Command palette entry: opens the side panel's Stats tab for the playing song.
+#: src/app/components/shell/command_palette/widget.rs:683
+msgid "Current Song Stats"
+msgstr "Estatísticas da música atual"
 
-#. translators: Subtitle of the "Song Stats" command palette entry.
-#: src/app/components/shell/command_palette/widget.rs:670
-msgid "Plays, listeners and tags, from Last.fm"
-msgstr "Reproduções, ouvintes e tags, pelo Last.fm"
+#. translators: Subtitle of the "Current Song Stats" command palette entry.
+#: src/app/components/shell/command_palette/widget.rs:685
+msgid "Plays, listeners and tags for this track (Last.fm)"
+msgstr "Reproduções, ouvintes e tags desta faixa (Last.fm)"
 
 #. Translators: Tooltip of the button in the lyrics that shows them full screen.
-#: src/app/components/shell/command_palette/widget.rs:680
+#: src/app/components/shell/command_palette/widget.rs:696
 #: src/app/components/pages/lyrics/lyrics_page.blp:346
 msgid "Full-Screen Lyrics"
 msgstr "Letra em tela cheia"
 
-#: src/app/components/shell/command_palette/widget.rs:681
+#: src/app/components/shell/command_palette/widget.rs:697
 msgid "Show the lyrics big, over the cover"
 msgstr "Mostrar a letra grande, sobre a capa"
 
 #. Translators: Tooltip of the player bar button that opens the small player window.
-#: src/app/components/shell/command_palette/widget.rs:691
+#: src/app/components/shell/command_palette/widget.rs:707
 #: src/app/components/shell/playback/playback_widget.blp:390
-#: src/app/components/shell/playback/playback_widget.rs:576
+#: src/app/components/shell/playback/playback_widget.rs:554
 msgid "Mini Player"
 msgstr "Mini player"
 
-#: src/app/components/shell/command_palette/widget.rs:692
+#: src/app/components/shell/command_palette/widget.rs:708
 msgid "Keep the controls in a small window"
 msgstr "Deixar os controles numa janela pequena"
 
-#. translators: Title of the window with the user's Last.fm listening stats.
-#: src/app/components/shell/command_palette/widget.rs:702
-#: src/app/components/shell/stats_dialog.rs:49 src/window.blp:519
-msgid "Your Stats"
-msgstr "Suas estatísticas"
+#. translators: Command palette entry: opens the personal Last.fm listening statistics dialog.
+#: src/app/components/shell/command_palette/widget.rs:719
+msgid "Your Top Stats"
+msgstr "Suas principais estatísticas"
 
-#: src/app/components/shell/command_palette/widget.rs:703
-msgid "What you played most, from Last.fm"
-msgstr "O que você mais ouviu, pelo Last.fm"
+#. translators: Subtitle of the "Your Top Stats" command palette entry.
+#: src/app/components/shell/command_palette/widget.rs:721
+msgid "Your most played artists, tracks and albums (Last.fm)"
+msgstr "Seus artistas, músicas e álbuns mais tocados (Last.fm)"
 
-#: src/app/components/shell/command_palette/widget.rs:735
+#: src/app/components/shell/command_palette/widget.rs:754
 msgid "Sleep Timer: Off"
 msgstr "Temporizador: Desativado"
 
-#: src/app/components/shell/command_palette/widget.rs:736
+#: src/app/components/shell/command_palette/widget.rs:755
 msgid "Disable active sleep timer"
 msgstr "Desativar temporizador ativo"
 
-#: src/app/components/shell/command_palette/widget.rs:746
+#: src/app/components/shell/command_palette/widget.rs:765
 msgid "Sleep Timer: End of Current Track"
 msgstr "Temporizador: Fim da faixa atual"
 
-#: src/app/components/shell/command_palette/widget.rs:747
+#: src/app/components/shell/command_palette/widget.rs:766
 msgid "Pause playback when this song finishes"
 msgstr "Pausar a reprodução quando esta faixa terminar"
 
-#: src/app/components/shell/command_palette/widget.rs:761
+#: src/app/components/shell/command_palette/widget.rs:780
 msgid "Pause playback after"
 msgstr "Pausar reprodução após"
 
-#: src/app/components/shell/command_palette/widget.rs:762
+#: src/app/components/shell/command_palette/widget.rs:781
 msgid "minutes"
 msgstr "minutos"
 
 #. Translators: Color theme option: follows Omarchy, matugen/pywal/wallust, or the native desktop theme live.
-#: src/app/components/shell/command_palette/widget.rs:776
+#: src/app/components/shell/command_palette/widget.rs:795
 #: src/app/components/pages/settings/settings.blp:24
 #: src/app/components/pages/settings/settings.blp:39
 msgid "Follow System"
 msgstr "Seguir o sistema"
 
-#: src/app/components/shell/command_palette/widget.rs:777
+#: src/app/components/shell/command_palette/widget.rs:796
 msgid "Neutral"
 msgstr "Neutro"
 
 #. Translators: Color theme option, a dark theme with green accents.
-#: src/app/components/shell/command_palette/widget.rs:778
+#: src/app/components/shell/command_palette/widget.rs:797
 #: src/app/components/pages/settings/settings.blp:42
 msgid "Green"
 msgstr "Verde"
 
-#: src/app/components/shell/command_palette/widget.rs:779
+#: src/app/components/shell/command_palette/widget.rs:798
 #: src/app/components/pages/settings/settings.blp:43
 msgid "OLED Dark"
 msgstr "Escuro OLED"
 
-#: src/app/components/shell/command_palette/widget.rs:780
+#: src/app/components/shell/command_palette/widget.rs:799
 #: src/app/components/pages/settings/settings.blp:44
 msgid "Warm Vinyl"
 msgstr "Vinil quente"
 
-#: src/app/components/shell/command_palette/widget.rs:781
+#: src/app/components/shell/command_palette/widget.rs:800
 #: src/app/components/pages/settings/settings.blp:45
 msgid "Purple Night"
 msgstr "Noite roxa"
 
-#: src/app/components/shell/command_palette/widget.rs:786
+#: src/app/components/shell/command_palette/widget.rs:805
 msgid "Active theme"
 msgstr "Tema ativo"
 
-#: src/app/components/shell/command_palette/widget.rs:788
+#: src/app/components/shell/command_palette/widget.rs:807
 msgid "Switch theme live"
 msgstr "Trocar tema ao vivo"
 
-#: src/app/components/shell/command_palette/widget.rs:812
+#: src/app/components/shell/command_palette/widget.rs:831
 #: src/app/components/shell/device_selector/widget.rs:149
 #: src/app/components/shell/device_selector/device_selector.blp:58
 msgid "This Device"
 msgstr "Este dispositivo"
 
-#: src/app/components/shell/command_palette/widget.rs:814
+#: src/app/components/shell/command_palette/widget.rs:833
 msgid "Active playback device"
 msgstr "Dispositivo de reprodução ativo"
 
-#: src/app/components/shell/command_palette/widget.rs:816
+#: src/app/components/shell/command_palette/widget.rs:835
 msgid "Transfer playback locally"
 msgstr "Transferir reprodução localmente"
 
-#: src/app/components/shell/command_palette/widget.rs:844
+#: src/app/components/shell/command_palette/widget.rs:863
 msgid "Active Connect device"
 msgstr "Dispositivo Connect ativo"
 
-#: src/app/components/shell/command_palette/widget.rs:846
+#: src/app/components/shell/command_palette/widget.rs:865
 msgid "Transfer playback to device"
 msgstr "Transferir reprodução para o dispositivo"
 
-#: src/app/components/shell/command_palette/widget.rs:860
+#: src/app/components/shell/command_palette/widget.rs:879
 #: src/app/components/pages/settings/settings.blp:359
 msgid "Track"
 msgstr "Faixa"
 
-#: src/app/components/shell/command_palette/widget.rs:906
+#: src/app/components/shell/command_palette/widget.rs:925
 msgid "Open artist page"
 msgstr "Abrir página do artista"
+
+#. translators: Title of the window with the user's Last.fm listening stats.
+#: src/app/components/shell/stats_dialog.rs:49 src/window.blp:519
+msgid "Your Stats"
+msgstr "Suas estatísticas"
 
 #. translators: Stats period: the last 7 days.
 #: src/app/components/shell/stats_dialog.rs:153
@@ -1337,7 +1414,7 @@ msgid "No previous track"
 msgstr ""
 
 #: src/app/components/shell/playback/playback_controls.rs:78
-#: src/app/components/shell/mini_player.rs:243
+#: src/app/components/shell/mini_player.rs:713
 #: src/app/components/widgets/details_page/header.rs:264
 msgid "Pause"
 msgstr "Pausar"
@@ -1355,7 +1432,7 @@ msgstr "Ir para o álbum"
 #. translators: Side panel view of the current track, when nothing plays.
 #: src/app/components/shell/now_panel/mod.rs:413
 #: src/app/components/shell/now_panel/info_page.rs:86
-#: src/app/components/shell/mini_player.rs:254
+#: src/app/components/shell/mini_player.rs:725
 msgid "Nothing Playing"
 msgstr "Nada tocando"
 
@@ -1737,20 +1814,35 @@ msgstr "Mostrar menos"
 msgid "Exit Full Screen (Esc)"
 msgstr "Sair da tela cheia (Esc)"
 
-#: src/app/components/shell/mini_player.rs:170
+#. translators: Tooltip on the Mini Player lyrics toggle when the live lyric line is enabled.
+#: src/app/components/shell/mini_player.rs:478
+msgid "Hide Synced Lyrics"
+msgstr "Ocultar letra sincronizada"
+
+#. translators: Tooltip on the Mini Player lyrics toggle when the live lyric line is hidden.
+#: src/app/components/shell/mini_player.rs:481
+msgid "Show Synced Lyrics"
+msgstr "Mostrar letra sincronizada"
+
+#: src/app/components/shell/mini_player.rs:586
 #: src/app/components/shell/playback/playback_controls.blp:30
 msgid "Previous"
 msgstr "Voltar"
 
-#: src/app/components/shell/mini_player.rs:174
+#: src/app/components/shell/mini_player.rs:590
 #: src/app/components/shell/playback/playback_controls.blp:56
 msgid "Next"
 msgstr "Avançar"
 
-#: src/app/components/shell/mini_player.rs:188
-#: src/app/components/shell/mini_player.rs:221
+#: src/app/components/shell/mini_player.rs:615
+#: src/app/components/shell/mini_player.rs:687
 msgid "Open Canto"
 msgstr "Abrir o Canto"
+
+#. translators: Tooltip on the Mini Player's bottom progress bar.
+#: src/app/components/shell/mini_player.rs:660
+msgid "Click to seek"
+msgstr "Clique para avançar ou voltar"
 
 #. translators: Library order: what was played most recently first.
 #: src/app/components/shell/navigation_panel/model.rs:73
@@ -1872,6 +1964,36 @@ msgstr "Fechar"
 msgid "Remember my choice"
 msgstr ""
 
+#. translators: Tooltip of the button that reveals the in-page track filter bar.
+#: src/app/components/widgets/details_page/component.rs:94
+msgid "Filter tracks (Ctrl+F)"
+msgstr "Filtrar faixas (Ctrl+F)"
+
+#. translators: Track sort option keeping album/playlist original track order.
+#: src/app/components/widgets/details_page/component.rs:103
+msgid "Original Order"
+msgstr "Ordem original"
+
+#. translators: Track sort option sorting alphabetically by track title.
+#: src/app/components/widgets/details_page/component.rs:105
+msgid "Title"
+msgstr "Título"
+
+#. translators: Track sort option sorting by track duration.
+#: src/app/components/widgets/details_page/component.rs:109
+msgid "Duration"
+msgstr "Duração"
+
+#. translators: Tooltip of the dropdown sorting tracks in the current playlist, album, or Liked Songs page.
+#: src/app/components/widgets/details_page/component.rs:113
+msgid "Sort tracks"
+msgstr "Ordenar faixas"
+
+#. translators: Placeholder in the in-page filter bar for playlists, albums, and Liked Songs.
+#: src/app/components/widgets/details_page/component.rs:123
+msgid "Filter tracks…"
+msgstr "Filtrar faixas…"
+
 #: src/app/components/widgets/details_page/header.rs:423
 #: src/app/components/widgets/details_page/header.blp:189
 #, fuzzy
@@ -1895,25 +2017,25 @@ msgid "Tracks saved!"
 msgstr "Faixas foram salvas!"
 
 #. translators: Title of the dialog asking to confirm clearing the play queue, from its trash button.
-#: src/app/components/widgets/queue_list/model.rs:255
+#: src/app/components/widgets/queue_list/model.rs:306
 msgid "Clear the Queue?"
 msgstr ""
 
 #. translators: Body of the dialog asking to confirm clearing the play queue.
-#: src/app/components/widgets/queue_list/model.rs:257
+#: src/app/components/widgets/queue_list/model.rs:308
 msgid "All tracks added to the queue will be removed."
 msgstr ""
 
 #. translators: Button of the dialog asking to confirm clearing the play queue: clears it.
 #. Translators: Label for the button that clears the cache
-#: src/app/components/widgets/queue_list/model.rs:262
+#: src/app/components/widgets/queue_list/model.rs:313
 #: src/app/components/pages/settings/settings.blp:239
 msgid "Clear"
 msgstr ""
 
 #. translators: Header shown above the tracks of disc {} in a
 #. multi-disc album.
-#: src/app/components/widgets/track_list/track_list.rs:375
+#: src/app/components/widgets/track_list/track_list.rs:414
 #, rust-format
 msgid "Disc {}"
 msgstr "Disco {}"
@@ -2274,7 +2396,7 @@ msgstr "Idioma da tradução"
 #. translators: Button label. Selects all visible songs.
 #: src/app/components/pages/queue/queue_page.blp:34
 #: src/app/components/shell/headerbar/headerbar.blp:131
-#: src/app/components/pages/queue/widget.rs:204
+#: src/app/components/pages/queue/widget.rs:227
 #: src/app/components/shell/headerbar/widget.rs:782
 #: src/app/components/shell/utility_panel/utility_panel.blp:135
 #: src/app/components/shell/utility_panel/widget.rs:192
@@ -2286,10 +2408,15 @@ msgstr "Selecionar todas"
 msgid "Recently Played"
 msgstr "Tocadas Recentemente"
 
+#. Translators: Button on the queue page that saves the current play queue into a new playlist.
+#: src/app/components/pages/queue/queue_page.blp:170
+msgid "Save as Playlist…"
+msgstr "Salvar como playlist…"
+
 #. Translators: Shown in place of the queue when nothing plays or is queued.
-#: src/app/components/pages/queue/queue_page.blp:160
+#: src/app/components/pages/queue/queue_page.blp:188
 msgid "Nothing Queued"
-msgstr ""
+msgstr "Nada na fila"
 
 #: src/app/components/pages/search/search.blp:29
 msgid "Filter"
@@ -2463,7 +2590,9 @@ msgstr "Tema de cores"
 msgid ""
 "Follow System uses Omarchy, matugen, pywal, wallust, or your desktop theme "
 "live"
-msgstr "Seguir o sistema usa Omarchy, matugen, pywal, wallust ou o tema da sua área de trabalho ao vivo"
+msgstr ""
+"Seguir o sistema usa Omarchy, matugen, pywal, wallust ou o tema da sua área "
+"de trabalho ao vivo"
 
 #: src/app/components/pages/settings/settings.blp:40
 msgid "Neutral (Adwaita)"
@@ -2505,7 +2634,8 @@ msgstr "Cor da capa nos controles"
 #: src/app/components/pages/settings/settings.blp:74
 msgid ""
 "Use the playing album cover's color for buttons, sliders, and highlights"
-msgstr "Usar a cor da capa do álbum em botões, controles deslizantes e destaques"
+msgstr ""
+"Usar a cor da capa do álbum em botões, controles deslizantes e destaques"
 
 #. Translators: Title for an item in preferences
 #: src/app/components/pages/settings/settings.blp:81
@@ -3011,7 +3141,9 @@ msgstr "Ponte Visual"
 msgid ""
 "Opt-in lightweight local state and audio RMS/peak output for status bars, "
 "widgets, and external visualizers."
-msgstr "Saída local leve e opcional de estado e níveis RMS/pico de áudio para barras de status, widgets e visualizadores externos."
+msgstr ""
+"Saída local leve e opcional de estado e níveis RMS/pico de áudio para barras "
+"de status, widgets e visualizadores externos."
 
 #: src/app/components/pages/settings/settings.blp:628
 msgid "Enable Visual Bridge"
@@ -3021,42 +3153,41 @@ msgstr "Ativar Ponte Visual"
 msgid ""
 "Write active track, synced lyric, theme colors, and audio levels to "
 "$XDG_RUNTIME_DIR/canto/state.json"
-msgstr "Gravar faixa ativa, letra sincronizada, cores do tema e níveis de áudio em $XDG_RUNTIME_DIR/canto/state.json"
+msgstr ""
+"Gravar faixa ativa, letra sincronizada, cores do tema e níveis de áudio em "
+"$XDG_RUNTIME_DIR/canto/state.json"
 
 #: src/app/components/pages/shortcuts/shortcuts.blp:10
-#, fuzzy
 msgid "Play/Pause"
-msgstr "Pausar"
+msgstr "Reproduzir/Pausar"
 
 #: src/app/components/pages/shortcuts/shortcuts.blp:15
-#, fuzzy
 msgid "Previous Track"
-msgstr "Voltar"
+msgstr "Faixa anterior"
 
 #: src/app/components/pages/shortcuts/shortcuts.blp:20
-#, fuzzy
 msgid "Next Track"
-msgstr "Faixas"
+msgstr "Próxima faixa"
 
 #: src/app/components/pages/shortcuts/shortcuts.blp:25
 msgid "Seek Backward"
-msgstr ""
+msgstr "Retroceder"
 
 #: src/app/components/pages/shortcuts/shortcuts.blp:30
 msgid "Seek Forward"
-msgstr ""
+msgstr "Avançar"
 
 #: src/app/components/pages/shortcuts/shortcuts.blp:35
 msgid "Volume Down"
-msgstr ""
+msgstr "Diminuir volume"
 
 #: src/app/components/pages/shortcuts/shortcuts.blp:40
 msgid "Volume Up"
-msgstr ""
+msgstr "Aumentar volume"
 
 #: src/app/components/pages/shortcuts/shortcuts.blp:45
 msgid "Mute"
-msgstr ""
+msgstr "Silenciar"
 
 #: src/app/components/pages/shortcuts/shortcuts.blp:55
 #: src/app/components/shell/playback/playback_controls.blp:67
@@ -3064,20 +3195,23 @@ msgstr ""
 msgid "Repeat"
 msgstr "Repetir"
 
+#: src/app/components/pages/shortcuts/shortcuts.blp:64
+msgid "Search / Filter Tracks"
+msgstr "Buscar / Filtrar faixas"
+
 #: src/app/components/pages/shortcuts/shortcuts.blp:74
-#, fuzzy
 msgid "Go Back"
-msgstr "Backend de áudio"
+msgstr "Voltar"
 
 #: src/app/components/pages/shortcuts/shortcuts.blp:79
 msgid "Go Forward"
-msgstr ""
+msgstr "Avançar"
 
 #. Translators: Tooltip for the button that shows/hides the navigation panel.
 #: src/app/components/pages/shortcuts/shortcuts.blp:109
 #: src/app/components/shell/headerbar/headerbar.blp:36
 msgid "Toggle Sidebar"
-msgstr ""
+msgstr "Alternar barra lateral"
 
 #: src/app/components/pages/shortcuts/shortcuts.blp:118 src/window.blp:152
 msgid "Main Menu"
@@ -3107,16 +3241,16 @@ msgstr "Atualizar dispositivos"
 #. Translators: Tooltip for the header bar button that navigates back.
 #: src/app/components/shell/headerbar/headerbar.blp:54
 msgid "Back"
-msgstr ""
+msgstr "Voltar"
 
 #. Translators: Tooltip for the header bar button that navigates forward.
 #: src/app/components/shell/headerbar/headerbar.blp:74
 msgid "Forward"
-msgstr ""
+msgstr "Avançar"
 
 #: src/app/components/shell/playback/playback_widget.blp:226
 #: src/app/components/shell/playback/playback_widget.blp:783
-#: src/app/components/shell/playback/playback_widget.rs:918
+#: src/app/components/shell/playback/playback_widget.rs:896
 msgid "Off"
 msgstr "Desativado"
 
@@ -3150,14 +3284,14 @@ msgid "Mute / Unmute"
 msgstr "Silenciar / reativar som"
 
 #: src/app/components/shell/playback/playback_widget.blp:360
-#: src/app/components/shell/playback/playback_widget.rs:570
+#: src/app/components/shell/playback/playback_widget.rs:548
 msgid "Volume"
 msgstr "Volume"
 
 #. Translators: Tooltip of the player bar button that opens the sleep timer, equalizer and audio options.
 #: src/app/components/shell/playback/playback_widget.blp:408
 #: src/app/components/widgets/details_page/header.blp:219
-#: src/app/components/shell/playback/playback_widget.rs:583
+#: src/app/components/shell/playback/playback_widget.rs:561
 msgid "More Options"
 msgstr "Mais opções"
 
@@ -3198,14 +3332,14 @@ msgstr "Acústico"
 
 #. Translators: Tooltip of the player bar button that shows or hides the right side panel (Now Playing, Queue, Lyrics).
 #: src/app/components/shell/playback/playback_widget.blp:870
-#: src/app/components/shell/playback/playback_widget.rs:589
+#: src/app/components/shell/playback/playback_widget.rs:567
 msgid "Side Panel"
 msgstr "Painel lateral"
 
 #. Translators: tooltip of the button picking the cover image of a new playlist
 #. translators: Title of the dialog picking a playlist's cover.
 #: src/app/components/widgets/playlist_dialog/playlist_dialog.blp:30
-#: src/app/components/widgets/playlist_dialog/widget.rs:238
+#: src/app/components/widgets/playlist_dialog/widget.rs:250
 msgid "Choose Cover"
 msgstr ""
 
@@ -3221,6 +3355,7 @@ msgstr ""
 
 #. Translators: shown in the dialog creating a new playlist when creating it failed
 #: src/app/components/widgets/playlist_dialog/playlist_dialog.blp:112
+#: src/app/components/widgets/playlist_dialog/widget.rs:174
 #, fuzzy
 msgid "The playlist could not be created."
 msgstr "Nova lista de reprodução criada."
@@ -3232,6 +3367,7 @@ msgstr ""
 
 #. Translators: Button that creates a new playlist
 #: src/app/components/widgets/playlist_dialog/playlist_dialog.blp:148
+#: src/app/components/widgets/playlist_dialog/widget.rs:172
 msgid "Create"
 msgstr "Criar"
 
@@ -3335,7 +3471,7 @@ msgid "Details"
 msgstr ""
 
 #. translators: Button label. Deselects all songs, once they are all selected.
-#: src/app/components/pages/queue/widget.rs:201
+#: src/app/components/pages/queue/widget.rs:224
 #: src/app/components/shell/headerbar/widget.rs:779
 #: src/app/components/shell/utility_panel/widget.rs:189
 msgid "Deselect All"
@@ -3394,12 +3530,17 @@ msgstr ""
 msgid "The playlist could not be saved."
 msgstr "Nova lista de reprodução criada."
 
+#. translators: Title of the dialog saving the current play queue into a new playlist.
+#: src/app/components/widgets/playlist_dialog/widget.rs:171
+msgid "Save Queue as Playlist"
+msgstr "Salvar fila como playlist"
+
 #. translators: Name of the file filter of the dialog picking a playlist's cover.
-#: src/app/components/widgets/playlist_dialog/widget.rs:230
+#: src/app/components/widgets/playlist_dialog/widget.rs:242
 msgid "Images"
 msgstr ""
 
-#: src/app/state/app_state.rs:336
+#: src/app/state/app_state.rs:339
 msgid "Queueing isn't available when playing on another device"
 msgstr "Não é possível enfileirar ao tocar em outro dispositivo"
 
@@ -3422,36 +3563,39 @@ msgid "Using CANTO_SPOTIFY_CLIENT_ID from the environment."
 msgstr "Usando CANTO_SPOTIFY_CLIENT_ID do ambiente."
 
 #. translators: Heading of the popover that chooses which buttons the player bar shows.
-#: src/app/components/shell/playback/playback_widget.rs:599
+#: src/app/components/shell/playback/playback_widget.rs:577
 msgid "Show in the Bar"
 msgstr "Mostrar na barra"
 
 #. translators: Tooltip of the arrow that moves a button earlier in the player bar.
-#: src/app/components/shell/playback/playback_widget.rs:630
+#: src/app/components/shell/playback/playback_widget.rs:608
 msgid "Move Left"
 msgstr "Mover para a esquerda"
 
 #. translators: Tooltip of the arrow that moves a button later in the player bar.
-#: src/app/components/shell/playback/playback_widget.rs:633
+#: src/app/components/shell/playback/playback_widget.rs:611
 msgid "Move Right"
 msgstr "Mover para a direita"
 
 #. translators: What a screen reader says of the Repeat row in the player bar's More Options menu while the whole album or playlist repeats.
-#: src/app/components/shell/playback/playback_widget.rs:915
+#: src/app/components/shell/playback/playback_widget.rs:893
 msgid "Repeat All"
 msgstr "Repetir tudo"
 
 #. translators: What a screen reader says of the Repeat row in the player bar's More Options menu while the song playing repeats.
-#: src/app/components/shell/playback/playback_widget.rs:917
+#: src/app/components/shell/playback/playback_widget.rs:895
 msgid "Repeat This Song"
 msgstr "Repetir esta música"
 
 #. / The volume's tooltip: its level, and the keys that change it.
 #. translators: Tooltip of the volume slider. {} is the volume in percent (the % follows it); Ctrl+↑ and Ctrl+↓ are the keys that change it.
-#: src/app/components/shell/playback/playback_widget.rs:1015
+#: src/app/components/shell/playback/playback_widget.rs:1016
 #, rust-format
 msgid "Volume {}% · Ctrl+↑ / Ctrl+↓"
 msgstr "Volume {}% · Ctrl+↑ / Ctrl+↓"
+
+#~ msgid "What you played most, from Last.fm"
+#~ msgstr "O que você mais ouviu, pelo Last.fm"
 
 #~ msgid "Follow System uses your Omarchy theme and changes with it"
 #~ msgstr "Seguir o sistema usa o seu tema do Omarchy e muda junto com ele"

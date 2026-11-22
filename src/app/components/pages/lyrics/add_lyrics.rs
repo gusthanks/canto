@@ -537,7 +537,7 @@ pub fn open_with_playback(
         btn.connect_clicked(move |_| toggle());
         studio_controls.append(&btn);
 
-        let rew = gtk::Button::from_icon_name("media-seek-backward-symbolic");
+        let rew = gtk::Button::from_icon_name("media-skip-backward-symbolic");
         rew.add_css_class("circular");
         rew.set_focus_on_click(false);
         // translators: Rewind 3 seconds button inside the Lyrics Sync Studio.
@@ -561,7 +561,7 @@ pub fn open_with_playback(
     stamp_btn.set_tooltip_text(Some(&gettext("Stamp current time (Space)")));
     studio_controls.append(&stamp_btn);
 
-    let undo_btn = gtk::Button::from_icon_name("edit-undo-symbolic");
+    let undo_btn = gtk::Button::from_icon_name("edit-clear-symbolic");
     undo_btn.add_css_class("circular");
     undo_btn.set_focus_on_click(false);
     // translators: Undo button in the Lyrics Sync Studio clearing the last timestamp.
@@ -645,7 +645,7 @@ pub fn open_with_playback(
                 } else if s.is_complete() {
                     labels::fill(
                         // translators: Shown in Lyrics Sync Studio once all lines have timestamps.
-                        gettext("All {} lines synced — ready to review"),
+                        gettext("All {} lines synced · ready to review"),
                         &[&s.total().to_string()],
                     )
                 } else {
@@ -1065,7 +1065,7 @@ pub fn studio_controls_for_tests(
         } else if let Ok(btn) = widget.clone().downcast::<gtk::Button>() {
             if btn.label().as_deref() == Some(stamp_label.as_str()) {
                 stamp_btn = Some(btn);
-            } else if btn.icon_name().as_deref() == Some("edit-undo-symbolic") {
+            } else if btn.icon_name().as_deref() == Some("edit-clear-symbolic") {
                 undo_btn = Some(btn);
             }
         }

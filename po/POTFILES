@@ -37,6 +37,7 @@ src/app/components/shell/navigation_panel/navigation_panel_item.rs
 src/app/components/shell/navigation_panel/navigation_panel.rs
 src/app/components/shell/window/close_dialog.rs
 src/app/components/shell/window/mod.rs
+src/app/components/widgets/details_page/component.rs
 src/app/components/widgets/details_page/header.rs
 src/app/components/widgets/details_page/model.rs
 src/app/components/widgets/track_list/track_row.rs

@@ -164,6 +164,11 @@ it drops buttons in steps (`BAR_TIER_WIDTHS`):
   visible.
 - Tracks of an hour or more read `1h02` in a tight bar instead of pushing it
   wider.
+- `MiniPlayer` (`src/app/components/shell/mini_player.rs`): shows a 2 px
+  seekable progress bar along the bottom edge, natural-scroll volume
+  (`scroll_steps_from_event`, `volume_after_scroll`), and an optional 1-line
+  live synced lyric strip controlled by `mini-player-lyrics` and refreshed on
+  `AppEvent::LyricsUpdated`.
 - Tests: `assert_bar_tiers` and `assert_more_options_rows`
   (`src/app/components/gtk_tests/playback_bar.rs`).
 
@@ -232,8 +237,13 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   Now Playing; it opens scrolled to its end and follows it until a scroll by
   hand. Unfolded it shows three songs (`RECENT_VISIBLE_ROWS`,
   `fit_recent_rows`), measured from the rows. Each song has a heart.
-- Tests: `assert_recently_played`, `assert_recently_played_opens_at_newest`
-  (`src/app/components/gtk_tests/queue.rs`).
+- `save_playlist_button` (`queue_actions`, `save_queue_as_playlist`) saves the
+  playable queue tracks into a new playlist through
+  `PlaylistDialog::for_saving_queue`. Movable rows expose Move Up and Move Down
+  in the row menu (`menu_opening_for` enables each direction lazily on
+  `Device::Local`).
+- Tests: `assert_recently_played`, `assert_recently_played_opens_at_newest` and
+  `assert_save_queue_as_playlist_button` (`src/app/components/gtk_tests/queue.rs`).
 
 ## 6. Lyrics (`src/app/components/pages/lyrics/`)
 
@@ -251,19 +261,20 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   - `web_search_button` "Search the Web" opens a web search for the main
     artist, the title without edition notes and the word for lyrics in the
     app's language (`web_lyrics_search_url`).
-  - `add_lyrics_button` "Add Lyrics" opens `add_lyrics.rs`: the song
-    (`SongForLyrics`), a box to type or paste the lyrics (lines with a time
-    such as `[01:23.45]` make synced lyrics: `parse_draft`, `LyricsDraft`), a
-    confirmation that shows what goes out and that it becomes public, then
-    `Sending` while LRCLIB's proof of work is solved
-    (`crates/canto-api/src/lyrics/publish.rs`, `publish_lyrics`). Nothing is
-    sent without that confirmation.
+  - `add_lyrics_button` "Add Lyrics" opens `add_lyrics.rs` (`open_with_playback`,
+    `SyncPlayback`): a Write / Paste editor and the 1-button "Sync While
+    Listening" studio (`SyncSession`, `SyncLine`; `Space` stamps without
+    bubbling to global play/pause, `Backspace` undoes, `Left` rewinds 3 s),
+    both feeding `parse_draft` (`LyricsDraft`) before the confirmation dialog
+    and LRCLIB proof-of-work publish (`crates/canto-api/src/lyrics/publish.rs`,
+    `publish_lyrics`). Nothing is sent without that confirmation.
 - Full screen (`src/app/components/shell/fullscreen_lyrics.rs`): a sharp cover
   on the left with title and artist under it, the lyrics on the right, and a
   solid background from the cover's color
   (`extract_cover_accent_from_texture`) mixed with near black.
 - Tests: `assert_lyrics_options`, `assert_lyrics_source_line`,
-  `assert_add_lyrics_window` (`src/app/components/gtk_tests/lyrics.rs`).
+  `assert_add_lyrics_window` and `assert_lyrics_sync_studio`
+  (`src/app/components/gtk_tests/lyrics.rs`).
 
 ## 7. Your Library (`src/app/components/shell/navigation_panel/`)
 
@@ -308,18 +319,31 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   artist's page: `artist_links_markup` fills the card's `subtitle-markup`, and
   the card's label opens it through `app.view_artist`; other links go to the
   label. The names read dim, like the player bar's (`track-links`).
-- Track lists have no lines between songs.
+- Track lists have no lines between songs: continuous single-card track lists
+  paint `@card_bg_color` once on `.playlist--single-card` (`sync_single_card_class`
+  in `track_list.rs`) to prevent fractional display-scale subpixel seams.
+- `create_track_list` in `src/app/components/widgets/details_page/component.rs`
+  adds an inline filter toggle, `.details-section__filter-entry` (focused via
+  map-scoped `<Ctrl>F` when no modal dialog is open) and `.details-section__sort`
+  (`TrackSortOrder`) controlled through `TrackListController`.
 - Tests: `assert_release_filters_are_buttons`,
   `assert_filtered_card_grid_keeps_its_columns`, `assert_card_artist_links`,
-  `assert_no_lines_between_songs`, `assert_album_page_fits` (`library.rs`).
+  `assert_no_lines_between_songs`, `assert_album_page_fits` and
+  `assert_track_list_filter_and_sort` (`library.rs`).
 
 ## 9. Ctrl+K and the stats dialog
 
 - Ctrl+K (`src/app/components/shell/command_palette/widget.rs`) is an
-  `Adw.Dialog`. Spotify results show their cover (`PaletteEntry`, round for
-  artists). A click outside closes it (a capture `GestureClick` on the window,
-  removed on `closed`). A new action shortcut: a `PaletteAction` variant, its
-  arm calling `activate_action("win.<x>")`, and a `PaletteEntry` with keywords.
+  `Adw.Dialog`. On any typed query, `build_library_entries` searches saved
+  playlists, albums and artists immediately from `HomeState`, while
+  `merge_palette_results` deduplicates matching remote catalog results (`PlayTrack`,
+  `ViewAlbum`, `ViewArtist`, `ViewPlaylist`). Statistics actions distinguish
+  "Current Song Stats" (`PaletteAction::ShowStats`) from "Your Top Stats"
+  (`PaletteAction::ListeningStats`). Spotify results show their cover
+  (`PaletteEntry`, round for artists). A click outside closes it (a capture
+  `GestureClick` on the window, removed on `closed`). A new action shortcut: a
+  `PaletteAction` variant, its arm calling `activate_action("win.<x>")`, and a
+  `PaletteEntry` with keywords.
 - Listening stats (`src/app/components/shell/stats_dialog.rs`,
   `win.listening-stats`, registered in `src/app/mod.rs`), from the main menu
   ("Your Stats"), Ctrl+K and the Stats tab. Periods 7 days, month, year, all
