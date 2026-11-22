@@ -11,6 +11,7 @@
 //!
 //! Docs: <https://developer.spotify.com/documentation/soloist>
 
+use gettextrs::gettext;
 use gio::prelude::SettingsExt;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
@@ -406,6 +407,28 @@ pub fn days_left() -> Option<i64> {
     Some(built + BUILD_LIFETIME_DAYS - today)
 }
 
+/// Whether Canto can automatically download and update Soloist on this machine.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum AutoDownloadSupport {
+    #[default]
+    Available,
+    /// Spotify's CDN only publishes Linux x86_64 Soloist builds.
+    UnsupportedArch,
+    /// `CANTO_SOLOIST_CMD` points at a user-managed binary.
+    CustomBinary,
+}
+
+/// Reports whether automatic Soloist downloads are supported in this environment.
+pub fn auto_download_support() -> AutoDownloadSupport {
+    if std::env::var_os("CANTO_SOLOIST_CMD").is_some() {
+        AutoDownloadSupport::CustomBinary
+    } else if cfg!(target_arch = "x86_64") {
+        AutoDownloadSupport::Available
+    } else {
+        AutoDownloadSupport::UnsupportedArch
+    }
+}
+
 /// What looking for a new Soloist build did.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UpdateOutcome {
@@ -417,6 +440,10 @@ pub enum UpdateOutcome {
     NothingNewer,
     /// A newer build is in place; it runs the next time Soloist starts.
     Updated { days_left: i64 },
+    /// Automatic downloads are only published for x86_64 Linux.
+    UnsupportedArchitecture,
+    /// `CANTO_SOLOIST_CMD` is set, so Canto does not replace it.
+    ManagedExternally,
 }
 
 /// Whether to ask the CDN for a new build: when none is installed, or few
@@ -458,8 +485,15 @@ fn run_checked(command: &mut Command, what: &str) -> Result<(), String> {
 /// running Soloist keeps going; the new one is used from its next start.
 /// Blocks for the download: call it off the main thread.
 pub fn update() -> Result<UpdateOutcome, String> {
-    if !cfg!(target_arch = "x86_64") || std::env::var_os("CANTO_SOLOIST_CMD").is_some() {
-        return Ok(UpdateOutcome::UpToDate);
+    match auto_download_support() {
+        AutoDownloadSupport::Available => {}
+        AutoDownloadSupport::UnsupportedArch => {
+            info!("Automatic Soloist download is only available on x86_64; skipping update");
+            return Ok(UpdateOutcome::UnsupportedArchitecture);
+        }
+        AutoDownloadSupport::CustomBinary => {
+            return Ok(UpdateOutcome::ManagedExternally);
+        }
     }
     let installed_day = version().as_deref().and_then(parse_build_day);
     let now_secs = (now_ms().ok_or("no clock")? / 1000) as i64;
@@ -540,6 +574,7 @@ pub struct Report {
     pub logged_in: bool,
     pub active: bool,
     pub days_left: Option<i64>,
+    pub auto_download: AutoDownloadSupport,
 }
 
 /// Reads Soloist's state. Blocks for a moment: call it off the main thread.
@@ -551,7 +586,66 @@ pub fn report() -> Report {
         logged_in: status.logged_in,
         active: status.active,
         days_left: days_left(),
+        auto_download: auto_download_support(),
     }
+}
+
+/// One line on how Soloist stands, for the settings window.
+pub fn status_text(report: &Report, key_saved: bool) -> String {
+    let mut text = if !report.installed {
+        match report.auto_download {
+            AutoDownloadSupport::Available if key_saved => {
+                gettext("Not installed yet: Canto gets it from Spotify when you press play")
+            }
+            AutoDownloadSupport::Available => gettext(
+                "Not installed. Canto plays through the Spotify app hidden in the background.",
+            ),
+            AutoDownloadSupport::UnsupportedArch if key_saved => gettext(
+                "Not installed. Automatic download is only available on x86_64; install Soloist manually or set CANTO_SOLOIST_CMD.",
+            ),
+            AutoDownloadSupport::UnsupportedArch => gettext(
+                "Not installed. Automatic download is only available on x86_64; install Soloist manually, or Canto uses the hidden Spotify app.",
+            ),
+            AutoDownloadSupport::CustomBinary => {
+                gettext("Not found at the path set in CANTO_SOLOIST_CMD.")
+            }
+        }
+    } else if !key_saved {
+        gettext("Installed, waiting for a key")
+    } else if !report.running {
+        gettext("Ready. It starts when you press play.")
+    } else if !report.logged_in {
+        gettext("Running, not logged in yet: in Spotify on your phone, pick “Canto” in the device list once")
+    } else if report.active {
+        gettext("Running and playing through Canto")
+    } else {
+        gettext("Running and logged in")
+    };
+    match report.days_left {
+        Some(days) if days < 0 => {
+            text.push_str(" · ");
+            text.push_str(&match report.auto_download {
+                AutoDownloadSupport::Available => gettext(
+                    "This Soloist build has expired; Canto gets the new one when you press play",
+                ),
+                AutoDownloadSupport::UnsupportedArch => gettext(
+                    "This Soloist build has expired; automatic updates are only available on x86_64, so update Soloist manually",
+                ),
+                AutoDownloadSupport::CustomBinary => gettext(
+                    "This Soloist build has expired; update the binary configured in CANTO_SOLOIST_CMD",
+                ),
+            });
+        }
+        Some(days) if days <= 14 => {
+            text.push_str(" · ");
+            text.push_str(
+                &gettext("This Soloist build stops working in {days} days")
+                    .replace("{days}", &days.to_string()),
+            );
+        }
+        _ => {}
+    }
+    text
 }
 
 #[cfg(test)]
@@ -652,5 +746,64 @@ mod tests {
             / 86_400;
         assert_eq!(day, expected);
         assert_eq!(parse_build_day("soloist 1.0 (linux/x86_64)"), None);
+    }
+
+    #[test]
+    fn status_text_explains_manual_install_when_auto_download_unavailable() {
+        let arm_missing = Report {
+            installed: false,
+            auto_download: AutoDownloadSupport::UnsupportedArch,
+            ..Default::default()
+        };
+        let with_key = status_text(&arm_missing, true);
+        assert!(
+            with_key.contains("x86_64") && with_key.contains("CANTO_SOLOIST_CMD"),
+            "ARM64 status with key should explain x86_64 limitation: {}",
+            with_key
+        );
+        assert!(
+            !with_key.contains("gets it from Spotify"),
+            "ARM64 status must not promise automatic download: {}",
+            with_key
+        );
+        let without_key = status_text(&arm_missing, false);
+        assert!(
+            without_key.contains("x86_64"),
+            "ARM64 status without key should explain x86_64 limitation: {}",
+            without_key
+        );
+
+        let arm_expired = Report {
+            installed: true,
+            running: false,
+            days_left: Some(-2),
+            auto_download: AutoDownloadSupport::UnsupportedArch,
+            ..Default::default()
+        };
+        let expired = status_text(&arm_expired, true);
+        assert!(
+            expired.contains("x86_64") && expired.contains("manually"),
+            "ARM64 expired status should tell user to update manually: {}",
+            expired
+        );
+        assert!(
+            !expired.contains("gets the new one"),
+            "ARM64 expired status must not promise auto-update: {}",
+            expired
+        );
+
+        let x86_missing = Report {
+            installed: false,
+            auto_download: AutoDownloadSupport::Available,
+            ..Default::default()
+        };
+        assert!(status_text(&x86_missing, true).contains("gets it from Spotify"));
+
+        let custom_missing = Report {
+            installed: false,
+            auto_download: AutoDownloadSupport::CustomBinary,
+            ..Default::default()
+        };
+        assert!(status_text(&custom_missing, true).contains("CANTO_SOLOIST_CMD"));
     }
 }

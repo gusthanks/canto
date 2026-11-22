@@ -728,14 +728,33 @@ impl ConnectPlayer {
                 info!("no Soloist key saved; playing through the Spotify app instead");
                 return false;
             };
-            // Missing or expired: get the current build before playing
+            // Missing or expired: get the current build before playing when supported
             if soloist::binary().is_none() || soloist::days_left().is_some_and(|d| d <= 0) {
-                self.send_actions([AppAction::ShowNotification(gettext(
-                    "Getting the current Spotify Soloist…",
-                ))]);
-                Self::log_update(tokio::task::spawn_blocking(soloist::update).await);
-                if soloist::binary().is_none() || soloist::days_left().is_some_and(|d| d <= 0) {
-                    return false;
+                match soloist::auto_download_support() {
+                    soloist::AutoDownloadSupport::Available => {
+                        self.send_actions([AppAction::ShowNotification(gettext(
+                            "Getting the current Spotify Soloist…",
+                        ))]);
+                        Self::log_update(tokio::task::spawn_blocking(soloist::update).await);
+                        if soloist::binary().is_none()
+                            || soloist::days_left().is_some_and(|d| d <= 0)
+                        {
+                            return false;
+                        }
+                    }
+                    soloist::AutoDownloadSupport::UnsupportedArch => {
+                        warn!(
+                            "Soloist is missing or expired and automatic download is only available on x86_64"
+                        );
+                        self.send_actions([AppAction::ShowNotification(gettext(
+                            "Spotify Soloist requires manual installation on this architecture; using the Spotify app instead.",
+                        ))]);
+                        return false;
+                    }
+                    soloist::AutoDownloadSupport::CustomBinary => {
+                        warn!("Soloist configured via CANTO_SOLOIST_CMD is missing or expired");
+                        return false;
+                    }
                 }
             }
             let started =
