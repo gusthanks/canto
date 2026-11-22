@@ -89,8 +89,33 @@
       <image>https://raw.githubusercontent.com/gusthanks/canto/main/data/screenshots/12-mini-player.png</image>
       <caption>Mini player</caption>
     </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.1/data/screenshots/13-theme-tokyo-night.png</image>
+      <caption>An album with synced lyrics beside it, in the Tokyo Night theme</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.1/data/screenshots/14-theme-catppuccin-latte.png</image>
+      <caption>The same window in the light Catppuccin Latte theme</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.1/data/screenshots/15-theme-gruvbox.png</image>
+      <caption>The same window in the Gruvbox theme</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.1/data/screenshots/16-theme-rose-pine.png</image>
+      <caption>The same window in the Rosé Pine theme</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.1/data/screenshots/18-lyrics-fullscreen-man-made.png</image>
+      <caption>Full-screen lyrics beside the album cover</caption>
+    </screenshot>
   </screenshots>
   <releases>
+    <release version="0.1.1" date="2026-11-22">
+      <description>
+        <p>Fixes playing a song from search or an album on Spotify Connect devices, which skipped to another song.</p>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-11-22">
       <description>
         <p>First release of Canto.</p>

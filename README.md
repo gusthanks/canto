@@ -84,6 +84,11 @@ Building from source and the Arch Linux (AUR) packages: see [Building from sourc
 - A player bar you can customize: right-click it to pick which buttons show and in what order.
 - Built for tiled and narrow windows too: below 1100 sp the side panel floats as a drawer, the library collapses to covers beside it when space gets tight, and the player bar stays on one line while stepping buttons down.
 
+<p align="center">
+  <img src="data/screenshots/17-themes-grid.png" alt="The same Canto window in four Omarchy themes: Tokyo Night, Catppuccin Latte, Gruvbox and Rosé Pine, playing Make Noise by Greentea Peng">
+  <br><sub>One window, four Omarchy themes (Tokyo Night, Catppuccin Latte, Gruvbox, Rosé Pine): Canto recolors live when the desktop theme changes.</sub>
+</p>
+
 **Listening**
 - Now Playing panel with a big cover, a lyrics preview, the next track, how many times you played the song, album and artist (Last.fm), song credits and the song's story from **Genius**. The title takes you to the album, the artists to their pages, and clicking any album/playlist/artist header cover opens it in a fullscreen lightbox.
 - Your Library as a list or a grid of covers, with pinned items, Recents and sorting, plus a collapsed sidebar that keeps only the covers, and an inline track filter (`Ctrl+F`) and quick sort inside album and playlist pages.
