@@ -14,11 +14,12 @@ use libadwaita::subclass::prelude::*;
 use crate::app::components::sleep_timer::SleepTimerController;
 use crate::app::components::track_radio::start_track_radio;
 use crate::app::components::utils::Debouncer;
-use crate::app::models::Track;
+use crate::app::models::{CardModel, Track};
 use crate::app::state::{
-    load_context, start_actions, BrowserAction, Device, HomePage, PlaybackAction, Route,
+    load_context, start_actions, BrowserAction, Device, HomePage, HomeState, PlaybackAction, Route,
 };
 use crate::app::{AppAction, AppModel, Dispatcher, SongsSource};
+use std::collections::HashSet;
 
 #[derive(Clone)]
 enum PaletteAction {
@@ -42,6 +43,17 @@ enum PaletteAction {
     ViewAlbum(String),
     ViewArtist(String),
     ViewPlaylist(String),
+}
+
+impl PaletteAction {
+    fn dedup_key(&self) -> Option<(&'static str, &str)> {
+        match self {
+            Self::ViewAlbum(id) => Some(("album", id.as_str())),
+            Self::ViewArtist(id) => Some(("artist", id.as_str())),
+            Self::ViewPlaylist(id) => Some(("playlist", id.as_str())),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -407,14 +419,17 @@ impl CommandPaletteDialog {
             None
         };
 
-        let mut items = build_local_entries(&runtime);
-        let filtered = filter_entries(&items, query);
-        items.clear();
-        items.extend(filtered);
-
-        if query.trim().chars().count() >= 2 {
-            items.extend(runtime.remote_entries.borrow().iter().cloned());
-        }
+        let commands = build_local_entries(&runtime);
+        let library = {
+            let state = runtime.app_model.get_state();
+            state
+                .browser
+                .home_state()
+                .map(build_library_entries)
+                .unwrap_or_default()
+        };
+        let remote = runtime.remote_entries.borrow();
+        let items = merge_palette_results(&commands, &library, &remote, query);
 
         let imp = self.imp();
         while let Some(child) = imp.results_list.first_child() {
@@ -664,14 +679,15 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         action: PaletteAction::ShowAbout,
     });
     entries.push(PaletteEntry {
-        // translators: Command palette entry: opens the side panel's Stats tab.
-        title: gettext("Song Stats"),
-        // translators: Subtitle of the "Song Stats" command palette entry.
-        subtitle: gettext("Plays, listeners and tags, from Last.fm"),
+        // translators: Command palette entry: opens the side panel's Stats tab for the playing song.
+        title: gettext("Current Song Stats"),
+        // translators: Subtitle of the "Current Song Stats" command palette entry.
+        subtitle: gettext("Plays, listeners and tags for this track (Last.fm)"),
         category: action_cat.clone(),
         icon_name: "canto-stats-symbolic",
         shortcut_hint: None,
-        keywords: "stats statistics plays scrobbles listeners tags similar lastfm last.fm".into(),
+        keywords: "song stats statistics current track plays scrobbles listeners tags similar lastfm last.fm"
+            .into(),
         cover_url: None,
         round_cover: false,
         action: PaletteAction::ShowStats,
@@ -699,13 +715,16 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         action: PaletteAction::MiniPlayer,
     });
     entries.push(PaletteEntry {
-        title: gettext("Your Stats"),
-        subtitle: gettext("What you played most, from Last.fm"),
+        // translators: Command palette entry: opens the personal Last.fm listening statistics dialog.
+        title: gettext("Your Top Stats"),
+        // translators: Subtitle of the "Your Top Stats" command palette entry.
+        subtitle: gettext("Your most played artists, tracks and albums (Last.fm)"),
         category: action_cat.clone(),
         icon_name: "canto-lastfm-symbolic",
         shortcut_hint: None,
-        keywords: "stats statistics last.fm lastfm top artists tracks albums wrapped estatisticas"
-            .into(),
+        keywords:
+            "your stats statistics last.fm lastfm top artists tracks albums wrapped estatisticas"
+                .into(),
         cover_url: None,
         round_cover: false,
         action: PaletteAction::ListeningStats,
@@ -933,8 +952,109 @@ fn build_remote_entries(results: &canto_api::models::SearchResults) -> Vec<Palet
     out
 }
 
+fn card_cover_url(card: &CardModel) -> Option<String> {
+    card.image()
+        .filter(|url| !canto_api::models::is_resource_url(url))
+}
+
+fn build_library_entries(home: &HomeState) -> Vec<PaletteEntry> {
+    let mut entries = Vec::new();
+    let lib_cat = gettext("Library");
+    let playlist_label = gettext("Playlist");
+    let album_label = gettext("Album");
+    let artist_label = gettext("Artist");
+
+    for card in home.playlists.iter() {
+        let sub = card.subtitle();
+        let subtitle = if sub.trim().is_empty() {
+            playlist_label.clone()
+        } else {
+            format!("{playlist_label} · {sub}")
+        };
+        entries.push(PaletteEntry {
+            title: card.title(),
+            subtitle,
+            category: lib_cat.clone(),
+            icon_name: "playlist2-symbolic",
+            shortcut_hint: None,
+            keywords: format!("library playlist {sub}"),
+            cover_url: card_cover_url(&card),
+            round_cover: false,
+            action: PaletteAction::ViewPlaylist(card.id()),
+        });
+    }
+    for card in home.albums.iter() {
+        let sub = card.subtitle();
+        let subtitle = if sub.trim().is_empty() {
+            album_label.clone()
+        } else {
+            format!("{album_label} · {sub}")
+        };
+        entries.push(PaletteEntry {
+            title: card.title(),
+            subtitle,
+            category: lib_cat.clone(),
+            icon_name: "media-optical-cd-audio-symbolic",
+            shortcut_hint: None,
+            keywords: format!("library album {sub}"),
+            cover_url: card_cover_url(&card),
+            round_cover: false,
+            action: PaletteAction::ViewAlbum(card.id()),
+        });
+    }
+    for card in home.artists.iter() {
+        entries.push(PaletteEntry {
+            title: card.title(),
+            subtitle: artist_label.clone(),
+            category: lib_cat.clone(),
+            icon_name: "avatar-default-symbolic",
+            shortcut_hint: None,
+            keywords: "library artist".into(),
+            cover_url: card_cover_url(&card),
+            round_cover: true,
+            action: PaletteAction::ViewArtist(card.id()),
+        });
+    }
+    entries
+}
+
+const MAX_LIBRARY_PALETTE_HITS: usize = 12;
+
+fn merge_palette_results(
+    commands: &[PaletteEntry],
+    library: &[PaletteEntry],
+    remote: &[PaletteEntry],
+    query: &str,
+) -> Vec<PaletteEntry> {
+    let trimmed = query.trim();
+    if trimmed.is_empty() {
+        return commands.to_vec();
+    }
+    let mut out = filter_entries(commands, trimmed);
+    let lib_hits = filter_entries(library, trimmed);
+    let seen: HashSet<(&'static str, String)> = lib_hits
+        .iter()
+        .take(MAX_LIBRARY_PALETTE_HITS)
+        .filter_map(|e| e.action.dedup_key().map(|(k, id)| (k, id.to_string())))
+        .collect();
+    out.extend(lib_hits.into_iter().take(MAX_LIBRARY_PALETTE_HITS));
+    if trimmed.chars().count() >= 2 {
+        out.extend(
+            remote
+                .iter()
+                .filter(|e| {
+                    e.action
+                        .dedup_key()
+                        .is_none_or(|(k, id)| !seen.contains(&(k, id.to_string())))
+                })
+                .cloned(),
+        );
+    }
+    out
+}
+
 fn filter_entries(entries: &[PaletteEntry], query: &str) -> Vec<PaletteEntry> {
-    let q = query.trim().to_ascii_lowercase();
+    let q = query.trim().to_lowercase();
     if q.is_empty() {
         return entries.to_vec();
     }
@@ -942,10 +1062,10 @@ fn filter_entries(entries: &[PaletteEntry], query: &str) -> Vec<PaletteEntry> {
     let mut scored: Vec<(i32, &PaletteEntry)> = entries
         .iter()
         .filter_map(|e| {
-            let title_l = e.title.to_ascii_lowercase();
-            let sub_l = e.subtitle.to_ascii_lowercase();
-            let cat_l = e.category.to_ascii_lowercase();
-            let kw_l = e.keywords.to_ascii_lowercase();
+            let title_l = e.title.to_lowercase();
+            let sub_l = e.subtitle.to_lowercase();
+            let cat_l = e.category.to_lowercase();
+            let kw_l = e.keywords.to_lowercase();
             let all_match = tokens.iter().all(|tok| {
                 title_l.contains(tok)
                     || sub_l.contains(tok)
@@ -1078,5 +1198,113 @@ mod tests {
         let by_keyword = filter_entries(&entries, "saved");
         assert_eq!(by_keyword.len(), 1);
         assert_eq!(by_keyword[0].title, "Liked Songs");
+    }
+
+    #[test]
+    fn library_entries_match_immediately_skip_empty_dump_and_dedup_remote() {
+        let mut home = HomeState::default();
+        home.playlists.insert(
+            0,
+            CardModel::new(
+                "pl-1",
+                None,
+                "Flowra Late Night",
+                "gus",
+                None,
+                None,
+                None,
+                None,
+            ),
+        );
+        home.albums.insert(
+            0,
+            CardModel::new(
+                "alb-1",
+                None,
+                "Blonde",
+                "Frank Ocean",
+                None,
+                None,
+                None,
+                None,
+            ),
+        );
+        home.artists.insert(
+            0,
+            CardModel::new("art-1", None, "Frank Ocean", "", None, None, None, None),
+        );
+
+        let library = build_library_entries(&home);
+        assert_eq!(library.len(), 3);
+
+        let commands = vec![PaletteEntry {
+            title: "Settings".into(),
+            subtitle: "Open Preferences".into(),
+            category: "Navigation".into(),
+            icon_name: "preferences-other-symbolic",
+            shortcut_hint: None,
+            keywords: "settings".into(),
+            cover_url: None,
+            round_cover: false,
+            action: PaletteAction::OpenPreferences,
+        }];
+        let remote = vec![
+            PaletteEntry {
+                title: "Blonde".into(),
+                subtitle: "Frank Ocean".into(),
+                category: "Album".into(),
+                icon_name: "media-optical-cd-audio-symbolic",
+                shortcut_hint: None,
+                keywords: String::new(),
+                cover_url: None,
+                round_cover: false,
+                action: PaletteAction::ViewAlbum("alb-1".into()),
+            },
+            PaletteEntry {
+                title: "Channel Orange".into(),
+                subtitle: "Frank Ocean".into(),
+                category: "Album".into(),
+                icon_name: "media-optical-cd-audio-symbolic",
+                shortcut_hint: None,
+                keywords: String::new(),
+                cover_url: None,
+                round_cover: false,
+                action: PaletteAction::ViewAlbum("alb-2".into()),
+            },
+            PaletteEntry {
+                title: "Solo".into(),
+                subtitle: "Frank Ocean".into(),
+                category: "Track".into(),
+                icon_name: "audio-x-generic-symbolic",
+                shortcut_hint: None,
+                keywords: String::new(),
+                cover_url: None,
+                round_cover: false,
+                action: PaletteAction::PlayTrack(crate::app::models::make_track("trk-1")),
+            },
+        ];
+
+        // Empty query keeps only commands without dumping saved library.
+        let empty = merge_palette_results(&commands, &library, &remote, "");
+        assert_eq!(empty.len(), 1);
+        assert_eq!(empty[0].title, "Settings");
+
+        // Matching local items appear first, duplicate remote album "alb-1" is dropped,
+        // while non-duplicate album "alb-2" and tracks remain.
+        let hits = merge_palette_results(&commands, &library, &remote, "blonde");
+        assert_eq!(hits.len(), 3);
+        assert_eq!(hits[0].category, "Library");
+        assert_eq!(hits[0].title, "Blonde");
+        assert_eq!(hits[1].title, "Channel Orange");
+        assert_eq!(hits[2].title, "Solo");
+    }
+
+    #[test]
+    fn stats_commands_have_distinct_titles_and_keywords() {
+        let commands = [
+            ("Current Song Stats", "song stats current track"),
+            ("Your Top Stats", "your stats top artists"),
+        ];
+        assert_ne!(commands[0].0, commands[1].0);
     }
 }
