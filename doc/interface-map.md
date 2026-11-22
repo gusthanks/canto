@@ -259,9 +259,12 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   `sync_button` (a stopwatch, `canto-lyrics-sync-symbolic`, with a popover of
   -100 / 0 / +100 ms; any shift lights it with `lyric-sync-button--shifted`),
   reload and full screen.
-- One quiet line above the lyrics says where they came from (`lyrics_source`,
-  `lyrics-source`), in the panel and in full screen. LRCLIB comes first;
-  Genius only when LRCLIB has none, matched strictly on title and artist.
+- One quiet line above the lyrics says where they came from (`lyrics_source`
+  inside `lyrics_source_row`, `lyrics-source`), in the panel and in full
+  screen. LRCLIB comes first; Genius only when LRCLIB has none, matched
+  strictly on title and artist. When the shown lyrics are not synced,
+  `sync_plain_lyrics_button` sits beside the source label and opens
+  `add_lyrics::open_for_sync` pre-filled with the current lines.
 - With no lyrics from any source, under "No Lyrics Available":
   - `web_search_button` "Search the Web" opens a web search for the main
     artist, the title without edition notes and the word for lyrics in the

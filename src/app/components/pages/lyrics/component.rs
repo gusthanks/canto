@@ -113,96 +113,128 @@ impl LyricsPage {
             let url = web_lyrics_search_url(&artist, &track.title);
             crate::app::components::open_external_url(button, &url);
         });
-        let weak_model = Rc::downgrade(&self.app_model);
-        let weak_widget = self.widget.downgrade();
-        let dispatcher = self.dispatcher.clone();
-        self.widget.connect_add_lyrics(move |button| {
-            let Some(model) = weak_model.upgrade() else {
-                return;
-            };
-            let Some(track) = model.get_state().playback.current_song() else {
-                return;
-            };
-            // The names the lyrics are looked up by, so the next look-up
-            // finds them
-            let song = super::add_lyrics::SongForLyrics {
-                title: track.title.clone(),
-                artist: track.artists_name(),
-                album: track
-                    .album
-                    .as_ref()
-                    .map(|album| album.name.clone())
-                    .unwrap_or_default(),
-                duration_ms: track.duration_ms,
-            };
-            let api = model.api();
-            let weak_widget = weak_widget.clone();
-            let dispatcher = dispatcher.clone();
-            let sent_song = song.clone();
-            let pb_pos_model = Rc::downgrade(&model);
-            let pb_play_model = Rc::downgrade(&model);
-            let pb_toggle_disp = dispatcher.clone();
-            let pb_seek_disp = dispatcher.clone();
-            let sync_playback = super::add_lyrics::SyncPlayback {
-                position_ms: Rc::new(move || {
-                    pb_pos_model
-                        .upgrade()
-                        .map_or(0, |m| m.get_state().playback.seek_position())
-                }),
-                is_playing: Rc::new(move || {
-                    pb_play_model
-                        .upgrade()
-                        .is_some_and(|m| m.get_state().playback.is_playing())
-                }),
-                toggle_play: Rc::new(move || {
-                    pb_toggle_disp.dispatch(PlaybackAction::TogglePlay.into());
-                }),
-                seek_ms: Rc::new(move |ms| {
-                    pb_seek_disp.dispatch(PlaybackAction::Seek(ms).into());
-                }),
-            };
-            super::add_lyrics::open_with_playback(
-                button,
-                &song,
-                Some(sync_playback),
-                move |draft, sending| {
-                    let lyrics = canto_api::LyricsToPublish {
-                        track_name: sent_song.title.clone(),
-                        artist_name: sent_song.artist.clone(),
-                        album_name: sent_song.album.clone(),
-                        duration_secs: (sent_song.duration_ms + 500) / 1000,
-                        plain_lyrics: draft.plain,
-                        synced_lyrics: draft.synced,
+        let open_studio = {
+            let weak_model = Rc::downgrade(&self.app_model);
+            let weak_widget = self.widget.downgrade();
+            let dispatcher = self.dispatcher.clone();
+            Rc::new(
+                move |button: &gtk::Button, initial_lyrics: Option<String>| {
+                    let Some(model) = weak_model.upgrade() else {
+                        return;
                     };
-                    let api = api.clone();
+                    let Some(track) = model.get_state().playback.current_song() else {
+                        return;
+                    };
+                    // The names the lyrics are looked up by, so the next look-up
+                    // finds them
+                    let song = super::add_lyrics::SongForLyrics {
+                        title: track.title.clone(),
+                        artist: track.artists_name(),
+                        album: track
+                            .album
+                            .as_ref()
+                            .map(|album| album.name.clone())
+                            .unwrap_or_default(),
+                        duration_ms: track.duration_ms,
+                    };
+                    let api = model.api();
                     let weak_widget = weak_widget.clone();
                     let dispatcher = dispatcher.clone();
-                    glib::spawn_future_local(async move {
-                        let result = api
-                            .publish_lyrics_cancellable(&lyrics, sending.cancel_flag())
-                            .await;
-                        if sending.is_cancelled() {
-                            return;
-                        }
-                        match result {
-                            Ok(()) => {
-                                sending.done();
-                                dispatcher.dispatch(crate::app::AppAction::ShowNotification(
-                                    // translators: Shown once lyrics the listener added were published.
-                                    gettext("Lyrics published to LRCLIB"),
-                                ));
-                                if let Some(widget) = weak_widget.upgrade() {
-                                    widget.reload();
+                    let sent_song = song.clone();
+                    let pb_pos_model = Rc::downgrade(&model);
+                    let pb_play_model = Rc::downgrade(&model);
+                    let pb_toggle_disp = dispatcher.clone();
+                    let pb_seek_disp = dispatcher.clone();
+                    let sync_playback = super::add_lyrics::SyncPlayback {
+                        position_ms: Rc::new(move || {
+                            pb_pos_model
+                                .upgrade()
+                                .map_or(0, |m| m.get_state().playback.seek_position())
+                        }),
+                        is_playing: Rc::new(move || {
+                            pb_play_model
+                                .upgrade()
+                                .is_some_and(|m| m.get_state().playback.is_playing())
+                        }),
+                        toggle_play: Rc::new(move || {
+                            pb_toggle_disp.dispatch(PlaybackAction::TogglePlay.into());
+                        }),
+                        seek_ms: Rc::new(move |ms| {
+                            pb_seek_disp.dispatch(PlaybackAction::Seek(ms).into());
+                        }),
+                    };
+                    let on_publish =
+                        move |draft: super::add_lyrics::LyricsDraft,
+                              sending: super::add_lyrics::Sending| {
+                            let lyrics = canto_api::LyricsToPublish {
+                                track_name: sent_song.title.clone(),
+                                artist_name: sent_song.artist.clone(),
+                                album_name: sent_song.album.clone(),
+                                duration_secs: (sent_song.duration_ms + 500) / 1000,
+                                plain_lyrics: draft.plain,
+                                synced_lyrics: draft.synced,
+                            };
+                            let api = api.clone();
+                            let weak_widget = weak_widget.clone();
+                            let dispatcher = dispatcher.clone();
+                            glib::spawn_future_local(async move {
+                                let result = api
+                                    .publish_lyrics_cancellable(&lyrics, sending.cancel_flag())
+                                    .await;
+                                if sending.is_cancelled() {
+                                    return;
                                 }
-                            }
-                            Err(error) => {
-                                warn!("publishing lyrics to LRCLIB failed: {error}");
-                                sending.failed(&error);
-                            }
-                        }
-                    });
+                                match result {
+                                    Ok(()) => {
+                                        sending.done();
+                                        dispatcher.dispatch(
+                                            crate::app::AppAction::ShowNotification(
+                                                // translators: Shown once lyrics the listener added were published.
+                                                gettext("Lyrics published to LRCLIB"),
+                                            ),
+                                        );
+                                        if let Some(widget) = weak_widget.upgrade() {
+                                            widget.reload();
+                                        }
+                                    }
+                                    Err(error) => {
+                                        warn!("publishing lyrics to LRCLIB failed: {error}");
+                                        sending.failed(&error);
+                                    }
+                                }
+                            });
+                        };
+                    if let Some(text) = initial_lyrics {
+                        super::add_lyrics::open_for_sync(
+                            button,
+                            &song,
+                            Some(sync_playback),
+                            &text,
+                            on_publish,
+                        );
+                    } else {
+                        super::add_lyrics::open_with_playback(
+                            button,
+                            &song,
+                            Some(sync_playback),
+                            on_publish,
+                        );
+                    }
                 },
-            );
+            )
+        };
+        let open_add = Rc::clone(&open_studio);
+        self.widget.connect_add_lyrics(move |button| {
+            open_add(button, None);
+        });
+        let open_sync = Rc::clone(&open_studio);
+        let weak_widget_sync = self.widget.downgrade();
+        self.widget.connect_sync_plain_lyrics(move |button| {
+            let initial = weak_widget_sync
+                .upgrade()
+                .map(|w| w.line_texts().join("\n"))
+                .unwrap_or_default();
+            open_sync(button, Some(initial));
         });
         self.widget
             .set_word_by_word(self.settings.string(LYRICS_HIGHLIGHT) != "line");

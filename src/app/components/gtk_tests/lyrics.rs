@@ -246,6 +246,10 @@ fn assert_lyrics_source_line() {
     let source = lyrics.source_label();
     assert_eq!(source.text().as_str(), "Lyrics: Genius · not synced");
     assert!(source.is_visible());
+    assert!(
+        lyrics.sync_plain_lyrics_button().is_visible(),
+        "unsynced lyrics expose the inline Sync button"
+    );
     assert_eq!(lyrics.source(), Some(genius.clone()));
     assert_eq!(
         lyrics.line_texts(),

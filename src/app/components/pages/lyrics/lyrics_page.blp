@@ -43,18 +43,50 @@ template $LyricsPageWidget : Adw.Bin {
               margin-end: 16;
 
               // Where the lyrics came from: one quiet line that scrolls away
-              // with them. Outside the lines' box, so it never counts as a line
-              Label lyrics_source {
+              // with them. Outside the lines' box, so it never counts as a line.
+              // When the lyrics have no timing yet, a compact Sync button sits
+              // beside it and opens the Sync Studio pre-filled with these lines.
+              Box lyrics_source_row {
+                orientation: horizontal;
+                spacing: 8;
                 visible: false;
-                halign: start;
-                xalign: 0.0;
-                ellipsize: end;
 
                 styles [
-                  "caption",
-                  "dim-label",
-                  "lyrics-source",
+                  "lyrics-source-row",
                 ]
+
+                Label lyrics_source {
+                  visible: false;
+                  halign: start;
+                  hexpand: true;
+                  valign: center;
+                  xalign: 0.0;
+                  ellipsize: end;
+
+                  styles [
+                    "caption",
+                    "dim-label",
+                    "lyrics-source",
+                  ]
+                }
+
+                Button sync_plain_lyrics_button {
+                  visible: false;
+                  valign: center;
+                  /* Translators: Tooltip of the button beside unsynced lyrics: opens the Sync Studio with the current lines pre-filled. */
+                  tooltip-text: _("Sync these lyrics while listening and publish to LRCLIB");
+
+                  styles [
+                    "flat",
+                    "lyrics-sync-plain",
+                  ]
+
+                  Adw.ButtonContent {
+                    icon-name: "canto-lyrics-sync-symbolic";
+                    /* Translators: Compact button beside "Lyrics: ... · not synced" that opens the Lyrics Sync Studio. */
+                    label: _("Sync");
+                  }
+                }
               }
 
               Box lyrics_container {

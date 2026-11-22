@@ -24,7 +24,11 @@ mod imp {
         #[template_child]
         pub lyrics_column: TemplateChild<gtk::Box>,
         #[template_child]
+        pub lyrics_source_row: TemplateChild<gtk::Box>,
+        #[template_child]
         pub lyrics_source: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub sync_plain_lyrics_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub lyrics_container: TemplateChild<gtk::Box>,
         #[template_child]
@@ -244,6 +248,13 @@ impl LyricsPageWidget {
         self.imp().add_lyrics_button.connect_clicked(move |b| f(b));
     }
 
+    /// The button beside unsynced lyrics that opens the Sync Studio pre-filled.
+    pub fn connect_sync_plain_lyrics<F: Fn(&gtk::Button) + 'static>(&self, f: F) {
+        self.imp()
+            .sync_plain_lyrics_button
+            .connect_clicked(move |b| f(b));
+    }
+
     /// Looks the lyrics up again, as the reload button does (after the
     /// listener published some).
     pub fn reload(&self) {
@@ -265,9 +276,12 @@ impl LyricsPageWidget {
         F: Fn(u32) + Clone + 'static,
     {
         let imp = self.imp();
+        let is_synced_source = lyrics.is_synced();
         imp.lyrics_source
-            .set_text(&source_line(lyrics.is_synced(), source));
+            .set_text(&source_line(is_synced_source, source));
+        imp.lyrics_source_row.set_visible(true);
         imp.lyrics_source.set_visible(true);
+        imp.sync_plain_lyrics_button.set_visible(!is_synced_source);
         imp.source.replace(Some(source.clone()));
         if let Some(anim) = imp.scroll_anim.borrow_mut().take() {
             anim.pause();
@@ -349,14 +363,22 @@ impl LyricsPageWidget {
     fn forget_source(&self) {
         let imp = self.imp();
         imp.source.replace(None);
+        imp.lyrics_source_row.set_visible(false);
         imp.lyrics_source.set_visible(false);
         imp.lyrics_source.set_text("");
+        imp.sync_plain_lyrics_button.set_visible(false);
     }
 
     /// The line above the lyrics saying where they came from (for tests).
     #[cfg(test)]
     pub fn source_label(&self) -> gtk::Label {
         self.imp().lyrics_source.get()
+    }
+
+    /// The compact Sync button shown beside unsynced lyrics (for tests).
+    #[cfg(test)]
+    pub fn sync_plain_lyrics_button(&self) -> gtk::Button {
+        self.imp().sync_plain_lyrics_button.get()
     }
 
     /// The label of lyric line `index` (for tests).

@@ -309,8 +309,25 @@ bottom-sheet.bottom-sheet--padded > sheet {
 /* Where the lyrics came from: one quiet line above them (caption size and
    dimmed by its classes). 14px in, the same as .lyric-line's padding, so its
    text starts where the lines' text does */
-.lyrics-source {
+.lyrics-source-row {
   margin: 0 14px 6px 14px;
+}
+
+.lyrics-source {
+  margin: 0;
+}
+
+button.lyrics-sync-plain {
+  min-height: 24px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.82em;
+  font-weight: 600;
+  background-color: alpha(currentColor, 0.08);
+}
+
+button.lyrics-sync-plain:hover {
+  background-color: alpha(currentColor, 0.15);
 }
 
 .lyric-sync-bar {

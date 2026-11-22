@@ -411,9 +411,38 @@ pub fn open_with_playback(
     playback: Option<SyncPlayback>,
     on_publish: impl Fn(LyricsDraft, Sending) + 'static,
 ) -> libadwaita::Dialog {
-    let dialog = libadwaita::Dialog::builder()
+    open_dialog(parent, song, playback, None, on_publish)
+}
+
+/// Opens the Sync Studio pre-filled with existing unsynced lyrics, jumping
+/// straight to the "Sync While Listening" tab.
+pub fn open_for_sync(
+    parent: &impl IsA<gtk::Widget>,
+    song: &SongForLyrics,
+    playback: Option<SyncPlayback>,
+    initial_lyrics: &str,
+    on_publish: impl Fn(LyricsDraft, Sending) + 'static,
+) -> libadwaita::Dialog {
+    open_dialog(parent, song, playback, Some(initial_lyrics), on_publish)
+}
+
+fn open_dialog(
+    parent: &impl IsA<gtk::Widget>,
+    song: &SongForLyrics,
+    playback: Option<SyncPlayback>,
+    initial_lyrics: Option<&str>,
+    on_publish: impl Fn(LyricsDraft, Sending) + 'static,
+) -> libadwaita::Dialog {
+    let prefilled = initial_lyrics.map(str::trim).filter(|s| !s.is_empty());
+    let dialog_title = if prefilled.is_some() {
+        // translators: Title of the window when syncing existing plain lyrics line by line.
+        gettext("Sync Lyrics")
+    } else {
         // translators: Title of the window where a listener adds the lyrics of a song no source has.
-        .title(gettext("Add Lyrics"))
+        gettext("Add Lyrics")
+    };
+    let dialog = libadwaita::Dialog::builder()
+        .title(dialog_title)
         .content_width(520)
         .content_height(660)
         .build();
@@ -974,6 +1003,11 @@ pub fn open_with_playback(
             confirm.present(Some(&dialog));
         }
     ));
+
+    if let Some(initial) = prefilled {
+        buffer.set_text(initial);
+        sync_btn.set_active(true);
+    }
 
     toolbar.set_content(Some(&body));
     dialog.set_child(Some(&toolbar));
