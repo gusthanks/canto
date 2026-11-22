@@ -32,6 +32,21 @@ filter functions". Filter the model itself (`gtk::FilterListModel` with a
 box and hiding the list that had `vexpand` makes the `ScrolledWindow` shrink to
 its minimum and cut the rest. Put `set_vexpand(true)` on the wrapping box too.
 
+**An `Adw.WrapBox` child that starts hidden never comes back.** Showing it
+later with `set_visible(true)` leaves it at zero width: nothing draws and no
+warning is logged. Keep the child visible and let it be empty instead (an
+empty box takes no space). See `trailing_buttons` in
+`src/app/components/widgets/details_page/header.blp`, check
+`assert_header_track_controls_show` in `src/app/components/gtk_tests/library.rs`.
+
+**A pixel row shared at a fractional scale.** Two widgets clipped by the same
+rounded edge (the page bar and the list scrolling under it) both draw the
+edge's half-covered pixel row, and the one underneath shows through. Start
+the one underneath a pixel further in. See `keep_top_edge_clean` in
+`src/app/components/widgets/details_page/widget.rs`, check
+`assert_details_page_top_edge_clean`; only a real screen at scale 1.6 shows
+the row itself.
+
 **`overflow` is not a CSS property.** The log says "No property named
 overflow". It is a widget property: `overflow: hidden;` in the `.blp`, or
 `set_overflow(gtk::Overflow::Hidden)`.

@@ -861,19 +861,25 @@ impl NavigationPanelModel {
         update_store(list_store, &items);
     }
 
-    /// The pinned rows first as they are, then the rest sorted and searched.
+    /// Liked Songs always first, whatever the sort and the pins (a search
+    /// still hides it when it doesn't match); then the pinned rows as they
+    /// are; then the rest sorted and searched.
     fn arrange_keeping_pins(
         &self,
         items: Vec<NavigationPanelItem>,
         pinned_ids: &[String],
     ) -> Vec<NavigationPanelItem> {
         let searching = !self.query.borrow().is_empty();
+        let (liked, items): (Vec<_>, Vec<_>) = items
+            .into_iter()
+            .partition(|item| is_liked_songs(&item.id()));
+        let mut out = self.arrange(liked);
         let (top, rest): (Vec<_>, Vec<_>) = items.into_iter().partition(|item| {
             !searching
                 && self.filter.get() == LibraryFilter::All
                 && pinned_ids.contains(&item.data())
         });
-        let mut out = top;
+        out.extend(top);
         out.extend(self.arrange(rest));
         out
     }
@@ -1157,6 +1163,11 @@ fn update_store(list_store: &gtk::gio::ListStore, items: &[NavigationPanelItem])
 }
 
 /// `update_store`, for the GTK checks.
+/// The Liked Songs row, which always stays first in "Your Library".
+fn is_liked_songs(id: &str) -> bool {
+    id == NavigationPanelDestination::SavedTracks.id()
+}
+
 #[cfg(test)]
 pub(crate) fn update_store_for_tests(
     list_store: &gtk::gio::ListStore,

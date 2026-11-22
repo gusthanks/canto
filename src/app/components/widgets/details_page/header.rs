@@ -402,7 +402,6 @@ impl DetailsHeader {
         button.insert_action_group("header", Some(&actions));
         button.set_menu_model(Some(&menu));
         button.set_visible(menu.n_items() > 0);
-        self.sync_trailing_visibility();
     }
 
     /// Place track filter/sort controls on the action row beside the menu button.
@@ -413,13 +412,6 @@ impl DetailsHeader {
         }
         slot.append(controls);
         slot.set_visible(true);
-        self.sync_trailing_visibility();
-    }
-
-    fn sync_trailing_visibility(&self) {
-        let imp = self.widget.imp();
-        imp.trailing_buttons
-            .set_visible(imp.track_controls.is_visible() || imp.menu_button.is_visible());
     }
 
     /// Connect a handler to the like/save button. Also makes the button visible.

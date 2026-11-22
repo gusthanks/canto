@@ -59,6 +59,22 @@ glib::wrapper! {
         @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget;
 }
 
+/// Gives the page's root the scrolling content's tint while the bar over it
+/// is see-through (scrolled less than half the header), none after.
+fn sync_edge_tint(
+    root: &DetailsPageWidget,
+    scroll_child: &gtk::Box,
+    header_area: &impl IsA<gtk::Widget>,
+    value: f64,
+) {
+    let (_, header_height, _, _) = header_area.measure(gtk::Orientation::Vertical, -1);
+    let solid_bar = header_height > 0 && value >= header_height as f64 * 0.5;
+    let tint = (!solid_bar)
+        .then(|| super::tint::tint_of(scroll_child))
+        .flatten();
+    super::tint::set_tint(root, tint.as_deref());
+}
+
 /// A reusable details page layout used by album, artist, and playlist views:
 /// the header (artwork, title, actions) above the content, scrolling together
 /// (see `details_page.blp`).
@@ -80,7 +96,33 @@ impl DetailsPage {
         Self::load_css();
         let widget: DetailsPageWidget = glib::Object::new();
         let header = DetailsHeader::for_widget(widget.imp().header.get(), shape);
-        Self { widget, header }
+        let page = Self { widget, header };
+        page.keep_top_edge_clean();
+        page
+    }
+
+    /// The list starts 1 px under the card's top edge (`details_page.blp`):
+    /// at a fractional scale that edge is a pixel row shared by the page bar
+    /// and whatever is under it, and the songs scrolled up under the bar
+    /// showed through it. The page itself fills that 1 px row: with the
+    /// cover's tint while the bar is see-through, so the tint still reaches
+    /// the edge, and with nothing once the bar turns solid (the title shows,
+    /// as in [`Self::connect_title_reveal`]).
+    fn keep_top_edge_clean(&self) {
+        let imp = self.widget.imp();
+        let adj = imp.scrolled_window.vadjustment();
+        let root = self.widget.downgrade();
+        let scroll_child = imp.scroll_child.downgrade();
+        let header_area = imp.header_area.downgrade();
+        adj.connect_value_changed(move |adj| {
+            if let (Some(root), Some(scroll_child), Some(header_area)) = (
+                root.upgrade(),
+                scroll_child.upgrade(),
+                header_area.upgrade(),
+            ) {
+                sync_edge_tint(&root, &scroll_child, &header_area, adj.value());
+            }
+        });
     }
 
     // Accessors
@@ -137,6 +179,14 @@ impl DetailsPage {
                 if let (Some(scroll_child), Some(ref texture)) = (weak.upgrade(), texture) {
                     let tint = crate::app::theme::extract_cover_accent_from_texture(texture);
                     super::tint::set_tint(&scroll_child, tint.as_deref());
+                    if let Some(root) = scroll_child
+                        .ancestor(DetailsPageWidget::static_type())
+                        .and_downcast::<DetailsPageWidget>()
+                    {
+                        let imp = root.imp();
+                        let value = imp.scrolled_window.vadjustment().value();
+                        sync_edge_tint(&root, &scroll_child, &*imp.header_area, value);
+                    }
                     if let Some(header) = weak_header.upgrade() {
                         let (title, subtitle, circular) = {
                             let imp = header.imp();

@@ -41,6 +41,14 @@ gtk_tests! {
         force_dark();
         assert_track_row_shows_explicit_badge();
     },
+    header_track_controls_show => || {
+        force_dark();
+        assert_header_track_controls_show();
+    },
+    details_page_top_edge_clean => || {
+        force_dark();
+        assert_details_page_top_edge_clean();
+    },
 }
 
 /// The sidebar's grid of covers: section titles stay out of it, and in the
@@ -1203,4 +1211,132 @@ fn assert_track_row_shows_explicit_badge() {
 
     window.destroy();
     eprintln!("track row explicit badge ok");
+}
+
+/// A playlist page without a section title (Liked Songs, playlists, albums)
+/// puts its track filter and sort on the header's row of buttons, at its
+/// right end: both are drawn there, whole, inside the header. Renders
+/// header-track-controls-NNNN.
+fn assert_header_track_controls_show() {
+    let cover = sample_cover();
+    for width in [900, 607, 440] {
+        let page = crate::app::components::DetailsPage::sample_for_tests(cover.upcast_ref());
+        page.add_sample_tracks_for_tests(2);
+        let controls = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        let filter = gtk::ToggleButton::builder()
+            .icon_name("system-search-symbolic")
+            .build();
+        filter.add_css_class("flat");
+        filter.add_css_class("circular");
+        filter.add_css_class("details-header__filter");
+        let sort = gtk::DropDown::new(
+            Some(gtk::StringList::new(&["Original Order", "Title"])),
+            None::<gtk::Expression>,
+        );
+        sort.add_css_class("details-section__sort");
+        controls.append(&filter);
+        controls.append(&sort);
+        page.header().set_track_controls(&controls);
+        let window = gtk::Window::new();
+        window.set_decorated(false);
+        window.set_default_size(width, 760);
+        window.set_child(Some(page.widget()));
+        window.present();
+        wait_mapped(page.widget(), 300);
+        wait_frames(&window, 3);
+        pump(300);
+        let parts = page.parts_for_tests();
+        let header_bounds = parts.header.compute_bounds(&window);
+        let seen = |w: &gtk::Widget| {
+            (
+                w.is_drawable(),
+                w.width(),
+                w.height(),
+                w.compute_bounds(&window),
+            )
+        };
+        let f = seen(filter.upcast_ref());
+        let d = seen(sort.upcast_ref());
+        let inside = |b: Option<gtk::graphene::Rect>| match (b, header_bounds) {
+            (Some(b), Some(h)) => {
+                b.x() >= h.x() - 0.5
+                    && b.y() >= h.y() - 0.5
+                    && b.x() + b.width() <= h.x() + h.width() + 0.5
+                    && b.y() + b.height() <= h.y() + h.height() + 0.5
+            }
+            _ => false,
+        };
+        distinct_colors(
+            window.upcast_ref(),
+            &format!("header-track-controls-{:04}", width),
+        );
+        check(
+            &format!(
+                "{} px: track filter and sort drawn whole in the header",
+                width
+            ),
+            f.0 && d.0 && f.1 > 0 && d.1 > 0 && inside(f.3) && inside(d.3),
+            format!(
+                "filter {:?}, sort {:?}, header {:?}, opacity filter {} sort {}",
+                f,
+                d,
+                header_bounds,
+                filter.opacity(),
+                sort.opacity()
+            ),
+        );
+        window.destroy();
+    }
+}
+
+/// At a fractional scale the card's top edge is a pixel row the page bar
+/// shares with what is under it, and the songs scrolled up under the bar
+/// showed through it. The list starts 1 px under the page's top; that row is
+/// the page's own: the cover's tint while the bar is see-through, nothing
+/// once the bar turns solid (scrolled half the header).
+fn assert_details_page_top_edge_clean() {
+    use crate::app::components::details_page_tint_for_tests as tint_of;
+    let cover = sample_cover();
+    let page = crate::app::components::DetailsPage::sample_for_tests(cover.upcast_ref());
+    page.add_sample_tracks_for_tests(4);
+    let window = gtk::Window::new();
+    window.set_decorated(false);
+    // Short, so half the header scrolls away
+    window.set_default_size(700, 300);
+    window.set_child(Some(page.widget()));
+    window.present();
+    wait_mapped(page.widget(), 300);
+    wait_frames(&window, 3);
+    let parts = page.parts_for_tests();
+    let top = parts
+        .scrolled_window
+        .compute_bounds(page.widget())
+        .map(|b| b.y());
+    check(
+        "the list starts 1 px under the page's top edge",
+        top.is_some_and(|y| y >= 1.0),
+        format!("{:?}", top),
+    );
+    let adj = parts.scrolled_window.vadjustment();
+    let header = parts.header.height() as f64;
+    adj.set_value(1.0);
+    adj.set_value(0.0);
+    pump(100);
+    let clear = tint_of(page.widget());
+    adj.set_value(header * 0.6);
+    pump(100);
+    let solid = tint_of(page.widget());
+    check(
+        "the page's top row has the tint under the see-through bar, none under the solid one",
+        clear.as_deref() == Some("#b0281e") && solid.is_none(),
+        format!(
+            "clear {:?}, solid {:?} (header {}, scrolled to {} of {})",
+            clear,
+            solid,
+            header,
+            adj.value(),
+            adj.upper() - adj.page_size()
+        ),
+    );
+    window.destroy();
 }

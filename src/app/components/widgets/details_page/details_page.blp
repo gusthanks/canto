@@ -5,6 +5,10 @@ using Adw 1;
 // tightening-threshold match CLAMP_MAX_SIZE.
 template $DetailsPageWidget : Adw.Bin {
   child: ScrolledWindow scrolled_window {
+    // 1 px under the card's top edge, which the page bar shares with what
+    // is under it at a fractional scale: songs scrolled up under the bar
+    // showed through that row (widget.rs, keep_top_edge_clean)
+    margin-top: 1;
     hscrollbar-policy: never;
     hexpand: true;
     vexpand: true;

@@ -625,10 +625,13 @@ button.lyrics-sync-plain:hover {
   font-weight: normal;
 }
 
-/* Saved Tracks' own cover in the sidebar */
+/* Saved Tracks' own cover in the sidebar: one flat block of the accent,
+   no gradient or shadow (a gradient read as a bevelled rim at scale 1.6) */
 .navigation-row__liked {
-  background: linear-gradient(135deg, @accent_bg_color, shade(@accent_bg_color, 0.78));
+  background: @accent_bg_color;
   color: @accent_fg_color;
+  box-shadow: none;
+  outline: none;
 }
 
 /* The collapsed sidebar's "+" (new playlist) */

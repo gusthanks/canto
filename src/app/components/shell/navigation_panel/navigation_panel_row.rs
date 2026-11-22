@@ -93,6 +93,9 @@ mod imp {
                 self.icon.set_icon_name(Some("canto-heart-filled-symbolic"));
                 self.icon.set_pixel_size(18);
                 self.icon.set_size_request(COVER_PX, COVER_PX);
+                // The block is exactly a cover's size, like the covers under it
+                self.icon_clip.set_size_request(COVER_PX, COVER_PX);
+                self.icon_clip.set_halign(gtk::Align::Center);
                 self.icon_clip.add_css_class("navigation-row__cover");
                 self.icon_clip.add_css_class("navigation-row__liked");
             } else if !item.image().is_empty() {

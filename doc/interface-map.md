@@ -106,7 +106,11 @@ decided about it. Read the section of an area before changing it.
   cover shows. Once the title shows in the bar it takes the page's background
   with a thin edge (`page-bar--solid`), so the list never crosses the title.
   Other pages get a top margin of the bar's height.
-- Test: `assert_page_bar_covers_the_list` (`shell_layout.rs`).
+- The page's list starts 1 px under the card's top edge, and the page fills
+  that row (the tint while the bar is see-through, nothing once it is solid):
+  at scale 1.6 the songs showed through the edge (`keep_top_edge_clean`).
+- Tests: `assert_page_bar_covers_the_list` (`shell_layout.rs`),
+  `assert_details_page_top_edge_clean` (`library.rs`).
 
 ## 4. The player bar
 
@@ -291,7 +295,9 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   Filter pills and "+" come from `add_library_controls`; refills group into
   one every 250 ms; the item playing is highlighted (`is_playing_from`).
 - `library_tools` under the filters: search by name or owner, and "Sort by"
-  (Recents, Recently Added, Alphabetical, Creator; `library-sort`). Pinned
+  (Recents, Recently Added, Alphabetical, Creator; `library-sort`). Liked
+  Songs is always first, above the pins and whatever the sort (a search
+  still hides it when it doesn't match; `arrange_keeping_pins`). Pinned
   items stay on top except while searching or filtering. Sorting and search
   happen only in `arrange`.
 - "View as" List or Grid at the end of the sort popover (`library-view`,

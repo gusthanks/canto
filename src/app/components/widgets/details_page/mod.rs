@@ -34,6 +34,8 @@ pub(super) const HEADER_IMAGE_SIZE: i32 = 200;
 
 #[cfg(test)]
 pub(crate) use tint::set_tint;
+#[cfg(test)]
+pub(crate) use tint::tint_of as details_page_tint_for_tests;
 
 /// Register GObject widget types for this module (called at app startup).
 pub fn expose_widgets() {

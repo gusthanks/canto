@@ -33,6 +33,14 @@ pub fn tint_rule(digits: &str) -> String {
     )
 }
 
+/// The tint `widget` has ("#rrggbb"), if any.
+pub fn tint_of(widget: &impl IsA<gtk::Widget>) -> Option<String> {
+    widget
+        .css_classes()
+        .iter()
+        .find_map(|class| class.strip_prefix(CLASS_PREFIX).map(|d| format!("#{d}")))
+}
+
 /// Tints `widget` with `color` ("#rrggbb"); `None` removes the tint.
 pub fn set_tint(widget: &impl IsA<gtk::Widget>, color: Option<&str>) {
     let widget = widget.upcast_ref::<gtk::Widget>();
