@@ -112,6 +112,7 @@ pub struct CantoOauthClient {
 }
 
 pub struct AuthcodeChallenge {
+    client: OauthClient,
     pkce_verifier: PkceCodeVerifier,
     session_pkce_verifier: PkceCodeVerifier,
     pub auth_url: Url,
@@ -196,12 +197,13 @@ impl CantoOauthClient {
         true
     }
 
+    fn active_client(&self) -> (String, OauthClient) {
+        let guard = self.client.read().unwrap_or_else(|e| e.into_inner());
+        (guard.0.clone(), guard.1.clone())
+    }
+
     fn oauth_client(&self) -> OauthClient {
-        self.client
-            .read()
-            .unwrap_or_else(|e| e.into_inner())
-            .1
-            .clone()
+        self.active_client().1
     }
 
     pub(crate) fn build_client(client_id: &str) -> OauthClient {
@@ -220,17 +222,36 @@ impl CantoOauthClient {
         &self,
         notify_complete: impl FnOnce() + Send + 'static,
     ) -> Result<AuthcodeChallenge, OAuthError> {
+        let addr = get_socket_address(REDIRECT_URI).expect("Invalid redirect uri");
+        self.spawn_authcode_listener_on(addr, notify_complete).await
+    }
+
+    async fn spawn_authcode_listener_on(
+        &self,
+        addr: SocketAddr,
+        notify_complete: impl FnOnce() + Send + 'static,
+    ) -> Result<AuthcodeChallenge, OAuthError> {
         let client = self.oauth_client();
         let (auth_url, state, pkce_verifier) = authorization(&client, SCOPES);
         let (session_auth_url, session_state, session_pkce_verifier) =
             authorization(self.session_tokens.client(), SESSION_SCOPES);
 
+        // Bind before spawning so a port conflict fails immediately (before
+        // opening the browser) and so `accept_authcodes` directly owns the
+        // listener socket, letting `AuthcodeChallenge::cancel` release it
+        // deterministically before returning.
+        let listener = tokio::net::TcpListener::bind(addr)
+            .await
+            .map_err(|e| OAuthError::AuthCodeListenerBind { addr, e })?;
+
         Ok(AuthcodeChallenge {
+            client,
             pkce_verifier,
             session_pkce_verifier,
             auth_url,
             listener: tokio::task::spawn(async move {
-                let result = wait_for_authcodes(state, session_state, session_auth_url).await;
+                let result =
+                    accept_authcodes(listener, state, session_state, session_auth_url).await;
                 notify_complete();
                 result
             }),
@@ -249,8 +270,8 @@ impl CantoOauthClient {
             .await
             .map_err(|_| OAuthError::AuthCodeListenerTerminated)??;
 
-        let client = self.oauth_client();
-        let web_api = Self::exchange(&client, codes.code, challenge.pkce_verifier).await?;
+        let web_api =
+            Self::exchange(&challenge.client, codes.code, challenge.pkce_verifier).await?;
         let session = Self::exchange(
             self.session_tokens.client(),
             codes.session_code,
@@ -299,6 +320,7 @@ impl CantoOauthClient {
                         .expires_in()
                         .unwrap_or_else(|| Duration::from_secs(3600)),
             ),
+            client_id: Some(client.client_id().as_str().to_string()),
         };
 
         Ok(token)
@@ -322,8 +344,20 @@ impl CantoOauthClient {
     }
 
     pub async fn get_valid_token(&self) -> Result<Credentials, OAuthError> {
-        let client = self.oauth_client();
-        Self::valid_token(&client, &self.token_store).await
+        let (active_client_id, client) = self.active_client();
+        let token = self.token_store.get().await.ok_or(OAuthError::LoggedOut)?;
+        let minted_by = token.client_id.as_deref().unwrap_or(CLIENT_ID);
+        if minted_by != active_client_id {
+            info!(
+                "Stored OAuth token was minted for a different Client ID; re-authentication required"
+            );
+            return Err(OAuthError::LoggedOut);
+        }
+        if token.token_expired() {
+            Self::refresh(&client, &self.token_store, token).await
+        } else {
+            Ok(token)
+        }
     }
 
     pub(crate) async fn valid_token(
@@ -388,20 +422,22 @@ impl CantoOauthClient {
                                 .expires_in()
                                 .unwrap_or_else(|| Duration::from_secs(3600)),
                     ),
+                    client_id: Some(client.client_id().as_str().to_string()),
                 };
 
                 token_store.set(new_token.clone()).await;
                 Ok(new_token)
             }
             Err(e) => {
-                // A rejected refresh token will never succeed on retry, so
-                // treat it as fatal and clear the stored credentials. Anything
+                // A rejected refresh token (`invalid_grant`) or mismatched/invalid
+                // Client ID (`invalid_client`) will never succeed on retry, so
+                // treat both as fatal and clear the stored credentials. Anything
                 // else (network errors, 5xx, parse failures) is transient and
                 // must not discard the still-valid refresh token.
                 let fatal = matches!(
                     &e,
                     RequestTokenError::ServerResponse(res)
-                        if matches!(res.error(), BasicErrorResponseType::InvalidGrant)
+                        if is_fatal_refresh_error(res.error())
                 );
 
                 if fatal {
@@ -465,6 +501,13 @@ impl CantoOauthClient {
     }
 }
 
+fn is_fatal_refresh_error(err: &BasicErrorResponseType) -> bool {
+    matches!(
+        err,
+        BasicErrorResponseType::InvalidGrant | BasicErrorResponseType::InvalidClient
+    )
+}
+
 #[derive(Debug, Error)]
 pub enum OAuthError {
     #[error("Auth code param not found in URI")]
@@ -501,22 +544,6 @@ pub enum OAuthError {
     LoggedOut,
 }
 
-/// Spawn HTTP server at provided socket address to accept the OAuth callbacks
-/// of a login and return its auth codes.
-async fn wait_for_authcodes(
-    state: CsrfToken,
-    session_state: CsrfToken,
-    session_auth_url: Url,
-) -> Result<AuthCodes, OAuthError> {
-    let addr = get_socket_address(REDIRECT_URI).expect("Invalid redirect uri");
-
-    let listener = tokio::net::TcpListener::bind(addr)
-        .await
-        .map_err(|e| OAuthError::AuthCodeListenerBind { addr, e })?;
-
-    accept_authcodes(listener, state, session_state, session_auth_url).await
-}
-
 async fn accept_authcodes(
     listener: tokio::net::TcpListener,
     state: CsrfToken,
@@ -524,25 +551,32 @@ async fn accept_authcodes(
     session_auth_url: Url,
 ) -> Result<AuthCodes, OAuthError> {
     let (requests_tx, mut requests) = tokio::sync::mpsc::unbounded_channel();
-    let accepting = tokio::task::spawn(async move {
-        while let Ok((mut stream, _)) = listener.accept().await {
-            let requests_tx = requests_tx.clone();
-            tokio::task::spawn(async move {
-                let request = tokio::time::timeout(REQUEST_TIMEOUT, read_request(&mut stream));
-                if let Ok(Ok(request_line)) = request.await {
-                    let _ = requests_tx.send((stream, request_line));
-                }
-            });
-        }
-    });
-    let _accepting = AbortOnDrop(accepting);
 
     let mut first_code = None;
     loop {
-        let (mut stream, request_line) = requests
-            .recv()
-            .await
-            .ok_or(OAuthError::AuthCodeListenerTerminated)?;
+        let (mut stream, request_line) = tokio::select! {
+            accepted = listener.accept() => {
+                match accepted {
+                    Ok((mut stream, _)) => {
+                        let requests_tx = requests_tx.clone();
+                        tokio::task::spawn(async move {
+                            let request = tokio::time::timeout(REQUEST_TIMEOUT, read_request(&mut stream));
+                            if let Ok(Ok(request_line)) = request.await {
+                                let _ = requests_tx.send((stream, request_line));
+                            }
+                        });
+                    }
+                    Err(_) => return Err(OAuthError::AuthCodeListenerTerminated),
+                }
+                continue;
+            }
+            req = requests.recv() => {
+                match req {
+                    Some(req) => req,
+                    None => return Err(OAuthError::AuthCodeListenerTerminated),
+                }
+            }
+        };
 
         let Ok((callback_state, code)) = parse_query(&request_line) else {
             turn_away(&mut stream).await;
@@ -601,14 +635,6 @@ fn refused_page() -> String {
 
 async fn turn_away(stream: &mut tokio::net::TcpStream) {
     let _ = respond(stream, "404 Not Found", "", "").await;
-}
-
-struct AbortOnDrop(JoinHandle<()>);
-
-impl Drop for AbortOnDrop {
-    fn drop(&mut self) {
-        self.0.abort();
-    }
 }
 
 async fn read_request(stream: &mut tokio::net::TcpStream) -> Result<String, OAuthError> {
@@ -851,6 +877,111 @@ mod test {
 
         assert!(client.set_client_id(None));
         assert_eq!(client.client_id(), CLIENT_ID);
+    }
+
+    #[tokio::test]
+    async fn cancel_releases_socket_before_returning() {
+        // Reserve a free loopback port, then immediately release it to test
+        // deterministic cancel-and-rebind on the exact same SocketAddr.
+        let probe = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = probe.local_addr().unwrap();
+        drop(probe);
+
+        let client = CantoOauthClient::with_client_id(
+            TokenStore::new(),
+            SessionTokens::new(),
+            Some("custom-id-1"),
+        );
+
+        for i in 0..20 {
+            let challenge = client
+                .spawn_authcode_listener_on(addr, || {})
+                .await
+                .expect("listener should bind cleanly after previous cancel");
+            // While active, a second bind to the same port fails immediately.
+            let conflict = client.spawn_authcode_listener_on(addr, || {}).await;
+            assert!(
+                matches!(conflict, Err(OAuthError::AuthCodeListenerBind { .. })),
+                "expected bind failure while active (iter {i})"
+            );
+            challenge.cancel().await;
+            let _ = client.set_client_id(Some(&format!("custom-id-{}", i + 2)));
+        }
+    }
+
+    #[tokio::test]
+    async fn get_valid_token_requires_relogin_when_client_id_changes() {
+        if std::env::var(ENV_CLIENT_ID)
+            .ok()
+            .is_some_and(|v| !v.trim().is_empty())
+        {
+            return;
+        }
+        let future = Some(SystemTime::now() + Duration::from_secs(3600));
+
+        // Legacy token (no stored client_id) matches the built-in CLIENT_ID
+        // so existing logins are preserved, but triggers re-login under a custom ID.
+        let store = TokenStore::new();
+        store.set_cached_for_tests(Credentials {
+            access_token: "tok-default".to_string(),
+            refresh_token: "ref-default".to_string(),
+            token_expiry_time: future,
+            client_id: None,
+        });
+        let client = CantoOauthClient::with_client_id(store.clone(), SessionTokens::new(), None);
+        assert_eq!(
+            client.get_valid_token().await.unwrap().access_token,
+            "tok-default"
+        );
+        assert!(client.set_client_id(Some("custom-app")));
+        assert!(matches!(
+            client.get_valid_token().await,
+            Err(OAuthError::LoggedOut)
+        ));
+
+        // Token minted for "custom-app" works with "custom-app", not with another ID.
+        store.set_cached_for_tests(Credentials {
+            access_token: "tok-custom".to_string(),
+            refresh_token: "ref-custom".to_string(),
+            token_expiry_time: future,
+            client_id: Some("custom-app".to_string()),
+        });
+        assert_eq!(
+            client.get_valid_token().await.unwrap().access_token,
+            "tok-custom"
+        );
+        assert!(client.set_client_id(Some("other-app")));
+        assert!(matches!(
+            client.get_valid_token().await,
+            Err(OAuthError::LoggedOut)
+        ));
+        assert!(client.set_client_id(None));
+        assert!(matches!(
+            client.get_valid_token().await,
+            Err(OAuthError::LoggedOut)
+        ));
+    }
+
+    #[test]
+    fn invalid_client_is_fatal_refresh_error() {
+        assert!(is_fatal_refresh_error(
+            &BasicErrorResponseType::InvalidGrant
+        ));
+        assert!(is_fatal_refresh_error(
+            &BasicErrorResponseType::InvalidClient
+        ));
+        assert!(!is_fatal_refresh_error(
+            &BasicErrorResponseType::InvalidRequest
+        ));
+    }
+
+    #[test]
+    fn credentials_deserialize_without_client_id() {
+        let json = r#"{"access_token":"a","refresh_token":"r","token_expiry_time":null}"#;
+        let creds: Credentials = serde_json::from_str(json).unwrap();
+        assert_eq!(creds.access_token, "a");
+        assert_eq!(creds.refresh_token, "r");
+        assert_eq!(creds.client_id, None);
     }
 }
 

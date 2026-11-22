@@ -175,6 +175,7 @@ template $LoginWindow : Adw.Window {
                     /* Translators: Title of the row showing the OAuth Redirect URI to register in a personal Spotify Developer app. */
                     title: _("Redirect URI");
                     subtitle: "http://127.0.0.1:8898/login";
+                    activatable-widget: copy_redirect_uri_button;
 
                     Button copy_redirect_uri_button {
                       icon-name: "edit-copy-symbolic";

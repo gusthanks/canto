@@ -233,6 +233,11 @@ impl TokenStore {
         self.0.storage.write().unwrap().take();
     }
 
+    #[cfg(test)]
+    pub(crate) fn set_cached_for_tests(&self, creds: Credentials) {
+        self.0.storage.write().unwrap().replace(creds);
+    }
+
     /// Dev tools only: force the in-memory cached token to look expired by
     /// backdating its expiry. The next `get_valid_token` will then take the
     /// refresh path. Only the in-memory copy is touched; the keyring is left
@@ -293,6 +298,7 @@ mod tests {
             access_token: "test_token".to_string(),
             refresh_token: "test_refresh".to_string(),
             token_expiry_time: None,
+            client_id: None,
         };
         store.0.storage.write().unwrap().replace(creds.clone());
 
@@ -308,6 +314,7 @@ mod tests {
             access_token: "cached_token".to_string(),
             refresh_token: "cached_refresh".to_string(),
             token_expiry_time: None,
+            client_id: None,
         };
         store.0.storage.write().unwrap().replace(creds.clone());
 
