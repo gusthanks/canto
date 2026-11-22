@@ -30,6 +30,7 @@ impl SpotifyPlayerSettings {
             _ => None,
         }?;
         let gapless = settings.boolean("gapless-playback");
+        let crossfade_seconds = settings.uint(canto_config::settings::CROSSFADE_SECONDS);
 
         let ap_port_val = settings.uint("ap-port");
         // Access points usually use port 80, 443 or 4070. Since gsettings
@@ -122,6 +123,7 @@ impl SpotifyPlayerSettings {
             bitrate,
             backend,
             gapless,
+            crossfade_seconds,
             ap_port,
 
             volume_curve,

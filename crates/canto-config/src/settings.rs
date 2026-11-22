@@ -248,6 +248,7 @@ pub const LISTENBRAINZ_TOKEN: &str = "listenbrainz-token";
 pub const SMART_QUEUE_CONTINUATION: &str = "smart-queue-continuation";
 pub const VISUAL_BRIDGE_ENABLED: &str = "visual-bridge-enabled";
 pub const SPOTIFY_CLIENT_ID: &str = "spotify-client-id";
+pub const CROSSFADE_SECONDS: &str = "crossfade-seconds";
 
 pub fn spotify_client_id() -> Option<String> {
     let value = gio::Settings::new(SETTINGS)

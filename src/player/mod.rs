@@ -41,6 +41,9 @@ pub enum Command {
     SetPitch {
         cents: f64,
     },
+    SetCrossfade {
+        seconds: u32,
+    },
     // Rebuild the librespot session and player if the current session has
     // died. librespot sessions are single-use: once the connection drops they
     // are invalidated forever and a brand new session must be created.

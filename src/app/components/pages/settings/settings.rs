@@ -83,6 +83,9 @@ mod imp {
         pub gapless_playback: TemplateChild<libadwaita::SwitchRow>,
 
         #[template_child]
+        pub crossfade_seconds: TemplateChild<libadwaita::SpinRow>,
+
+        #[template_child]
         pub ap_port: TemplateChild<gtk::Entry>,
 
         #[template_child]
@@ -297,6 +300,11 @@ impl SettingsDialog {
     #[cfg(test)]
     pub fn genius_lyrics_row(&self) -> libadwaita::SwitchRow {
         self.imp().genius_lyrics_switch.get()
+    }
+
+    #[cfg(test)]
+    pub fn crossfade_seconds_row(&self) -> libadwaita::SpinRow {
+        self.imp().crossfade_seconds.get()
     }
 
     #[cfg(test)]
@@ -545,6 +553,25 @@ impl SettingsDialog {
         settings
             .bind("gapless-playback", gapless_playback, "active")
             .build();
+
+        // Crossfade duration (seconds). Bound manually rather than via `Settings::bind`
+        // for the same spin-row uint/double reason as memory_cache_size.
+        let crossfade_seconds = widget
+            .crossfade_seconds
+            .downcast_ref::<libadwaita::SpinRow>()
+            .unwrap();
+        let crossfade_adjustment = crossfade_seconds.adjustment();
+        crossfade_adjustment
+            .set_value(settings.uint(canto_config::settings::CROSSFADE_SECONDS) as f64);
+        {
+            let settings = settings.clone();
+            crossfade_adjustment.connect_value_changed(move |adj| {
+                let _ = settings.set_uint(
+                    canto_config::settings::CROSSFADE_SECONDS,
+                    adj.value().round() as u32,
+                );
+            });
+        }
 
         let ap_port = widget.ap_port.downcast_ref::<gtk::Entry>().unwrap();
         settings

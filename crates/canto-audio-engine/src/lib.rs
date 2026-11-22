@@ -48,7 +48,7 @@ pub use capture_sink::CaptureSink;
 pub use eq_processor::{EqController, EqProcessor};
 pub use level_meter::{LevelMeterController, LevelMeterProcessor};
 pub use limiter_processor::{LimiterProcessor, LIMITER_CEILING};
-pub use mix_processor::{MixController, MixProcessor};
+pub use mix_processor::{MixController, MixProcessor, MAX_CROSSFADE_SECONDS};
 pub use mono_processor::{MonoController, MonoProcessor};
 pub use pan_processor::{PanController, PanProcessor};
 pub use pitch_processor::{PitchController, PitchProcessor};

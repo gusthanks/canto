@@ -321,6 +321,20 @@ template $SettingsWindow : Adw.PreferencesDialog {
         subtitle: _("Eliminates silence between consecutive tracks");
       }
 
+      Adw.SpinRow crossfade_seconds {
+        /* Translators: Title for the crossfade duration preference */
+        title: _("Crossfade (seconds)");
+        /* Translators: Subtitle for the crossfade duration preference */
+        subtitle: _("Blend smoothly between consecutive tracks (0 disables)");
+        adjustment: Adjustment {
+          lower: 0;
+          upper: 12;
+          value: 0;
+          step-increment: 1;
+          page-increment: 2;
+        };
+      }
+
       Adw.ComboRow volume_curve {
         title: _("Volume Curve");
         subtitle: _("Controls how the volume slider responds");

@@ -105,6 +105,7 @@ pub struct SpotifyPlayerSettings {
     pub bitrate: Bitrate,
     pub backend: AudioBackend,
     pub gapless: bool,
+    pub crossfade_seconds: u32,
     pub ap_port: Option<u16>,
 
     pub shuffle: bool,
@@ -160,6 +161,7 @@ impl Default for SpotifyPlayerSettings {
 
             bitrate: Bitrate::Bitrate160,
             gapless: true,
+            crossfade_seconds: 0,
             backend: AudioBackend::PulseAudio,
             ap_port: None,
 
@@ -337,7 +339,7 @@ impl SpotifyPlayer {
         let mono_controller = MonoController::new(settings.mono_audio);
         let pan_controller = PanController::new(settings.pan);
         let pitch_controller = PitchController::new(settings.pitch_cents);
-        let mix_controller = MixController::new(false);
+        let mix_controller = MixController::with_duration_secs(settings.crossfade_seconds);
         Self {
             settings,
             mixer: None,
@@ -426,6 +428,11 @@ impl SpotifyPlayer {
                 self.pitch_controller.update(cents);
                 Ok(())
             }
+            Command::SetCrossfade { seconds } => {
+                self.settings.crossfade_seconds = seconds;
+                self.mix_controller.set_duration_secs(seconds);
+                Ok(())
+            }
             Command::PlayerResume => {
                 self.ensure_session_alive().await?;
                 self.is_paused = false;
@@ -442,11 +449,13 @@ impl SpotifyPlayer {
                 self.is_paused = false;
                 self.track_needs_reload = false;
                 self.advance_after_reconnect.store(false, Ordering::Relaxed);
+                self.mix_controller.reset();
                 self.get_player()?.stop();
                 Ok(())
             }
             Command::PlayerSeek(position) => {
                 self.last_position_ms.store(position, Ordering::Relaxed);
+                self.mix_controller.reset();
                 self.ensure_session_alive().await?;
                 self.get_player()?.seek(position);
                 Ok(())
@@ -454,6 +463,15 @@ impl SpotifyPlayer {
             Command::PlayerLoad { track, resume } => {
                 debug!("Player: playing track {track}");
                 self.ensure_session_alive().await?;
+                if self.current_track.is_some()
+                    && !self.is_paused
+                    && resume
+                    && self.settings.crossfade_seconds > 0
+                {
+                    self.mix_controller.trigger_transition();
+                } else if !resume {
+                    self.mix_controller.reset();
+                }
                 self.current_track = Some(track.clone());
                 self.is_paused = !resume;
                 self.track_needs_reload = false;
@@ -514,6 +532,7 @@ impl SpotifyPlayer {
                 self.advance_after_reconnect.store(false, Ordering::Relaxed);
                 self.consecutive_load_failures.store(0, Ordering::Relaxed);
                 self.has_played_since_login.store(false, Ordering::Relaxed);
+                self.mix_controller.reset();
                 self.delegate.set_connection_lost(false);
                 Ok(())
             }

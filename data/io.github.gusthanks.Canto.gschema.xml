@@ -505,6 +505,12 @@
       <summary>Custom Spotify Web API Client ID</summary>
       <description>Optional Spotify Developer app Client ID used for OAuth login instead of Canto's built-in one. Overridden by the CANTO_SPOTIFY_CLIENT_ID environment variable when set.</description>
     </key>
+    <key name="crossfade-seconds" type="u">
+      <default>0</default>
+      <range min="0" max="12"/>
+      <summary>Crossfade duration in seconds</summary>
+      <description>Smooth equal-power overlap between tracks in seconds (0 disables crossfade).</description>
+    </key>
     <key name="migrated-from-riff" type="b">
       <default>false</default>
       <summary>Settings copied from the old app id</summary>

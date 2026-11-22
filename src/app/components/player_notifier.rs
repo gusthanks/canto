@@ -125,6 +125,16 @@ impl PlayerNotifier {
             let _ = s.unbounded_send(Command::SetPitch { cents });
         });
 
+        // Crossfade duration in seconds.
+        let s = sender.clone();
+        settings.connect_changed(
+            Some(canto_config::settings::CROSSFADE_SECONDS),
+            move |settings, _| {
+                let seconds = settings.uint(canto_config::settings::CROSSFADE_SECONDS);
+                let _ = s.unbounded_send(Command::SetCrossfade { seconds });
+            },
+        );
+
         // 10-band EQ: any band change sends the full band array.
         for band_key in &[
             "eq-band-0",

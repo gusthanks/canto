@@ -181,6 +181,26 @@ fn assert_preferences_pages_and_search() {
     wait_frames(&window, 3);
     distinct_colors(window.upcast_ref(), "settings-audio-local-sample");
 
+    let gsettings_cf = gio::Settings::new(canto_config::settings::SETTINGS);
+    gsettings_cf.reset(canto_config::settings::CROSSFADE_SECONDS);
+    let crossfade_row = dialog.crossfade_seconds_row();
+    check(
+        "Crossfade duration SpinRow starts at 0 seconds and writes live updates",
+        crossfade_row.value() as u32 == 0,
+        format!("value={}", crossfade_row.value()),
+    );
+    crossfade_row.adjustment().set_value(5.0);
+    pump(50);
+    check(
+        "Crossfade SpinRow updates crossfade-seconds GSetting",
+        gsettings_cf.uint(canto_config::settings::CROSSFADE_SECONDS) == 5,
+        format!(
+            "gsettings={}",
+            gsettings_cf.uint(canto_config::settings::CROSSFADE_SECONDS)
+        ),
+    );
+    gsettings_cf.reset(canto_config::settings::CROSSFADE_SECONDS);
+
     dialog.set_external_player_for_tests(true);
     wait_frames(&window, 3);
     distinct_colors(window.upcast_ref(), "settings-audio-sample");
