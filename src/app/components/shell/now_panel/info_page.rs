@@ -128,6 +128,17 @@ pub(super) fn pill_button(label: &str, on_click: impl Fn(&gtk::Button) + 'static
     button
 }
 
+/// A quiet compact chip button that opens `url` in the browser.
+pub(super) fn compact_link_button(label: &str, url: String) -> gtk::Button {
+    let button = gtk::Button::with_label(label);
+    button.add_css_class("flat");
+    button.add_css_class("info-link-chip");
+    button.set_halign(gtk::Align::Start);
+    button.set_tooltip_text(Some(&gettext("Opens in your browser")));
+    button.connect_clicked(move |button| crate::app::components::open_external_url(button, &url));
+    button
+}
+
 /// A small rounded button that opens `url` in the browser.
 pub(super) fn link_button(label: &str, url: String) -> gtk::Button {
     let button = pill_button(label, move |button| {
@@ -196,6 +207,7 @@ pub(super) fn folding_text(full: String) -> gtk::Box {
         let more = gtk::Button::with_label(&gettext("Show More"));
         more.add_css_class("flat");
         more.add_css_class("small");
+        more.add_css_class("info-more");
         more.set_halign(gtk::Align::Start);
         let expanded = std::cell::Cell::new(false);
         more.connect_clicked(move |button| {

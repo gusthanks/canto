@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-22 14:13-0300\n"
+"POT-Creation-Date: 2026-11-22 17:04-0300\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -17,7 +17,7 @@ msgstr "Voir l'album"
 
 #. translators: This is part of a contextual menu attached to a single track; the intent is to copy the link (public URL) to a specific track.
 #: src/app/components/labels.rs:11
-#: src/app/components/widgets/details_page/header.blp:202
+#: src/app/components/widgets/details_page/header.blp:214
 msgid "Copy Link"
 msgstr "Copier le lien"
 
@@ -161,8 +161,8 @@ msgstr "Aucune liste de lecture enregistrée."
 #: src/app/components/shell/now_panel/stats.rs:435
 #: src/app/components/shell/mini_player.rs:587
 #: src/app/components/shell/mini_player.rs:715
-#: src/app/components/widgets/details_page/header.rs:315
-#: src/app/components/widgets/details_page/header.blp:163
+#: src/app/components/widgets/details_page/header.rs:324
+#: src/app/components/widgets/details_page/header.blp:175
 msgid "Play"
 msgstr "Lecture"
 
@@ -170,7 +170,7 @@ msgstr "Lecture"
 #: src/app/components/labels.rs:83
 #: src/app/components/pages/shortcuts/shortcuts.blp:50
 #: src/app/components/shell/playback/playback_controls.blp:15
-#: src/app/components/widgets/details_page/header.blp:176
+#: src/app/components/widgets/details_page/header.blp:188
 msgid "Shuffle"
 msgstr "Aléatoire"
 
@@ -210,7 +210,7 @@ msgstr "Nouvelle liste de lecture"
 #: src/app/components/shell/command_palette/widget.rs:880
 #: src/app/components/shell/command_palette/widget.rs:964
 #: src/app/components/shell/navigation_panel/model.rs:419
-#: src/app/components/shell/navigation_panel/model.rs:887
+#: src/app/components/shell/navigation_panel/model.rs:897
 #: src/app/components/widgets/track_list/track_details.rs:271
 #: src/app/components/pages/settings/settings.blp:374
 #, fuzzy
@@ -317,8 +317,8 @@ msgstr "{} de {}"
 #: src/app/components/shell/command_palette/widget.rs:881
 #: src/app/components/shell/command_palette/widget.rs:965
 #: src/app/components/shell/navigation_panel/model.rs:421
-#: src/app/components/shell/navigation_panel/model.rs:912
-#: src/app/components/widgets/details_page/component.rs:107
+#: src/app/components/shell/navigation_panel/model.rs:922
+#: src/app/components/widgets/details_page/component.rs:108
 #, fuzzy
 msgid "Artist"
 msgstr "Artistes"
@@ -330,7 +330,7 @@ msgstr "Artistes"
 #: src/app/components/shell/command_palette/widget.rs:882
 #: src/app/components/shell/command_palette/widget.rs:963
 #: src/app/components/shell/navigation_panel/model.rs:440
-#: src/app/components/shell/navigation_panel/model.rs:825
+#: src/app/components/shell/navigation_panel/model.rs:822
 #, fuzzy
 msgid "Playlist"
 msgstr "Listes de lecture"
@@ -543,13 +543,13 @@ msgid "Lyrics"
 msgstr ""
 
 #. translators: Shown once lyrics the listener added were published.
-#: src/app/components/pages/lyrics/component.rs:206
+#: src/app/components/pages/lyrics/component.rs:192
 msgid "Lyrics published to LRCLIB"
 msgstr ""
 
 #. translators: Short text displayed instead of a track title when nothing plays
-#: src/app/components/pages/lyrics/component.rs:568
-#: src/app/components/pages/lyrics/component.rs:986
+#: src/app/components/pages/lyrics/component.rs:554
+#: src/app/components/pages/lyrics/component.rs:935
 #: src/app/components/shell/playback/playback_info.rs:129
 #: src/app/components/shell/fullscreen_lyrics.rs:212
 #, fuzzy
@@ -557,12 +557,12 @@ msgid "No Track Playing"
 msgstr "En cours de lecture"
 
 #. Translators: Shown when no lyrics are found.
-#: src/app/components/pages/lyrics/component.rs:741
+#: src/app/components/pages/lyrics/component.rs:727
 #: src/app/components/pages/lyrics/lyrics_page.blp:95
 msgid "No Lyrics Available"
 msgstr ""
 
-#: src/app/components/pages/lyrics/component.rs:742
+#: src/app/components/pages/lyrics/component.rs:728
 #: src/app/components/pages/lyrics/lyrics_page.blp:96
 msgid "Lyrics couldn't be found for this song."
 msgstr ""
@@ -571,40 +571,40 @@ msgstr ""
 #. / title without edition notes ("- Remastered", "(feat. ...)") and the word
 #. / for lyrics in the app's language ("lyrics", "letra").
 #. translators: The word added to a web search for a song's lyrics ("Search the Web" under "No Lyrics Available"): what people type in a search engine in your language, like "letra" in Portuguese.
-#: src/app/components/pages/lyrics/component.rs:753
+#: src/app/components/pages/lyrics/component.rs:739
 msgid "lyrics"
 msgstr ""
 
 #. Translators: Heading of the lyrics timing part of the lyrics options popover.
-#: src/app/components/pages/lyrics/widget.rs:219
-#: src/app/components/pages/lyrics/lyrics_page.blp:252
+#: src/app/components/pages/lyrics/widget.rs:217
+#: src/app/components/pages/lyrics/lyrics_page.blp:260
 msgid "Lyrics Timing"
 msgstr ""
 
 #. translators: Tooltip of the lyrics timing button while an offset is set. {} is like "+200 ms".
-#: src/app/components/pages/lyrics/widget.rs:223
+#: src/app/components/pages/lyrics/widget.rs:221
 #, rust-format
 msgid "Lyrics Timing ({})"
 msgstr ""
 
 #. translators: Tooltip of the mark on a lyric line that Genius explains.
-#: src/app/components/pages/lyrics/widget.rs:476
+#: src/app/components/pages/lyrics/widget.rs:469
 msgid "What This Line Means"
 msgstr ""
 
 #. translators: First entry of the lyrics translation languages: the app's own language.
-#: src/app/components/pages/lyrics/widget.rs:505
+#: src/app/components/pages/lyrics/widget.rs:498
 msgid "App Language"
 msgstr ""
 
 #. translators: Quiet line above the lyrics saying where they came from. {} is the source's name, "LRCLIB" or "Genius" (keep it as is).
-#: src/app/components/pages/lyrics/widget.rs:763
+#: src/app/components/pages/lyrics/widget.rs:756
 #, rust-format
 msgid "Lyrics: {}"
 msgstr ""
 
 #. translators: Quiet line above lyrics that have no timing, so they don't follow the song. {} is the source's name, "LRCLIB" or "Genius" (keep it as is).
-#: src/app/components/pages/lyrics/widget.rs:766
+#: src/app/components/pages/lyrics/widget.rs:759
 #, rust-format
 msgid "Lyrics: {} · not synced"
 msgstr ""
@@ -663,11 +663,11 @@ msgid_plural "{} days ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/app/components/pages/saved_albums/model.rs:109
+#: src/app/components/pages/saved_albums/model.rs:123
 msgid "You have no saved albums."
 msgstr "Aucun album dans votre bibliothèque."
 
-#: src/app/components/pages/saved_albums/model.rs:112
+#: src/app/components/pages/saved_albums/model.rs:126
 msgid "Your library will be shown here."
 msgstr "Vos albums apparaîtrons ici."
 
@@ -682,34 +682,34 @@ msgid "Your followed artists will be shown here."
 msgstr "Vos listes de lectures apparaîtrons ici."
 
 #. translators: Filter of the saved playlists: shows all of them.
-#: src/app/components/pages/saved_playlists/model.rs:105
+#: src/app/components/pages/saved_playlists/model.rs:119
 #: src/app/models/card_enums.rs:172
 msgid "All"
 msgstr ""
 
 #. translators: Filter of the saved playlists: shows only those the user created.
-#: src/app/components/pages/saved_playlists/model.rs:107
+#: src/app/components/pages/saved_playlists/model.rs:121
 #, fuzzy
 msgid "Created"
 msgstr "Créer"
 
 #. translators: Filter of the saved playlists: shows only those made by others, which the user follows.
-#: src/app/components/pages/saved_playlists/model.rs:109
+#: src/app/components/pages/saved_playlists/model.rs:123
 msgid "Followed"
 msgstr ""
 
-#: src/app/components/pages/saved_playlists/model.rs:128
+#: src/app/components/pages/saved_playlists/model.rs:142
 msgid "You have no saved playlists."
 msgstr "Aucune liste de lecture enregistrée."
 
-#: src/app/components/pages/saved_playlists/model.rs:131
+#: src/app/components/pages/saved_playlists/model.rs:145
 msgid "Your playlists will be shown here."
 msgstr "Vos listes de lectures apparaîtrons ici."
 
 #. translators: This is a navigation panel entry to browse to the songs the user liked (the heart).
 #: src/app/components/pages/saved_tracks/model.rs:59
 #: src/app/components/shell/command_palette/widget.rs:601
-#: src/app/components/shell/navigation_panel/model.rs:574
+#: src/app/components/shell/navigation_panel/model.rs:571
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:73
 msgid "Liked Songs"
 msgstr ""
@@ -1145,7 +1145,7 @@ msgstr ""
 #. translators: Command palette entry: opens the side panel's About tab.
 #. translators: Heading of the Genius song bio.
 #: src/app/components/shell/command_palette/widget.rs:670
-#: src/app/components/shell/now_panel/about.rs:294
+#: src/app/components/shell/now_panel/about.rs:316
 msgid "About This Song"
 msgstr ""
 
@@ -1167,7 +1167,7 @@ msgstr ""
 
 #. Translators: Tooltip of the button in the lyrics that shows them full screen.
 #: src/app/components/shell/command_palette/widget.rs:696
-#: src/app/components/pages/lyrics/lyrics_page.blp:346
+#: src/app/components/pages/lyrics/lyrics_page.blp:335
 msgid "Full-Screen Lyrics"
 msgstr ""
 
@@ -1264,8 +1264,8 @@ msgid "Switch theme live"
 msgstr ""
 
 #: src/app/components/shell/command_palette/widget.rs:831
-#: src/app/components/shell/device_selector/widget.rs:149
-#: src/app/components/shell/device_selector/device_selector.blp:58
+#: src/app/components/shell/device_selector/widget.rs:144
+#: src/app/components/shell/device_selector/device_selector.blp:71
 msgid "This Device"
 msgstr ""
 
@@ -1417,12 +1417,12 @@ msgid "Playing similar tracks"
 msgstr ""
 
 #. translators: Tooltip of the player bar's device button. {} is where the sound plays, e.g. "This Computer".
-#: src/app/components/shell/device_selector/widget.rs:160
+#: src/app/components/shell/device_selector/widget.rs:155
 #, rust-format
 msgid "Playing on {}"
 msgstr ""
 
-#: src/app/components/shell/device_selector/widget.rs:219
+#: src/app/components/shell/device_selector/widget.rs:221
 msgid "This Computer"
 msgstr ""
 
@@ -1447,7 +1447,7 @@ msgstr ""
 
 #: src/app/components/shell/playback/playback_controls.rs:78
 #: src/app/components/shell/mini_player.rs:713
-#: src/app/components/widgets/details_page/header.rs:313
+#: src/app/components/widgets/details_page/header.rs:322
 msgid "Pause"
 msgstr "Pause"
 
@@ -1458,7 +1458,7 @@ msgid "Select a track to play"
 msgstr "Titres aimés"
 
 #: src/app/components/shell/now_panel/mod.rs:54
-#: src/app/components/shell/now_panel/mod.rs:1255
+#: src/app/components/shell/now_panel/mod.rs:1267
 #, fuzzy
 msgid "Go to Album"
 msgstr "Albums"
@@ -1500,7 +1500,7 @@ msgstr "Ajouter à la file d'attente"
 #. translators: The user's own play count on Last.fm in Track Details.
 #: src/app/components/shell/now_panel/mod.rs:506
 #: src/app/components/shell/now_panel/stats.rs:310
-#: src/app/components/widgets/track_list/track_details.rs:381
+#: src/app/components/widgets/track_list/track_details.rs:383
 #, fuzzy
 msgid "Your Plays"
 msgstr "Bibliothèque"
@@ -1512,7 +1512,7 @@ msgid "Show Song Stats"
 msgstr ""
 
 #: src/app/components/shell/now_panel/mod.rs:516
-#: src/app/components/shell/now_panel/about.rs:302
+#: src/app/components/shell/now_panel/about.rs:324
 msgid "Credits"
 msgstr ""
 
@@ -1524,19 +1524,19 @@ msgstr ""
 
 #. translators: Credits row in the Now Playing panel: the track's artists.
 #: src/app/components/shell/now_panel/mod.rs:612
-#: src/app/components/shell/now_panel/about.rs:305
+#: src/app/components/shell/now_panel/about.rs:327
 msgid "Performed by"
 msgstr ""
 
 #: src/app/components/shell/now_panel/mod.rs:615
-#: src/app/components/shell/now_panel/about.rs:309
-#: src/app/components/widgets/track_list/track_details.rs:459
+#: src/app/components/shell/now_panel/about.rs:331
+#: src/app/components/widgets/track_list/track_details.rs:461
 msgid "Producer(s)"
 msgstr ""
 
 #: src/app/components/shell/now_panel/mod.rs:616
-#: src/app/components/shell/now_panel/about.rs:310
-#: src/app/components/widgets/track_list/track_details.rs:463
+#: src/app/components/shell/now_panel/about.rs:332
+#: src/app/components/widgets/track_list/track_details.rs:465
 msgid "Writer(s)"
 msgstr ""
 
@@ -1557,193 +1557,205 @@ msgstr "Voir l'album"
 msgid "this artist"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:928
+#: src/app/components/shell/now_panel/mod.rs:940
 msgid "Add a Genius token to see who produced and wrote this track."
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:930
-#: src/app/components/shell/now_panel/mod.rs:958
-#: src/app/components/shell/now_panel/about.rs:109
-#: src/app/components/shell/now_panel/about.rs:156
+#: src/app/components/shell/now_panel/mod.rs:942
+#: src/app/components/shell/now_panel/mod.rs:970
+#: src/app/components/shell/now_panel/about.rs:111
+#: src/app/components/shell/now_panel/about.rs:158
 #, fuzzy
 msgid "Set Up Genius"
 msgstr "Rechercher dans Spotify."
 
 #. translators: Shown while the credits of the current track load.
-#: src/app/components/shell/now_panel/mod.rs:936
+#: src/app/components/shell/now_panel/mod.rs:948
 msgid "Loading credits…"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:956
-#: src/app/components/shell/now_panel/about.rs:154
+#: src/app/components/shell/now_panel/mod.rs:968
+#: src/app/components/shell/now_panel/about.rs:156
 msgid ""
 "Genius didn't accept your token. Paste a new one in Settings to see the "
 "credits again."
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:963
+#: src/app/components/shell/now_panel/mod.rs:975
 msgid "Couldn't load the credits from Genius."
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:965
-#: src/app/components/shell/now_panel/about.rs:144
-#: src/app/components/shell/now_panel/about.rs:169
+#: src/app/components/shell/now_panel/mod.rs:977
+#: src/app/components/shell/now_panel/about.rs:146
+#: src/app/components/shell/now_panel/about.rs:171
 #, fuzzy
 msgid "Search on Genius"
 msgstr "Rechercher dans Spotify."
 
 #. translators: Title in the About tab when no Genius token was added.
-#: src/app/components/shell/now_panel/about.rs:107
-#: src/app/components/shell/now_panel/about.rs:152
+#: src/app/components/shell/now_panel/about.rs:109
+#: src/app/components/shell/now_panel/about.rs:154
 msgid "Genius Isn't Set Up"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:108
+#: src/app/components/shell/now_panel/about.rs:110
 msgid "Add a Genius token to see who made this song, its story and the artist."
 msgstr ""
 
 #. translators: Title in the About tab when Genius doesn't have the playing song.
-#: src/app/components/shell/now_panel/about.rs:142
+#: src/app/components/shell/now_panel/about.rs:144
 #, fuzzy
 msgid "Not on Genius"
 msgstr "Rechercher dans Spotify."
 
-#: src/app/components/shell/now_panel/about.rs:143
+#: src/app/components/shell/now_panel/about.rs:145
 msgid "Genius doesn't have a page for this song yet."
 msgstr ""
 
 #. translators: Title in the About tab when Genius can't be reached.
-#: src/app/components/shell/now_panel/about.rs:166
+#: src/app/components/shell/now_panel/about.rs:168
 msgid "Couldn't Reach Genius"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:167
+#: src/app/components/shell/now_panel/about.rs:169
 msgid "Check your connection, then open this tab again."
 msgstr ""
 
 #. translators: About tab: songs this song samples.
-#: src/app/components/shell/now_panel/about.rs:197
+#: src/app/components/shell/now_panel/about.rs:199
 msgid "Samples"
 msgstr ""
 
 #. translators: About tab: songs that sample this song.
-#: src/app/components/shell/now_panel/about.rs:199
+#: src/app/components/shell/now_panel/about.rs:201
 msgid "Sampled in"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:200
+#: src/app/components/shell/now_panel/about.rs:202
 msgid "Interpolates"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:201
+#: src/app/components/shell/now_panel/about.rs:203
 msgid "Interpolated in"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:202
+#: src/app/components/shell/now_panel/about.rs:204
 msgid "Cover of"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:203
+#: src/app/components/shell/now_panel/about.rs:205
 msgid "Covered by"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:204
+#: src/app/components/shell/now_panel/about.rs:206
 msgid "Remix of"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:205
+#: src/app/components/shell/now_panel/about.rs:207
 msgid "Remixed by"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:206
+#: src/app/components/shell/now_panel/about.rs:208
 msgid "Live version of"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:207
+#: src/app/components/shell/now_panel/about.rs:209
 msgid "Performed live as"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:215
+#: src/app/components/shell/now_panel/about.rs:217
 msgid "Song bio from Genius · Unreviewed"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:216
+#: src/app/components/shell/now_panel/about.rs:218
 msgid "Song bio from Genius · Reviewed by Genius"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:217
+#: src/app/components/shell/now_panel/about.rs:219
 msgid "Song bio from Genius · Verified by the artist"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:218
+#: src/app/components/shell/now_panel/about.rs:220
 msgid "Song bio from Genius"
 msgstr ""
 
 #. translators: An artist's own website, in the About tab.
-#: src/app/components/shell/now_panel/about.rs:237
+#: src/app/components/shell/now_panel/about.rs:239
 msgid "Website"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:308
-#: src/app/components/widgets/track_list/track_details.rs:453
+#: src/app/components/shell/now_panel/about.rs:330
+#: src/app/components/widgets/track_list/track_details.rs:455
 #, fuzzy
 msgid "Featured Artists"
 msgstr "Artistes"
 
 #. translators: About tab: the studio or place where the song was recorded.
-#: src/app/components/shell/now_panel/about.rs:323
-#: src/app/components/widgets/track_list/track_details.rs:472
+#: src/app/components/shell/now_panel/about.rs:345
+#: src/app/components/widgets/track_list/track_details.rs:474
 msgid "Recorded At"
 msgstr ""
 
 #. translators: Heading in the About tab: samples, covers, remixes and live versions of the song.
-#: src/app/components/shell/now_panel/about.rs:339
+#: src/app/components/shell/now_panel/about.rs:361
 msgid "Samples and Versions"
 msgstr ""
 
-#: src/app/components/shell/now_panel/about.rs:352
+#: src/app/components/shell/now_panel/about.rs:374
 #, fuzzy
 msgid "Translations"
 msgstr "Normale"
 
-#: src/app/components/shell/now_panel/about.rs:354
+#: src/app/components/shell/now_panel/about.rs:376
 msgid "Made by Genius users. They open in your browser."
 msgstr ""
 
 #. translators: Heading of the About tab's card with the song's numbers on Genius and its link.
-#: src/app/components/shell/now_panel/about.rs:368
+#: src/app/components/shell/now_panel/about.rs:390
 #, fuzzy
 msgid "On Genius"
 msgstr "Rechercher dans Spotify."
 
 #. translators: Under a number in the About tab: how many times the song's Genius page was seen.
-#: src/app/components/shell/now_panel/about.rs:371
+#: src/app/components/shell/now_panel/about.rs:393
 msgid "page views"
 msgstr ""
 
 #. translators: Under a number in the About tab: how many people worked on the song's Genius page.
-#: src/app/components/shell/now_panel/about.rs:373
+#: src/app/components/shell/now_panel/about.rs:395
 msgid "contributors"
 msgstr ""
 
 #. translators: Under a number in the About tab: reviewed explanations of lyric lines.
-#: src/app/components/shell/now_panel/about.rs:375
+#: src/app/components/shell/now_panel/about.rs:397
 msgid "annotations"
 msgstr ""
 
-#. Translators: Tooltip of the lyrics button that opens the song's page on Genius (to read or fix its lyrics).
-#: src/app/components/shell/now_panel/about.rs:379
-#: src/app/components/widgets/track_list/track_details.rs:503
-#: src/app/components/pages/lyrics/lyrics_page.blp:169
+#: src/app/components/shell/now_panel/about.rs:401
+#: src/app/components/widgets/track_list/track_details.rs:505
 #, fuzzy
 msgid "Open on Genius"
 msgstr "Rechercher dans Spotify."
 
 #. translators: About tab, under the artist's name: their other names. {} is the list.
-#: src/app/components/shell/now_panel/about.rs:393
+#: src/app/components/shell/now_panel/about.rs:415
 #, rust-format
 msgid "Also known as {}"
 msgstr ""
+
+#. translators: About tab, inside the artist card above external links (Instagram, YouTube, etc.).
+#: src/app/components/shell/now_panel/about.rs:429
+msgid "Links"
+msgstr ""
+
+#. / Renders artist external links as clean circular brand icons (falling back
+#. / to compact text chips only for unknown platforms).
+#: src/app/components/shell/now_panel/about.rs:445
+#: src/app/components/shell/now_panel/info_page.rs:137
+#: src/app/components/shell/now_panel/info_page.rs:147
+#, fuzzy
+msgid "Opens in your browser"
+msgstr "Titres aimés"
 
 #. translators: Title in the Stats tab when Last.fm doesn't know the playing song.
 #: src/app/components/shell/now_panel/stats.rs:153
@@ -1857,18 +1869,13 @@ msgstr "Artistes"
 msgid "Open Artist"
 msgstr "Artistes"
 
-#: src/app/components/shell/now_panel/info_page.rs:136
-#, fuzzy
-msgid "Opens in your browser"
-msgstr "Titres aimés"
-
-#: src/app/components/shell/now_panel/info_page.rs:196
-#: src/app/components/shell/now_panel/info_page.rs:208
+#: src/app/components/shell/now_panel/info_page.rs:207
+#: src/app/components/shell/now_panel/info_page.rs:220
 #, fuzzy
 msgid "Show More"
 msgstr "Ajouter à la file d'attente"
 
-#: src/app/components/shell/now_panel/info_page.rs:206
+#: src/app/components/shell/now_panel/info_page.rs:218
 #, fuzzy
 msgid "Show Less"
 msgstr "En cours de lecture"
@@ -1951,26 +1958,26 @@ msgstr ""
 msgid "Song"
 msgstr ""
 
-#: src/app/components/shell/navigation_panel/model.rs:501
+#: src/app/components/shell/navigation_panel/model.rs:498
 msgid "Unnamed Playlist"
 msgstr "Liste de lecture sans titre"
 
-#: src/app/components/shell/navigation_panel/model.rs:923
+#: src/app/components/shell/navigation_panel/model.rs:933
 #, fuzzy
 msgid "Pinned Playlist"
 msgstr "Liste de lecture sans titre"
 
-#: src/app/components/shell/navigation_panel/model.rs:924
+#: src/app/components/shell/navigation_panel/model.rs:934
 #, fuzzy
 msgid "Pinned Album"
 msgstr "Voir l'album"
 
-#: src/app/components/shell/navigation_panel/model.rs:925
+#: src/app/components/shell/navigation_panel/model.rs:935
 #, fuzzy
 msgid "Pinned Artist"
 msgstr "Artistes"
 
-#: src/app/components/shell/navigation_panel/model.rs:926
+#: src/app/components/shell/navigation_panel/model.rs:936
 #, fuzzy
 msgid "Pinned Track"
 msgstr "Titres aimés"
@@ -2044,40 +2051,40 @@ msgid "Filter tracks (Ctrl+F)"
 msgstr ""
 
 #. translators: Track sort option keeping album/playlist original track order.
-#: src/app/components/widgets/details_page/component.rs:103
+#: src/app/components/widgets/details_page/component.rs:104
 msgid "Original Order"
 msgstr ""
 
 #. translators: Track sort option sorting alphabetically by track title.
-#: src/app/components/widgets/details_page/component.rs:105
+#: src/app/components/widgets/details_page/component.rs:106
 msgid "Title"
 msgstr ""
 
 #. translators: Track sort option sorting by track duration.
-#: src/app/components/widgets/details_page/component.rs:109
+#: src/app/components/widgets/details_page/component.rs:110
 #: src/app/components/widgets/track_list/track_details.rs:265
 #, fuzzy
 msgid "Duration"
 msgstr "Normale"
 
 #. translators: Tooltip of the dropdown sorting tracks in the current playlist, album, or Liked Songs page.
-#: src/app/components/widgets/details_page/component.rs:113
+#: src/app/components/widgets/details_page/component.rs:114
 #, fuzzy
 msgid "Sort tracks"
 msgstr "Morceaux"
 
 #. translators: Placeholder in the in-page filter bar for playlists, albums, and Liked Songs.
-#: src/app/components/widgets/details_page/component.rs:123
+#: src/app/components/widgets/details_page/component.rs:128
 msgid "Filter tracks…"
 msgstr ""
 
 #. translators: Tooltip on an album, playlist, or artist cover in the header.
-#: src/app/components/widgets/details_page/header.rs:185
+#: src/app/components/widgets/details_page/header.rs:194
 msgid "View artwork in fullscreen"
 msgstr ""
 
-#: src/app/components/widgets/details_page/header.rs:472
-#: src/app/components/widgets/details_page/header.blp:189
+#: src/app/components/widgets/details_page/header.rs:499
+#: src/app/components/widgets/details_page/header.blp:201
 #, fuzzy
 msgid "Add to Library"
 msgstr "Enregistrer dans la bibliothèque"
@@ -2139,7 +2146,7 @@ msgstr ""
 #. Translators: Sort option. Orders items by their popularity score, with
 #. the most popular items appearing first.
 #: src/app/components/widgets/track_list/track_details.rs:285
-#: src/app/components/widgets/track_list/track_details.rs:322
+#: src/app/components/widgets/track_list/track_details.rs:324
 #: src/app/models/card_enums.rs:63
 msgid "Popularity"
 msgstr ""
@@ -2149,31 +2156,31 @@ msgid "Source"
 msgstr ""
 
 #. translators: Section title in the Track Details dialog for global plays and views.
-#: src/app/components/widgets/track_list/track_details.rs:346
+#: src/app/components/widgets/track_list/track_details.rs:348
 msgid "Plays & Reach"
 msgstr ""
 
 #. translators: Global scrobble play count from Last.fm in Track Details.
-#: src/app/components/widgets/track_list/track_details.rs:367
+#: src/app/components/widgets/track_list/track_details.rs:369
 msgid "Last.fm Plays"
 msgstr ""
 
-#: src/app/components/widgets/track_list/track_details.rs:374
+#: src/app/components/widgets/track_list/track_details.rs:376
 msgid "Last.fm Listeners"
 msgstr ""
 
 #. translators: Section title in the Track Details dialog for Genius credits and song bio.
-#: src/app/components/widgets/track_list/track_details.rs:395
+#: src/app/components/widgets/track_list/track_details.rs:397
 msgid "Credits & Story"
 msgstr ""
 
 #. translators: Song page view count from Genius in Track Details.
-#: src/app/components/widgets/track_list/track_details.rs:438
+#: src/app/components/widgets/track_list/track_details.rs:440
 msgid "Genius Views"
 msgstr ""
 
 #. translators: Release date row in the Track Details dialog.
-#: src/app/components/widgets/track_list/track_details.rs:446
+#: src/app/components/widgets/track_list/track_details.rs:448
 #, fuzzy
 msgid "Release Date"
 msgstr "Discographie"
@@ -2502,72 +2509,72 @@ msgstr ""
 msgid "Search the Web"
 msgstr "Rechercher dans Spotify."
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:158
-msgid "Reload lyrics"
+#. Translators: Tooltip of the lyrics button that shows a translation under each line.
+#: src/app/components/pages/lyrics/lyrics_page.blp:166
+msgid "Translate Lyrics"
+msgstr ""
+
+#. Translators: Tooltip of the button that picks the language lyrics are translated into.
+#: src/app/components/pages/lyrics/lyrics_page.blp:176
+msgid "Translation Language"
 msgstr ""
 
 #. Translators: Tooltip of the lyrics button that opens how lyrics light up, scroll and are timed.
-#: src/app/components/pages/lyrics/lyrics_page.blp:180
+#: src/app/components/pages/lyrics/lyrics_page.blp:188
 msgid "Lyrics Options"
 msgstr ""
 
 #. Translators: Heading in the lyrics options popover: how the line being sung lights up.
-#: src/app/components/pages/lyrics/lyrics_page.blp:199
+#: src/app/components/pages/lyrics/lyrics_page.blp:207
 #, fuzzy
 msgid "Highlight"
 msgstr "Élevée"
 
 #. Translators: Lyrics highlight choice: the words light up one by one as they are sung.
-#: src/app/components/pages/lyrics/lyrics_page.blp:213
+#: src/app/components/pages/lyrics/lyrics_page.blp:221
 msgid "Word by Word"
 msgstr ""
 
 #. Translators: Lyrics highlight choice: the whole line lights up at once.
-#: src/app/components/pages/lyrics/lyrics_page.blp:219
+#: src/app/components/pages/lyrics/lyrics_page.blp:227
 msgid "Whole Line"
 msgstr ""
 
 #. Translators: Heading in the lyrics options popover: what the lyrics do after you scroll them by hand.
-#: src/app/components/pages/lyrics/lyrics_page.blp:225
+#: src/app/components/pages/lyrics/lyrics_page.blp:233
 msgid "After You Scroll"
 msgstr ""
 
 #. Translators: Lyrics scroll choice: a few seconds after scrolling by hand, the lyrics go back to the line being sung.
-#: src/app/components/pages/lyrics/lyrics_page.blp:240
+#: src/app/components/pages/lyrics/lyrics_page.blp:248
 #, fuzzy
 msgid "Follow the Song"
 msgstr "Valeur système"
 
 #. Translators: Lyrics scroll choice: after scrolling by hand, the lyrics stay where you left them until you press Back to Current Line.
-#: src/app/components/pages/lyrics/lyrics_page.blp:246
+#: src/app/components/pages/lyrics/lyrics_page.blp:254
 msgid "Stay Put"
 msgstr ""
 
 #. Translators: Explanation in the lyrics timing popover.
-#: src/app/components/pages/lyrics/lyrics_page.blp:263
+#: src/app/components/pages/lyrics/lyrics_page.blp:271
 msgid "If the lyrics run ahead of or behind the song, nudge them here."
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:284
+#: src/app/components/pages/lyrics/lyrics_page.blp:292
 msgid "Delay lyrics (-100 ms)"
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:293
+#: src/app/components/pages/lyrics/lyrics_page.blp:301
 msgid "Reset lyrics sync offset"
 msgstr ""
 
-#: src/app/components/pages/lyrics/lyrics_page.blp:303
+#: src/app/components/pages/lyrics/lyrics_page.blp:311
 msgid "Advance lyrics (+100 ms)"
 msgstr ""
 
-#. Translators: Tooltip of the lyrics button that shows a translation under each line.
 #: src/app/components/pages/lyrics/lyrics_page.blp:324
-msgid "Translate Lyrics"
-msgstr ""
-
-#. Translators: Tooltip of the button that picks the language lyrics are translated into.
-#: src/app/components/pages/lyrics/lyrics_page.blp:334
-msgid "Translation Language"
+msgid "Reload lyrics"
 msgstr ""
 
 #. Translators: Button label. Selects all visible songs.
@@ -2576,7 +2583,7 @@ msgstr ""
 #. translators: Button label. Selects all visible songs.
 #: src/app/components/pages/queue/queue_page.blp:34
 #: src/app/components/shell/headerbar/headerbar.blp:131
-#: src/app/components/pages/queue/widget.rs:227
+#: src/app/components/pages/queue/widget.rs:232
 #: src/app/components/shell/headerbar/widget.rs:782
 #: src/app/components/shell/utility_panel/utility_panel.blp:135
 #: src/app/components/shell/utility_panel/widget.rs:192
@@ -2584,18 +2591,21 @@ msgid "Select All"
 msgstr "Tout sélectionner"
 
 #. Translators: Header above the queue in the side panel; clicking it shows or hides the songs played lately.
-#: src/app/components/pages/queue/queue_page.blp:59
+#: src/app/components/pages/queue/queue_page.blp:65
+#: src/app/components/pages/queue/queue_page.blp:94
 msgid "Recently Played"
 msgstr ""
 
-#. Translators: Button on the queue page that saves the current play queue into a new playlist.
-#: src/app/components/pages/queue/queue_page.blp:170
+#. Translators: Tooltip on the compact "+" icon button on the queue page that saves the current play queue into a new playlist.
+#. translators: Title of the dialog saving the current play queue into a new playlist.
+#: src/app/components/pages/queue/queue_page.blp:82
+#: src/app/components/widgets/playlist_dialog/widget.rs:171
 #, fuzzy
-msgid "Save as Playlist…"
+msgid "Save Queue as Playlist"
 msgstr "Nouvelle liste de lecture"
 
 #. Translators: Shown in place of the queue when nothing plays or is queued.
-#: src/app/components/pages/queue/queue_page.blp:188
+#: src/app/components/pages/queue/queue_page.blp:193
 msgid "Nothing Queued"
 msgstr ""
 
@@ -3444,11 +3454,11 @@ msgstr ""
 msgid "Choose Where to Play"
 msgstr ""
 
-#: src/app/components/shell/device_selector/device_selector.blp:26
+#: src/app/components/shell/device_selector/device_selector.blp:37
 msgid "Playing On"
 msgstr ""
 
-#: src/app/components/shell/device_selector/device_selector.blp:35
+#: src/app/components/shell/device_selector/device_selector.blp:113
 msgid "Refresh Devices"
 msgstr ""
 
@@ -3499,7 +3509,7 @@ msgstr ""
 
 #. Translators: Tooltip of the player bar button that opens the sleep timer, equalizer and audio options.
 #: src/app/components/shell/playback/playback_widget.blp:408
-#: src/app/components/widgets/details_page/header.blp:219
+#: src/app/components/widgets/details_page/header.blp:242
 #: src/app/components/shell/playback/playback_widget.rs:563
 msgid "More Options"
 msgstr ""
@@ -3680,7 +3690,7 @@ msgid "Details"
 msgstr ""
 
 #. translators: Button label. Deselects all songs, once they are all selected.
-#: src/app/components/pages/queue/widget.rs:224
+#: src/app/components/pages/queue/widget.rs:229
 #: src/app/components/shell/headerbar/widget.rs:779
 #: src/app/components/shell/utility_panel/widget.rs:189
 #, fuzzy
@@ -3775,12 +3785,6 @@ msgstr ""
 msgid "The playlist could not be saved."
 msgstr "Liste de lecture créée."
 
-#. translators: Title of the dialog saving the current play queue into a new playlist.
-#: src/app/components/widgets/playlist_dialog/widget.rs:171
-#, fuzzy
-msgid "Save Queue as Playlist"
-msgstr "Nouvelle liste de lecture"
-
 #. translators: Name of the file filter of the dialog picking a playlist's cover.
 #: src/app/components/widgets/playlist_dialog/widget.rs:242
 msgid "Images"
@@ -3847,6 +3851,14 @@ msgid "Volume {}% · Ctrl+↑ / Ctrl+↓"
 msgstr ""
 
 #, fuzzy
+#~ msgid "Show all links"
+#~ msgstr "En cours de lecture"
+
+#, fuzzy
+#~ msgid "Save as Playlist…"
+#~ msgstr "Nouvelle liste de lecture"
+
+#, fuzzy
 #~ msgid "Search in Canto"
 #~ msgstr "Rechercher dans Spotify."
 
@@ -3857,10 +3869,6 @@ msgstr ""
 #, fuzzy
 #~ msgid "Open Preferences"
 #~ msgstr "Préférences"
-
-#, fuzzy
-#~ msgid "Show track lyrics"
-#~ msgstr "En cours de lecture"
 
 #, fuzzy
 #~ msgid "About Track"

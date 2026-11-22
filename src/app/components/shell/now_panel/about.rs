@@ -8,7 +8,9 @@ use gtk::prelude::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use super::info_page::{caption, flow, folding_text, link_button, row, setup_button, InfoPage};
+use super::info_page::{
+    caption, compact_link_button, flow, folding_text, link_button, row, setup_button, InfoPage,
+};
 use super::{card, heading, number_columns, wrapping_label};
 use crate::app::components::EventListener;
 use crate::app::models::TrackExt;
@@ -264,6 +266,26 @@ fn link_label(kind: &str) -> String {
     }
 }
 
+/// Symbolic brand icon for a known artist link kind.
+fn link_icon(kind: &str) -> Option<&'static str> {
+    match kind {
+        "website" => Some("canto-social-web-symbolic"),
+        "instagram" => Some("canto-social-instagram-symbolic"),
+        "twitter" => Some("canto-social-x-symbolic"),
+        "facebook" => Some("canto-social-facebook-symbolic"),
+        "youtube" => Some("canto-social-youtube-symbolic"),
+        "tiktok" => Some("canto-social-tiktok-symbolic"),
+        "soundcloud" => Some("canto-social-soundcloud-symbolic"),
+        "spotify" => Some("canto-social-spotify-symbolic"),
+        "apple_music" => Some("canto-social-apple-music-symbolic"),
+        "tidal" => Some("canto-social-tidal-symbolic"),
+        "deezer" => Some("canto-social-deezer-symbolic"),
+        "amazon_music" => Some("canto-social-amazon-music-symbolic"),
+        "shazam" => Some("canto-social-shazam-symbolic"),
+        _ => None,
+    }
+}
+
 /// The song's cards; the artist's comes later (see [`render_artist`]).
 fn render_song(page: &InfoPage, title: &str, performers: &[String], info: &GeniusTrackInfo) {
     page.clear();
@@ -393,17 +415,19 @@ fn render_artist(page: &InfoPage, artist: &GeniusArtistInfo) {
         let aka = gettext("Also known as {}").replace("{}", &artist.alternate_names.join(", "));
         block.append(&caption(&aka));
     }
+    let has_bio_content = !artist.alternate_names.is_empty() || bio.is_some();
     if let Some(bio) = bio {
         block.append(&folding_text(bio));
     }
     if !artist.links.is_empty() {
-        block.append(&flow(
-            artist
-                .links
-                .iter()
-                .map(|(kind, url)| link_button(&link_label(kind), url.clone()).upcast())
-                .collect(),
-        ));
+        if has_bio_content {
+            let sep = gtk::Separator::new(gtk::Orientation::Horizontal);
+            sep.add_css_class("info-card__separator");
+            block.append(&sep);
+        }
+        // translators: About tab, inside the artist card above external links (Instagram, YouTube, etc.).
+        block.append(&caption(&gettext("Links")));
+        block.append(&artist_links_flow(&artist.links));
     }
     let content = &page.content;
     match content.last_child() {
@@ -413,6 +437,34 @@ fn render_artist(page: &InfoPage, artist: &GeniusArtistInfo) {
         }
         None => content.append(&block),
     }
+}
+
+/// Renders artist external links as clean circular brand icons (falling back
+/// to compact text chips only for unknown platforms).
+fn artist_links_flow(links: &[(String, String)]) -> libadwaita::WrapBox {
+    let browser_tip = gettext("Opens in your browser");
+    let widgets = links
+        .iter()
+        .map(|(kind, url)| {
+            let label = link_label(kind);
+            if let Some(icon) = link_icon(kind) {
+                let btn = gtk::Button::from_icon_name(icon);
+                btn.add_css_class("flat");
+                btn.add_css_class("circular");
+                btn.add_css_class("info-social-icon");
+                btn.set_tooltip_text(Some(&format!("{label} · {browser_tip}")));
+                btn.update_property(&[gtk::accessible::Property::Label(&label)]);
+                let url = url.clone();
+                btn.connect_clicked(move |button| {
+                    crate::app::components::open_external_url(button, &url);
+                });
+                btn.upcast()
+            } else {
+                compact_link_button(&label, url.clone()).upcast()
+            }
+        })
+        .collect();
+    flow(widgets)
 }
 
 /// The tab filled with a sample song, to look at its rendering.
@@ -505,6 +557,13 @@ mod tests {
         assert_eq!(link_label("twitter"), "X");
         assert_eq!(link_label("apple_music"), "Apple Music");
         assert_eq!(link_label("new_site"), "New Site");
+        assert_eq!(
+            link_icon("instagram"),
+            Some("canto-social-instagram-symbolic")
+        );
+        assert_eq!(link_icon("twitter"), Some("canto-social-x-symbolic"));
+        assert_eq!(link_icon("shazam"), Some("canto-social-shazam-symbolic"));
+        assert_eq!(link_icon("new_site"), None);
     }
 
     #[test]

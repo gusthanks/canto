@@ -147,7 +147,6 @@ template $DetailsHeaderWidget : Widget {
 
         Box button_box {
           orientation: horizontal;
-          spacing: 8;
           hexpand: true;
           margin-top: 12;
           // Room for the play button's hover growth and shadow: the header
@@ -155,73 +154,99 @@ template $DetailsHeaderWidget : Widget {
           margin-start: 4;
           margin-bottom: 18;
 
-          Button play_button {
-            icon-name: "media-playback-start-symbolic";
-            halign: center;
-            valign: center;
-            visible: false;
-            tooltip-text: _("Play");
-
-            styles [
-              "circular",
-              "play__button",
-            ]
-          }
-
-          Button shuffle_button {
-            icon-name: "media-playlist-shuffle-symbolic";
-            halign: center;
-            valign: center;
-            visible: false;
-            tooltip-text: _("Shuffle");
-
-            styles [
-              "circular",
-              "shuffle__button",
-            ]
-          }
-
-          Button like_button {
-            icon-name: "canto-heart-symbolic";
-            halign: center;
-            valign: center;
-            visible: false;
-            tooltip-text: _("Add to Library");
-
-            styles [
-              "circular",
-              "like__button",
-            ]
-          }
-
-          Button share_button {
-            icon-name: "folder-publicshare-symbolic";
-            halign: center;
-            valign: center;
-            visible: false;
-            tooltip-text: _("Copy Link");
-
-            styles [
-              "circular",
-              "share__button",
-            ]
-          }
-
-          Box {
+          Adw.WrapBox action_wrap {
             hexpand: true;
-          }
+            child-spacing: 8;
+            line-spacing: 8;
+            justify: fill;
+            justify-last-line: true;
 
-          MenuButton menu_button {
-            icon-name: "view-more-symbolic";
-            halign: center;
-            valign: center;
-            visible: false;
-            tooltip-text: _("More Options");
+            Box primary_buttons {
+              orientation: horizontal;
+              spacing: 8;
+              halign: start;
+              valign: center;
 
-            styles [
-              "circular",
-              "menu__button",
-            ]
+              Button play_button {
+                icon-name: "media-playback-start-symbolic";
+                halign: center;
+                valign: center;
+                visible: false;
+                tooltip-text: _("Play");
+
+                styles [
+                  "circular",
+                  "play__button",
+                ]
+              }
+
+              Button shuffle_button {
+                icon-name: "media-playlist-shuffle-symbolic";
+                halign: center;
+                valign: center;
+                visible: false;
+                tooltip-text: _("Shuffle");
+
+                styles [
+                  "circular",
+                  "shuffle__button",
+                ]
+              }
+
+              Button like_button {
+                icon-name: "canto-heart-symbolic";
+                halign: center;
+                valign: center;
+                visible: false;
+                tooltip-text: _("Add to Library");
+
+                styles [
+                  "circular",
+                  "like__button",
+                ]
+              }
+
+              Button share_button {
+                icon-name: "folder-publicshare-symbolic";
+                halign: center;
+                valign: center;
+                visible: false;
+                tooltip-text: _("Copy Link");
+
+                styles [
+                  "circular",
+                  "share__button",
+                ]
+              }
+            }
+
+            Box trailing_buttons {
+              orientation: horizontal;
+              spacing: 8;
+              halign: end;
+              valign: center;
+              visible: false;
+
+              Box track_controls {
+                orientation: horizontal;
+                spacing: 6;
+                valign: center;
+                visible: false;
+              }
+
+              MenuButton menu_button {
+                icon-name: "view-more-symbolic";
+                halign: center;
+                valign: center;
+                visible: false;
+                tooltip-text: _("More Options");
+
+                styles [
+                  "circular",
+                  "menu__button",
+                ]
+              }
+            }
           }
         }
       }

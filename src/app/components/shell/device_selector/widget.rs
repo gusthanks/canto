@@ -24,19 +24,13 @@ mod imp {
         pub button_content: TemplateChild<libadwaita::ButtonContent>,
 
         #[template_child]
-        pub popover: TemplateChild<gtk::PopoverMenu>,
-
-        #[template_child]
-        pub custom_content: TemplateChild<gtk::Box>,
+        pub popover: TemplateChild<gtk::Popover>,
 
         #[template_child]
         pub devices: TemplateChild<gtk::Box>,
 
         #[template_child]
         pub this_device_button: TemplateChild<gtk::CheckButton>,
-
-        #[template_child]
-        pub menu: TemplateChild<gio::MenuModel>,
 
         pub action_group: SimpleActionGroup,
     }
@@ -67,9 +61,7 @@ mod imp {
         fn constructed(&self) {
             self.parent_constructed();
 
-            let popover: &gtk::PopoverMenu = &self.popover;
-            popover.set_menu_model(Some(&*self.menu));
-            popover.add_child(&*self.custom_content, "custom_content");
+            let popover: &gtk::Popover = &self.popover;
             popover.set_parent(&*self.obj());
             popover.set_autohide(true);
 
@@ -84,8 +76,7 @@ mod imp {
                 popover,
                 move |btn| {
                     let _ = btn.activate_action(&format!("{ACTIONS}.{REFRESH_ACTION}"), None);
-                    popover.set_visible(true);
-                    popover.present();
+                    popover.popup();
                     popover.grab_focus();
                 }
             ));
@@ -121,6 +112,7 @@ impl DeviceSelectorWidget {
     where
         F: Fn(Option<String>) + 'static,
     {
+        let popover = self.imp().popover.downgrade();
         self.imp().action_group.add_action(&{
             let connect = SimpleAction::new_stateful(
                 CONNECT_ACTION,
@@ -130,6 +122,9 @@ impl DeviceSelectorWidget {
             connect.connect_activate(move |action, device_id| {
                 if let Some(device_id) = device_id {
                     action.change_state(device_id);
+                    if let Some(popover) = popover.upgrade() {
+                        popover.popdown();
+                    }
                     f(Option::<String>::from_variant(device_id).unwrap());
                 }
             });
@@ -182,15 +177,22 @@ impl DeviceSelectorWidget {
 
         for device in devices {
             // Icon of the kind of device, then its name
-            let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-            row.append(&gtk::Image::from_icon_name(device_icon(device)));
-            row.append(&gtk::Label::new(Some(&device_label(device))));
+            let row = gtk::Box::new(gtk::Orientation::Horizontal, 10);
+            let icon = gtk::Image::from_icon_name(device_icon(device));
+            icon.set_pixel_size(16);
+            icon.add_css_class("device-selector__icon");
+            let label = gtk::Label::new(Some(&device_label(device)));
+            label.set_xalign(0.0);
+            label.set_hexpand(true);
+            row.append(&icon);
+            row.append(&label);
             let check = gtk::CheckButton::builder()
                 .action_name(format!("{}.{}", ACTIONS, CONNECT_ACTION))
                 .action_target(&Some(&device.id).to_variant())
                 .group(&*widget.this_device_button)
                 .child(&row)
                 .build();
+            check.add_css_class("device-selector__row");
             widget.devices.append(&check);
         }
     }

@@ -108,6 +108,20 @@
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-translate-symbolic.svg">../data/hicolor/symbolic/actions/canto-translate-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-heart-symbolic.svg">../data/hicolor/symbolic/actions/canto-heart-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-heart-filled-symbolic.svg">../data/hicolor/symbolic/actions/canto-heart-filled-symbolic.svg</file>
+    <!-- artist social & streaming platform icons (About tab) -->
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-social-web-symbolic.svg">../data/hicolor/symbolic/actions/canto-social-web-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-social-instagram-symbolic.svg">../data/hicolor/symbolic/actions/canto-social-instagram-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-social-x-symbolic.svg">../data/hicolor/symbolic/actions/canto-social-x-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-social-facebook-symbolic.svg">../data/hicolor/symbolic/actions/canto-social-facebook-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-social-youtube-symbolic.svg">../data/hicolor/symbolic/actions/canto-social-youtube-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-social-tiktok-symbolic.svg">../data/hicolor/symbolic/actions/canto-social-tiktok-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-social-soundcloud-symbolic.svg">../data/hicolor/symbolic/actions/canto-social-soundcloud-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-social-spotify-symbolic.svg">../data/hicolor/symbolic/actions/canto-social-spotify-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-social-apple-music-symbolic.svg">../data/hicolor/symbolic/actions/canto-social-apple-music-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-social-tidal-symbolic.svg">../data/hicolor/symbolic/actions/canto-social-tidal-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-social-deezer-symbolic.svg">../data/hicolor/symbolic/actions/canto-social-deezer-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-social-amazon-music-symbolic.svg">../data/hicolor/symbolic/actions/canto-social-amazon-music-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-social-shazam-symbolic.svg">../data/hicolor/symbolic/actions/canto-social-shazam-symbolic.svg</file>
     <!-- fallback copies of Adwaita icons for themes that lack them -->
     <file compressed="true" preprocess="xml-stripblanks" alias="audio-speakers-symbolic.svg">../data/hicolor/symbolic/actions/audio-speakers-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="audio-x-generic-symbolic.svg">../data/hicolor/symbolic/actions/audio-x-generic-symbolic.svg</file>

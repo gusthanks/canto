@@ -301,7 +301,13 @@ fn assert_save_queue_as_playlist_button() {
     window.present();
     wait_mapped(&page, 200);
 
-    page.save_playlist_button_for_tests().emit_clicked();
+    let btn = page.save_playlist_button_for_tests();
+    assert_eq!(btn.icon_name().as_deref(), Some("list-add-symbolic"));
+    assert!(
+        btn.label().is_none(),
+        "Save Queue as Playlist should be a compact icon-only button"
+    );
+    btn.emit_clicked();
     pump(200);
     assert!(opened.get(), "clicking Save as Playlist opens dialog");
     let dialog = window

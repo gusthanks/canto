@@ -28,6 +28,8 @@ mod imp {
         #[template_child]
         pub recent_toggle: TemplateChild<gtk::Button>,
         #[template_child]
+        pub recent_chevron_button: TemplateChild<gtk::Button>,
+        #[template_child]
         pub recent_chevron: TemplateChild<gtk::Image>,
         #[template_child]
         pub recent_revealer: TemplateChild<gtk::Revealer>,
@@ -41,8 +43,6 @@ mod imp {
         pub recent_status: TemplateChild<gtk::Label>,
         #[template_child]
         pub queue_stack: TemplateChild<gtk::Stack>,
-        #[template_child]
-        pub queue_actions: TemplateChild<gtk::Box>,
         #[template_child]
         pub save_playlist_button: TemplateChild<gtk::Button>,
         #[template_child]
@@ -83,9 +83,14 @@ mod imp {
         fn constructed(&self) {
             self.parent_constructed();
             let revealer = self.recent_revealer.get();
-            self.recent_toggle.connect_clicked(move |_| {
-                revealer.set_reveal_child(!revealer.reveals_child());
-            });
+            let toggle_revealer = {
+                let revealer = revealer.clone();
+                move |_: &gtk::Button| {
+                    revealer.set_reveal_child(!revealer.reveals_child());
+                }
+            };
+            self.recent_toggle.connect_clicked(toggle_revealer.clone());
+            self.recent_chevron_button.connect_clicked(toggle_revealer);
             let obj = self.obj().downgrade();
             self.recent_revealer
                 .connect_reveal_child_notify(move |revealer| {
@@ -174,11 +179,11 @@ impl QueuePageWidget {
     }
 
     pub fn set_save_playlist_visible(&self, visible: bool) {
-        self.imp().queue_actions.set_visible(visible);
+        self.imp().save_playlist_button.set_visible(visible);
     }
 
     pub fn is_save_playlist_visible(&self) -> bool {
-        self.imp().queue_actions.is_visible()
+        self.imp().save_playlist_button.is_visible()
     }
 
     pub fn connect_save_playlist<F: Fn(&gtk::Button) + 'static>(&self, f: F) {

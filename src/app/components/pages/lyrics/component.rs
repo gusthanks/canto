@@ -98,20 +98,6 @@ impl LyricsPage {
 
     fn setup_controls(&self) {
         let weak_model = Rc::downgrade(&self.app_model);
-        let weak_widget = self.widget.downgrade();
-        self.widget.connect_open_genius(move |button| {
-            // Lyrics read from Genius: straight to the page they came from
-            let page = weak_widget
-                .upgrade()
-                .and_then(|widget| widget.source())
-                .and_then(|source| source.genius_url().map(str::to_owned));
-            if let Some(url) = page {
-                crate::app::components::open_external_url(button, &url);
-            } else if let Some(model) = weak_model.upgrade() {
-                open_genius_page(button, &model);
-            }
-        });
-        let weak_model = Rc::downgrade(&self.app_model);
         self.widget.connect_web_search(move |button| {
             let Some(track) = weak_model
                 .upgrade()
@@ -767,43 +753,6 @@ fn web_lyrics_search_url(artist: &str, title: &str) -> String {
 }
 
 const WEB_SEARCH: &str = "https://www.google.com/search";
-
-/// Opens the playing song's page on Genius (where its lyrics can be read,
-/// fixed or added), or a Genius search when there's no token or no match.
-fn open_genius_page(button: &gtk::Button, app_model: &Rc<AppModel>) {
-    let Some(track) = app_model.get_state().playback.current_song() else {
-        return;
-    };
-    let api = app_model.api();
-    let artist = track.artists_name();
-    let title = track.title.clone();
-    let track_id = track.rri.id.clone();
-    let search = api.genius_search_url(&artist, &title);
-    let token = gio::Settings::new(SETTINGS)
-        .string(GENIUS_ACCESS_TOKEN)
-        .trim()
-        .to_string();
-    if token.is_empty() {
-        crate::app::components::open_external_url(button, &search);
-        return;
-    }
-    let button = button.clone();
-    glib::spawn_future_local(async move {
-        // Cached after the first look-up (the credits card makes the same one)
-        let url = match api
-            .fetch_genius_track_info(&track_id, &artist, &title, &token)
-            .await
-        {
-            Ok(info) if !info.url.is_empty() => info.url,
-            Ok(_) => search,
-            Err(e) => {
-                warn!("Genius page look-up failed: {e}");
-                search
-            }
-        };
-        crate::app::components::open_external_url(&button, &url);
-    });
-}
 
 /// Marks the lines Genius explains (with a Genius token).
 fn annotate_lyrics(widget: &LyricsPageWidget, app_model: &Rc<AppModel>, track_id: &str) {

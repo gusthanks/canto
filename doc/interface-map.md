@@ -238,7 +238,8 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   Now Playing; it opens scrolled to its end and follows it until a scroll by
   hand. Unfolded it shows three songs (`RECENT_VISIBLE_ROWS`,
   `fit_recent_rows`), measured from the rows. Each song has a heart.
-- `save_playlist_button` (`queue_actions`, `save_queue_as_playlist`) saves the
+- `save_playlist_button` (compact icon-only button in `recent_header`, beside
+  `recent_chevron_button`, handled by `save_queue_as_playlist`) saves the
   playable queue tracks into a new playlist through
   `PlaylistDialog::for_saving_queue`. Movable rows expose Move Up and Move Down
   in the row menu (`menu_opening_for` enables each direction lazily on
@@ -253,13 +254,11 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
 
 ## 6. Lyrics (`src/app/components/pages/lyrics/`)
 
-- The lyrics bar (`lyrics_page.blp`): reload, `genius_button` (the Genius
-  page of the song, for lyrics shown from Genius: `connect_open_genius`,
-  `open_genius_page` in `component.rs`), `sync_button` (a stopwatch,
-  `canto-lyrics-sync-symbolic`, with a popover of -100 / 0 / +100 ms; any
-  shift lights it with `lyric-sync-button--shifted`), the translate capsule
-  `translate_group` (`linked`, `lyrics-translate-group`: translate, then the
-  language arrow) and full screen.
+- The lyrics bar (`lyrics_page.blp`): the translate capsule `translate_group`
+  (`linked`, `lyrics-translate-group`: translate, then the language arrow),
+  `sync_button` (a stopwatch, `canto-lyrics-sync-symbolic`, with a popover of
+  -100 / 0 / +100 ms; any shift lights it with `lyric-sync-button--shifted`),
+  reload and full screen.
 - One quiet line above the lyrics says where they came from (`lyrics_source`,
   `lyrics-source`), in the panel and in full screen. LRCLIB comes first;
   Genius only when LRCLIB has none, matched strictly on title and artist.

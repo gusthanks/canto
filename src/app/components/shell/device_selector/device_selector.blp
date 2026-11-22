@@ -21,46 +21,100 @@ template $DeviceSelectorWidget : Button {
   }
 }
 
-menu menu {
-  section {
-    label: _("Playing On");
+Popover popover {
+  autohide: true;
 
-    item {
-      custom: "custom_content";
-    }
-  }
+  styles [
+    "menu",
+    "device-selector-popover",
+  ]
 
-  section {
-    item {
-      label: _("Refresh Devices");
-      action: "devices.refresh";
-    }
-  }
-}
-
-PopoverMenu popover {
-}
-
-Box custom_content {
-  orientation: vertical;
-
-  CheckButton this_device_button {
-    sensitive: true;
-
-    child: Box {
-      spacing: 8;
-
-      Image {
-        icon-name: "canto-device-computer-symbolic";
-      }
-
-      Label {
-        label: _("This Device");
-      }
-    };
-  }
-
-  Box devices {
+  Box {
     orientation: vertical;
+    spacing: 2;
+
+    Label {
+      label: _("Playing On");
+      xalign: 0;
+
+      styles [
+        "caption-heading",
+        "dim-label",
+        "device-selector__heading",
+      ]
+    }
+
+    Box custom_content {
+      orientation: vertical;
+      spacing: 2;
+
+      CheckButton this_device_button {
+        sensitive: true;
+
+        styles [
+          "device-selector__row",
+        ]
+
+        child: Box {
+          spacing: 10;
+
+          Image {
+            icon-name: "canto-device-computer-symbolic";
+            pixel-size: 16;
+
+            styles [
+              "device-selector__icon",
+            ]
+          }
+
+          Label {
+            label: _("This Device");
+            xalign: 0;
+            hexpand: true;
+          }
+        };
+      }
+
+      Box devices {
+        orientation: vertical;
+        spacing: 2;
+      }
+    }
+
+    Separator {
+      orientation: horizontal;
+
+      styles [
+        "device-selector__separator",
+      ]
+    }
+
+    Button refresh_button {
+      action-name: "devices.refresh";
+
+      styles [
+        "flat",
+        "device-selector__action",
+      ]
+
+      Box {
+        spacing: 10;
+
+        Image {
+          icon-name: "view-refresh-symbolic";
+          pixel-size: 16;
+
+          styles [
+            "device-selector__icon",
+          ]
+        }
+
+        Label {
+          label: _("Refresh Devices");
+          xalign: 0;
+          hexpand: true;
+        }
+      }
+    }
   }
 }

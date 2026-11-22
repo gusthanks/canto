@@ -44,8 +44,6 @@ mod imp {
         #[template_child]
         pub reload_button: TemplateChild<gtk::Button>,
         #[template_child]
-        pub genius_button: TemplateChild<gtk::Button>,
-        #[template_child]
         pub web_search_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub add_lyrics_button: TemplateChild<gtk::Button>,
@@ -234,11 +232,6 @@ impl LyricsPageWidget {
 
     pub fn connect_offset_reset<F: Fn() + 'static>(&self, f: F) {
         self.imp().offset_reset_button.connect_clicked(move |_| f());
-    }
-
-    /// The Genius button in the lyrics bar.
-    pub fn connect_open_genius<F: Fn(&gtk::Button) + 'static>(&self, f: F) {
-        self.imp().genius_button.connect_clicked(move |b| f(b));
     }
 
     /// The button shown when no source had the lyrics.

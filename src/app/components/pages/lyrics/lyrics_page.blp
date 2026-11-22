@@ -153,25 +153,33 @@ template $LyricsPageWidget : Adw.Bin {
         "lyric-sync-bar",
       ]
 
-      Button reload_button {
-        icon-name: "view-refresh-symbolic";
-        tooltip-text: _("Reload lyrics");
-
+      // Translate and its language read as one control
+      Box translate_group {
         styles [
-          "flat",
-          "circular",
+          "linked",
+          "lyrics-translate-group",
         ]
-      }
 
-      Button genius_button {
-        icon-name: "canto-genius-symbolic";
-        /* Translators: Tooltip of the lyrics button that opens the song's page on Genius (to read or fix its lyrics). */
-        tooltip-text: _("Open on Genius");
+        ToggleButton translate_button {
+          icon-name: "canto-translate-symbolic";
+          /* Translators: Tooltip of the lyrics button that shows a translation under each line. */
+          tooltip-text: _("Translate Lyrics");
 
-        styles [
-          "flat",
-          "circular",
-        ]
+          styles [
+            "flat",
+          ]
+        }
+
+        MenuButton translate_language_button {
+          icon-name: "pan-down-symbolic";
+          /* Translators: Tooltip of the button that picks the language lyrics are translated into. */
+          tooltip-text: _("Translation Language");
+
+          styles [
+            "flat",
+            "lyrics-translate-language",
+          ]
+        }
       }
 
       MenuButton sync_button {
@@ -311,33 +319,14 @@ template $LyricsPageWidget : Adw.Bin {
         };
       }
 
-      // Translate and its language read as one control
-      Box translate_group {
+      Button reload_button {
+        icon-name: "view-refresh-symbolic";
+        tooltip-text: _("Reload lyrics");
+
         styles [
-          "linked",
-          "lyrics-translate-group",
+          "flat",
+          "circular",
         ]
-
-        ToggleButton translate_button {
-          icon-name: "canto-translate-symbolic";
-          /* Translators: Tooltip of the lyrics button that shows a translation under each line. */
-          tooltip-text: _("Translate Lyrics");
-
-          styles [
-            "flat",
-          ]
-        }
-
-        MenuButton translate_language_button {
-          icon-name: "pan-down-symbolic";
-          /* Translators: Tooltip of the button that picks the language lyrics are translated into. */
-          tooltip-text: _("Translation Language");
-
-          styles [
-            "flat",
-            "lyrics-translate-language",
-          ]
-        }
       }
 
       Button fullscreen_button {

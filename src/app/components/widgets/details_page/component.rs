@@ -97,6 +97,7 @@ impl<M: PinnedPageModel + 'static> DetailsPageComponent<M> {
             .build();
         filter_toggle.add_css_class("flat");
         filter_toggle.add_css_class("circular");
+        filter_toggle.add_css_class("details-header__filter");
 
         let sort_labels = gtk::StringList::new(&[
             // translators: Track sort option keeping album/playlist original track order.
@@ -116,7 +117,11 @@ impl<M: PinnedPageModel + 'static> DetailsPageComponent<M> {
 
         controls.append(&filter_toggle);
         controls.append(&sort_dropdown);
-        section.set_button(&controls);
+        if label.is_some() {
+            section.set_button(&controls);
+        } else {
+            self.page.header().set_track_controls(&controls);
+        }
 
         let search_entry = gtk::SearchEntry::builder()
             // translators: Placeholder in the in-page filter bar for playlists, albums, and Liked Songs.

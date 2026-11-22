@@ -208,10 +208,27 @@ bottom-sheet.bottom-sheet--padded > sheet {
 }
 
 /* Recently Played, folded above the queue */
-.queue-page__recent-toggle {
+.queue-page__recent-header {
   margin: 0 12px;
+}
+
+.queue-page__recent-toggle {
   padding: 6px 12px;
   border-radius: 8px;
+}
+
+.queue-page__save-playlist {
+  opacity: 0.62;
+  transition: opacity 120ms ease-out;
+}
+
+.queue-page__save-playlist:hover,
+.queue-page__save-playlist:focus-visible {
+  opacity: 1;
+}
+
+.queue-page__recent-chevron {
+  opacity: 0.78;
 }
 
 /* The bottom padding is RECENT_LIST_BOTTOM_PADDING in queue/widget.rs */
@@ -607,16 +624,25 @@ bottom-sheet.bottom-sheet--padded > sheet {
 /* The page's bar over album, playlist and artist pages: see-through until
    the page is scrolled and its title shows. Then the page card's own
    background and a thin edge, as the list scrolls up under the bar */
+.page-bar--clear,
 .page-bar--clear headerbar {
   background: transparent;
   box-shadow: none;
 }
 
-.page-bar--solid headerbar {
+.page-bar--solid {
   background-color: @view_bg_color;
-  box-shadow: 0 1px alpha(@window_fg_color, 0.08);
+  border-radius: 10px 10px 0 0;
+  box-shadow: 0 -2px 0 0 @view_bg_color;
 }
 
+.page-bar--solid headerbar {
+  background-color: @view_bg_color;
+  box-shadow: 0 1px alpha(@window_fg_color, 0.08), 0 -2px 0 0 @view_bg_color;
+}
+
+.page-bar--clear,
+.page-bar--solid,
 .page-bar--clear headerbar,
 .page-bar--solid headerbar {
   transition: background-color 250ms ease-out, box-shadow 250ms ease-out;
@@ -702,6 +728,56 @@ button.info-pill {
   font-weight: 600;
 }
 
+button.flat.info-more {
+  min-height: 0;
+  padding: 4px 8px;
+  margin-left: -8px;
+  margin-top: 2px;
+  font-size: 0.9em;
+  font-weight: 600;
+  opacity: 0.82;
+}
+
+button.flat.info-more:hover {
+  opacity: 1;
+}
+
+.info-card__separator {
+  margin: 4px 0 2px 0;
+  opacity: 0.55;
+}
+
+button.info-social-icon {
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  background-color: alpha(currentColor, 0.07);
+  opacity: 0.86;
+  transition: background-color 140ms ease, opacity 140ms ease;
+}
+
+button.info-social-icon:hover {
+  background-color: alpha(currentColor, 0.14);
+  opacity: 1;
+}
+
+button.info-social-icon image {
+  -gtk-icon-size: 16px;
+}
+
+button.info-link-chip {
+  min-height: 26px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.85em;
+  font-weight: 500;
+  background-color: alpha(currentColor, 0.08);
+}
+
+button.info-link-chip:hover {
+  background-color: alpha(currentColor, 0.14);
+}
+
 .info-row {
   padding: 6px 8px;
   margin: 0 -8px;
@@ -771,6 +847,12 @@ overlay-split-view.canto-cards > .sidebar-pane.end {
   margin: 8px 4px 8px 4px;
   border-radius: 10px;
   background-color: @view_bg_color;
+}
+
+/* ClipBin inside the page card matches the card's rounded corners at every
+   fractional scale so scrolled covers and headerbars never bleed at the edge */
+overlay-split-view.canto-cards overlay-split-view.canto-cards > .content-pane > * {
+  border-radius: 10px;
 }
 
 overlay-split-view.canto-cards overlay-split-view.canto-cards > .sidebar-pane:not(.end) {
@@ -915,4 +997,43 @@ overlay-split-view.utility-split--floating > border {
   border-radius: 3px;
   background-color: alpha(currentColor, 0.16);
   color: alpha(currentColor, 0.78);
+}
+
+/* Device selector ("Playing On") popover */
+.device-selector-popover contents {
+  padding: 6px;
+  min-width: 224px;
+}
+
+.device-selector__heading {
+  padding: 4px 10px 6px 10px;
+}
+
+.device-selector__row {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border-spacing: 10px;
+  font-weight: 500;
+}
+
+.device-selector__row:hover {
+  background-color: alpha(currentColor, 0.07);
+}
+
+.device-selector__row radio {
+  margin: 0;
+}
+
+.device-selector__action {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.device-selector__icon {
+  opacity: 0.85;
+}
+
+.device-selector__separator {
+  margin: 4px 6px;
 }

@@ -43,18 +43,24 @@ template $QueuePageWidget : Adw.Bin {
         "queue-page__recent",
       ]
 
-      Button recent_toggle {
-        focus-on-click: false;
+      Box recent_header {
+        orientation: horizontal;
+        spacing: 2;
 
         styles [
-          "flat",
-          "queue-page__recent-toggle",
+          "queue-page__recent-header",
         ]
 
-        child: Box {
-          spacing: 8;
+        Button recent_toggle {
+          hexpand: true;
+          focus-on-click: false;
 
-          Label {
+          styles [
+            "flat",
+            "queue-page__recent-toggle",
+          ]
+
+          child: Label {
             /* Translators: Header above the queue in the side panel; clicking it shows or hides the songs played lately. */
             label: _("Recently Played");
             xalign: 0;
@@ -64,12 +70,39 @@ template $QueuePageWidget : Adw.Bin {
             styles [
               "heading",
             ]
-          }
+          };
+        }
 
-          Image recent_chevron {
+        Button save_playlist_button {
+          visible: false;
+          focus-on-click: false;
+          valign: center;
+          icon-name: "list-add-symbolic";
+          /* Translators: Tooltip on the compact "+" icon button on the queue page that saves the current play queue into a new playlist. */
+          tooltip-text: _("Save Queue as Playlist");
+
+          styles [
+            "flat",
+            "circular",
+            "queue-page__save-playlist",
+          ]
+        }
+
+        Button recent_chevron_button {
+          focus-on-click: false;
+          valign: center;
+          tooltip-text: _("Recently Played");
+
+          styles [
+            "flat",
+            "circular",
+            "queue-page__recent-chevron",
+          ]
+
+          child: Image recent_chevron {
             icon-name: "pan-end-symbolic";
-          }
-        };
+          };
+        }
       }
 
       Revealer recent_revealer {
@@ -145,37 +178,9 @@ template $QueuePageWidget : Adw.Bin {
       StackPage {
         name: "list";
 
-        child: Box {
-          orientation: vertical;
-
-          Box queue_actions {
-            visible: false;
-            margin-start: 12;
-            margin-end: 12;
-            margin-top: 6;
-            margin-bottom: 2;
-
-            Button save_playlist_button {
-              halign: end;
-              hexpand: true;
-              focus-on-click: false;
-
-              styles [
-                "flat",
-              ]
-
-              child: Adw.ButtonContent {
-                icon-name: "list-add-symbolic";
-                /* Translators: Button on the queue page that saves the current play queue into a new playlist. */
-                label: _("Save as Playlist…");
-              };
-            }
-          }
-
-          ScrolledWindow queue_scroller {
-            hscrollbar-policy: never;
-            vexpand: true;
-          }
+        child: ScrolledWindow queue_scroller {
+          hscrollbar-policy: never;
+          vexpand: true;
         };
       }
 

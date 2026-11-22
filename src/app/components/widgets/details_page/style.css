@@ -53,7 +53,7 @@
   animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
 
-.details-page-content .details-header .circular:not(.play__button):not(.like__button):not(.shuffle__button):not(.menu__button):not(.share__button) {
+.details-page-content .details-header .circular:not(.play__button):not(.like__button):not(.shuffle__button):not(.menu__button):not(.share__button):not(.details-header__filter) {
   background-color: @skeleton_color;
   color: transparent;
   opacity: 0;
@@ -66,7 +66,9 @@
 .details-page-content:not(.details-page--loaded) .details-header .like-pin__button > button,
 .details-page-content:not(.details-page--loaded) .details-header .like-pin__button revealer > box > button,
 .details-page-content:not(.details-page--loaded) .details-header .menu__button > button,
-.details-page-content:not(.details-page--loaded) .details-header .share__button {
+.details-page-content:not(.details-page--loaded) .details-header .share__button,
+.details-page-content:not(.details-page--loaded) .details-header .details-header__filter,
+.details-page-content:not(.details-page--loaded) .details-header .details-section__sort > button {
   background-color: @skeleton_color;
   color: transparent;
   animation: skeleton-pulse 1.5s ease-in-out infinite;
@@ -95,7 +97,7 @@
   min-width: unset;
 }
 
-.details-page--loaded .details-header .circular:not(.play__button):not(.like__button):not(.shuffle__button):not(.menu__button):not(.share__button) {
+.details-page--loaded .details-header .circular:not(.play__button):not(.like__button):not(.shuffle__button):not(.menu__button):not(.share__button):not(.details-header__filter) {
   animation: none;
   background-color: transparent;
   color: inherit;
@@ -280,6 +282,12 @@ headerbar.details__headerbar windowtitle {
 
 .details-section__sort {
   min-height: 30px;
+}
+
+.details-section__sort > button {
+  min-height: 32px;
+  padding: 2px 10px;
+  font-weight: 500;
 }
 
 .details-section__filter-entry {
