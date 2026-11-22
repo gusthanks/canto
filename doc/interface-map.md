@@ -422,6 +422,11 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   a WCAG contrast-safe cover accent (`compute_accessible_cover_accent`,
   `build_theme_css_with_options`) to UI accent tokens on both dark and light
   themes.
+- Album, playlist and artist pages get a gradient of the cover's color
+  behind their header (`set_tint`, `src/app/components/widgets/details_page/tint.rs`).
+  `readable_tint` darkens it in dark themes and lightens it in light ones
+  until the title keeps 3:1 contrast over its top (a white cover made the
+  title vanish); the tints are rewritten when the theme turns light or dark.
 - `VisualBridge` (`src/app/components/visual_bridge.rs`, enabled via
   `visual_bridge_switch` / `visual-bridge-enabled`) publishes
   `VisualBridgeState` including the live synced lyric line

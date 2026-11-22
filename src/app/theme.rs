@@ -781,7 +781,7 @@ fn blend_hex(from: &str, to: &str, ratio: f64) -> Option<String> {
     Some(rgb_to_hex(r, g, bl))
 }
 
-fn relative_luminance(r: u8, g: u8, b: u8) -> f64 {
+pub(crate) fn relative_luminance(r: u8, g: u8, b: u8) -> f64 {
     let channel = |c: u8| {
         let s = f64::from(c) / 255.0;
         if s <= 0.04045 {
@@ -793,7 +793,7 @@ fn relative_luminance(r: u8, g: u8, b: u8) -> f64 {
     0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
 }
 
-fn wcag_contrast_ratio(a: (u8, u8, u8), b: (u8, u8, u8)) -> f64 {
+pub(crate) fn wcag_contrast_ratio(a: (u8, u8, u8), b: (u8, u8, u8)) -> f64 {
     let la = relative_luminance(a.0, a.1, a.2);
     let lb = relative_luminance(b.0, b.1, b.2);
     let (lighter, darker) = if la >= lb { (la, lb) } else { (lb, la) };
