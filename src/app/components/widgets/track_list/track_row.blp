@@ -121,9 +121,28 @@ template $TrackRow : Box {
               ]
             }
 
-            $SubtitleLinksBox song_artist {
-              halign: start;
-              height-request: 18;
+            Box subtitle_box {
+              orientation: horizontal;
+              spacing: 6;
+              valign: center;
+
+              Label song_explicit {
+                label: "E";
+                visible: false;
+                valign: center;
+                /* Translators: Tooltip on the compact "E" badge for explicit tracks. */
+                tooltip-text: _("Explicit");
+
+                styles [
+                  "song__explicit",
+                ]
+              }
+
+              $SubtitleLinksBox song_artist {
+                halign: start;
+                hexpand: true;
+                height-request: 18;
+              }
             }
           }
 

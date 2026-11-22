@@ -11,7 +11,7 @@ pub mod tracker;
 
 pub use lastfm::{
     build_auth_url, clean_lastfm_wiki, parse_track_insights, sign_lastfm_params, LastFmClient,
-    LastFmSession, ListeningStats, Playcounts, StatsPeriod, TopItem, TrackInsights,
+    LastFmSession, ListeningStats, Playcounts, StatsPeriod, TopItem, TrackInsights, TrackStats,
 };
 pub use listenbrainz::ListenBrainzClient;
 pub use queue::{PendingScrobble, RetryQueue, ScrobbleTarget, MAX_QUEUE_ITEMS};

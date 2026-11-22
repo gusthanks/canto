@@ -65,19 +65,38 @@ template $PlaybackInfoWidget : Box {
       ]
     }
 
-    Label song_artist {
+    Box {
+      orientation: horizontal;
       halign: start;
-      xalign: 0;
-      width-chars: 12;
-      max-width-chars: 28;
-      ellipsize: end;
-      single-line-mode: true;
+      valign: center;
+      spacing: 6;
 
-      styles [
-        "caption",
-        "dim-label",
-        "track-links",
-      ]
+      Label explicit_badge {
+        label: "E";
+        visible: false;
+        valign: center;
+        /* Translators: Tooltip on the compact "E" badge for explicit tracks. */
+        tooltip-text: _("Explicit");
+
+        styles [
+          "explicit-badge",
+        ]
+      }
+
+      Label song_artist {
+        halign: start;
+        xalign: 0;
+        width-chars: 12;
+        max-width-chars: 28;
+        ellipsize: end;
+        single-line-mode: true;
+
+        styles [
+          "caption",
+          "dim-label",
+          "track-links",
+        ]
+      }
     }
   }
 

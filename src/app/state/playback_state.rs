@@ -345,9 +345,29 @@ impl PlaybackState {
     }
 
     fn play_next_events(&mut self, auto: bool) -> Vec<PlaybackEvent> {
-        if !auto && !self.is_local() && !self.has_next() {
-            // The device knows its real queue, which Canto may only partly see
-            return vec![PlaybackEvent::RemoteSkip(true)];
+        if !auto && !self.is_local() {
+            if !self.has_next() {
+                // The device knows its real queue, which Canto may only partly see
+                return vec![PlaybackEvent::RemoteSkip(true)];
+            }
+            // When the immediate next track isn't skipped by `skip_explicit` or
+            // unplayability, update Canto's UI optimistically and send a direct
+            // skip command (`soloist ctl next` / MPRIS `Next` / `/player/next`)
+            // instead of reloading the whole context over Spotify Web API.
+            let raw_next = self.queue.peek_next(false, self.repeat, |_| false);
+            let skip = self.skipper();
+            let filtered_next = self.queue.peek_next(false, self.repeat, skip);
+            let direct_step = match (raw_next, filtered_next) {
+                (Some(raw), Some(filtered)) => raw.rri.id == filtered.rri.id,
+                _ => false,
+            };
+            if direct_step && self.play_next_skippable(false).is_some() {
+                return vec![
+                    PlaybackEvent::TrackSynced,
+                    PlaybackEvent::SeekSynced(0),
+                    PlaybackEvent::RemoteSkip(true),
+                ];
+            }
         }
         if let Some(id) = self.play_next_skippable(auto) {
             vec![PlaybackEvent::TrackChanged(id)]
@@ -380,6 +400,13 @@ impl PlaybackState {
             let skip = self.skipper();
             if self.queue.go_back(self.repeat, skip).is_some() {
                 if let Some(id) = self.started_playing() {
+                    if !self.is_local() && !self.skip_explicit {
+                        return vec![
+                            PlaybackEvent::TrackSynced,
+                            PlaybackEvent::SeekSynced(0),
+                            PlaybackEvent::RemoteSkip(false),
+                        ];
+                    }
                     return vec![PlaybackEvent::TrackChanged(id)];
                 }
             }
@@ -2090,9 +2117,13 @@ mod tests {
         assert_eq!(state.current_source(), Some(&source));
 
         let events = state.act(PlaybackAction::Previous);
+        assert_eq!(state.current_song_id().as_deref(), Some("2"));
         assert!(events
             .iter()
-            .any(|e| matches!(e, PlaybackEvent::TrackChanged(id) if id == "2")));
+            .any(|e| matches!(e, PlaybackEvent::TrackSynced)));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::RemoteSkip(false))));
 
         // A track from elsewhere still takes Spotify's queue
         state.act(PlaybackAction::SyncRemoteState(Box::new(
@@ -2142,6 +2173,50 @@ mod tests {
             .iter()
             .any(|e| matches!(e, PlaybackEvent::PlaybackStopped)));
         assert_eq!(state.is_playing(), was_playing);
+    }
+
+    #[test]
+    fn connect_device_uses_fast_remote_skip_for_known_adjacent_tracks() {
+        let mut state = playing(&["1", "2", "3"], "2");
+        state.act(PlaybackAction::SwitchDevice(connect_device("Canto")));
+
+        let next = state.act(PlaybackAction::Next);
+        assert_eq!(state.current_song_id().as_deref(), Some("3"));
+        assert!(next.iter().any(|e| matches!(e, PlaybackEvent::TrackSynced)));
+        assert!(next
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::RemoteSkip(true))));
+        assert!(!next
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::TrackChanged(_))));
+
+        let prev = state.act(PlaybackAction::Previous);
+        assert_eq!(state.current_song_id().as_deref(), Some("2"));
+        assert!(prev.iter().any(|e| matches!(e, PlaybackEvent::TrackSynced)));
+        assert!(prev
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::RemoteSkip(false))));
+        assert!(!prev
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::TrackChanged(_))));
+
+        // When skip_explicit skips over an explicit next track, fall back to TrackChanged
+        // so Connect loads the non-explicit track directly instead of landing on the explicit one.
+        let mut explicit_track = song("2");
+        explicit_track.content_rating = canto_api::models::ContentRating::Explicit;
+        let mut state = PlaybackState::default();
+        load(&mut state, vec![song("1"), explicit_track, song("3")]);
+        state.play("1");
+        state.act(PlaybackAction::SwitchDevice(connect_device("Canto")));
+        state.act(PlaybackAction::SetSkipExplicit(true));
+        let jumped = state.act(PlaybackAction::Next);
+        assert_eq!(state.current_song_id().as_deref(), Some("3"));
+        assert!(jumped
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::TrackChanged(id) if id == "3")));
+        assert!(!jumped
+            .iter()
+            .any(|e| matches!(e, PlaybackEvent::RemoteSkip(_))));
     }
 
     #[test]

@@ -154,7 +154,7 @@ fn ctl(args: &[&str]) -> Result<String, String> {
         match child.try_wait() {
             Ok(Some(_)) => break,
             Ok(None) if started.elapsed() < CTL_TIMEOUT => {
-                std::thread::sleep(Duration::from_millis(15))
+                std::thread::sleep(Duration::from_millis(2))
             }
             _ => {
                 let _ = child.kill();
@@ -295,6 +295,11 @@ pub fn previous() -> Result<(), String> {
 /// Plays a Spotify URI (a track, album or playlist) from its start.
 pub fn open_uri(uri: &str) -> Result<(), String> {
     ctl(&["play", uri]).map(drop)
+}
+
+/// Appends a Spotify track URI directly to Soloist's queue locally.
+pub fn add_to_queue(uri: &str) -> Result<(), String> {
+    ctl(&["add-to-queue", uri]).map(drop)
 }
 
 pub fn seek(position_ms: u32) -> Result<(), String> {

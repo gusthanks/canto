@@ -277,6 +277,12 @@ pub trait MusicProvider: Send + Sync + 'static {
     async fn player_add_to_queue(&self, _device_id: &str, _uri: &str) -> Result<(), DomainError> {
         Ok(())
     }
+    async fn player_next(&self, _device_id: &str) -> Result<(), DomainError> {
+        Ok(())
+    }
+    async fn player_previous(&self, _device_id: &str) -> Result<(), DomainError> {
+        Ok(())
+    }
 
     /// Drop any cached auth configuration (e.g. after a 401).
     fn invalidate_config(&self);

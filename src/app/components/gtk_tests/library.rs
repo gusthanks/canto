@@ -37,6 +37,10 @@ gtk_tests! {
         force_dark();
         assert_track_menu_sections_icons_and_details_dialog();
     },
+    track_row_shows_explicit_badge => || {
+        force_dark();
+        assert_track_row_shows_explicit_badge();
+    },
 }
 
 /// The sidebar's grid of covers: section titles stay out of it, and in the
@@ -1141,4 +1145,62 @@ fn assert_track_menu_sections_icons_and_details_dialog() {
     pump(50);
     window.destroy();
     eprintln!("track menu icons & details dialog ok");
+}
+
+fn assert_track_row_shows_explicit_badge() {
+    use std::sync::Arc;
+
+    use canto_api::models::ContentRating;
+
+    use crate::app::components::widgets::track_list::{RowOptions, TrackRow};
+    use crate::app::models::{make_track, SongModel};
+
+    let token_provider: Arc<dyn canto_api::TokenProvider> = Arc::new(|| None::<String>);
+    let api = Arc::new(canto_api::spotify_service(
+        Arc::clone(&token_provider),
+        token_provider,
+        1024 * 1024,
+        1024 * 1024,
+    ));
+
+    let mut explicit_track = make_track("trk-exp-1");
+    explicit_track.title = "Explicit Cut".to_string();
+    explicit_track.content_rating = ContentRating::Explicit;
+    let explicit_model = SongModel::new(explicit_track);
+
+    let mut clean_track = make_track("trk-clean-1");
+    clean_track.title = "Clean Cut".to_string();
+    clean_track.content_rating = ContentRating::Clean;
+    let clean_model = SongModel::new(clean_track);
+
+    let row = TrackRow::new();
+    let window = gtk::Window::new();
+    window.set_default_size(560, 120);
+    window.set_child(Some(&row));
+    window.present();
+    pump(50);
+
+    row.bind(&explicit_model, Arc::clone(&api), RowOptions::default());
+    pump(30);
+    assert!(
+        row.is_explicit_badge_visible(),
+        "explicit track must show the E badge"
+    );
+
+    row.bind(&clean_model, Arc::clone(&api), RowOptions::default());
+    pump(30);
+    assert!(
+        !row.is_explicit_badge_visible(),
+        "clean track must hide the E badge"
+    );
+
+    row.bind_skeleton();
+    pump(30);
+    assert!(
+        !row.is_explicit_badge_visible(),
+        "skeleton placeholder row must hide the E badge"
+    );
+
+    window.destroy();
+    eprintln!("track row explicit badge ok");
 }

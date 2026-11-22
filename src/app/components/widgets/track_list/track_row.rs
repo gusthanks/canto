@@ -17,7 +17,7 @@ use crate::app::components::level_bars::{self, LevelBars};
 use crate::app::components::utils::{add_hover_class, decode_px, set_css_class, set_missing_art};
 use crate::app::components::{display_add_css_provider, labels, SubtitleLinksBox};
 use crate::app::load;
-use crate::app::models::{SongModel, Track};
+use crate::app::models::{SongModel, Track, TrackExt};
 
 /// Height of every track list row, tracks and disc headers alike.
 pub const ROW_HEIGHT_PX: i32 = 56;
@@ -119,6 +119,8 @@ mod imp {
         pub title_artist_box: TemplateChild<gtk::Box>,
         #[template_child]
         pub song_title: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub song_explicit: TemplateChild<gtk::Label>,
         #[template_child]
         pub song_artist: TemplateChild<SubtitleLinksBox>,
         #[template_child]
@@ -463,6 +465,7 @@ impl TrackRow {
         model.bind_liked(self, "liked");
         model.bind_playable(self, "playable");
         model.bind_explicit_filtered(self, "explicit-filtered");
+        imp.song_explicit.set_visible(song.is_explicit());
 
         self.set_artist_links(&song);
 
@@ -495,6 +498,7 @@ impl TrackRow {
         set_missing_art(&*imp.song_cover, false);
         // Placeholder text sizes the blocks; it's never visible.
         imp.song_title.set_label("Loading track title");
+        imp.song_explicit.set_visible(false);
         imp.song_artist.clear_links();
         let artist = gtk::Label::new(Some("Artist name"));
         artist.set_css_classes(SECONDARY_TEXT_CLASSES);
@@ -575,6 +579,11 @@ impl TrackRow {
     /// cover, no album column, a menu), without a song model: for renders
     /// of a page.
     #[cfg(test)]
+    pub(crate) fn is_explicit_badge_visible(&self) -> bool {
+        self.imp().song_explicit.is_visible()
+    }
+
+    #[cfg(test)]
     pub(crate) fn fill_for_tests(
         &self,
         number: u32,
@@ -587,6 +596,7 @@ impl TrackRow {
         self.set_skeleton(false);
         imp.song_index.set_label(&number.to_string());
         imp.song_title.set_label(title);
+        imp.song_explicit.set_visible(false);
         imp.song_artist.clear_links();
         for (i, name) in artists.iter().enumerate() {
             if i > 0 {

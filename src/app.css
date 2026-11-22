@@ -904,3 +904,15 @@ overlay-split-view.utility-split--floating > border {
   font-feature-settings: "tnum";
   min-width: 72px;
 }
+
+/* Compact "E" badge for explicit tracks in player bar, Now Playing, and Track Details */
+.explicit-badge {
+  font-size: 9px;
+  font-weight: 800;
+  min-width: 15px;
+  min-height: 15px;
+  padding: 0 3px;
+  border-radius: 3px;
+  background-color: alpha(currentColor, 0.16);
+  color: alpha(currentColor, 0.78);
+}

@@ -235,6 +235,7 @@ impl PlaybackControl {
                 &title_markup(&song.title, &song.rri.id, song.album.is_some()),
                 &artists_markup(&song),
             );
+            self.widget.set_explicit(song.is_explicit());
             self.widget.set_liked(self.model.liked());
             self.widget.set_song_duration(Some(song.duration_ms as f64));
             if let Some(url) = song.art.best_for_width(120) {

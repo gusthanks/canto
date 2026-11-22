@@ -59,10 +59,10 @@ async fn connect_server(
             time::sleep(Duration::from_secs(1)).await;
             waited += Duration::from_secs(1);
             let pace = if player_clone.has_device() && player_clone.polls_locally() {
-                // Soloist answers locally in a few ms: follow it closely
-                Duration::from_secs(2)
+                // Soloist / MPRIS answers locally in a few ms with no network calls
+                Duration::from_secs(1)
             } else if player_clone.has_device() && player_clone.is_remote_playing() {
-                Duration::from_secs(3)
+                Duration::from_secs(2)
             } else {
                 Duration::from_secs(12)
             };
@@ -80,9 +80,55 @@ async fn connect_server(
         }
     });
 
-    receiver
-        .for_each(|command| async { player.handle_command(command).await.unwrap() })
-        .await;
+    let mut receiver = receiver;
+    let mut pending: Option<ConnectCommand> = None;
+    loop {
+        let mut command = match pending.take() {
+            Some(cmd) => cmd,
+            None => match receiver.next().await {
+                Some(cmd) => cmd,
+                None => break,
+            },
+        };
+        // Skip superseded queued commands (e.g. rapid track clicks, seeks, or
+        // volume drags) so stale HTTP requests never pile up behind the latest one.
+        while let Ok(next) = receiver.try_recv() {
+            match coalesce_connect_command(command, next) {
+                Coalesced::Merged(merged) => command = merged,
+                Coalesced::KeepBoth(first, second) => {
+                    command = first;
+                    pending = Some(second);
+                    break;
+                }
+            }
+        }
+        player.handle_command(command).await;
+    }
+}
+
+#[derive(Debug)]
+enum Coalesced {
+    Merged(ConnectCommand),
+    KeepBoth(ConnectCommand, ConnectCommand),
+}
+
+fn coalesce_connect_command(current: ConnectCommand, next: ConnectCommand) -> Coalesced {
+    let supersedes = matches!(
+        (&current, &next),
+        (
+            ConnectCommand::PlayerLoad { .. } | ConnectCommand::PlayerLoadInContext { .. },
+            ConnectCommand::PlayerLoad { .. } | ConnectCommand::PlayerLoadInContext { .. }
+        ) | (ConnectCommand::PlayerSeek(_), ConnectCommand::PlayerSeek(_))
+            | (
+                ConnectCommand::PlayerSetVolume(_),
+                ConnectCommand::PlayerSetVolume(_)
+            )
+    );
+    if supersedes {
+        Coalesced::Merged(next)
+    } else {
+        Coalesced::KeepBoth(current, next)
+    }
 }
 
 pub fn start_connect_server(
@@ -94,4 +140,45 @@ pub fn start_connect_server(
     std::thread::spawn(move || connect_server(api, action_sender, receiver));
 
     sender
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn coalesces_superseded_loads_seeks_and_volume() {
+        let first = ConnectCommand::PlayerLoad {
+            songs: vec!["a".into()],
+            offset: 0,
+            position_ms: None,
+        };
+        let second = ConnectCommand::PlayerLoad {
+            songs: vec!["b".into()],
+            offset: 0,
+            position_ms: None,
+        };
+        match coalesce_connect_command(first, second) {
+            Coalesced::Merged(ConnectCommand::PlayerLoad { songs, .. }) => {
+                assert_eq!(songs, vec!["b"]);
+            }
+            other => panic!("expected merged load, got {:?}", other),
+        }
+
+        match coalesce_connect_command(
+            ConnectCommand::PlayerSetVolume(20),
+            ConnectCommand::PlayerSetVolume(80),
+        ) {
+            Coalesced::Merged(ConnectCommand::PlayerSetVolume(80)) => {}
+            other => panic!("expected merged volume, got {:?}", other),
+        }
+
+        match coalesce_connect_command(ConnectCommand::PlayerNext, ConnectCommand::PlayerNext) {
+            Coalesced::KeepBoth(ConnectCommand::PlayerNext, ConnectCommand::PlayerNext) => {}
+            other => panic!(
+                "consecutive next presses must never be dropped, got {:?}",
+                other
+            ),
+        }
+    }
 }

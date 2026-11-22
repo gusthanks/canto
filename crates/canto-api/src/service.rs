@@ -1381,6 +1381,16 @@ impl ApiService {
         self.provider().player_add_to_queue(device_id, uri).await
     }
 
+    pub async fn player_next(&self, device_id: &str) -> Result<(), DomainError> {
+        let _lane = self.player_lane.enter().await;
+        self.provider().player_next(device_id).await
+    }
+
+    pub async fn player_previous(&self, device_id: &str) -> Result<(), DomainError> {
+        let _lane = self.player_lane.enter().await;
+        self.provider().player_previous(device_id).await
+    }
+
     pub async fn get_followed_artists(
         &self,
         after: Option<&str>,

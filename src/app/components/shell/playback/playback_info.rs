@@ -29,6 +29,9 @@ mod imp {
         pub song_title: TemplateChild<gtk::Label>,
 
         #[template_child]
+        pub explicit_badge: TemplateChild<gtk::Label>,
+
+        #[template_child]
         pub song_artist: TemplateChild<gtk::Label>,
 
         #[template_child]
@@ -114,12 +117,17 @@ impl PlaybackInfoWidget {
         widget.cover_frame.set_sensitive(true);
     }
 
+    pub fn set_explicit(&self, explicit: bool) {
+        self.imp().explicit_badge.set_visible(explicit);
+    }
+
     pub fn reset_info(&self) {
         let widget = self.imp();
         widget
             .song_title
             // translators: Short text displayed instead of a track title when nothing plays
             .set_text(&gettext("No Track Playing"));
+        widget.explicit_badge.set_visible(false);
         widget
             .song_artist
             // translators: Subtle hint displayed below "No Track Playing" in the bottom player bar

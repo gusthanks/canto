@@ -64,6 +64,14 @@ pub struct Playcounts {
     pub artist: Option<u64>,
 }
 
+/// Lightweight track play stats from a single memoized `track.getInfo` request.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct TrackStats {
+    pub plays: Option<u64>,
+    pub listeners: Option<u64>,
+    pub user_plays: Option<u64>,
+}
+
 /// A count Last.fm sends as a number or a string ("37").
 fn count(value: Option<&Value>) -> Option<u64> {
     match value? {
@@ -518,6 +526,34 @@ impl LastFmClient {
             top.ok().as_ref(),
             user.and_then(Result::ok).as_ref(),
         ))
+    }
+
+    /// Lightweight single-call track play/listener stats (`track.getInfo`),
+    /// sharing the in-memory memo cache with [`Self::track_insights`].
+    pub async fn track_stats(
+        api_key: &str,
+        username: &str,
+        artist: &str,
+        track: &str,
+    ) -> Result<TrackStats, DomainError> {
+        static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+        let client = CLIENT.get_or_init(reqwest::Client::new).clone();
+        let (api_key, username) = (api_key.trim(), username.trim());
+        if api_key.is_empty() {
+            return Err(DomainError::NoToken);
+        }
+        let params = info_params(
+            "track.getInfo",
+            api_key,
+            username,
+            vec![("artist", artist.to_string()), ("track", track.to_string())],
+        );
+        let value = get_memoized(&client, &params).await?;
+        Ok(TrackStats {
+            plays: count(value.pointer("/track/playcount")),
+            listeners: count(value.pointer("/track/listeners")),
+            user_plays: count(value.pointer("/track/userplaycount")),
+        })
     }
 
     /// [`Self::playcounts`] with a shared HTTP client.

@@ -1010,6 +1010,19 @@ impl MusicProvider for SpotifyDomain {
         let config = self.config_or_err()?;
         Ok(apis::player_api::add_to_queue(&config, uri, Some(device_id)).await?)
     }
+
+    async fn player_next(&self, device_id: &str) -> Result<(), DomainError> {
+        let config = self.config_or_err()?;
+        Ok(apis::player_api::skip_users_playback_to_next_track(&config, Some(device_id)).await?)
+    }
+
+    async fn player_previous(&self, device_id: &str) -> Result<(), DomainError> {
+        let config = self.config_or_err()?;
+        Ok(
+            apis::player_api::skip_users_playback_to_previous_track(&config, Some(device_id))
+                .await?,
+        )
+    }
 }
 
 #[cfg(test)]

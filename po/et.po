@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-22 12:44-0300\n"
+"POT-Creation-Date: 2026-11-22 14:13-0300\n"
 "Language: et\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -54,7 +54,7 @@ msgstr "Salvestatud lood"
 #. translators: Header above the tracks the user added to the play queue, on the queue page.
 #. translators: Heading of the card showing the track that plays next.
 #: src/app/components/labels.rs:29
-#: src/app/components/shell/now_panel/mod.rs:465
+#: src/app/components/shell/now_panel/mod.rs:476
 msgid "Next in Queue"
 msgstr ""
 
@@ -97,7 +97,7 @@ msgstr ""
 
 #. translators: This is part of a contextual menu attached to a single track; this entry saves the track to the user's saved tracks.
 #: src/app/components/labels.rs:50
-#: src/app/components/widgets/track_list/track_row.blp:159
+#: src/app/components/widgets/track_list/track_row.blp:178
 #: src/app/components/widgets/selection/selection_toolbar.blp:83
 #, fuzzy
 msgid "Add to Saved Tracks"
@@ -211,7 +211,7 @@ msgstr "Kõik esitusloendid"
 #: src/app/components/shell/command_palette/widget.rs:964
 #: src/app/components/shell/navigation_panel/model.rs:419
 #: src/app/components/shell/navigation_panel/model.rs:887
-#: src/app/components/widgets/track_list/track_details.rs:239
+#: src/app/components/widgets/track_list/track_details.rs:271
 #: src/app/components/pages/settings/settings.blp:374
 #, fuzzy
 msgid "Album"
@@ -354,7 +354,7 @@ msgid "The playlist's cover could not be uploaded."
 msgstr ""
 
 #. translators: This notification is shown when Spotify throttles requests.
-#: src/app/components/mod.rs:256 src/connect/player.rs:1244
+#: src/app/components/mod.rs:256 src/connect/player.rs:1362
 msgid "Rate limited by Spotify. Please wait a moment and try again."
 msgstr ""
 
@@ -531,7 +531,7 @@ msgstr ""
 #. Translators: Tooltip of the player bar button that shows or hides synced lyrics.
 #. Translators: Tab label for lyrics in utility panel.
 #: src/app/components/pages/lyrics/component.rs:89
-#: src/app/components/shell/now_panel/mod.rs:450
+#: src/app/components/shell/now_panel/mod.rs:461
 #: src/app/components/shell/fullscreen_lyrics.rs:101
 #: src/app/components/pages/settings/settings.blp:603
 #: src/app/components/shell/playback/playback_widget.blp:124
@@ -548,7 +548,7 @@ msgstr ""
 #. translators: Short text displayed instead of a track title when nothing plays
 #: src/app/components/pages/lyrics/component.rs:568
 #: src/app/components/pages/lyrics/component.rs:986
-#: src/app/components/shell/playback/playback_info.rs:122
+#: src/app/components/shell/playback/playback_info.rs:129
 #: src/app/components/shell/fullscreen_lyrics.rs:212
 #, fuzzy
 msgid "No Track Playing"
@@ -1284,7 +1284,7 @@ msgstr ""
 
 #. translators: Row title for disc and track number in the Track Details dialog.
 #: src/app/components/shell/command_palette/widget.rs:879
-#: src/app/components/widgets/track_list/track_details.rs:243
+#: src/app/components/widgets/track_list/track_details.rs:275
 #: src/app/components/pages/settings/settings.blp:373
 #, fuzzy
 msgid "Track"
@@ -1449,106 +1449,117 @@ msgid "Pause"
 msgstr "Peata"
 
 #. translators: Subtle hint displayed below "No Track Playing" in the bottom player bar
-#: src/app/components/shell/playback/playback_info.rs:126
+#: src/app/components/shell/playback/playback_info.rs:134
 #, fuzzy
 msgid "Select a track to play"
 msgstr "Salvestatud lood"
 
 #: src/app/components/shell/now_panel/mod.rs:54
-#: src/app/components/shell/now_panel/mod.rs:1242
+#: src/app/components/shell/now_panel/mod.rs:1255
 #, fuzzy
 msgid "Go to Album"
 msgstr "Albumid"
 
 #. translators: Side panel view of the current track, when nothing plays.
-#: src/app/components/shell/now_panel/mod.rs:413
+#: src/app/components/shell/now_panel/mod.rs:414
 #: src/app/components/shell/now_panel/info_page.rs:86
 #: src/app/components/shell/mini_player.rs:725
 #, fuzzy
 msgid "Nothing Playing"
 msgstr "Praegu mängib"
 
-#: src/app/components/shell/now_panel/mod.rs:414
+#: src/app/components/shell/now_panel/mod.rs:415
 #: src/app/components/shell/now_panel/info_page.rs:87
 msgid "Play something and it shows up here."
 msgstr ""
 
+#. Translators: Tooltip on the compact "E" badge for explicit tracks.
+#: src/app/components/shell/now_panel/mod.rs:443
+#: src/app/components/widgets/track_list/track_details.rs:187
+#: src/app/components/widgets/track_list/track_details.rs:279
+#: src/app/components/shell/playback/playback_info.blp:79
+#: src/app/components/widgets/track_list/track_row.blp:134
+msgid "Explicit"
+msgstr ""
+
 #. translators: Tooltip of the lyrics preview card in the Now Playing panel.
-#: src/app/components/shell/now_panel/mod.rs:459
+#: src/app/components/shell/now_panel/mod.rs:470
 #, fuzzy
 msgid "Show Lyrics"
 msgstr "Praegu mängib"
 
 #. translators: Tooltip of the next track card in the Now Playing panel.
-#: src/app/components/shell/now_panel/mod.rs:489
+#: src/app/components/shell/now_panel/mod.rs:500
 #, fuzzy
 msgid "Show Queue"
 msgstr "Lisa järjekorda"
 
-#: src/app/components/shell/now_panel/mod.rs:495
+#. translators: The user's own play count on Last.fm in Track Details.
+#: src/app/components/shell/now_panel/mod.rs:506
 #: src/app/components/shell/now_panel/stats.rs:310
+#: src/app/components/widgets/track_list/track_details.rs:381
 #, fuzzy
 msgid "Your Plays"
 msgstr "Teek"
 
 #. A click opens the Stats tab, with everything Last.fm knows
 #. translators: Tooltip of the "Your Plays" card in the Now Playing panel: it opens the Stats tab.
-#: src/app/components/shell/now_panel/mod.rs:501
+#: src/app/components/shell/now_panel/mod.rs:512
 msgid "Show Song Stats"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:505
+#: src/app/components/shell/now_panel/mod.rs:516
 #: src/app/components/shell/now_panel/about.rs:302
 msgid "Credits"
 msgstr ""
 
 #. A click opens the About tab, with the full credits and the story
 #. translators: Tooltip of the Credits card in the Now Playing panel: it opens the About tab.
-#: src/app/components/shell/now_panel/mod.rs:513
+#: src/app/components/shell/now_panel/mod.rs:524
 msgid "Show About This Song"
 msgstr ""
 
 #. translators: Credits row in the Now Playing panel: the track's artists.
-#: src/app/components/shell/now_panel/mod.rs:600
+#: src/app/components/shell/now_panel/mod.rs:612
 #: src/app/components/shell/now_panel/about.rs:305
 msgid "Performed by"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:603
+#: src/app/components/shell/now_panel/mod.rs:615
 #: src/app/components/shell/now_panel/about.rs:309
-#: src/app/components/widgets/track_list/track_details.rs:330
+#: src/app/components/widgets/track_list/track_details.rs:459
 msgid "Producer(s)"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:604
+#: src/app/components/shell/now_panel/mod.rs:616
 #: src/app/components/shell/now_panel/about.rs:310
-#: src/app/components/widgets/track_list/track_details.rs:334
+#: src/app/components/widgets/track_list/track_details.rs:463
 msgid "Writer(s)"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:614
+#: src/app/components/shell/now_panel/mod.rs:626
 msgid "No detailed credits were found on Genius for this track."
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:624
+#: src/app/components/shell/now_panel/mod.rs:636
 msgid "this song"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:625
+#: src/app/components/shell/now_panel/mod.rs:637
 #, fuzzy
 msgid "this album"
 msgstr "Vaata albumit"
 
-#: src/app/components/shell/now_panel/mod.rs:626
+#: src/app/components/shell/now_panel/mod.rs:638
 msgid "this artist"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:915
+#: src/app/components/shell/now_panel/mod.rs:928
 msgid "Add a Genius token to see who produced and wrote this track."
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:917
-#: src/app/components/shell/now_panel/mod.rs:945
+#: src/app/components/shell/now_panel/mod.rs:930
+#: src/app/components/shell/now_panel/mod.rs:958
 #: src/app/components/shell/now_panel/about.rs:109
 #: src/app/components/shell/now_panel/about.rs:156
 #, fuzzy
@@ -1556,22 +1567,22 @@ msgid "Set Up Genius"
 msgstr "Otsi Spotify'st."
 
 #. translators: Shown while the credits of the current track load.
-#: src/app/components/shell/now_panel/mod.rs:923
+#: src/app/components/shell/now_panel/mod.rs:936
 msgid "Loading credits…"
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:943
+#: src/app/components/shell/now_panel/mod.rs:956
 #: src/app/components/shell/now_panel/about.rs:154
 msgid ""
 "Genius didn't accept your token. Paste a new one in Settings to see the "
 "credits again."
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:950
+#: src/app/components/shell/now_panel/mod.rs:963
 msgid "Couldn't load the credits from Genius."
 msgstr ""
 
-#: src/app/components/shell/now_panel/mod.rs:952
+#: src/app/components/shell/now_panel/mod.rs:965
 #: src/app/components/shell/now_panel/about.rs:144
 #: src/app/components/shell/now_panel/about.rs:169
 #, fuzzy
@@ -1671,14 +1682,14 @@ msgid "Website"
 msgstr ""
 
 #: src/app/components/shell/now_panel/about.rs:308
-#: src/app/components/widgets/track_list/track_details.rs:324
+#: src/app/components/widgets/track_list/track_details.rs:453
 #, fuzzy
 msgid "Featured Artists"
 msgstr "Esitajad"
 
 #. translators: About tab: the studio or place where the song was recorded.
 #: src/app/components/shell/now_panel/about.rs:323
-#: src/app/components/widgets/track_list/track_details.rs:343
+#: src/app/components/widgets/track_list/track_details.rs:472
 msgid "Recorded At"
 msgstr ""
 
@@ -1719,7 +1730,7 @@ msgstr ""
 
 #. Translators: Tooltip of the lyrics button that opens the song's page on Genius (to read or fix its lyrics).
 #: src/app/components/shell/now_panel/about.rs:379
-#: src/app/components/widgets/track_list/track_details.rs:374
+#: src/app/components/widgets/track_list/track_details.rs:503
 #: src/app/components/pages/lyrics/lyrics_page.blp:169
 #, fuzzy
 msgid "Open on Genius"
@@ -2040,7 +2051,7 @@ msgstr ""
 
 #. translators: Track sort option sorting by track duration.
 #: src/app/components/widgets/details_page/component.rs:109
-#: src/app/components/widgets/track_list/track_details.rs:233
+#: src/app/components/widgets/track_list/track_details.rs:265
 #, fuzzy
 msgid "Duration"
 msgstr "Keskmine"
@@ -2078,25 +2089,25 @@ msgid "Back"
 msgstr ""
 
 #. translators: Music source label in the Track Details dialog for local audio files.
-#: src/app/components/widgets/track_list/track_details.rs:24
+#: src/app/components/widgets/track_list/track_details.rs:38
 #: src/app/components/pages/settings/settings.blp:533
 msgid "Local Files"
 msgstr ""
 
 #. translators: Fallback source label in the Track Details dialog when the provider is unknown.
-#: src/app/components/widgets/track_list/track_details.rs:31
+#: src/app/components/widgets/track_list/track_details.rs:45
 #, fuzzy
 msgid "Unknown"
 msgstr "Esitajad"
 
 #. translators: Position of a song on a multi-disc album, e.g. "Disc 1 · Track 3".
-#: src/app/components/widgets/track_list/track_details.rs:39
+#: src/app/components/widgets/track_list/track_details.rs:53
 #, rust-format
 msgid "Disc {} · Track {}"
 msgstr ""
 
 #. translators: Position of a song on an album, e.g. "Track 3".
-#: src/app/components/widgets/track_list/track_details.rs:44
+#: src/app/components/widgets/track_list/track_details.rs:58
 #, fuzzy, rust-format
 msgid "Track {}"
 msgstr "Lood"
@@ -2104,54 +2115,70 @@ msgstr "Lood"
 #. translators: Disc number when the track number is absent, e.g. "Disc 2".
 #. translators: Header shown above the tracks of disc {} in a
 #. multi-disc album.
-#: src/app/components/widgets/track_list/track_details.rs:49
+#: src/app/components/widgets/track_list/track_details.rs:63
 #: src/app/components/widgets/track_list/track_list.rs:480
 #, rust-format
 msgid "Disc {}"
 msgstr ""
 
 #. translators: Section title in the Track Details dialog for core track metadata.
-#: src/app/components/widgets/track_list/track_details.rs:226
+#: src/app/components/widgets/track_list/track_details.rs:258
 #, fuzzy
 msgid "Track Info"
 msgstr "Lood"
 
 #. translators: Row title and value when a song is marked explicit.
-#: src/app/components/widgets/track_list/track_details.rs:247
+#: src/app/components/widgets/track_list/track_details.rs:279
 msgid "Content"
-msgstr ""
-
-#: src/app/components/widgets/track_list/track_details.rs:247
-msgid "Explicit"
 msgstr ""
 
 #. Translators: Sort option. Orders items by their popularity score, with
 #. the most popular items appearing first.
-#: src/app/components/widgets/track_list/track_details.rs:253
+#: src/app/components/widgets/track_list/track_details.rs:285
+#: src/app/components/widgets/track_list/track_details.rs:322
 #: src/app/models/card_enums.rs:63
 msgid "Popularity"
 msgstr ""
 
-#: src/app/components/widgets/track_list/track_details.rs:263
+#: src/app/components/widgets/track_list/track_details.rs:295
 msgid "Source"
 msgstr ""
 
+#. translators: Section title in the Track Details dialog for global plays and views.
+#: src/app/components/widgets/track_list/track_details.rs:346
+msgid "Plays & Reach"
+msgstr ""
+
+#. translators: Global scrobble play count from Last.fm in Track Details.
+#: src/app/components/widgets/track_list/track_details.rs:367
+msgid "Last.fm Plays"
+msgstr ""
+
+#: src/app/components/widgets/track_list/track_details.rs:374
+msgid "Last.fm Listeners"
+msgstr ""
+
 #. translators: Section title in the Track Details dialog for Genius credits and song bio.
-#: src/app/components/widgets/track_list/track_details.rs:274
+#: src/app/components/widgets/track_list/track_details.rs:395
 msgid "Credits & Story"
 msgstr ""
 
+#. translators: Song page view count from Genius in Track Details.
+#: src/app/components/widgets/track_list/track_details.rs:438
+msgid "Genius Views"
+msgstr ""
+
 #. translators: Release date row in the Track Details dialog.
-#: src/app/components/widgets/track_list/track_details.rs:317
+#: src/app/components/widgets/track_list/track_details.rs:446
 #, fuzzy
 msgid "Release Date"
 msgstr "Diskograafia"
 
-#: src/app/components/widgets/track_list/track_row.rs:382
+#: src/app/components/widgets/track_list/track_row.rs:384
 msgid "Explicit Content is Disabled"
 msgstr ""
 
-#: src/app/components/widgets/track_list/track_row.rs:384
+#: src/app/components/widgets/track_list/track_row.rs:386
 msgid "Not Available in Your Region"
 msgstr ""
 
@@ -2210,105 +2237,105 @@ msgstr "Praegu mängib"
 msgid "Connection to device lost!"
 msgstr ""
 
-#: src/connect/player.rs:687 src/connect/player.rs:1062
+#: src/connect/player.rs:805 src/connect/player.rs:1180
 msgid "Starting Spotify in the background…"
 msgstr ""
 
-#: src/connect/player.rs:694
+#: src/connect/player.rs:812
 msgid "Could not start the Spotify app. Is it installed?"
 msgstr ""
 
-#: src/connect/player.rs:706
+#: src/connect/player.rs:824
 msgid "The Spotify app did not show up as a device. Try again in a moment."
 msgstr ""
 
-#: src/connect/player.rs:753
+#: src/connect/player.rs:871
 msgid "Getting the current Spotify Soloist…"
 msgstr ""
 
-#: src/connect/player.rs:767
+#: src/connect/player.rs:885
 msgid ""
 "Spotify Soloist requires manual installation on this architecture; using the "
 "Spotify app instead."
 msgstr ""
 
 #. translators: Shown while a sleeping Spotify Connect speaker (an Alexa) wakes up.
-#: src/connect/player.rs:1103
+#: src/connect/player.rs:1221
 msgid "Waking up the speaker…"
 msgstr ""
 
 #. translators: Shown when a Spotify Connect speaker is asleep or unreachable.
-#: src/connect/player.rs:1187 src/connect/player.rs:1249
+#: src/connect/player.rs:1305 src/connect/player.rs:1367
 msgid ""
 "Spotify Connect device is asleep or inactive. Start playback on the device "
 "first."
 msgstr ""
 
-#: src/connect/soloist.rs:624
+#: src/connect/soloist.rs:629
 msgid "Not installed yet: Canto gets it from Spotify when you press play"
 msgstr ""
 
-#: src/connect/soloist.rs:627
+#: src/connect/soloist.rs:632
 msgid ""
 "Not installed. Canto plays through the Spotify app hidden in the background."
 msgstr ""
 
-#: src/connect/soloist.rs:630
+#: src/connect/soloist.rs:635
 msgid ""
 "Not installed. Automatic download is only available on x86_64; install "
 "Soloist manually or set CANTO_SOLOIST_CMD."
 msgstr ""
 
-#: src/connect/soloist.rs:633
+#: src/connect/soloist.rs:638
 msgid ""
 "Not installed. Automatic download is only available on x86_64; install "
 "Soloist manually, or Canto uses the hidden Spotify app."
 msgstr ""
 
-#: src/connect/soloist.rs:636
+#: src/connect/soloist.rs:641
 msgid "Not found at the path set in CANTO_SOLOIST_CMD."
 msgstr ""
 
-#: src/connect/soloist.rs:640
+#: src/connect/soloist.rs:645
 msgid "Installed, waiting for a key"
 msgstr ""
 
-#: src/connect/soloist.rs:642
+#: src/connect/soloist.rs:647
 msgid "Ready. It starts when you press play."
 msgstr ""
 
-#: src/connect/soloist.rs:644
+#: src/connect/soloist.rs:649
 msgid ""
 "Running, not logged in yet: in Spotify on your phone, pick “Canto” in the "
 "device list once"
 msgstr ""
 
-#: src/connect/soloist.rs:646
+#: src/connect/soloist.rs:651
 msgid "Running and playing through Canto"
 msgstr ""
 
-#: src/connect/soloist.rs:648
+#: src/connect/soloist.rs:653
 msgid "Running and logged in"
 msgstr ""
 
-#: src/connect/soloist.rs:655
+#: src/connect/soloist.rs:660
 msgid ""
 "This Soloist build has expired; Canto gets the new one when you press play"
 msgstr ""
 
-#: src/connect/soloist.rs:658
+#: src/connect/soloist.rs:663
 msgid ""
 "This Soloist build has expired; automatic updates are only available on "
 "x86_64, so update Soloist manually"
 msgstr ""
 
-#: src/connect/soloist.rs:661
+#: src/connect/soloist.rs:666
 msgid ""
 "This Soloist build has expired; update the binary configured in "
 "CANTO_SOLOIST_CMD"
 msgstr ""
 
-#: src/connect/soloist.rs:668
+#: src/connect/soloist.rs:673
 #, rust-format
 msgid "This Soloist build stops working in {days} days"
 msgstr ""

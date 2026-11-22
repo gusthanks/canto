@@ -944,6 +944,10 @@ impl PlaybackWidget {
         widget.now_playing.set_track(title_markup, artists_markup);
     }
 
+    pub fn set_explicit(&self, explicit: bool) {
+        self.imp().now_playing.set_explicit(explicit);
+    }
+
     pub fn set_liked(&self, liked: Option<bool>) {
         self.imp().now_playing.set_liked(liked);
     }

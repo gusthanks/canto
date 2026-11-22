@@ -80,6 +80,17 @@ row:hover .song--playing .song__play-hover,
   font-weight: bold;
 }
 
+.song__explicit {
+  font-size: 9px;
+  font-weight: 800;
+  min-width: 15px;
+  min-height: 15px;
+  padding: 0 3px;
+  border-radius: 3px;
+  background-color: alpha(currentColor, 0.16);
+  color: alpha(currentColor, 0.78);
+}
+
 /* Artist and album links: underlined only while hovered. */
 .song__link.song__link--hover {
   text-decoration-line: underline;
@@ -92,6 +103,7 @@ row:hover .song--playing .song__play-hover,
 /* Unplayable tracks. The menu stays usable. */
 .song--unplayable label.title,
 .song--unplayable label.subtitle,
+.song--unplayable .song__explicit,
 .song--unplayable .song__index,
 .song--unplayable .song__cover,
 row:hover .song--unplayable .song__index,
@@ -259,6 +271,7 @@ row:hover .song--skeleton .song__cover {
 }
 
 .song--skeleton .song__index,
+.song--skeleton .song__explicit,
 .song--skeleton .song__icon,
 .song--skeleton .song__checkbox,
 row:hover .song--skeleton .song__play-hover,

@@ -388,6 +388,7 @@ struct Widgets {
     scroller: gtk::ScrolledWindow,
     cover: gtk::Picture,
     title: gtk::Label,
+    explicit_badge: gtk::Label,
     artists: gtk::Label,
     like: gtk::Button,
     lyrics_card: gtk::Box,
@@ -434,9 +435,19 @@ impl Widgets {
         let text = gtk::Box::new(gtk::Orientation::Vertical, 2);
         text.set_hexpand(true);
         let title = wrapping_label(&["title-2", "now-panel__title", "track-links"]);
+        let artists_row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        artists_row.set_valign(gtk::Align::Center);
+        let explicit_badge = gtk::Label::new(Some("E"));
+        explicit_badge.set_visible(false);
+        explicit_badge.set_valign(gtk::Align::Center);
+        explicit_badge.set_tooltip_text(Some(&gettext("Explicit")));
+        explicit_badge.add_css_class("explicit-badge");
         let artists = wrapping_label(&["now-panel__artists", "track-links", "dim-label"]);
+        artists.set_hexpand(true);
+        artists_row.append(&explicit_badge);
+        artists_row.append(&artists);
         text.append(&title);
-        text.append(&artists);
+        text.append(&artists_row);
         info.append(&text);
         let like = gtk::Button::from_icon_name(HEART_ICON);
         like.set_valign(gtk::Align::Center);
@@ -528,6 +539,7 @@ impl Widgets {
             scroller,
             cover,
             title,
+            explicit_badge,
             artists,
             like,
             lyrics_card,
@@ -750,6 +762,7 @@ impl NowPanel {
             &song.rri.id,
             song.album.is_some(),
         ));
+        w.explicit_badge.set_visible(song.is_explicit());
         w.artists.set_markup(&artists_markup(&song));
         self.update_like();
         self.load_cover(&song);

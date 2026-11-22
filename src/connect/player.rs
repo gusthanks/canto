@@ -182,6 +182,35 @@ impl ConnectPlayer {
             .unwrap_or(true);
         let queue_dirty = self.last_queue.read().map(|g| *g == 0).unwrap_or(false);
         let poll_idx = self.poll_count.fetch_add(1, Ordering::Relaxed);
+        let volume = state
+            .device
+            .as_ref()
+            .and_then(|d| d.volume_percent)
+            .map(|pct| f64::from(pct) / 100.0);
+
+        // When the track just changed, push the lightweight playback snapshot
+        // to the UI right away instead of blocking 400-1200ms on Spotify's
+        // remote `/me/player/queue` endpoint. If Canto already knows the track
+        // in its current context, the UI flips immediately; if not, the queue
+        // refresh right below populates its metadata and upcoming rows.
+        if track_changed && self.has_device() {
+            if let Ok(mut last) = self.last_track_id.write() {
+                *last = remote_track.clone();
+            }
+            self.send_actions([
+                PlaybackAction::SyncRemoteState(Box::new(RemotePlaybackState {
+                    tracks: None,
+                    track_id: remote_track.clone(),
+                    is_playing: state.is_playing,
+                    position_ms: state.progress_ms,
+                    repeat: state.repeat,
+                    shuffle: state.shuffle,
+                    volume,
+                }))
+                .into(),
+            ]);
+        }
+
         let tracks = if track_changed || queue_dirty || poll_idx.is_multiple_of(4) {
             match self.get_queue_if_changed(remote_track.as_deref()).await {
                 Ok(queue) => {
@@ -199,12 +228,11 @@ impl ConnectPlayer {
         if !self.has_device() {
             return;
         }
-
-        let volume = state
-            .device
-            .as_ref()
-            .and_then(|d| d.volume_percent)
-            .map(|pct| f64::from(pct) / 100.0);
+        // If we already emitted the immediate state on `track_changed` and the
+        // queue hash didn't change, don't emit a duplicate SyncRemoteState.
+        if track_changed && tracks.is_none() {
+            return;
+        }
 
         self.send_actions([
             PlaybackAction::SyncRemoteState(Box::new(RemotePlaybackState {
@@ -304,8 +332,10 @@ impl ConnectPlayer {
         }
     }
 
-    /// Spotify can take this long to reflect a command in its state.
-    const COMMAND_SETTLE: Duration = Duration::from_millis(1500);
+    /// Local players (Soloist / Spotify desktop over MPRIS) reflect commands
+    /// in a few dozen ms; remote cloud Connect devices can take up to ~1.2s.
+    const LOCAL_COMMAND_SETTLE: Duration = Duration::from_millis(350);
+    const REMOTE_COMMAND_SETTLE: Duration = Duration::from_millis(1200);
 
     fn mark_command(&self) {
         if let Ok(mut last) = self.last_command.lock() {
@@ -315,12 +345,17 @@ impl ConnectPlayer {
 
     /// Whether a playback command was sent after (or shortly before) a poll
     /// that started at `request_started`.
-    fn command_overlaps(&self, request_started: std::time::Instant) -> bool {
+    fn command_overlaps(&self, request_started: std::time::Instant, is_local: bool) -> bool {
+        let settle = if is_local {
+            Self::LOCAL_COMMAND_SETTLE
+        } else {
+            Self::REMOTE_COMMAND_SETTLE
+        };
         self.last_command
             .lock()
             .ok()
             .and_then(|last| *last)
-            .is_some_and(|sent| sent + Self::COMMAND_SETTLE > request_started)
+            .is_some_and(|sent| sent + settle > request_started)
     }
 
     pub fn has_device(&self) -> bool {
@@ -342,6 +377,7 @@ impl ConnectPlayer {
             .as_deref()
             .filter(|id| self.controls_locally(id))
             .and_then(|id| self.local_snapshot(id));
+        let polled_locally = local.is_some();
         // A Soloist that plays nothing (just started, the track not loaded
         // yet) has no news: applying it would take the track the user just
         // chose off the player
@@ -361,7 +397,7 @@ impl ConnectPlayer {
         let Ok(mut state) = player_state else {
             return;
         };
-        if self.command_overlaps(request_started) {
+        if self.command_overlaps(request_started, polled_locally) {
             debug!("dropping a poll that raced a playback command");
             return;
         }
@@ -434,6 +470,19 @@ impl ConnectPlayer {
         let is_paused = !current_state.is_playing;
         if is_diff_song {
             let context = source.spotify_uri().unwrap();
+            // Starting an unshuffled album/playlist from its first track on local
+            // Soloist needs no Spotify cloud round-trip.
+            if offset == 0
+                && position_ms.is_none()
+                && !current_state.shuffle
+                && self.is_known_soloist(&device_id)
+                && soloist::is_running()
+            {
+                if let Ok(()) = soloist::open_uri(&context) {
+                    debug!("PlayerLoadInContext(offset=0) sent directly to Soloist");
+                    return Ok(());
+                }
+            }
             let result = self
                 .retrying(&device_id, || {
                     self.api
@@ -442,6 +491,13 @@ impl ConnectPlayer {
                 .await;
             self.fall_back_to_open_uri(&device_id, result, &song)
         } else if is_paused {
+            if self.controls_locally(&device_id) {
+                if let Some(result) =
+                    self.try_local_command(&device_id, &ConnectCommand::PlayerResume)
+                {
+                    return result;
+                }
+            }
             self.api.player_resume(&device_id).await
         } else {
             Ok(())
@@ -473,6 +529,17 @@ impl ConnectPlayer {
         let is_paused = !current_state.is_playing;
         if is_diff_song {
             let target = target_id.clone();
+            if songs.len() == 1
+                && position_ms.is_none()
+                && self.is_known_soloist(&device_id)
+                && soloist::is_running()
+            {
+                let uri = format!("spotify:track:{target}");
+                if let Ok(()) = soloist::open_uri(&uri) {
+                    debug!("single-track PlayerLoad sent directly to Soloist");
+                    return Ok(());
+                }
+            }
             let uris: Vec<String> = songs
                 .into_iter()
                 .map(|s| format!("spotify:track:{}", s))
@@ -485,6 +552,13 @@ impl ConnectPlayer {
                 .await;
             self.fall_back_to_open_uri(&device_id, result, &target)
         } else if is_paused {
+            if self.controls_locally(&device_id) {
+                if let Some(result) =
+                    self.try_local_command(&device_id, &ConnectCommand::PlayerResume)
+                {
+                    return result;
+                }
+            }
             self.api.player_resume(&device_id).await
         } else {
             Ok(())
@@ -503,7 +577,7 @@ impl ConnectPlayer {
         if !self.controls_locally(device_id) {
             return result;
         }
-        for wait_ms in [600, 1500] {
+        for wait_ms in [250, 600] {
             let retry = match &result {
                 Ok(()) | Err(DomainError::RateLimited { .. }) => false,
                 Err(_) => true,
@@ -568,6 +642,13 @@ impl ConnectPlayer {
                 match command {
                     ConnectCommand::PlayerResume => self.remember_playing(&result, true),
                     ConnectCommand::PlayerPause => self.remember_playing(&result, false),
+                    ConnectCommand::PlayerNext | ConnectCommand::PlayerPrevious => {
+                        if result.is_ok() {
+                            if let Ok(mut last) = self.last_track_id.write() {
+                                *last = None;
+                            }
+                        }
+                    }
                     _ => {}
                 }
                 return result;
@@ -595,21 +676,54 @@ impl ConnectPlayer {
             return Ok(());
         };
         let state = &state;
+        let is_local = self.controls_locally(&device_id);
+        let load_quiet = if is_local {
+            Duration::from_millis(450)
+        } else {
+            Duration::from_millis(900)
+        };
         match command {
             ConnectCommand::PlayerLoadInContext { .. } => {
                 let result = self
                     .handle_player_load_in_context(device_id, state, command)
                     .await;
                 self.remember_playing(&result, true);
-                // A moment for the device to switch tracks
-                self.set_quiet(Some(Duration::from_millis(1500)));
+                if result.is_ok() {
+                    if let Ok(mut last) = self.last_track_id.write() {
+                        *last = None;
+                    }
+                }
+                // Brief window for the device to switch tracks without freezing the UI
+                self.set_quiet(Some(load_quiet));
                 result
             }
             ConnectCommand::PlayerLoad { .. } => {
                 let result = self.handle_player_load(device_id, state, command).await;
                 self.remember_playing(&result, true);
-                // A moment for the device to switch tracks
-                self.set_quiet(Some(Duration::from_millis(1500)));
+                if result.is_ok() {
+                    if let Ok(mut last) = self.last_track_id.write() {
+                        *last = None;
+                    }
+                }
+                self.set_quiet(Some(load_quiet));
+                result
+            }
+            ConnectCommand::PlayerNext => {
+                let result = self.api.player_next(&device_id).await;
+                if result.is_ok() {
+                    if let Ok(mut last) = self.last_track_id.write() {
+                        *last = None;
+                    }
+                }
+                result
+            }
+            ConnectCommand::PlayerPrevious => {
+                let result = self.api.player_previous(&device_id).await;
+                if result.is_ok() {
+                    if let Ok(mut last) = self.last_track_id.write() {
+                        *last = None;
+                    }
+                }
                 result
             }
             ConnectCommand::PlayerSeek(offset) => {
@@ -623,13 +737,17 @@ impl ConnectPlayer {
                 self.api.player_volume(&device_id, volume).await
             }
             ConnectCommand::AddToQueue(uris) => {
+                let soloist_local = self.is_known_soloist(&device_id) && soloist::is_running();
                 for uri in uris {
-                    self.api.player_add_to_queue(&device_id, &uri).await?;
+                    let queued_locally = soloist_local && soloist::add_to_queue(&uri).is_ok();
+                    if !queued_locally {
+                        self.api.player_add_to_queue(&device_id, &uri).await?;
+                    }
                 }
                 if let Ok(mut guard) = self.last_queue.write() {
                     *guard = 0;
                 }
-                tokio::time::sleep(Duration::from_millis(350)).await;
+                tokio::time::sleep(Duration::from_millis(250)).await;
                 if let Ok(mut last) = self.last_command.lock() {
                     *last = None;
                 }

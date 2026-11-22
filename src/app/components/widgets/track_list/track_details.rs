@@ -3,7 +3,8 @@
 use std::rc::Rc;
 
 use canto_api::models::{is_resource_url, ContentRating, Provider};
-use canto_config::settings::{GENIUS_ACCESS_TOKEN, SETTINGS};
+use canto_api::scrobbler::LastFmClient;
+use canto_config::settings::{GENIUS_ACCESS_TOKEN, LASTFM_API_KEY, LASTFM_USERNAME, SETTINGS};
 use gettextrs::gettext;
 use gio::prelude::*;
 use gtk::prelude::*;
@@ -16,6 +17,19 @@ use crate::app::models::{Track, TrackExt};
 use crate::app::{load, AppAction, AppModel, Dispatcher};
 
 const COVER_SIZE_PX: i32 = 88;
+
+fn format_count(n: u64) -> String {
+    let digits = n.to_string();
+    let mut out = String::with_capacity(digits.len() + digits.len() / 3);
+    for (i, ch) in digits.chars().enumerate() {
+        let rem = digits.len() - i;
+        if i > 0 && rem % 3 == 0 {
+            out.push(',');
+        }
+        out.push(ch);
+    }
+    out
+}
 
 fn provider_label(provider: &Provider) -> String {
     match provider {
@@ -160,16 +174,34 @@ pub fn present_track_details(
     summary_box.append(&title_label);
 
     let artists = song.artists_name();
-    if !artists.is_empty() {
-        let artists_label = gtk::Label::builder()
-            .label(&artists)
-            .xalign(0.0)
-            .wrap(true)
-            .wrap_mode(pango::WrapMode::WordChar)
-            .selectable(true)
-            .css_classes(["dim-label"])
+    if !artists.is_empty() || song.is_explicit() {
+        let artist_row = gtk::Box::builder()
+            .orientation(gtk::Orientation::Horizontal)
+            .spacing(6)
+            .valign(gtk::Align::Center)
             .build();
-        summary_box.append(&artists_label);
+        if song.is_explicit() {
+            let badge = gtk::Label::builder()
+                .label("E")
+                .valign(gtk::Align::Center)
+                .tooltip_text(gettext("Explicit"))
+                .css_classes(["explicit-badge"])
+                .build();
+            artist_row.append(&badge);
+        }
+        if !artists.is_empty() {
+            let artists_label = gtk::Label::builder()
+                .label(&artists)
+                .xalign(0.0)
+                .wrap(true)
+                .wrap_mode(pango::WrapMode::WordChar)
+                .selectable(true)
+                .hexpand(true)
+                .css_classes(["dim-label"])
+                .build();
+            artist_row.append(&artists_label);
+        }
+        summary_box.append(&artist_row);
     }
 
     let action_row = gtk::Box::builder()
@@ -265,10 +297,101 @@ pub fn present_track_details(
     );
     root_box.append(&info_group);
 
-    // Optional Genius credits & story section (loaded asynchronously when token is configured).
+    // Album tracklists return simplified Spotify tracks without popularity/ISRC:
+    // fetch the full track lazily so opening Track Details from an album still shows them.
+    let has_tokio = tokio::runtime::Handle::try_current().is_ok();
+    if has_tokio
+        && song.rri.provider == Provider::Spotify
+        && !song.rri.id.is_empty()
+        && (song.popularity.is_none() || song.isrc.is_none())
+    {
+        let api = app_model.api();
+        let track_id = song.rri.id.clone();
+        let need_popularity = song.popularity.is_none();
+        let need_isrc = song.isrc.is_none();
+        let info_weak = info_group.downgrade();
+        glib::MainContext::default().spawn_local(async move {
+            let Ok(full) = api.get_track(&track_id, load::visible()).await else {
+                return;
+            };
+            let Some(group) = info_weak.upgrade() else {
+                return;
+            };
+            if need_popularity {
+                if let Some(popularity) = full.popularity {
+                    add_property_row(
+                        &group,
+                        &gettext("Popularity"),
+                        &format!("{popularity} / 100"),
+                    );
+                }
+            }
+            if need_isrc {
+                if let Some(ref isrc) = full.isrc {
+                    add_property_row(&group, "ISRC", isrc);
+                }
+            }
+        });
+    }
+
+    // Plays & Reach section (Last.fm global plays/listeners/user plays + Genius pageviews).
     let settings = gio::Settings::new(SETTINGS);
+    let lastfm_key = settings.string(LASTFM_API_KEY).trim().to_string();
+    let lastfm_user = settings.string(LASTFM_USERNAME).trim().to_string();
+    let primary_artist = song
+        .artists
+        .first()
+        .map(|a| a.name.clone())
+        .unwrap_or_else(|| artists.clone());
+    let stats_group = libadwaita::PreferencesGroup::builder()
+        // translators: Section title in the Track Details dialog for global plays and views.
+        .title(gettext("Plays & Reach"))
+        .visible(false)
+        .build();
+    root_box.append(&stats_group);
+
+    if has_tokio && !lastfm_key.is_empty() && !primary_artist.is_empty() {
+        let title = song.title.clone();
+        let artist = primary_artist.clone();
+        let stats_weak = stats_group.downgrade();
+        glib::MainContext::default().spawn_local(async move {
+            let Ok(stats) =
+                LastFmClient::track_stats(&lastfm_key, &lastfm_user, &artist, &title).await
+            else {
+                return;
+            };
+            let Some(group) = stats_weak.upgrade() else {
+                return;
+            };
+            let mut added = false;
+            if let Some(plays) = stats.plays.filter(|&n| n > 0) {
+                // translators: Global scrobble play count from Last.fm in Track Details.
+                add_property_row(&group, &gettext("Last.fm Plays"), &format_count(plays));
+                added = true;
+            }
+            if let Some(listeners) = stats.listeners.filter(|&n| n > 0) {
+                // translators: Global listener count from Last.fm in Track Details.
+                add_property_row(
+                    &group,
+                    &gettext("Last.fm Listeners"),
+                    &format_count(listeners),
+                );
+                added = true;
+            }
+            if let Some(user_plays) = stats.user_plays {
+                // translators: The user's own play count on Last.fm in Track Details.
+                add_property_row(&group, &gettext("Your Plays"), &format_count(user_plays));
+                added = true;
+            }
+            if added {
+                group.set_visible(true);
+            }
+        });
+    }
+
+    // Optional Genius credits & story section (loaded asynchronously when token is configured).
     let genius_token = settings.string(GENIUS_ACCESS_TOKEN).trim().to_string();
-    if !genius_token.is_empty() && !artists.is_empty() {
+    if has_tokio && !genius_token.is_empty() && !artists.is_empty() {
         let credits_group = libadwaita::PreferencesGroup::builder()
             // translators: Section title in the Track Details dialog for Genius credits and song bio.
             .title(gettext("Credits & Story"))
@@ -291,6 +414,7 @@ pub fn present_track_details(
         let title = song.title.clone();
         let performers = artists.clone();
         let group_weak = credits_group.downgrade();
+        let stats_weak = stats_group.downgrade();
         let row_weak = loading_row.downgrade();
         glib::MainContext::default().spawn_local(async move {
             let result = api
@@ -309,6 +433,13 @@ pub fn present_track_details(
             if !info.is_exact_match {
                 group.set_visible(false);
                 return;
+            }
+            if let Some(views) = info.stats.pageviews.filter(|&n| n > 0) {
+                if let Some(stats_group) = stats_weak.upgrade() {
+                    // translators: Song page view count from Genius in Track Details.
+                    add_property_row(&stats_group, &gettext("Genius Views"), &format_count(views));
+                    stats_group.set_visible(true);
+                }
             }
             let mut added = false;
             if let Some(ref release_date) = info.release_date {
