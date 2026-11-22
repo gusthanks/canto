@@ -44,6 +44,17 @@ fn main() {
         libc::mallopt(libc::M_ARENA_MAX, MALLOC_ARENAS);
     }
 
+    // A second launch (a Spotify link clicked while Canto runs) only hands
+    // its arguments to the running Canto. Building the app here would start
+    // its D-Bus names and rotate the session log before GApplication finds
+    // the running instance: the MPRIS names left with this process and the
+    // running Canto's log was wiped (Q33).
+    if canto_already_running() {
+        let remote = gtk::Application::new(Some(config::APPID), ApplicationFlags::HANDLES_OPEN);
+        remote.run();
+        std::process::exit(0);
+    }
+
     let migrated = canto_config::settings::migrate_from_old_app_id();
     if migrated > 0 {
         // Before the logger starts
@@ -318,6 +329,27 @@ fn move_old_cache_in(cache: &std::path::Path) {
     }
     // Only goes if nothing else is left in it
     let _ = std::fs::remove_dir(&old);
+}
+
+/// Whether a Canto already owns its app id on the session bus.
+fn canto_already_running() -> bool {
+    let Ok(bus) = gio::bus_get_sync(gio::BusType::Session, gio::Cancellable::NONE) else {
+        return false;
+    };
+    bus.call_sync(
+        Some("org.freedesktop.DBus"),
+        "/org/freedesktop/DBus",
+        "org.freedesktop.DBus",
+        "NameHasOwner",
+        Some(&(config::APPID,).to_variant()),
+        Some(glib::VariantTy::new("(b)").unwrap()),
+        gio::DBusCallFlags::NONE,
+        1000,
+        gio::Cancellable::NONE,
+    )
+    .ok()
+    .and_then(|reply| reply.get::<(bool,)>())
+    .is_some_and(|(owned,)| owned)
 }
 
 fn setup_gtk(settings: &settings::CantoSettings) {
