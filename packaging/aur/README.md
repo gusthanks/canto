@@ -8,6 +8,7 @@ The AUR already has an unrelated EPUB reader (`canto-git`) providing `/usr/bin/c
 
 - `canto-player`: builds from the release source tarball (`conflicts=('canto-git')`).
 - `canto-player-bin`: installs a prebuilt `x86_64` release archive (`provides=('canto-player')`, `conflicts=('canto-player' 'canto-git')`).
+  Not usable yet: the release workflow publishes only the Flatpak bundles, not the `canto-<ver>-x86_64.tar.gz` archive this package downloads. Publish `canto-player` first.
 
 ## Before publishing a release to the AUR
 

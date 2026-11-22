@@ -22,6 +22,42 @@
 > [!NOTE]
 > Spotify playback and catalog browsing require a **Spotify Premium** account (Canto is unofficial and not affiliated with Spotify). **Local Music Folders** and **OpenSubsonic / Navidrome** work completely offline or self-hosted with no Spotify account required.
 
+## Download and install
+
+No terminal needed on most Linux desktops:
+
+1. **Download** [`canto-x86_64.flatpak`](https://github.com/gusthanks/canto/releases/latest/download/canto-x86_64.flatpak) from the [latest release](https://github.com/gusthanks/canto/releases/latest). On ARM (Raspberry Pi, Pinebook, Asahi), take [`canto-aarch64.flatpak`](https://github.com/gusthanks/canto/releases/latest/download/canto-aarch64.flatpak) instead.
+2. **Double-click** the file. If your system's app store handles Flatpak (GNOME Software on Fedora, KDE Discover on KDE Plasma systems, and others), it opens the file.
+3. Click **Install**, then open **Canto** from your app menu.
+
+The first install also downloads the GNOME platform Canto runs on (about 1 GB on disk, shared with other Flatpak apps), so give it a few minutes. To update, download and double-click the newer file.
+
+<details>
+<summary>The double-click does nothing (Ubuntu, Arch, Omarchy and other systems without an app store for Flatpak)</summary>
+
+Flatpak needs to be set up once: follow the steps for your system at [flatpak.org/setup](https://flatpak.org/setup/) (on Ubuntu: `sudo apt install flatpak`, then restart). Then, in the folder where you saved the file:
+
+```sh
+flatpak install --user canto-x86_64.flatpak
+```
+
+Open it from your app menu, or with `flatpak run io.github.gusthanks.Canto`.
+</details>
+
+<details>
+<summary>Em português: como baixar e instalar</summary>
+
+1. **Baixe** o arquivo [`canto-x86_64.flatpak`](https://github.com/gusthanks/canto/releases/latest/download/canto-x86_64.flatpak) (computador comum). Em ARM, como Raspberry Pi, use o [`canto-aarch64.flatpak`](https://github.com/gusthanks/canto/releases/latest/download/canto-aarch64.flatpak).
+2. **Dê dois cliques** no arquivo. Se a loja de apps do seu Linux aceita Flatpak (GNOME Software no Fedora, KDE Discover no KDE Plasma e outras), ela abre o arquivo.
+3. Clique em **Instalar** e abra o **Canto** pelo menu de apps.
+
+Na primeira vez, ele também baixa a base do GNOME que o Canto usa (cerca de 1 GB no disco, compartilhada com outros apps Flatpak). Para atualizar, baixe o arquivo novo e dê dois cliques de novo.
+
+Os dois cliques não fazem nada (Ubuntu, Arch, Omarchy)? Ative o Flatpak uma vez seguindo [flatpak.org/setup](https://flatpak.org/setup/) (no Ubuntu: `sudo apt install flatpak` e reinicie). Depois, na pasta do arquivo: `flatpak install --user canto-x86_64.flatpak`.
+</details>
+
+Building from source and the Arch Linux (AUR) packages: see [Building from source](#building-from-source).
+
 ## What Canto does
 
 **Music Sources**
@@ -197,9 +233,9 @@ Canto tracks active listening duration only (ignoring pauses and duplicate Conne
 
 You can enable Last.fm, ListenBrainz, or both simultaneously.
 
-## Installing
+## Building from source
 
-Arch Linux / AUR PKGBUILD templates live in [`packaging/aur/`](packaging/aur/README.md) (for upcoming tagged releases). To build from source today:
+Most people want the Flatpak above ([Download and install](#download-and-install)). Arch Linux / AUR PKGBUILD templates live in [`packaging/aur/`](packaging/aur/README.md) (not on the AUR yet). To build from source:
 
 ```sh
 ./scripts/setup-dev.sh    # install system build dependencies

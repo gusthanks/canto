@@ -9,3 +9,7 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    # Paused until after 0.1.0: a Cargo bump also needs
+    # flatpak/cargo-sources.json regenerated (./scripts/build.sh cargo-src),
+    # or the offline Flatpak build fails. Security updates still open PRs.
+    open-pull-requests-limit: 0
