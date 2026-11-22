@@ -91,9 +91,15 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release version="0.1.0" date="2026-11-18">
+    <release version="0.1.0" date="2026-11-22">
       <description>
         <p>First release of Canto.</p>
+        <ul>
+          <li>Spotify, local music folders and OpenSubsonic / Navidrome in one player</li>
+          <li>Synced lyrics with translation, Genius annotations and a one-button sync studio</li>
+          <li>Colors that follow your desktop theme or the album cover</li>
+          <li>Now Playing panel, queue, mini player, Spotify Connect, Last.fm and ListenBrainz</li>
+        </ul>
       </description>
     </release>
   </releases>
