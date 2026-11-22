@@ -107,6 +107,15 @@ the split's children by class and set their overflow in code.
 test, so the default from the `.blp` renders. When removing a text or icon,
 clear the `.blp` default too, not only the Rust setter.
 
+**`Adw.PreferencesDialog` search still shows hidden groups and rows.**
+Libadwaita's built-in Preferences search indexes every preference row (`Adw.ActionRow`,
+`Adw.SwitchRow`, `Adw.ComboRow`, `Adw.SpinRow`) attached to a visible
+`Adw.PreferencesPage`, even after calling `set_visible(false)` on the group or
+the row itself: clicking such a result leads nowhere. Detach inactive
+groups/rows with `PreferencesPage::remove` / `PreferencesGroup::remove` while
+keeping strong Rust references so they can be re-attached later
+(`sync_audio_page_layout` in `src/app/components/pages/settings/settings.rs`).
+
 ## 2. Events and signals
 
 **`gdk::Event` is not a GObject.** `and_downcast()` does not compile on it. Use

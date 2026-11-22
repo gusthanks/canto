@@ -260,48 +260,63 @@ Adw.ApplicationWindow window {
             "soloist-banner",
           ]
 
-          Image {
-            icon-name: "dialog-information-symbolic";
-            pixel-size: 16;
-            valign: center;
-
-            styles [
-              "accent",
-            ]
-          }
-
-          Label soloist_banner_label {
-            /* Translators: Contextual banner shown when the user's Spotify account requires Soloist for headless playback and no Soloist API key has been configured yet. */
-            label: _("This account needs Spotify Soloist for headless playback. Add a free API key so Canto doesn’t need the Spotify desktop app.");
-            wrap: true;
-            wrap-mode: word_char;
+          Adw.WrapBox {
+            child-spacing: 10;
+            line-spacing: 8;
             hexpand: true;
-            halign: fill;
-            xalign: 0;
-
-            styles [
-              "caption",
-            ]
-          }
-
-          Button soloist_banner_action {
-            /* Translators: Button in the Soloist setup banner that opens the Soloist setup guide. */
-            label: _("Set Up Soloist");
-            action-name: "win.soloist-guide";
             valign: center;
-            focus-on-click: false;
 
-            styles [
-              "suggested-action",
-              "soloist-banner__action",
-            ]
+            Box {
+              orientation: horizontal;
+              spacing: 10;
+              hexpand: true;
+              valign: center;
+
+              Image {
+                icon-name: "dialog-information-symbolic";
+                pixel-size: 16;
+                valign: center;
+
+                styles [
+                  "accent",
+                ]
+              }
+
+              Label soloist_banner_label {
+                /* Translators: Contextual banner shown when the user's Spotify account requires Soloist for headless playback and no Soloist API key has been configured yet. */
+                label: _("This account needs Spotify Soloist for headless playback. Add a free API key so Canto doesn’t need the Spotify desktop app.");
+                wrap: true;
+                wrap-mode: word_char;
+                hexpand: true;
+                halign: fill;
+                xalign: 0;
+
+                styles [
+                  "caption",
+                ]
+              }
+            }
+
+            Button soloist_banner_action {
+              /* Translators: Button in the Soloist setup banner that opens the Soloist setup guide. */
+              label: _("Set Up Soloist");
+              action-name: "win.soloist-guide";
+              halign: start;
+              valign: center;
+              focus-on-click: false;
+
+              styles [
+                "suggested-action",
+                "soloist-banner__action",
+              ]
+            }
           }
 
           Button soloist_banner_dismiss {
             icon-name: "window-close-symbolic";
             /* Translators: Tooltip of the button that dismisses the Soloist setup banner for the current session. */
             tooltip-text: _("Dismiss");
-            valign: center;
+            valign: start;
             focus-on-click: false;
 
             styles [

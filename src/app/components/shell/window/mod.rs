@@ -38,6 +38,7 @@ pub struct MainWindow {
     soloist_banner_revealer: gtk::Revealer,
     soloist_dismissed: Rc<Cell<bool>>,
     official_client_detected: Rc<Cell<bool>>,
+    soloist_sync_gen: Rc<Cell<u64>>,
     _soloist_settings: gio::Settings,
 }
 
@@ -96,12 +97,15 @@ impl MainWindow {
         let logged_in = Rc::new(Cell::new(false));
         let soloist_dismissed = Rc::new(Cell::new(false));
         let official_client_detected = Rc::new(Cell::new(false));
+        let soloist_sync_gen = Rc::new(Cell::new(0u64));
 
         {
             let revealer = soloist_banner_revealer.downgrade();
             let dismissed = Rc::clone(&soloist_dismissed);
+            let sync_gen = Rc::clone(&soloist_sync_gen);
             soloist_banner_dismiss.connect_clicked(move |_| {
                 dismissed.set(true);
+                sync_gen.set(sync_gen.get().wrapping_add(1));
                 if let Some(r) = revealer.upgrade() {
                     r.set_reveal_child(false);
                 }
@@ -114,9 +118,10 @@ impl MainWindow {
             let logged_in = Rc::clone(&logged_in);
             let dismissed = Rc::clone(&soloist_dismissed);
             let detected = Rc::clone(&official_client_detected);
+            let sync_gen = Rc::clone(&soloist_sync_gen);
             soloist_settings.connect_changed(Some(SOLOIST_ENABLED), move |_, _| {
                 if let Some(r) = revealer.upgrade() {
-                    sync_soloist_banner(&r, &logged_in, &detected, &dismissed);
+                    sync_soloist_banner(&r, &logged_in, &detected, &dismissed, &sync_gen);
                 }
             });
         }
@@ -128,6 +133,7 @@ impl MainWindow {
             soloist_banner_revealer,
             soloist_dismissed,
             official_client_detected,
+            soloist_sync_gen,
             _soloist_settings: soloist_settings,
         }
     }
@@ -138,6 +144,7 @@ impl MainWindow {
             &self.logged_in,
             &self.official_client_detected,
             &self.soloist_dismissed,
+            &self.soloist_sync_gen,
         );
     }
 
@@ -186,6 +193,8 @@ impl MainWindow {
         self.logged_in.set(false);
         self.soloist_dismissed.set(false);
         self.official_client_detected.set(false);
+        self.soloist_sync_gen
+            .set(self.soloist_sync_gen.get().wrapping_add(1));
         self.soloist_banner_revealer.set_reveal_child(false);
         self.window.set_visible(false);
     }
@@ -209,7 +218,11 @@ fn sync_soloist_banner(
     logged_in: &Rc<Cell<bool>>,
     official_client_detected: &Rc<Cell<bool>>,
     dismissed: &Rc<Cell<bool>>,
+    sync_gen: &Rc<Cell<u64>>,
 ) {
+    let gen = sync_gen.get().wrapping_add(1);
+    sync_gen.set(gen);
+
     let needs_official =
         official_client_detected.get() || crate::connect::account_needs_official_client();
     let enabled = crate::connect::soloist::is_enabled();
@@ -228,10 +241,14 @@ fn sync_soloist_banner(
     let logged_in = Rc::clone(logged_in);
     let detected = Rc::clone(official_client_detected);
     let dismissed = Rc::clone(dismissed);
+    let sync_gen = Rc::clone(sync_gen);
     glib::spawn_future_local(async move {
         let key_saved = gio::spawn_blocking(canto_auth::soloist_key::is_saved_blocking)
             .await
             .unwrap_or(false);
+        if sync_gen.get() != gen {
+            return;
+        }
         let Some(revealer) = revealer.upgrade() else {
             return;
         };

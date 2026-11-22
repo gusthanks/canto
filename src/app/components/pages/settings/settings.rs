@@ -4,7 +4,7 @@ use crate::settings::CantoSettings;
 use canto_api::scrobbler::{build_auth_url, LastFmClient};
 use canto_config::feature_flags::FeatureFlag;
 use gettextrs::gettext;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 
 use std::rc::Rc;
 
@@ -37,6 +37,22 @@ mod imp {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             f.write_str("SoloistKeyCallback")
         }
+    }
+
+    #[derive(Debug)]
+    pub struct DynamicAudioLayout {
+        pub audio_group: libadwaita::PreferencesGroup,
+        pub normalisation_group: libadwaita::PreferencesGroup,
+        pub equalizer: EqualizerWidget,
+        pub pan: PanWidget,
+        pub pitch: PitchWidget,
+        pub network_group: libadwaita::PreferencesGroup,
+        pub soloist_group: libadwaita::PreferencesGroup,
+        pub audio_cache_size: libadwaita::SpinRow,
+        pub clear_cache_row: libadwaita::ActionRow,
+        pub local_attached: bool,
+        pub normalisation_attached: bool,
+        pub audio_cache_attached: bool,
     }
 
     #[derive(Debug, Default, CompositeTemplate)]
@@ -148,6 +164,9 @@ mod imp {
         pub pitch: TemplateChild<PitchWidget>,
 
         #[template_child]
+        pub caching_group: TemplateChild<libadwaita::PreferencesGroup>,
+
+        #[template_child]
         pub memory_cache_size: TemplateChild<libadwaita::SpinRow>,
 
         #[template_child]
@@ -155,6 +174,9 @@ mod imp {
 
         #[template_child]
         pub audio_cache_size: TemplateChild<libadwaita::SpinRow>,
+
+        #[template_child]
+        pub clear_cache_row: TemplateChild<libadwaita::ActionRow>,
 
         #[template_child]
         pub clear_cache_button: TemplateChild<gtk::Button>,
@@ -223,6 +245,12 @@ mod imp {
         pub lastfm_pending_token: RefCell<Option<String>>,
 
         pub soloist_key_changed: SoloistKeyCallback,
+
+        pub external_player: Cell<bool>,
+
+        pub dynamic_audio: RefCell<Option<DynamicAudioLayout>>,
+
+        pub feature_settings: RefCell<Option<gio::Settings>>,
     }
 
     #[glib::object_subclass]
@@ -284,6 +312,7 @@ impl SettingsDialog {
     pub fn new() -> Self {
         let dialog: Self = glib::Object::new();
 
+        dialog.init_dynamic_audio_layout();
         dialog.bind_backend_and_device();
         dialog.bind_settings();
         dialog.setup_bitrate_lossless_factory();
@@ -292,6 +321,24 @@ impl SettingsDialog {
         dialog.setup_integrations();
         dialog.setup_soloist();
         dialog
+    }
+
+    fn init_dynamic_audio_layout(&self) {
+        let imp = self.imp();
+        *imp.dynamic_audio.borrow_mut() = Some(imp::DynamicAudioLayout {
+            audio_group: imp.audio_group.get(),
+            normalisation_group: imp.normalisation_group.get(),
+            equalizer: imp.equalizer.get(),
+            pan: imp.pan.get(),
+            pitch: imp.pitch.get(),
+            network_group: imp.network_group.get(),
+            soloist_group: imp.soloist_group.get(),
+            audio_cache_size: imp.audio_cache_size.get(),
+            clear_cache_row: imp.clear_cache_row.get(),
+            local_attached: true,
+            normalisation_attached: true,
+            audio_cache_attached: true,
+        });
     }
 
     fn bind_backend_and_device(&self) {
@@ -305,15 +352,15 @@ impl SettingsDialog {
             .alsa_device_row
             .downcast_ref::<libadwaita::ActionRow>()
             .unwrap();
+        let audio_group = widget.audio_group.get();
 
-        audio_backend
-            .bind_property("selected", alsa_device_row, "visible")
-            .transform_to(|_, value: u32| Some(value == 1))
-            .build();
+        let row_for_backend = alsa_device_row.clone();
+        let group_for_backend = audio_group.clone();
+        audio_backend.connect_selected_notify(move |combo| {
+            row_for_backend.set_visible(group_for_backend.get_visible() && combo.selected() == 1);
+        });
 
-        if audio_backend.selected() == 0 {
-            alsa_device_row.set_visible(false);
-        }
+        alsa_device_row.set_visible(audio_group.get_visible() && audio_backend.selected() == 1);
     }
 
     /// Installs a list factory on the Audio Quality combo row that renders the
@@ -981,18 +1028,13 @@ impl SettingsDialog {
             "These features are still in development and may be unstable or incomplete.",
         )));
 
-        settings
-            .bind(
-                FeatureFlag::Normalisation.key(),
-                &*self.imp().normalisation_group,
-                "visible",
-            )
-            .flags(gio::SettingsBindFlags::GET)
-            .mapping(|variant, _| {
-                let enabled = variant.get::<bool>().unwrap_or(false);
-                Some((enabled && !crate::connect::account_needs_official_client()).to_value())
-            })
-            .build();
+        let weak_self = self.downgrade();
+        settings.connect_changed(Some(FeatureFlag::Normalisation.key()), move |_, _| {
+            if let Some(dialog) = weak_self.upgrade() {
+                dialog.sync_audio_page_layout();
+            }
+        });
+        *self.imp().feature_settings.borrow_mut() = Some(settings.clone());
 
         for flag in FeatureFlag::ALL.iter() {
             let row = libadwaita::SwitchRow::new();
@@ -1071,21 +1113,80 @@ impl SettingsDialog {
         *self.imp().soloist_key_changed.0.borrow_mut() = Some(Box::new(on_change));
     }
 
+    /// Attaches or detaches the librespot-only audio/DSP/network groups and the
+    /// audio-cache row according to `external_player` and `FeatureFlag::Normalisation`.
+    ///
+    /// Detaching from `PreferencesPage` / `PreferencesGroup` (rather than only
+    /// calling `set_visible(false)`) is required so libadwaita's built-in
+    /// Preferences search stops indexing inactive settings.
+    fn sync_audio_page_layout(&self) {
+        let imp = self.imp();
+        let show_local = !imp.external_player.get();
+        let norm_enabled = gio::Settings::new(SETTINGS).boolean(FeatureFlag::Normalisation.key());
+        let show_norm = show_local && norm_enabled;
+
+        let mut layout_guard = imp.dynamic_audio.borrow_mut();
+        let Some(layout) = layout_guard.as_mut() else {
+            return;
+        };
+
+        if layout.local_attached != show_local || layout.normalisation_attached != show_norm {
+            let audio_page = imp.audio_page.get();
+            if layout.local_attached {
+                audio_page.remove(&layout.audio_group);
+                audio_page.remove(&layout.equalizer);
+                audio_page.remove(&layout.pan);
+                audio_page.remove(&layout.pitch);
+                audio_page.remove(&layout.network_group);
+            }
+            if layout.normalisation_attached {
+                audio_page.remove(&layout.normalisation_group);
+            }
+            audio_page.remove(&layout.soloist_group);
+
+            if show_local {
+                audio_page.add(&layout.audio_group);
+                if show_norm {
+                    audio_page.add(&layout.normalisation_group);
+                }
+                audio_page.add(&layout.equalizer);
+                audio_page.add(&layout.pan);
+                audio_page.add(&layout.pitch);
+                audio_page.add(&layout.network_group);
+            }
+            audio_page.add(&layout.soloist_group);
+
+            layout.local_attached = show_local;
+            layout.normalisation_attached = show_norm;
+        }
+
+        if layout.audio_cache_attached != show_local {
+            let caching_group = imp.caching_group.get();
+            if show_local {
+                caching_group.remove(&layout.clear_cache_row);
+                caching_group.add(&layout.audio_cache_size);
+                caching_group.add(&layout.clear_cache_row);
+            } else {
+                caching_group.remove(&layout.audio_cache_size);
+            }
+            layout.audio_cache_attached = show_local;
+        }
+    }
+
     /// Hides the librespot-only audio, DSP, network, and audio-cache controls
     /// for accounts that must play through Soloist or the hidden Spotify app.
     fn sync_external_player_visibility(&self) {
-        let imp = self.imp();
-        let external_player = crate::connect::account_needs_official_client();
-        let show_local = !external_player;
-        imp.audio_group.set_visible(show_local);
-        imp.network_group.set_visible(show_local);
-        imp.equalizer.set_visible(show_local);
-        imp.pan.set_visible(show_local);
-        imp.pitch.set_visible(show_local);
-        imp.audio_cache_size.set_visible(show_local);
-        let norm_enabled = gio::Settings::new(SETTINGS).boolean(FeatureFlag::Normalisation.key());
-        imp.normalisation_group
-            .set_visible(show_local && norm_enabled);
+        self.sync_external_player_visibility_for(crate::connect::account_needs_official_client());
+    }
+
+    fn sync_external_player_visibility_for(&self, external_player: bool) {
+        self.imp().external_player.set(external_player);
+        self.sync_audio_page_layout();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_external_player_for_tests(&self, external_player: bool) {
+        self.sync_external_player_visibility_for(external_player);
     }
 
     /// The Soloist group: on/off, key, status. For accounts that can't play
@@ -1493,7 +1594,12 @@ impl Settings {
 }
 
 impl EventListener for Settings {
-    fn on_event(&mut self, _: &AppEvent) {}
+    fn on_event(&mut self, event: &AppEvent) {
+        if matches!(event, AppEvent::OfficialClientRequested) {
+            self.settings_dialog
+                .sync_external_player_visibility_for(true);
+        }
+    }
 }
 
 fn open_external_url(widget: &impl IsA<gtk::Widget>, url: &str) {
@@ -1773,8 +1879,11 @@ fn soloist_guide_content(
     content
 }
 
-/// Opens the step-by-step Spotify Soloist setup guide over `parent`.
-pub fn present_soloist_guide_dialog(parent: &impl IsA<gtk::Widget>, show_open_settings: bool) {
+fn build_soloist_guide_dialog(
+    parent: &impl IsA<gtk::Widget>,
+    auto_download: crate::connect::soloist::AutoDownloadSupport,
+    show_open_settings: bool,
+) -> libadwaita::Dialog {
     let dialog = libadwaita::Dialog::builder()
         .title(gettext("Set Up Spotify Soloist"))
         .content_width(480)
@@ -1795,7 +1904,7 @@ pub fn present_soloist_guide_dialog(parent: &impl IsA<gtk::Widget>, show_open_se
     };
     let weak_dialog = dialog.downgrade();
     let content = soloist_guide_content(
-        crate::connect::soloist::auto_download_support(),
+        auto_download,
         show_open_settings,
         on_open_settings,
         move || {
@@ -1806,7 +1915,26 @@ pub fn present_soloist_guide_dialog(parent: &impl IsA<gtk::Widget>, show_open_se
     );
     toolbar.set_content(Some(&content));
     dialog.set_child(Some(&toolbar));
+    dialog
+}
+
+/// Opens the step-by-step Spotify Soloist setup guide over `parent`.
+pub fn present_soloist_guide_dialog(parent: &impl IsA<gtk::Widget>, show_open_settings: bool) {
+    let dialog = build_soloist_guide_dialog(
+        parent,
+        crate::connect::soloist::auto_download_support(),
+        show_open_settings,
+    );
     dialog.present(Some(parent));
+}
+
+#[cfg(test)]
+pub(crate) fn soloist_guide_dialog_for_tests(
+    parent: &impl IsA<gtk::Widget>,
+    auto_download: crate::connect::soloist::AutoDownloadSupport,
+    show_open_settings: bool,
+) -> libadwaita::Dialog {
+    build_soloist_guide_dialog(parent, auto_download, show_open_settings)
 }
 
 #[cfg(test)]

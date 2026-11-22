@@ -142,8 +142,9 @@ fn assert_lastfm_love_switch() {
     let _ = gsettings.set_string(LASTFM_USERNAME, "");
 }
 
-/// Preferences has built-in search enabled and is organized into three pages:
-/// General, Audio, and Integrations.
+/// Preferences has built-in search enabled, actually finds rows across pages
+/// while skipping hidden librespot rows in external-player mode, and is
+/// organized into three pages: General, Audio, and Integrations.
 fn assert_preferences_pages_and_search() {
     use libadwaita::prelude::{AdwDialogExt, PreferencesDialogExt};
     force_dark();
@@ -172,20 +173,146 @@ fn assert_preferences_pages_and_search() {
     window.set_default_size(720, 760);
     window.present();
     dialog.present(Some(&window));
+
+    // Verify both local-player and external-player (Soloist) Audio page layouts
+    dialog.set_external_player_for_tests(false);
+    wait_frames(&window, 3);
+    distinct_colors(window.upcast_ref(), "settings-audio-local-sample");
+
+    dialog.set_external_player_for_tests(true);
     wait_frames(&window, 3);
     distinct_colors(window.upcast_ref(), "settings-audio-sample");
+
     dialog.set_visible_page_name("general");
     wait_frames(&window, 3);
     distinct_colors(window.upcast_ref(), "settings-general-sample");
+
+    // Actually exercise Preferences built-in search across pages.
+    fn find_search_widgets(
+        root: &gtk::Widget,
+    ) -> (Option<gtk::ToggleButton>, Option<gtk::SearchEntry>) {
+        let mut toggle = None;
+        let mut entry = None;
+        let mut stack = vec![root.clone()];
+        while let Some(w) = stack.pop() {
+            if toggle.is_none() {
+                if let Some(btn) = w.downcast_ref::<gtk::ToggleButton>() {
+                    if btn.icon_name().as_deref() == Some("system-search-symbolic")
+                        || btn.icon_name().as_deref() == Some("edit-find-symbolic")
+                    {
+                        toggle = Some(btn.clone());
+                    }
+                }
+            }
+            if entry.is_none() {
+                if let Some(se) = w.downcast_ref::<gtk::SearchEntry>() {
+                    entry = Some(se.clone());
+                }
+            }
+            let mut child = w.first_child();
+            while let Some(c) = child {
+                child = c.next_sibling();
+                stack.push(c);
+            }
+        }
+        (toggle, entry)
+    }
+
+    fn visible_search_result_titles(root: &gtk::Widget) -> Vec<String> {
+        let mut titles = Vec::new();
+        let mut stack = vec![root.clone()];
+        while let Some(w) = stack.pop() {
+            if !w.get_visible() || !w.is_mapped() {
+                continue;
+            }
+            if let Some(row) = w.downcast_ref::<libadwaita::ActionRow>() {
+                let t = libadwaita::prelude::PreferencesRowExt::title(row).to_string();
+                if !t.is_empty() {
+                    titles.push(t);
+                }
+            }
+            let mut child = w.first_child();
+            while let Some(c) = child {
+                child = c.next_sibling();
+                stack.push(c);
+            }
+        }
+        titles
+    }
+
+    let (search_toggle, search_entry) = find_search_widgets(dialog.upcast_ref());
+    check(
+        "Preferences exposes a search button and SearchEntry",
+        search_toggle.is_some() && search_entry.is_some(),
+        format!(
+            "toggle={}, entry={}",
+            search_toggle.is_some(),
+            search_entry.is_some()
+        ),
+    );
+    if let (Some(toggle), Some(entry)) = (search_toggle, search_entry) {
+        toggle.set_active(true);
+        wait_frames(&window, 2);
+
+        entry.set_text("Soloist");
+        wait_frames(&window, 3);
+        let results = visible_search_result_titles(dialog.upcast_ref());
+        check(
+            "Preferences search finds Soloist rows",
+            results.iter().any(|t| t.contains("Soloist")),
+            format!("results={:?}", results),
+        );
+
+        entry.set_text("Scrobbling");
+        wait_frames(&window, 3);
+        let results = visible_search_result_titles(dialog.upcast_ref());
+        check(
+            "Preferences search finds Integrations rows across pages",
+            results.iter().any(|t| t.contains("Scrobbling")),
+            format!("results={:?}", results),
+        );
+
+        // In external-player mode, detached librespot-only rows must not appear in search.
+        for hidden_query in ["Gapless", "Pre-gain", "Access Point", "Audio Cache"] {
+            entry.set_text(hidden_query);
+            wait_frames(&window, 3);
+            let results = visible_search_result_titles(dialog.upcast_ref());
+            check(
+                &format!(
+                    "Preferences search skips hidden librespot row '{}' in external-player mode",
+                    hidden_query
+                ),
+                !results.iter().any(|t| t.contains(hidden_query)),
+                format!("results={:?}", results),
+            );
+        }
+
+        // In local-player mode, local librespot rows reappear in search.
+        dialog.set_external_player_for_tests(false);
+        entry.set_text("");
+        wait_frames(&window, 2);
+        entry.set_text("Gapless");
+        wait_frames(&window, 3);
+        let results = visible_search_result_titles(dialog.upcast_ref());
+        check(
+            "Preferences search finds local Audio rows when playing locally",
+            results.iter().any(|t| t.contains("Gapless")),
+            format!("results={:?}", results),
+        );
+    }
+
     dialog.force_close();
     window.destroy();
 }
 
-/// The Soloist setup guide adapts to x86_64 vs non-x86_64 architectures, and
-/// the contextual Soloist banner in the main window fits from 360 px up.
+/// The Soloist setup guide adapts to x86_64 vs non-x86_64 architectures, opens
+/// cleanly as a real Adw.Dialog whose "Soloist Settings" button triggers
+/// `win.preferences-audio`, and the contextual Soloist banner in the main
+/// window fits from 360 px up.
 fn assert_soloist_guide_and_banner() {
     use crate::connect::soloist::AutoDownloadSupport;
-    use libadwaita::prelude::AdwWindowExt;
+    use gio::prelude::ActionMapExt;
+    use libadwaita::prelude::AdwDialogExt;
     force_dark();
     no_animations();
 
@@ -208,6 +335,23 @@ fn assert_soloist_guide_and_banner() {
             }
         }
         (labels, buttons)
+    }
+
+    fn find_button_by_label(root: &gtk::Widget, target: &str) -> Option<gtk::Button> {
+        let mut stack = vec![root.clone()];
+        while let Some(w) = stack.pop() {
+            if let Some(btn) = w.downcast_ref::<gtk::Button>() {
+                if btn.label().as_deref() == Some(target) {
+                    return Some(btn.clone());
+                }
+            }
+            let mut child = w.first_child();
+            while let Some(c) = child {
+                child = c.next_sibling();
+                stack.push(c);
+            }
+        }
+        None
     }
 
     let x86_guide =
@@ -237,22 +381,51 @@ fn assert_soloist_guide_and_banner() {
         format!("labels={:?}, buttons={:?}", arm_labels, arm_buttons),
     );
 
-    // Render the guide inside an AdwWindow to verify no overflow at narrow widths
-    let guide_window = libadwaita::Window::new();
-    guide_window.set_default_size(480, 420);
-    guide_window.set_content(Some(&x86_guide));
-    guide_window.present();
-    wait_mapped(&x86_guide, 300);
-    distinct_colors(guide_window.upcast_ref(), "soloist-guide-sample");
-    guide_window.destroy();
+    // Mount the real Adw.Dialog inside an Adw.ApplicationWindow and verify both
+    // narrow (360 px) and standard (560 px) widths plus the Soloist Settings action.
+    let host = libadwaita::ApplicationWindow::builder().build();
+    let audio_prefs_opened = std::rc::Rc::new(std::cell::Cell::new(false));
+    let opened_flag = std::rc::Rc::clone(&audio_prefs_opened);
+    let audio_action = gio::SimpleAction::new("preferences-audio", None);
+    audio_action.connect_activate(move |_, _| opened_flag.set(true));
+    host.add_action(&audio_action);
+
+    host.set_default_size(560, 520);
+    host.present();
+    let guide_dialog = crate::app::components::soloist_guide_dialog_for_tests(
+        &host,
+        AutoDownloadSupport::Available,
+        true,
+    );
+    guide_dialog.present(Some(&host));
+    wait_frames(&host, 3);
+    distinct_colors(host.upcast_ref(), "soloist-guide-sample");
+
+    host.set_default_size(360, 520);
+    wait_frames(&host, 3);
+
+    let settings_btn = find_button_by_label(guide_dialog.upcast_ref(), "Soloist Settings");
+    check(
+        "Soloist guide dialog contains Soloist Settings button",
+        settings_btn.is_some(),
+        format!("found={}", settings_btn.is_some()),
+    );
+    if let Some(btn) = settings_btn {
+        btn.emit_clicked();
+        wait_frames(&host, 2);
+        check(
+            "clicking Soloist Settings activates win.preferences-audio",
+            audio_prefs_opened.get(),
+            format!("activated={}", audio_prefs_opened.get()),
+        );
+    }
+    guide_dialog.force_close();
+    host.destroy();
 
     // Check the contextual Soloist banner in window.ui at narrow and wide widths
     let builder = gtk::Builder::from_resource("/io/github/gusthanks/Canto/window.ui");
     let main: libadwaita::ApplicationWindow = builder.object("window").unwrap();
-    {
-        use gio::prelude::ActionMapExt;
-        main.add_action(&gio::SimpleAction::new("soloist-guide", None));
-    }
+    main.add_action(&gio::SimpleAction::new("soloist-guide", None));
     let revealer: gtk::Revealer = builder.object("soloist_banner_revealer").unwrap();
     let banner: gtk::Box = builder.object("soloist_banner").unwrap();
     let action: gtk::Button = builder.object("soloist_banner_action").unwrap();
@@ -273,7 +446,7 @@ fn assert_soloist_guide_and_banner() {
 
     revealer.set_reveal_child(true);
     for (width, tag) in [
-        (360, None),
+        (360, Some("soloist-banner-360-sample")),
         (583, None),
         (1024, Some("soloist-banner-sample")),
     ]
