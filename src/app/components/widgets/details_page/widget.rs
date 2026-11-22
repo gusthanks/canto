@@ -115,6 +115,7 @@ impl DetailsPage {
         let url = art.and_then(|s| s.best_for_width(HEADER_IMAGE_SIZE as u32));
         if url.is_some_and(is_resource_url) {
             if let Some(header) = self.header.widget_weak().upgrade() {
+                header.set_clickable_artwork(None);
                 let imp = header.imp();
                 imp.image.set_paintable(None::<&gdk::Paintable>);
                 set_missing_art(&*imp.image_box, true);
@@ -123,6 +124,7 @@ impl DetailsPage {
             }
             self.set_loaded();
         } else if let Some(url) = url {
+            let full_url = art.and_then(|s| s.largest()).unwrap_or(url).to_string();
             let url = url.to_string();
             let weak_header = self.header.widget_weak();
             let weak = self.widget.imp().scroll_child.downgrade();
@@ -136,16 +138,37 @@ impl DetailsPage {
                     let tint = crate::app::theme::extract_cover_accent_from_texture(texture);
                     super::tint::set_tint(&scroll_child, tint.as_deref());
                     if let Some(header) = weak_header.upgrade() {
-                        let imp = header.imp();
-                        imp.image.set_paintable(Some(texture));
-                        set_missing_art(&*imp.image_box, false);
-                        imp.image_box
-                            .remove_css_class("details-header__image-placeholder");
+                        let (title, subtitle, circular) = {
+                            let imp = header.imp();
+                            imp.image.set_paintable(Some(texture));
+                            set_missing_art(&*imp.image_box, false);
+                            imp.image_box
+                                .remove_css_class("details-header__image-placeholder");
+                            (
+                                imp.title_label.label().to_string(),
+                                header.subtitle_summary(),
+                                imp.image_box
+                                    .has_css_class("details-header__image--circular"),
+                            )
+                        };
+                        header.set_clickable_artwork(Some(super::ArtworkViewerSource {
+                            url,
+                            full_url,
+                            title,
+                            subtitle,
+                            tint,
+                            circular,
+                            preview: Some(texture.clone().upcast()),
+                            api_service,
+                        }));
                     }
                     scroll_child.add_css_class("details-page--loaded");
                 }
             });
         } else {
+            if let Some(header) = self.header.widget_weak().upgrade() {
+                header.set_clickable_artwork(None);
+            }
             self.set_loaded();
         }
     }

@@ -274,6 +274,9 @@ pub trait MusicProvider: Send + Sync + 'static {
     async fn player_repeat(&self, device_id: &str, mode: RepeatMode) -> Result<(), DomainError>;
     async fn player_shuffle(&self, device_id: &str, state: bool) -> Result<(), DomainError>;
     async fn player_volume(&self, device_id: &str, volume_percent: u8) -> Result<(), DomainError>;
+    async fn player_add_to_queue(&self, _device_id: &str, _uri: &str) -> Result<(), DomainError> {
+        Ok(())
+    }
 
     /// Drop any cached auth configuration (e.g. after a 401).
     fn invalidate_config(&self);

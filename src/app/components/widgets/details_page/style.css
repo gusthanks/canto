@@ -163,6 +163,46 @@
   box-shadow: 0 8px 24px alpha(black, 0.35);
 }
 
+.details-header__image-box--clickable {
+  transition: transform 180ms ease, filter 180ms ease, box-shadow 180ms ease;
+}
+
+.details-header__image-box--clickable:hover {
+  transform: scale(1.025);
+  filter: brightness(1.06);
+  box-shadow: 0 12px 30px alpha(black, 0.48);
+}
+
+/* Fullscreen artwork lightbox */
+.artwork-viewer-window {
+  background-color: rgba(10, 11, 16, 0.96);
+}
+
+.artwork-viewer__frame {
+  border-radius: 16px;
+  box-shadow: 0 24px 64px alpha(black, 0.65);
+}
+
+.artwork-viewer__frame--circular {
+  border-radius: 9999px;
+}
+
+.artwork-viewer__close {
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.artwork-viewer__title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: white;
+}
+
+.artwork-viewer__subtitle {
+  font-size: 1rem;
+  color: alpha(white, 0.72);
+}
+
 /* Caption that links somewhere (the album on Now Playing) */
 .details-header__caption--link {
   font-weight: 600;

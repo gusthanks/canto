@@ -1,7 +1,5 @@
 use std::borrow::Cow;
 
-use gettextrs::gettext;
-
 use crate::app::components::labels;
 use crate::app::models::{ImageSet, Playlist, PlaylistSummary, Track};
 use crate::app::state::{
@@ -335,9 +333,18 @@ impl AppState {
             return vec![];
         }
         if matches!(self.playback.current_device(), Device::Connect(_)) {
-            return vec![AppEvent::NotificationShown(gettext(
-                "Queueing isn't available when playing on another device",
-            ))];
+            let uris = tracks
+                .into_iter()
+                .map(|track| {
+                    let uri = track.rri.uri;
+                    let id = track.rri.id;
+                    uri.unwrap_or_else(|| format!("spotify:track:{}", id))
+                })
+                .collect();
+            return vec![
+                PlaybackEvent::TracksQueuedRemote(uris).into(),
+                AppEvent::NotificationShown(labels::ADDED_TO_QUEUE.clone()),
+            ];
         }
         self.playback.queue(tracks);
         vec![
@@ -428,5 +435,40 @@ mod tests {
         assert!(state.playback.is_shuffled());
         assert_eq!(upcoming.len(), 20);
         assert_ne!(upcoming, ids);
+    }
+
+    #[test]
+    fn test_queue_tracks_on_connect_device_emits_remote_queue_event() {
+        use crate::app::models::{Device as ConnectDevice, DeviceKind};
+        use crate::app::state::Device;
+
+        let mut state = AppState::new();
+        state.update_state(
+            PlaybackAction::SwitchDevice(Device::Connect(ConnectDevice {
+                id: "speaker-1".to_string(),
+                label: "Living Room".to_string(),
+                kind: DeviceKind::Speaker,
+                is_active: true,
+                volume_percent: Some(50),
+            }))
+            .into(),
+        );
+
+        let mut t1 = make_track("t1");
+        t1.rri.uri = Some("spotify:track:t1".to_string());
+        let t2 = make_track("t2");
+
+        let events = state.update_state(AppAction::QueueTracks {
+            tracks: vec![t1, t2],
+        });
+
+        assert!(events.iter().any(|e| matches!(
+            e,
+            AppEvent::PlaybackEvent(PlaybackEvent::TracksQueuedRemote(uris))
+                if uris == &["spotify:track:t1".to_string(), "spotify:track:t2".to_string()]
+        )));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, AppEvent::NotificationShown(_))));
     }
 }

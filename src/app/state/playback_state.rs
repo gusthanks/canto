@@ -767,6 +767,7 @@ pub enum PlaybackEvent {
     VolumeSynced(f64),
     TrackChanged(String),
     TrackSynced,
+    TracksQueuedRemote(Vec<String>),
     PlayStateSynced(bool),
     SourceChanged,
     Preload(String),

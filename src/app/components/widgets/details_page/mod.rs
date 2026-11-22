@@ -10,6 +10,7 @@
 // - DetailsPage: scroll-based layout widget with a collapsing header.
 // - DetailsHeader: header widget with artwork, titles, and action buttons.
 
+mod artwork_viewer;
 mod component;
 mod header;
 mod model;
@@ -19,6 +20,7 @@ mod tint;
 mod traits;
 mod widget;
 
+pub use artwork_viewer::*;
 pub use component::*;
 pub use header::*;
 pub use model::*;

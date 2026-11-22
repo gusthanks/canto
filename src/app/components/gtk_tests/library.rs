@@ -29,6 +29,10 @@ gtk_tests! {
         force_dark();
         assert_track_list_filter_and_sort();
     },
+    album_artwork_viewer_opens_and_closes => || {
+        force_dark();
+        assert_album_artwork_viewer_opens_and_closes();
+    },
 }
 
 /// The sidebar's grid of covers: section titles stay out of it, and in the
@@ -1000,4 +1004,48 @@ fn assert_track_list_filter_and_sort() {
     drop(track_list);
     window.destroy();
     eprintln!("track list filter and sort ok");
+}
+
+fn assert_album_artwork_viewer_opens_and_closes() {
+    use std::sync::Arc;
+
+    use crate::app::components::details_page::{
+        present_fullscreen_artwork, ArtworkViewerSource, DetailsHeaderWidget,
+    };
+
+    let token_provider: Arc<dyn canto_api::TokenProvider> = Arc::new(|| None::<String>);
+    let api = Arc::new(canto_api::spotify_service(
+        Arc::clone(&token_provider),
+        token_provider,
+        1024 * 1024,
+        1024 * 1024,
+    ));
+
+    let header_widget: DetailsHeaderWidget = glib::Object::new();
+    assert!(!header_widget.has_clickable_artwork());
+
+    let cover = sample_cover();
+    let source = ArtworkViewerSource {
+        url: "file:///tmp/small.png".to_string(),
+        full_url: "file:///tmp/large.png".to_string(),
+        title: "Blonde".to_string(),
+        subtitle: "Frank Ocean".to_string(),
+        tint: Some("#2c3e50".to_string()),
+        circular: false,
+        preview: Some(cover.upcast()),
+        api_service: api,
+    };
+    header_widget.set_clickable_artwork(Some(source.clone()));
+    assert!(header_widget.has_clickable_artwork());
+
+    let viewer = present_fullscreen_artwork(None, source);
+    assert!(viewer.has_css_class("artwork-viewer-window"));
+    assert!(viewer.has_css_class("artwork-viewer-tint-2c3e50"));
+    pump(50);
+    viewer.close();
+    pump(50);
+
+    header_widget.set_clickable_artwork(None);
+    assert!(!header_widget.has_clickable_artwork());
+    eprintln!("album artwork viewer ok");
 }

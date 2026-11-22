@@ -6,7 +6,7 @@ use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::CompositeTemplate;
 
-use super::{SubtitleLinksBox, HEADER_IMAGE_SIZE};
+use super::{present_fullscreen_artwork, ArtworkViewerSource, SubtitleLinksBox, HEADER_IMAGE_SIZE};
 use crate::app::components::utils::add_hover_class;
 use crate::app::components::{labels, ExpandBehavior, SegmentedButton};
 
@@ -78,6 +78,9 @@ mod imp {
 
         #[template_child]
         pub button_box: TemplateChild<gtk::Box>,
+
+        pub artwork_source: RefCell<Option<ArtworkViewerSource>>,
+        pub subtitle_summary: RefCell<String>,
     }
 
     #[glib::object_subclass]
@@ -100,6 +103,24 @@ mod imp {
             self.parent_constructed();
             // Visible: hidden cut the cover's shadow into a hard box
             self.obj().set_overflow(gtk::Overflow::Visible);
+
+            let click = gtk::GestureClick::new();
+            click.set_button(gdk::BUTTON_PRIMARY);
+            let obj_weak = self.obj().downgrade();
+            click.connect_released(move |gesture, _, _, _| {
+                let Some(obj) = obj_weak.upgrade() else {
+                    return;
+                };
+                let source = obj.imp().artwork_source.borrow().clone();
+                if let Some(source) = source {
+                    gesture.set_state(gtk::EventSequenceState::Claimed);
+                    let parent = obj
+                        .root()
+                        .and_then(|root| root.downcast::<gtk::Window>().ok());
+                    present_fullscreen_artwork(parent.as_ref(), source);
+                }
+            });
+            self.image_box.add_controller(click);
         }
 
         fn dispose(&self) {
@@ -150,6 +171,32 @@ mod imp {
 glib::wrapper! {
     pub struct DetailsHeaderWidget(ObjectSubclass<imp::DetailsHeaderWidget>) @extends gtk::Widget,
         @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget;
+}
+
+impl DetailsHeaderWidget {
+    pub fn set_clickable_artwork(&self, source: Option<ArtworkViewerSource>) {
+        let clickable = source.is_some();
+        *self.imp().artwork_source.borrow_mut() = source;
+        let box_ = &self.imp().image_box;
+        if clickable {
+            box_.add_css_class("details-header__image-box--clickable");
+            box_.set_cursor_from_name(Some("pointer"));
+            // translators: Tooltip on an album, playlist, or artist cover in the header.
+            box_.set_tooltip_text(Some(&gettext("View artwork in fullscreen")));
+        } else {
+            box_.remove_css_class("details-header__image-box--clickable");
+            box_.set_cursor_from_name(None);
+            box_.set_tooltip_text(None);
+        }
+    }
+
+    pub fn has_clickable_artwork(&self) -> bool {
+        self.imp().artwork_source.borrow().is_some()
+    }
+
+    pub fn subtitle_summary(&self) -> String {
+        self.imp().subtitle_summary.borrow().clone()
+    }
 }
 
 /// High-level wrapper around `DetailsHeaderWidget`.
@@ -221,6 +268,7 @@ impl DetailsHeader {
 
     pub fn set_subtitle(&self, subtitle: &str) {
         let imp = self.widget.imp();
+        *imp.subtitle_summary.borrow_mut() = subtitle.to_string();
         imp.subtitle_label.set_label(subtitle);
         imp.subtitle_label.set_visible(!subtitle.is_empty());
         // A plain subtitle and the links box are mutually exclusive.
@@ -235,6 +283,7 @@ impl DetailsHeader {
 
     /// Display a themed icon as fallback artwork (e.g. when no image is available).
     pub fn set_default_icon(&self, icon_name: &str) {
+        self.widget.set_clickable_artwork(None);
         let display = gdk::Display::default().unwrap();
         let scale = self.widget.scale_factor();
         let icon = gtk::IconTheme::for_display(&display).lookup_icon(
@@ -442,6 +491,11 @@ impl DetailsHeader {
 
         // Clear any previous children.
         links_box.clear_links();
+        *imp.subtitle_summary.borrow_mut() = artists
+            .iter()
+            .map(|(_, name)| name.as_str())
+            .collect::<Vec<_>>()
+            .join(", ");
 
         if artists.is_empty() {
             links_box.set_visible(false);

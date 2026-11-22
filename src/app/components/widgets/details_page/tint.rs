@@ -19,7 +19,7 @@ struct Tints {
 }
 
 /// Lowercase hex digits of a "#rrggbb" color, or `None` when it isn't one.
-fn hex_digits(color: &str) -> Option<String> {
+pub(super) fn hex_digits(color: &str) -> Option<String> {
     let digits = color.strip_prefix('#')?;
     (digits.len() == 6 && digits.chars().all(|c| c.is_ascii_hexdigit()))
         .then(|| digits.to_ascii_lowercase())

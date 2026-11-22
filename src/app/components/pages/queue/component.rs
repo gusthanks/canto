@@ -129,8 +129,18 @@ impl EventListener for QueuePage {
         if let AppEvent::LoginEvent(_) = event {
             self.update_save_playlist();
         }
-        if let AppEvent::PlaybackEvent(PlaybackEvent::TrackChanged(_)) = event {
-            self.recent.track_changed();
+        if let AppEvent::PlaybackEvent(ev) = event {
+            match ev {
+                PlaybackEvent::TrackChanged(_)
+                | PlaybackEvent::TrackSynced
+                | PlaybackEvent::SourceChanged
+                | PlaybackEvent::PlaybackResumed
+                | PlaybackEvent::PlayStateSynced(true)
+                | PlaybackEvent::PlaybackStopped => {
+                    self.recent.on_playback_event(ev);
+                }
+                _ => {}
+            }
         }
         if let AppEvent::BrowserEvent(BrowserEvent::SavedTracksUpdated) = event {
             self.recent.refresh_likes();
@@ -199,6 +209,9 @@ struct RecentlyPlayed {
     app_model: Rc<AppModel>,
     dispatcher: Dispatcher,
     tracks: RefCell<Vec<Track>>,
+    session_recent: RefCell<Vec<canto_api::models::PlayedTrack>>,
+    last_remote: RefCell<Vec<canto_api::models::PlayedTrack>>,
+    active_track: RefCell<Option<Track>>,
     /// Bumped by each load; an older answer is dropped.
     generation: Cell<u32>,
     loaded_at: Cell<Option<Instant>>,
@@ -206,11 +219,22 @@ struct RecentlyPlayed {
 
 impl RecentlyPlayed {
     fn new(widget: QueuePageWidget, app_model: Rc<AppModel>, dispatcher: Dispatcher) -> Rc<Self> {
+        let initial_active = {
+            let state = app_model.get_state();
+            if state.playback.is_playing() {
+                state.playback.current_song()
+            } else {
+                None
+            }
+        };
         let recent = Rc::new(Self {
             widget: widget.clone(),
             app_model,
             dispatcher,
             tracks: Default::default(),
+            session_recent: Default::default(),
+            last_remote: Default::default(),
+            active_track: RefCell::new(initial_active),
             generation: Default::default(),
             loaded_at: Default::default(),
         });
@@ -242,11 +266,81 @@ impl RecentlyPlayed {
         recent
     }
 
-    fn track_changed(self: &Rc<Self>) {
-        // Folded: nothing to fetch; the next unfold loads it fresh
-        self.loaded_at.set(None);
-        if self.widget.is_recent_expanded() {
-            self.load(true);
+    fn record_session_track(&self, track: Track) {
+        let played_at = glib::DateTime::now_utc()
+            .and_then(|d| d.format_iso8601())
+            .ok()
+            .map(|s| s.to_string());
+        let mut session = self.session_recent.borrow_mut();
+        session.insert(0, canto_api::models::PlayedTrack { track, played_at });
+        session.truncate(RECENT_LIMIT);
+    }
+
+    fn on_playback_event(self: &Rc<Self>, event: &PlaybackEvent) {
+        let recorded = match event {
+            PlaybackEvent::PlaybackStopped => {
+                if let Some(prev) = self.active_track.borrow_mut().take() {
+                    self.record_session_track(prev);
+                    true
+                } else {
+                    false
+                }
+            }
+            PlaybackEvent::TrackChanged(_)
+            | PlaybackEvent::TrackSynced
+            | PlaybackEvent::SourceChanged
+            | PlaybackEvent::PlaybackResumed
+            | PlaybackEvent::PlayStateSynced(true) => {
+                let (current, is_playing) = {
+                    let state = self.app_model.get_state();
+                    (state.playback.current_song(), state.playback.is_playing())
+                };
+                let should_track = is_playing
+                    || matches!(
+                        event,
+                        PlaybackEvent::TrackChanged(_) | PlaybackEvent::SourceChanged
+                    );
+                let mut recorded = false;
+                if should_track {
+                    let mut active = self.active_track.borrow_mut();
+                    let next_id = current.as_ref().map(|t| t.rri.id.as_str());
+                    if let Some(prev) = active.as_ref() {
+                        if next_id != Some(prev.rri.id.as_str()) {
+                            self.record_session_track(prev.clone());
+                            recorded = true;
+                        }
+                    }
+                    *active = current;
+                }
+                recorded
+            }
+            _ => false,
+        };
+
+        if matches!(
+            event,
+            PlaybackEvent::TrackChanged(_)
+                | PlaybackEvent::TrackSynced
+                | PlaybackEvent::SourceChanged
+                | PlaybackEvent::PlaybackStopped
+        ) || recorded
+        {
+            self.loaded_at.set(None);
+            if self.widget.is_recent_expanded() {
+                if recorded {
+                    let immediate = merge_recent_tracks(
+                        &self.session_recent.borrow(),
+                        &self.last_remote.borrow(),
+                        RECENT_LIMIT,
+                    );
+                    if !immediate.is_empty() {
+                        self.show(immediate);
+                    }
+                }
+                if !matches!(event, PlaybackEvent::PlaybackStopped) {
+                    self.load(true);
+                }
+            }
         }
     }
 
@@ -260,8 +354,15 @@ impl RecentlyPlayed {
         }
         let generation = self.generation.get().wrapping_add(1);
         self.generation.set(generation);
-        // Keep the old list in view while a newer one loads
-        if self.tracks.borrow().is_empty() {
+        let immediate = merge_recent_tracks(
+            &self.session_recent.borrow(),
+            &self.last_remote.borrow(),
+            RECENT_LIMIT,
+        );
+        if !immediate.is_empty() {
+            self.show(immediate);
+        } else if self.tracks.borrow().is_empty() {
+            // Keep the old list in view while a newer one loads
             self.widget.show_recent_loading();
         }
         let api = self.app_model.api();
@@ -285,12 +386,22 @@ impl RecentlyPlayed {
             }
             match result {
                 Ok(played) => {
+                    *recent.last_remote.borrow_mut() = played.clone();
                     recent.loaded_at.set(Some(Instant::now()));
-                    recent.show(played);
+                    let merged =
+                        merge_recent_tracks(&recent.session_recent.borrow(), &played, RECENT_LIMIT);
+                    recent.show(merged);
                 }
                 Err(err) => {
                     log::debug!("recently played failed: {err:?}");
-                    if recent.tracks.borrow().is_empty() {
+                    let fallback = merge_recent_tracks(
+                        &recent.session_recent.borrow(),
+                        &recent.last_remote.borrow(),
+                        RECENT_LIMIT,
+                    );
+                    if !fallback.is_empty() {
+                        recent.show(fallback);
+                    } else if recent.tracks.borrow().is_empty() {
                         // translators: Shown in Recently Played, above the queue, when Spotify didn't answer.
                         let text = gettext("Couldn't load your recent songs.");
                         recent.widget.show_recent_message(&text);
@@ -442,9 +553,109 @@ fn time_ago(seconds: i64) -> String {
     }
 }
 
+/// Merge session-tracked plays (including skipped tracks and non-Spotify
+/// sources) with remote history, keeping newest-first order and deduplicating
+/// overlapping remote entries for the same track within 3 minutes.
+fn merge_recent_tracks(
+    session: &[canto_api::models::PlayedTrack],
+    remote: &[canto_api::models::PlayedTrack],
+    limit: usize,
+) -> Vec<canto_api::models::PlayedTrack> {
+    let parse_unix = |at: Option<&str>| -> Option<i64> {
+        at.and_then(|s| glib::DateTime::from_iso8601(s, None).ok())
+            .map(|dt| dt.to_unix())
+    };
+    const OVERLAP_SECS: i64 = 180;
+
+    let mut merged: Vec<canto_api::models::PlayedTrack> = session.iter().cloned().collect();
+    for item in remote {
+        let item_unix = parse_unix(item.played_at.as_deref());
+        let overlaps_session = session.iter().any(|s| {
+            if s.track.rri.id != item.track.rri.id {
+                return false;
+            }
+            match (parse_unix(s.played_at.as_deref()), item_unix) {
+                (Some(su), Some(ru)) => (su - ru).abs() <= OVERLAP_SECS,
+                _ => true,
+            }
+        });
+        if !overlaps_session {
+            merged.push(item.clone());
+        }
+    }
+
+    merged.sort_by(|a, b| {
+        match (
+            parse_unix(a.played_at.as_deref()),
+            parse_unix(b.played_at.as_deref()),
+        ) {
+            (Some(au), Some(bu)) => bu.cmp(&au),
+            (Some(_), None) => std::cmp::Ordering::Less,
+            (None, Some(_)) => std::cmp::Ordering::Greater,
+            (None, None) => std::cmp::Ordering::Equal,
+        }
+    });
+    merged.truncate(limit);
+    merged
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use canto_api::models::{PlayedTrack, Provider, ResourceId};
+
+    fn played(id: &str, played_at: Option<&str>) -> PlayedTrack {
+        PlayedTrack {
+            track: Track {
+                rri: ResourceId::new(Provider::Local, id),
+                title: id.to_string(),
+                artists: vec![],
+                album: None,
+                duration_ms: 180_000,
+                track_number: None,
+                disc_number: None,
+                content_rating: canto_api::models::ContentRating::None,
+                isrc: None,
+                art: canto_api::models::ImageSet::default(),
+                playable: true,
+                popularity: None,
+                saved: None,
+                preview_url: None,
+                url: None,
+            },
+            played_at: played_at.map(str::to_string),
+        }
+    }
+
+    #[test]
+    fn merge_recent_tracks_keeps_session_tracks_when_remote_empty() {
+        let session = vec![
+            played("b", Some("2026-11-22T10:02:00Z")),
+            played("a", Some("2026-11-22T10:01:00Z")),
+        ];
+        let merged = merge_recent_tracks(&session, &[], 50);
+        let ids: Vec<&str> = merged.iter().map(|p| p.track.rri.id.as_str()).collect();
+        assert_eq!(ids, vec!["b", "a"]);
+    }
+
+    #[test]
+    fn merge_recent_tracks_deduplicates_remote_overlap_and_orders_newest_first() {
+        let session = vec![
+            played("c", Some("2026-11-22T10:05:00Z")),
+            played("b", Some("2026-11-22T10:03:00Z")),
+        ];
+        let remote = vec![
+            // Duplicate of "b" reported ~20s earlier by Spotify
+            played("b", Some("2026-11-22T10:02:40Z")),
+            // Earlier play of "a" from before session
+            played("a", Some("2026-11-22T09:50:00Z")),
+            // Distinct much earlier play of "b" (2 hours earlier) stays
+            played("b", Some("2026-11-22T08:00:00Z")),
+        ];
+        let merged = merge_recent_tracks(&session, &remote, 3);
+        let ids: Vec<&str> = merged.iter().map(|p| p.track.rri.id.as_str()).collect();
+        assert_eq!(ids, vec!["c", "b", "a"]);
+    }
 
     #[test]
     fn time_ago_rounds_down_to_the_largest_unit() {

@@ -273,6 +273,7 @@ impl PlayerNotifier {
             PlaybackEvent::ShuffleChanged(shuffled) => {
                 Some(ConnectCommand::PlayerShuffle(shuffled))
             }
+            PlaybackEvent::TracksQueuedRemote(uris) => Some(ConnectCommand::AddToQueue(uris)),
             _ => None,
         };
 

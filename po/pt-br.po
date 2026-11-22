@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-22 11:09-0300\n"
+"POT-Creation-Date: 2026-11-22 11:45-0300\n"
 "Language: pt-br\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -158,7 +158,7 @@ msgstr "Você não tem listas de reprodução salvas."
 #: src/app/components/shell/now_panel/stats.rs:435
 #: src/app/components/shell/mini_player.rs:587
 #: src/app/components/shell/mini_player.rs:715
-#: src/app/components/widgets/details_page/header.rs:266
+#: src/app/components/widgets/details_page/header.rs:315
 #: src/app/components/widgets/details_page/header.blp:163
 msgid "Play"
 msgstr "Tocar"
@@ -339,7 +339,7 @@ msgid "The playlist's cover could not be uploaded."
 msgstr ""
 
 #. translators: This notification is shown when Spotify throttles requests.
-#: src/app/components/mod.rs:256 src/connect/player.rs:1227
+#: src/app/components/mod.rs:256 src/connect/player.rs:1244
 msgid "Rate limited by Spotify. Please wait a moment and try again."
 msgstr ""
 
@@ -598,7 +598,7 @@ msgstr "Letra: {} · sem sincronia"
 #. Translators: Tooltip of the playback bar button that shows or hides the queue.
 #. Translators: Tab label for the queue in utility panel.
 #: src/app/components/pages/queue/component.rs:99
-#: src/app/components/pages/queue/component.rs:147
+#: src/app/components/pages/queue/component.rs:157
 #: src/app/components/shell/playback/playback_widget.blp:144
 #: src/app/components/shell/utility_panel/utility_panel.blp:67
 #: src/app/components/shell/playback/playback_widget.rs:534
@@ -606,40 +606,40 @@ msgid "Queue"
 msgstr "Fila"
 
 #. translators: Toast shown after saving the current play queue as a new playlist.
-#: src/app/components/pages/queue/component.rs:187
+#: src/app/components/pages/queue/component.rs:197
 msgid "Queue saved as playlist"
 msgstr "Fila salva como playlist"
 
 #. translators: Shown in Recently Played, above the queue, when Spotify didn't answer.
-#: src/app/components/pages/queue/component.rs:295
+#: src/app/components/pages/queue/component.rs:406
 msgid "Couldn't load your recent songs."
 msgstr "Não foi possível carregar suas músicas recentes."
 
 #. translators: Shown in Recently Played, above the queue, when the account has no history yet.
-#: src/app/components/pages/queue/component.rs:310
+#: src/app/components/pages/queue/component.rs:421
 msgid "Songs you play will show up here."
 msgstr "As músicas que você tocar vão aparecer aqui."
 
 #. translators: When a song in Recently Played was played: less than a minute ago.
-#: src/app/components/pages/queue/component.rs:423
+#: src/app/components/pages/queue/component.rs:534
 msgid "Just now"
 msgstr "Agora mesmo"
 
-#: src/app/components/pages/queue/component.rs:427
+#: src/app/components/pages/queue/component.rs:538
 #, rust-format
 msgid "{} min ago"
 msgid_plural "{} min ago"
 msgstr[0] "há {} min"
 msgstr[1] "há {} min"
 
-#: src/app/components/pages/queue/component.rs:433
+#: src/app/components/pages/queue/component.rs:544
 #, rust-format
 msgid "{} h ago"
 msgid_plural "{} h ago"
 msgstr[0] "há {} h"
 msgstr[1] "há {} h"
 
-#: src/app/components/pages/queue/component.rs:439
+#: src/app/components/pages/queue/component.rs:550
 #, rust-format
 msgid "{} day ago"
 msgid_plural "{} days ago"
@@ -901,6 +901,7 @@ msgstr "Abrir o Genius"
 #: src/app/components/pages/settings/settings.rs:2149
 #: src/app/components/pages/settings/settings.rs:2217
 #: src/app/components/shell/window/close_dialog.rs:67
+#: src/app/components/widgets/details_page/artwork_viewer.rs:159
 msgid "Close"
 msgstr "Fechar"
 
@@ -1438,7 +1439,7 @@ msgstr ""
 
 #: src/app/components/shell/playback/playback_controls.rs:78
 #: src/app/components/shell/mini_player.rs:713
-#: src/app/components/widgets/details_page/header.rs:264
+#: src/app/components/widgets/details_page/header.rs:313
 msgid "Pause"
 msgstr "Pausar"
 
@@ -1987,6 +1988,10 @@ msgstr "Fechar"
 msgid "Remember my choice"
 msgstr ""
 
+#: src/app/components/widgets/details_page/artwork_viewer.rs:53
+msgid "Artwork"
+msgstr "Capa"
+
 #. translators: Tooltip of the button that reveals the in-page track filter bar.
 #: src/app/components/widgets/details_page/component.rs:94
 msgid "Filter tracks (Ctrl+F)"
@@ -2017,7 +2022,12 @@ msgstr "Ordenar faixas"
 msgid "Filter tracks…"
 msgstr "Filtrar faixas…"
 
-#: src/app/components/widgets/details_page/header.rs:423
+#. translators: Tooltip on an album, playlist, or artist cover in the header.
+#: src/app/components/widgets/details_page/header.rs:185
+msgid "View artwork in fullscreen"
+msgstr "Ver capa em tela cheia"
+
+#: src/app/components/widgets/details_page/header.rs:472
 #: src/app/components/widgets/details_page/header.blp:189
 #, fuzzy
 msgid "Add to Library"
@@ -2098,28 +2108,28 @@ msgstr ""
 msgid "No track is currently playing"
 msgstr "Nenhuma faixa está tocando no momento"
 
-#: src/connect/player.rs:133
+#: src/connect/player.rs:135
 msgid "Connection to device lost!"
 msgstr "Conexão com o dispositivo perdida!"
 
-#: src/connect/player.rs:670 src/connect/player.rs:1045
+#: src/connect/player.rs:687 src/connect/player.rs:1062
 msgid "Starting Spotify in the background…"
 msgstr "Iniciando o Spotify em segundo plano…"
 
-#: src/connect/player.rs:677
+#: src/connect/player.rs:694
 msgid "Could not start the Spotify app. Is it installed?"
 msgstr "Não foi possível iniciar o app do Spotify. Ele está instalado?"
 
-#: src/connect/player.rs:689
+#: src/connect/player.rs:706
 msgid "The Spotify app did not show up as a device. Try again in a moment."
 msgstr ""
 "O app do Spotify não apareceu como dispositivo. Tente novamente em instantes."
 
-#: src/connect/player.rs:736
+#: src/connect/player.rs:753
 msgid "Getting the current Spotify Soloist…"
 msgstr "Baixando o Spotify Soloist atual…"
 
-#: src/connect/player.rs:750
+#: src/connect/player.rs:767
 msgid ""
 "Spotify Soloist requires manual installation on this architecture; using the "
 "Spotify app instead."
@@ -2128,12 +2138,12 @@ msgstr ""
 "usando o app do Spotify."
 
 #. translators: Shown while a sleeping Spotify Connect speaker (an Alexa) wakes up.
-#: src/connect/player.rs:1086
+#: src/connect/player.rs:1103
 msgid "Waking up the speaker…"
 msgstr "Acordando a caixa de som…"
 
 #. translators: Shown when a Spotify Connect speaker is asleep or unreachable.
-#: src/connect/player.rs:1170 src/connect/player.rs:1232
+#: src/connect/player.rs:1187 src/connect/player.rs:1249
 msgid ""
 "Spotify Connect device is asleep or inactive. Start playback on the device "
 "first."
@@ -3683,10 +3693,6 @@ msgstr "Salvar fila como playlist"
 msgid "Images"
 msgstr ""
 
-#: src/app/state/app_state.rs:339
-msgid "Queueing isn't available when playing on another device"
-msgstr "Não é possível enfileirar ao tocar em outro dispositivo"
-
 #: src/app/components/pages/about/about.rs:27
 msgid "Based On"
 msgstr "Baseado em"
@@ -3744,6 +3750,9 @@ msgstr "Repetir esta música"
 #, rust-format
 msgid "Volume {}% · Ctrl+↑ / Ctrl+↓"
 msgstr "Volume {}% · Ctrl+↑ / Ctrl+↓"
+
+#~ msgid "Queueing isn't available when playing on another device"
+#~ msgstr "Não é possível enfileirar ao tocar em outro dispositivo"
 
 #~ msgid "What you played most, from Last.fm"
 #~ msgstr "O que você mais ouviu, pelo Last.fm"

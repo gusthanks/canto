@@ -36,6 +36,8 @@ pub enum ConnectCommand {
     /// Start Soloist in the background without playing or taking over any
     /// device, so the first play is quick.
     PrepareSoloist,
+    /// Append Spotify track URIs to the active Connect device's playback queue.
+    AddToQueue(Vec<String>),
     PlayerLoadInContext {
         source: SongsSource,
         offset: usize,
@@ -178,8 +180,9 @@ impl ConnectPlayer {
             .read()
             .map(|last| *last != remote_track)
             .unwrap_or(true);
+        let queue_dirty = self.last_queue.read().map(|g| *g == 0).unwrap_or(false);
         let poll_idx = self.poll_count.fetch_add(1, Ordering::Relaxed);
-        let tracks = if track_changed || poll_idx.is_multiple_of(4) {
+        let tracks = if track_changed || queue_dirty || poll_idx.is_multiple_of(4) {
             match self.get_queue_if_changed(remote_track.as_deref()).await {
                 Ok(queue) => {
                     if let Ok(mut last) = self.last_track_id.write() {
@@ -618,6 +621,20 @@ impl ConnectPlayer {
             }
             ConnectCommand::PlayerSetVolume(volume) => {
                 self.api.player_volume(&device_id, volume).await
+            }
+            ConnectCommand::AddToQueue(uris) => {
+                for uri in uris {
+                    self.api.player_add_to_queue(&device_id, &uri).await?;
+                }
+                if let Ok(mut guard) = self.last_queue.write() {
+                    *guard = 0;
+                }
+                tokio::time::sleep(Duration::from_millis(350)).await;
+                if let Ok(mut last) = self.last_command.lock() {
+                    *last = None;
+                }
+                self.sync_state().await;
+                Ok(())
             }
             _ => Ok(()),
         }

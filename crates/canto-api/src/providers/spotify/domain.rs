@@ -1005,6 +1005,11 @@ impl MusicProvider for SpotifyDomain {
         )
         .await?)
     }
+
+    async fn player_add_to_queue(&self, device_id: &str, uri: &str) -> Result<(), DomainError> {
+        let config = self.config_or_err()?;
+        Ok(apis::player_api::add_to_queue(&config, uri, Some(device_id)).await?)
+    }
 }
 
 #[cfg(test)]
