@@ -30,11 +30,26 @@ mod imp {
     use super::*;
     use libadwaita::subclass::prelude::*;
 
+    #[derive(Default)]
+    pub struct SoloistKeyCallback(pub RefCell<Option<Box<dyn Fn()>>>);
+
+    impl std::fmt::Debug for SoloistKeyCallback {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str("SoloistKeyCallback")
+        }
+    }
+
     #[derive(Debug, Default, CompositeTemplate)]
     #[template(resource = "/io/github/gusthanks/Canto/components/settings.ui")]
     pub struct SettingsDialog {
         #[template_child]
         pub general_page: TemplateChild<libadwaita::PreferencesPage>,
+
+        #[template_child]
+        pub audio_page: TemplateChild<libadwaita::PreferencesPage>,
+
+        #[template_child]
+        pub integrations_page: TemplateChild<libadwaita::PreferencesPage>,
 
         #[template_child]
         pub player_bitrate: TemplateChild<libadwaita::ComboRow>,
@@ -206,6 +221,8 @@ mod imp {
         pub visual_bridge_switch: TemplateChild<libadwaita::SwitchRow>,
 
         pub lastfm_pending_token: RefCell<Option<String>>,
+
+        pub soloist_key_changed: SoloistKeyCallback,
     }
 
     #[glib::object_subclass]
@@ -249,6 +266,19 @@ impl SettingsDialog {
     #[cfg(test)]
     pub fn genius_lyrics_row(&self) -> libadwaita::SwitchRow {
         self.imp().genius_lyrics_switch.get()
+    }
+
+    #[cfg(test)]
+    pub fn page_names_for_tests(&self) -> Vec<String> {
+        let imp = self.imp();
+        [
+            imp.general_page.name(),
+            imp.audio_page.name(),
+            imp.integrations_page.name(),
+        ]
+        .iter()
+        .filter_map(|name| name.as_ref().map(|s| s.to_string()))
+        .collect()
     }
 
     pub fn new() -> Self {
@@ -951,16 +981,18 @@ impl SettingsDialog {
             "These features are still in development and may be unstable or incomplete.",
         )));
 
-        if !crate::connect::account_needs_official_client() {
-            settings
-                .bind(
-                    FeatureFlag::Normalisation.key(),
-                    &*self.imp().normalisation_group,
-                    "visible",
-                )
-                .get()
-                .build();
-        }
+        settings
+            .bind(
+                FeatureFlag::Normalisation.key(),
+                &*self.imp().normalisation_group,
+                "visible",
+            )
+            .flags(gio::SettingsBindFlags::GET)
+            .mapping(|variant, _| {
+                let enabled = variant.get::<bool>().unwrap_or(false);
+                Some((enabled && !crate::connect::account_needs_official_client()).to_value())
+            })
+            .build();
 
         for flag in FeatureFlag::ALL.iter() {
             let row = libadwaita::SwitchRow::new();
@@ -1031,6 +1063,31 @@ impl SettingsDialog {
             .connect_clicked(move |_| on_clear());
     }
 
+    /// Connect a callback invoked after the user saves or clears the Soloist API key.
+    fn connect_soloist_key_changed<F>(&self, on_change: F)
+    where
+        F: Fn() + 'static,
+    {
+        *self.imp().soloist_key_changed.0.borrow_mut() = Some(Box::new(on_change));
+    }
+
+    /// Hides the librespot-only audio, DSP, network, and audio-cache controls
+    /// for accounts that must play through Soloist or the hidden Spotify app.
+    fn sync_external_player_visibility(&self) {
+        let imp = self.imp();
+        let external_player = crate::connect::account_needs_official_client();
+        let show_local = !external_player;
+        imp.audio_group.set_visible(show_local);
+        imp.network_group.set_visible(show_local);
+        imp.equalizer.set_visible(show_local);
+        imp.pan.set_visible(show_local);
+        imp.pitch.set_visible(show_local);
+        imp.audio_cache_size.set_visible(show_local);
+        let norm_enabled = gio::Settings::new(SETTINGS).boolean(FeatureFlag::Normalisation.key());
+        imp.normalisation_group
+            .set_visible(show_local && norm_enabled);
+    }
+
     /// The Soloist group: on/off, key, status. For accounts that can't play
     /// inside Canto, the settings that only reach Canto's own player
     /// (librespot) are hidden: through Soloist they'd do nothing.
@@ -1045,21 +1102,12 @@ impl SettingsDialog {
             )
             .build();
 
-        let external_player = crate::connect::account_needs_official_client();
-        if external_player {
-            imp.audio_group.set_visible(false);
-            imp.normalisation_group.set_visible(false);
-            imp.network_group.set_visible(false);
-            imp.equalizer.set_visible(false);
-            imp.pan.set_visible(false);
-            imp.pitch.set_visible(false);
-            imp.audio_cache_size.set_visible(false);
-        }
+        self.sync_external_player_visibility();
 
         let weak_self = self.downgrade();
         imp.soloist_guide_button.connect_clicked(move |_| {
             if let Some(dialog) = weak_self.upgrade() {
-                open_external_url(&dialog, "https://developer.spotify.com/dashboard/soloist");
+                present_soloist_guide_dialog(&dialog, false);
             }
         });
 
@@ -1080,7 +1128,12 @@ impl SettingsDialog {
                     return;
                 };
                 match stored {
-                    Ok(Ok(())) => dialog.refresh_soloist_status(),
+                    Ok(Ok(())) => {
+                        dialog.refresh_soloist_status();
+                        if let Some(cb) = dialog.imp().soloist_key_changed.0.borrow().as_ref() {
+                            cb();
+                        }
+                    }
                     other => {
                         if let Ok(Err(e)) = &other {
                             warn!("couldn't save the Soloist key: {e}");
@@ -1117,7 +1170,7 @@ impl SettingsDialog {
                 gettext("Soloist API Key")
             });
             imp.soloist_status_row
-                .set_subtitle(&soloist_status_text(&report, key_saved));
+                .set_subtitle(&crate::connect::soloist::status_text(&report, key_saved));
         });
     }
 
@@ -1394,6 +1447,11 @@ impl Settings {
             clear_model.clear_cache();
         });
 
+        let soloist_model = model.clone();
+        settings_dialog.connect_soloist_key_changed(move || {
+            soloist_model.soloist_key_changed();
+        });
+
         let notify_model = model.clone();
         settings_dialog.connect_lastfm_auth(
             model.http_client(),
@@ -1414,11 +1472,18 @@ impl Settings {
     pub fn show_self(&self) {
         // Locks are UI-only and must not be stateful between openings.
         self.settings_dialog.reset_locks();
+        self.settings_dialog.sync_external_player_visibility();
+        self.settings_dialog.refresh_soloist_status();
         // Reflect the account's explicit content filter lock each time the
         // dialog opens, since it becomes known only after login.
         self.settings_dialog
             .set_explicit_filter_locked(self.model.explicit_filter_locked());
         self.dialog().present(Some(&self.parent));
+    }
+
+    pub fn show_audio(&self) {
+        self.settings_dialog.set_visible_page_name("audio");
+        self.show_self();
     }
 
     pub fn show_integrations(&self) {
@@ -1648,38 +1713,106 @@ fn present_scrobbling_guide_dialog(parent: &SettingsDialog) {
     dialog.present(Some(parent));
 }
 
-/// One line on how Soloist stands, for the settings window.
-fn soloist_status_text(report: &crate::connect::soloist::Report, key_saved: bool) -> String {
-    let mut text = if !report.installed && key_saved {
-        gettext("Not installed yet: Canto gets it from Spotify when you press play")
-    } else if !report.installed {
-        gettext("Not installed. Canto plays through the Spotify app hidden in the background.")
-    } else if !key_saved {
-        gettext("Installed, waiting for a key")
-    } else if !report.running {
-        gettext("Ready. It starts when you press play.")
-    } else if !report.logged_in {
-        gettext("Running, not logged in yet: in Spotify on your phone, pick “Canto” in the device list once")
-    } else if report.active {
-        gettext("Running and playing through Canto")
-    } else {
-        gettext("Running and logged in")
+/// The body of the Spotify Soloist setup guide (kept apart from the dialog so
+/// GTK tests can inspect it).
+fn soloist_guide_content(
+    auto_download: crate::connect::soloist::AutoDownloadSupport,
+    show_open_settings: bool,
+    on_open_settings: impl Fn() + 'static,
+    on_close: impl Fn() + 'static,
+) -> gtk::Box {
+    let content = gtk::Box::new(gtk::Orientation::Vertical, 12);
+    content.set_margin_top(16);
+    content.set_margin_bottom(20);
+    content.set_margin_start(20);
+    content.set_margin_end(20);
+
+    content.append(&make_guide_step_label(&gettext(
+        "Spotify blocks built-in playback on some accounts. Spotify Soloist is Spotify’s official headless player for Linux, using a fraction of the memory of the desktop app.",
+    )));
+    content.append(&make_guide_step_label(&gettext(
+        "1. Open the Spotify Soloist Dashboard below and create a free API key.",
+    )));
+    content.append(&make_guide_step_label(&gettext(
+        "2. In Canto, go to Preferences → Audio → Spotify Soloist, paste the key into Soloist API Key, and press Apply.",
+    )));
+    let step3 = match auto_download {
+        crate::connect::soloist::AutoDownloadSupport::UnsupportedArch => gettext(
+            "3. Automatic download is only available on x86_64. Install Soloist manually in PATH or set CANTO_SOLOIST_CMD, then press play and pick “Canto” once in Spotify on your phone to link it.",
+        ),
+        _ => gettext(
+            "3. Press play in Canto: Canto downloads Soloist automatically. On first use, open Spotify on your phone once and pick “Canto” in the device list to link it.",
+        ),
     };
-    match report.days_left {
-        Some(days) if days < 0 => {
-            text.push_str(" · ");
-            text.push_str(&gettext(
-                "This Soloist build has expired; Canto gets the new one when you press play",
-            ));
-        }
-        Some(days) if days <= 14 => {
-            text.push_str(" · ");
-            text.push_str(
-                &gettext("This Soloist build stops working in {days} days")
-                    .replace("{days}", &days.to_string()),
-            );
-        }
-        _ => {}
+    content.append(&make_guide_step_label(&step3));
+
+    let buttons = libadwaita::WrapBox::new();
+    buttons.set_child_spacing(8);
+    buttons.set_line_spacing(8);
+    buttons.set_align(1.0);
+    buttons.set_margin_top(8);
+
+    let open_btn = gtk::Button::with_label(&gettext("Open Dashboard"));
+    open_btn.add_css_class("suggested-action");
+    open_btn.connect_clicked(|b| {
+        open_external_url(b, "https://developer.spotify.com/dashboard/soloist");
+    });
+    buttons.append(&open_btn);
+
+    if show_open_settings {
+        let settings_btn = gtk::Button::with_label(&gettext("Soloist Settings"));
+        settings_btn.connect_clicked(move |_| on_open_settings());
+        buttons.append(&settings_btn);
     }
-    text
+
+    let close_btn = gtk::Button::with_label(&gettext("Close"));
+    close_btn.connect_clicked(move |_| on_close());
+    buttons.append(&close_btn);
+
+    content.append(&buttons);
+    content
+}
+
+/// Opens the step-by-step Spotify Soloist setup guide over `parent`.
+pub fn present_soloist_guide_dialog(parent: &impl IsA<gtk::Widget>, show_open_settings: bool) {
+    let dialog = libadwaita::Dialog::builder()
+        .title(gettext("Set Up Spotify Soloist"))
+        .content_width(480)
+        .build();
+
+    let toolbar = libadwaita::ToolbarView::new();
+    toolbar.add_top_bar(&libadwaita::HeaderBar::new());
+
+    let weak_dialog = dialog.downgrade();
+    let weak_parent = parent.as_ref().downgrade();
+    let on_open_settings = move || {
+        if let Some(d) = weak_dialog.upgrade() {
+            d.close();
+        }
+        if let Some(parent) = weak_parent.upgrade() {
+            let _ = parent.activate_action("win.preferences-audio", None);
+        }
+    };
+    let weak_dialog = dialog.downgrade();
+    let content = soloist_guide_content(
+        crate::connect::soloist::auto_download_support(),
+        show_open_settings,
+        on_open_settings,
+        move || {
+            if let Some(d) = weak_dialog.upgrade() {
+                d.close();
+            }
+        },
+    );
+    toolbar.set_content(Some(&content));
+    dialog.set_child(Some(&toolbar));
+    dialog.present(Some(parent));
+}
+
+#[cfg(test)]
+pub(crate) fn soloist_guide_for_tests(
+    auto_download: crate::connect::soloist::AutoDownloadSupport,
+    show_open_settings: bool,
+) -> gtk::Widget {
+    soloist_guide_content(auto_download, show_open_settings, || {}, || {}).upcast()
 }

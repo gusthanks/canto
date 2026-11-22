@@ -304,7 +304,16 @@ impl App {
         app_model: Rc<AppModel>,
     ) -> Box<impl EventListener> {
         let window: libadwaita::ApplicationWindow = builder.object("window").unwrap();
-        Box::new(MainWindow::new(settings.window.clone(), app_model, window))
+        let soloist_banner_revealer: gtk::Revealer =
+            builder.object("soloist_banner_revealer").unwrap();
+        let soloist_banner_dismiss: gtk::Button = builder.object("soloist_banner_dismiss").unwrap();
+        Box::new(MainWindow::new(
+            settings.window.clone(),
+            app_model,
+            window,
+            soloist_banner_revealer,
+            soloist_banner_dismiss,
+        ))
     }
 
     // The app-wide header bar shared by every content screen.

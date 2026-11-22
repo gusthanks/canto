@@ -834,3 +834,22 @@ overlay-split-view.utility-split--floating > border {
   padding: 4px 12px;
   min-height: 0;
 }
+
+/* Contextual banner when an account needs Spotify Soloist and has no API key yet */
+.soloist-banner-bar {
+  background-color: @headerbar_bg_color;
+}
+
+.soloist-banner {
+  margin: 4px 8px 0 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background-color: alpha(@accent_bg_color, 0.14);
+  box-shadow: inset 0 0 0 1px alpha(@accent_color, 0.24);
+}
+
+.soloist-banner__action {
+  padding: 4px 12px;
+  min-height: 28px;
+  border-radius: 999px;
+}

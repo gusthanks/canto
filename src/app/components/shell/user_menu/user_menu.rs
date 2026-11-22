@@ -47,6 +47,15 @@ impl UserMenu {
             preferences_action
         });
 
+        let settings_audio = Rc::clone(&settings);
+        parent.add_action(&{
+            let audio_action = SimpleAction::new("preferences-audio", None);
+            audio_action.connect_activate(move |_, _| {
+                settings_audio.show_audio();
+            });
+            audio_action
+        });
+
         let settings_int = Rc::clone(&settings);
         parent.add_action(&{
             let integrations_action = SimpleAction::new("preferences-integrations", None);
@@ -54,6 +63,18 @@ impl UserMenu {
                 settings_int.show_integrations();
             });
             integrations_action
+        });
+
+        parent.add_action(&{
+            let soloist_guide_action = SimpleAction::new("soloist-guide", None);
+            soloist_guide_action.connect_activate(clone!(
+                #[weak]
+                parent,
+                move |_, _| {
+                    crate::app::components::present_soloist_guide_dialog(&parent, true);
+                }
+            ));
+            soloist_guide_action
         });
 
         parent.add_action(&{

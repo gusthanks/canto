@@ -6,6 +6,7 @@ use crate::{
 #[derive(Clone, Debug)]
 pub enum SettingsAction {
     ChangeSettings,
+    SoloistKeyChanged,
 }
 
 impl From<SettingsAction> for AppAction {
@@ -17,6 +18,7 @@ impl From<SettingsAction> for AppAction {
 #[derive(Clone, Debug)]
 pub enum SettingsEvent {
     PlayerSettingsChanged,
+    SoloistKeyChanged,
 }
 
 impl From<SettingsEvent> for AppEvent {
@@ -55,6 +57,7 @@ impl UpdatableState for SettingsState {
                     vec![]
                 }
             }
+            SettingsAction::SoloistKeyChanged => vec![SettingsEvent::SoloistKeyChanged.into()],
         }
     }
 }

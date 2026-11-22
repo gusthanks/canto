@@ -26,6 +26,11 @@ impl SettingsModel {
             .dispatch(SettingsAction::ChangeSettings.into());
     }
 
+    pub fn soloist_key_changed(&self) {
+        self.dispatcher
+            .dispatch(SettingsAction::SoloistKeyChanged.into());
+    }
+
     pub fn show_restart_required(&self) {
         self.dispatcher.dispatch(AppAction::ShowRestartRequired);
     }

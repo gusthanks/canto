@@ -8,11 +8,11 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use crate::app::components::EventListener;
-use crate::app::state::LoginEvent;
+use crate::app::state::{LoginEvent, SettingsEvent};
 use crate::app::{AppEvent, AppModel};
 use crate::settings::{CloseWindowBehavior, WindowGeometry};
 
-use canto_config::settings::SETTINGS;
+use canto_config::settings::{SETTINGS, SOLOIST_ENABLED};
 
 thread_local! {
     static WINDOW_GEOMETRY: RefCell<WindowGeometry> = const { RefCell::new(WindowGeometry {
@@ -20,10 +20,25 @@ thread_local! {
     }) };
 }
 
+/// Whether the contextual Soloist setup banner should show.
+pub(crate) fn should_show_soloist_banner(
+    logged_in: bool,
+    needs_official: bool,
+    soloist_enabled: bool,
+    key_saved: bool,
+    dismissed: bool,
+) -> bool {
+    logged_in && needs_official && soloist_enabled && !key_saved && !dismissed
+}
+
 pub struct MainWindow {
     initial_window_geometry: WindowGeometry,
     window: libadwaita::ApplicationWindow,
-    logged_in: Cell<bool>,
+    logged_in: Rc<Cell<bool>>,
+    soloist_banner_revealer: gtk::Revealer,
+    soloist_dismissed: Rc<Cell<bool>>,
+    official_client_detected: Rc<Cell<bool>>,
+    _soloist_settings: gio::Settings,
 }
 
 impl MainWindow {
@@ -31,6 +46,8 @@ impl MainWindow {
         initial_window_geometry: WindowGeometry,
         app_model: Rc<AppModel>,
         window: libadwaita::ApplicationWindow,
+        soloist_banner_revealer: gtk::Revealer,
+        soloist_banner_dismiss: gtk::Button,
     ) -> Self {
         window.connect_close_request(clone!(
             #[weak]
@@ -76,11 +93,52 @@ impl MainWindow {
             }
         ));
 
+        let logged_in = Rc::new(Cell::new(false));
+        let soloist_dismissed = Rc::new(Cell::new(false));
+        let official_client_detected = Rc::new(Cell::new(false));
+
+        {
+            let revealer = soloist_banner_revealer.downgrade();
+            let dismissed = Rc::clone(&soloist_dismissed);
+            soloist_banner_dismiss.connect_clicked(move |_| {
+                dismissed.set(true);
+                if let Some(r) = revealer.upgrade() {
+                    r.set_reveal_child(false);
+                }
+            });
+        }
+
+        let soloist_settings = gio::Settings::new(SETTINGS);
+        {
+            let revealer = soloist_banner_revealer.downgrade();
+            let logged_in = Rc::clone(&logged_in);
+            let dismissed = Rc::clone(&soloist_dismissed);
+            let detected = Rc::clone(&official_client_detected);
+            soloist_settings.connect_changed(Some(SOLOIST_ENABLED), move |_, _| {
+                if let Some(r) = revealer.upgrade() {
+                    sync_soloist_banner(&r, &logged_in, &detected, &dismissed);
+                }
+            });
+        }
+
         Self {
             initial_window_geometry,
             window,
-            logged_in: Cell::new(false),
+            logged_in,
+            soloist_banner_revealer,
+            soloist_dismissed,
+            official_client_detected,
+            _soloist_settings: soloist_settings,
         }
+    }
+
+    fn refresh_soloist_banner(&self) {
+        sync_soloist_banner(
+            &self.soloist_banner_revealer,
+            &self.logged_in,
+            &self.official_client_detected,
+            &self.soloist_dismissed,
+        );
     }
 
     /// Keeps the open track and its spot for the next start: Spotify forgets
@@ -121,10 +179,14 @@ impl MainWindow {
     fn show(&self) {
         self.logged_in.set(true);
         self.window.present();
+        self.refresh_soloist_banner();
     }
 
     fn hide(&self) {
         self.logged_in.set(false);
+        self.soloist_dismissed.set(false);
+        self.official_client_detected.set(false);
+        self.soloist_banner_revealer.set_reveal_child(false);
         self.window.set_visible(false);
     }
 
@@ -142,6 +204,49 @@ impl MainWindow {
     }
 }
 
+fn sync_soloist_banner(
+    revealer: &gtk::Revealer,
+    logged_in: &Rc<Cell<bool>>,
+    official_client_detected: &Rc<Cell<bool>>,
+    dismissed: &Rc<Cell<bool>>,
+) {
+    let needs_official =
+        official_client_detected.get() || crate::connect::account_needs_official_client();
+    let enabled = crate::connect::soloist::is_enabled();
+    if !should_show_soloist_banner(
+        logged_in.get(),
+        needs_official,
+        enabled,
+        false,
+        dismissed.get(),
+    ) {
+        revealer.set_reveal_child(false);
+        return;
+    }
+
+    let revealer = revealer.downgrade();
+    let logged_in = Rc::clone(logged_in);
+    let detected = Rc::clone(official_client_detected);
+    let dismissed = Rc::clone(dismissed);
+    glib::spawn_future_local(async move {
+        let key_saved = gio::spawn_blocking(canto_auth::soloist_key::is_saved_blocking)
+            .await
+            .unwrap_or(false);
+        let Some(revealer) = revealer.upgrade() else {
+            return;
+        };
+        let still_needs = detected.get() || crate::connect::account_needs_official_client();
+        let still_enabled = crate::connect::soloist::is_enabled();
+        revealer.set_reveal_child(should_show_soloist_banner(
+            logged_in.get(),
+            still_needs,
+            still_enabled,
+            key_saved,
+            dismissed.get(),
+        ));
+    });
+}
+
 impl EventListener for MainWindow {
     fn on_event(&mut self, event: &AppEvent) {
         match event {
@@ -149,7 +254,29 @@ impl EventListener for MainWindow {
             AppEvent::Raised => self.raise(),
             AppEvent::LoginEvent(LoginEvent::LoginCompleted) => self.show(),
             AppEvent::LoginEvent(LoginEvent::LogoutCompleted) => self.hide(),
+            AppEvent::OfficialClientRequested => {
+                self.official_client_detected.set(true);
+                self.refresh_soloist_banner();
+            }
+            AppEvent::SettingsEvent(SettingsEvent::SoloistKeyChanged) => {
+                self.refresh_soloist_banner();
+            }
             _ => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::should_show_soloist_banner;
+
+    #[test]
+    fn soloist_banner_shows_only_when_needed_enabled_and_unconfigured() {
+        assert!(should_show_soloist_banner(true, true, true, false, false));
+        assert!(!should_show_soloist_banner(false, true, true, false, false));
+        assert!(!should_show_soloist_banner(true, false, true, false, false));
+        assert!(!should_show_soloist_banner(true, true, false, false, false));
+        assert!(!should_show_soloist_banner(true, true, true, true, false));
+        assert!(!should_show_soloist_banner(true, true, true, false, true));
     }
 }

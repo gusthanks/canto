@@ -2,16 +2,17 @@ using Gtk 4.0;
 using Adw 1;
 
 template $SettingsWindow : Adw.PreferencesDialog {
-  search-enabled: false;
+  search-enabled: true;
 
   Adw.PreferencesPage general_page {
+    name: "general";
     title: _("General");
     icon-name: "preferences-other-symbolic";
 
     Adw.PreferencesGroup {
-      /* Translators: Header for a group of preference items regarding the application's appearance and behavior */
+      /* Translators: Header for a group of preference items regarding the application's appearance */
 
-      title: _("General");
+      title: _("Appearance");
 
       Adw.ComboRow language {
         /* Translators: Title for the interface language preference in settings */
@@ -75,19 +76,12 @@ template $SettingsWindow : Adw.PreferencesDialog {
 
         subtitle: _("Show the queue in a panel at the side of the window");
       }
+    }
 
-      Adw.SpinRow lyrics_offset_ms {
-        /* Translators: Title for the manual synced lyrics offset preference */
-        title: _("Lyrics Sync Offset (ms)");
-        /* Translators: Description explaining positive vs negative lyrics offset */
-        subtitle: _("Positive advances lyrics earlier; negative delays them");
-        adjustment: Adjustment {
-          lower: -10000;
-          upper: 10000;
-          step-increment: 50;
-          page-increment: 250;
-        };
-      }
+    Adw.PreferencesGroup {
+      /* Translators: Header for a group of preference items regarding playback and window behavior */
+
+      title: _("Playback");
 
       Adw.ComboRow close_behavior {
         /* Translators: Title for an item in preferences */
@@ -147,7 +141,109 @@ template $SettingsWindow : Adw.PreferencesDialog {
           page-increment: 1;
         };
       }
+
+      Adw.SpinRow lyrics_offset_ms {
+        /* Translators: Title for the manual synced lyrics offset preference */
+        title: _("Lyrics Sync Offset (ms)");
+        /* Translators: Description explaining positive vs negative lyrics offset */
+        subtitle: _("Positive advances lyrics earlier; negative delays them");
+        adjustment: Adjustment {
+          lower: -10000;
+          upper: 10000;
+          step-increment: 50;
+          page-increment: 250;
+        };
+      }
     }
+
+    Adw.PreferencesGroup {
+      /* Translators: Header for a group of preference items regarding data caching */
+
+      title: _("Caching");
+
+      /* Translators: Description under the Caching preferences header */
+
+      description: _("Control how Canto caches data locally.");
+
+      Adw.SpinRow memory_cache_size {
+        /* Translators: Title for the in-memory cache size preference */
+
+        title: _("Memory Cache Size (MB)");
+
+        /* Translators: Description for the in-memory cache size preference */
+
+        subtitle: _("Maximum memory allocated for caching data while Canto is running.");
+        adjustment: Adjustment {
+          lower: 1;
+          upper: 1024;
+          value: 32;
+          step-increment: 8;
+          page-increment: 32;
+        };
+      }
+
+      Adw.SpinRow disk_cache_size {
+        /* Translators: Title for the on-disk image cache size preference */
+
+        title: _("Disk Cache Size (MB)");
+
+        /* Translators: Description for the on-disk image cache size preference */
+
+        subtitle: _("Maximum disk space allocated for caching data between sessions.");
+        adjustment: Adjustment {
+          lower: 16;
+          upper: 4096;
+          value: 256;
+          step-increment: 16;
+          page-increment: 64;
+        };
+      }
+
+      Adw.SpinRow audio_cache_size {
+        /* Translators: Title for the disk audio cache size preference */
+
+        title: _("Audio Cache Size (MB)");
+
+        /* Translators: Description for the disk audio cache size preference */
+
+        subtitle: _("Maximum disk space allocated for caching downloaded audio.");
+        adjustment: Adjustment {
+          lower: 64;
+          upper: 16384;
+          value: 1024;
+          step-increment: 64;
+          page-increment: 256;
+        };
+      }
+
+      Adw.ActionRow {
+        /* Translators: Title for the clear cache action row */
+
+        title: _("Clear Cache");
+
+        /* Translators: Description for the clear cache action row */
+
+        subtitle: _("Remove all cached data and images stored on disk");
+
+        Button clear_cache_button {
+          /* Translators: Label for the button that clears the cache */
+
+          label: _("Clear");
+          valign: center;
+
+          styles [
+            "destructive-action",
+          ]
+        }
+      }
+    }
+  }
+
+  Adw.PreferencesPage audio_page {
+    name: "audio";
+    /* Translators: Title of the Audio page in Preferences. */
+    title: _("Audio");
+    icon-name: "audio-speakers-symbolic";
 
     Adw.PreferencesGroup soloist_group {
       title: _("Spotify Soloist");
@@ -393,88 +489,6 @@ template $SettingsWindow : Adw.PreferencesDialog {
 
         Entry ap_port {
           valign: center;
-        }
-      }
-    }
-
-    Adw.PreferencesGroup {
-      /* Translators: Header for a group of preference items regarding data caching */
-
-      title: _("Caching");
-
-      /* Translators: Description under the Caching preferences header */
-
-      description: _("Control how Canto caches data locally.");
-
-      Adw.SpinRow memory_cache_size {
-        /* Translators: Title for the in-memory cache size preference */
-
-        title: _("Memory Cache Size (MB)");
-
-        /* Translators: Description for the in-memory cache size preference */
-
-        subtitle: _("Maximum memory allocated for caching data while Canto is running.");
-        adjustment: Adjustment {
-          lower: 1;
-          upper: 1024;
-          value: 32;
-          step-increment: 8;
-          page-increment: 32;
-        };
-      }
-
-      Adw.SpinRow disk_cache_size {
-        /* Translators: Title for the on-disk image cache size preference */
-
-        title: _("Disk Cache Size (MB)");
-
-        /* Translators: Description for the on-disk image cache size preference */
-
-        subtitle: _("Maximum disk space allocated for caching data between sessions.");
-        adjustment: Adjustment {
-          lower: 16;
-          upper: 4096;
-          value: 256;
-          step-increment: 16;
-          page-increment: 64;
-        };
-      }
-
-      Adw.SpinRow audio_cache_size {
-        /* Translators: Title for the disk audio cache size preference */
-
-        title: _("Audio Cache Size (MB)");
-
-        /* Translators: Description for the disk audio cache size preference */
-
-        subtitle: _("Maximum disk space allocated for caching downloaded audio.");
-        adjustment: Adjustment {
-          lower: 64;
-          upper: 16384;
-          value: 1024;
-          step-increment: 64;
-          page-increment: 256;
-        };
-      }
-
-      Adw.ActionRow {
-        /* Translators: Title for the clear cache action row */
-
-        title: _("Clear Cache");
-
-        /* Translators: Description for the clear cache action row */
-
-        subtitle: _("Remove all cached data and images stored on disk");
-
-        Button clear_cache_button {
-          /* Translators: Label for the button that clears the cache */
-
-          label: _("Clear");
-          valign: center;
-
-          styles [
-            "destructive-action",
-          ]
         }
       }
     }
