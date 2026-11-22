@@ -19,9 +19,16 @@ gtk_tests! {
 fn assert_volume_scrolls_in_steps() {
     let bar: crate::app::components::shell::playback::PlaybackWidget = glib::Object::new();
     let (slider, volume_box, volume_button) = bar.volume_parts_for_tests();
+    let volume_popover: gtk::Widget = volume_button
+        .downcast_ref::<gtk::MenuButton>()
+        .expect("volume menu button")
+        .popover()
+        .expect("volume popover")
+        .upcast();
     for (name, target) in [
         ("speaker and slider", &volume_box),
         ("narrow bar's volume button", &volume_button),
+        ("narrow bar's volume popover", &volume_popover),
     ] {
         let controllers = target.observe_controllers();
         let scroll = (0..controllers.n_items())

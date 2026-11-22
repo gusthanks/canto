@@ -480,14 +480,17 @@ mod imp {
             self.volume_slider
                 .connect_value_changed(sync_volume_tooltip);
 
-            // The wheel or the touchpad over the speaker and the slider, or
-            // over the narrow bar's button: 5% a step, as Ctrl+Up and
-            // Ctrl+Down. Captured before the slider's own scrolling, which
-            // would move it again
-            let targets: [gtk::Widget; 2] = [
+            // The wheel or the touchpad over the speaker and the slider, over
+            // the narrow bar's button, or inside its popover: 5% a step, as
+            // Ctrl+Up and Ctrl+Down. Captured before the sliders' own
+            // scrolling, which would move them again
+            let mut targets: Vec<gtk::Widget> = vec![
                 self.volume_box.get().upcast(),
                 self.volume_button.get().upcast(),
             ];
+            if let Some(popover) = self.volume_button.popover() {
+                targets.push(popover.upcast());
+            }
             for target in targets {
                 let scroll = gtk::EventControllerScroll::new(
                     gtk::EventControllerScrollFlags::VERTICAL

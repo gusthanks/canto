@@ -169,10 +169,10 @@ it drops buttons in steps (`BAR_TIER_WIDTHS`):
 - `volume_box` (`width-request` 168, `spacing` 0) with `.volume-slider`
   (`padding-left: 6px` in `playback.css`, since the theme pads the slider 12
   px on each side).
-- The wheel or the touchpad over the speaker, the slider or `volume_button`
-  changes the volume 5% a step, the step of Ctrl+Up and Ctrl+Down
-  (`VOLUME_STEP`). Two `gtk::EventControllerScroll`s in the capture phase,
-  before the slider's own scrolling; `volume_after_scroll` follows the hand
+- The wheel or the touchpad over the speaker, the slider, `volume_button` or
+  its popover changes the volume 5% a step, the step of Ctrl+Up and Ctrl+Down
+  (`VOLUME_STEP`). Capture-phase `gtk::EventControllerScroll`s sit on all three
+  before the sliders' own scrolling; `volume_after_scroll` follows the hand
   with natural scrolling. The tooltip says the level and the keys
   (`volume_tooltip`).
 - Test: `assert_volume_scrolls_in_steps` (`playback_bar.rs`).
