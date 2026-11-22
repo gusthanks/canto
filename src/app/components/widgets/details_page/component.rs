@@ -1,4 +1,5 @@
 use gtk::prelude::*;
+use libadwaita::prelude::*;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
@@ -7,10 +8,11 @@ use super::{is_playback_event, DetailsHeader, DetailsPage, DetailsSectionWidget,
 use crate::app::components::{
     categories_in, filter_matches_nothing, labels, CardLayout, CardList, CardListModel, CardSize,
     Component, EmbeddedCardList, EventListener, FilterChips, HeaderBarModel, PageHeader, SortOrder,
-    TrackList, TrackListModel,
+    TrackList, TrackListModel, TrackSortOrder,
 };
 use crate::app::{AppEvent, Dispatcher};
 use canto_config::feature_flags::{is_enabled, FeatureFlag};
+use gettextrs::gettext;
 
 const QUEUE: &str = "queue";
 
@@ -83,12 +85,187 @@ impl<M: PinnedPageModel + 'static> DetailsPageComponent<M> {
         let listview = gtk::ListView::new(None::<gtk::NoSelection>, None::<gtk::ListItemFactory>);
         let section = DetailsSectionWidget::new(label, &listview);
         section.add_css_class("details-section--tracks");
+
+        let controls = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        controls.set_valign(gtk::Align::Center);
+        let filter_toggle = gtk::ToggleButton::builder()
+            .icon_name("system-search-symbolic")
+            // translators: Tooltip of the button that reveals the in-page track filter bar.
+            .tooltip_text(gettext("Filter tracks (Ctrl+F)"))
+            .focus_on_click(false)
+            .valign(gtk::Align::Center)
+            .build();
+        filter_toggle.add_css_class("flat");
+        filter_toggle.add_css_class("circular");
+
+        let sort_labels = gtk::StringList::new(&[
+            // translators: Track sort option keeping album/playlist original track order.
+            &gettext("Original Order"),
+            // translators: Track sort option sorting alphabetically by track title.
+            &gettext("Title"),
+            // translators: Track sort option sorting alphabetically by artist name.
+            &gettext("Artist"),
+            // translators: Track sort option sorting by track duration.
+            &gettext("Duration"),
+        ]);
+        let sort_dropdown = gtk::DropDown::new(Some(sort_labels), None::<gtk::Expression>);
+        // translators: Tooltip of the dropdown sorting tracks in the current playlist, album, or Liked Songs page.
+        sort_dropdown.set_tooltip_text(Some(&gettext("Sort tracks")));
+        sort_dropdown.set_valign(gtk::Align::Center);
+        sort_dropdown.add_css_class("details-section__sort");
+
+        controls.append(&filter_toggle);
+        controls.append(&sort_dropdown);
+        section.set_button(&controls);
+
+        let search_entry = gtk::SearchEntry::builder()
+            // translators: Placeholder in the in-page filter bar for playlists, albums, and Liked Songs.
+            .placeholder_text(gettext("Filter tracks…"))
+            .hexpand(true)
+            .build();
+        search_entry.add_css_class("details-section__filter-entry");
+        let filter_revealer = gtk::Revealer::builder()
+            .transition_type(gtk::RevealerTransitionType::SlideDown)
+            .reveal_child(false)
+            .child(&search_entry)
+            .build();
+        section.set_filters(&filter_revealer);
+
         self.content.append(&section);
 
         let track_list = TrackList::new(listview.clone(), self.model.clone());
         // Requires an ancestor ScrolledWindow, provided by DetailsPage; must
         // run after the listview above is appended into the page's content.
         track_list.connect_scrolling();
+        let controller = track_list.controller();
+
+        filter_toggle.connect_toggled(clone!(
+            #[weak]
+            filter_revealer,
+            #[weak]
+            search_entry,
+            move |toggle| {
+                let active = toggle.is_active();
+                filter_revealer.set_reveal_child(active);
+                if active {
+                    search_entry.grab_focus();
+                    search_entry.select_region(0, -1);
+                } else if !search_entry.text().is_empty() {
+                    search_entry.set_text("");
+                }
+            }
+        ));
+
+        search_entry.connect_search_changed({
+            let controller = controller.clone();
+            move |entry| {
+                controller.set_filter_query(&entry.text());
+            }
+        });
+        search_entry.connect_stop_search(clone!(
+            #[weak]
+            filter_toggle,
+            move |entry| {
+                if !entry.text().is_empty() {
+                    entry.set_text("");
+                } else {
+                    filter_toggle.set_active(false);
+                }
+            }
+        ));
+
+        sort_dropdown.connect_selected_notify({
+            let controller = controller.clone();
+            move |dropdown| {
+                let order = match dropdown.selected() {
+                    1 => TrackSortOrder::Title,
+                    2 => TrackSortOrder::Artist,
+                    3 => TrackSortOrder::Duration,
+                    _ => TrackSortOrder::Original,
+                };
+                controller.set_sort_order(order);
+            }
+        });
+
+        controller.connect_filter_state_changed(clone!(
+            #[weak]
+            section,
+            #[weak]
+            listview,
+            move |filter_active, visible_count| {
+                let empty = filter_active && visible_count == 0;
+                section.set_empty(empty);
+                listview.set_visible(!empty);
+            }
+        ));
+
+        // Scoped Ctrl+F: intercepts while this page is the mapped page (and no
+        // modal dialog is open) so global Ctrl+F Search keeps working elsewhere.
+        let attached_key: Rc<
+            RefCell<Option<(glib::WeakRef<gtk::Widget>, gtk::EventControllerKey)>>,
+        > = Default::default();
+        self.page.widget().connect_map({
+            let attached = Rc::clone(&attached_key);
+            let filter_toggle = filter_toggle.downgrade();
+            let search_entry = search_entry.downgrade();
+            move |page_widget| {
+                if let Some((weak_root, prev)) = attached.borrow_mut().take() {
+                    if let Some(root) = weak_root.upgrade() {
+                        root.remove_controller(&prev);
+                    }
+                }
+                let Some(root) = page_widget.root() else {
+                    return;
+                };
+                let root_widget: gtk::Widget = root.upcast();
+                let key_ctrl = gtk::EventControllerKey::new();
+                key_ctrl.set_propagation_phase(gtk::PropagationPhase::Capture);
+                let filter_toggle = filter_toggle.clone();
+                let search_entry = search_entry.clone();
+                let weak_root = root_widget.downgrade();
+                key_ctrl.connect_key_pressed(move |_, key, _, state| {
+                    let mods = state
+                        & (gtk::gdk::ModifierType::CONTROL_MASK
+                            | gtk::gdk::ModifierType::ALT_MASK
+                            | gtk::gdk::ModifierType::SUPER_MASK
+                            | gtk::gdk::ModifierType::SHIFT_MASK);
+                    if mods != gtk::gdk::ModifierType::CONTROL_MASK
+                        || !matches!(key, gtk::gdk::Key::f | gtk::gdk::Key::F)
+                    {
+                        return glib::Propagation::Proceed;
+                    }
+                    let has_dialog = weak_root.upgrade().is_some_and(|w| {
+                        w.downcast_ref::<libadwaita::ApplicationWindow>()
+                            .and_then(|win| win.visible_dialog())
+                            .is_some()
+                            || w.downcast_ref::<libadwaita::Window>()
+                                .and_then(|win| win.visible_dialog())
+                                .is_some()
+                    });
+                    if has_dialog {
+                        return glib::Propagation::Proceed;
+                    }
+                    if let Some(toggle) = filter_toggle.upgrade() {
+                        toggle.set_active(true);
+                    }
+                    if let Some(entry) = search_entry.upgrade() {
+                        entry.grab_focus();
+                        entry.select_region(0, -1);
+                    }
+                    glib::Propagation::Stop
+                });
+                root_widget.add_controller(key_ctrl.clone());
+                *attached.borrow_mut() = Some((root_widget.downgrade(), key_ctrl));
+            }
+        });
+        self.page.widget().connect_unmap(move |_| {
+            if let Some((weak_root, ctrl)) = attached_key.borrow_mut().take() {
+                if let Some(root) = weak_root.upgrade() {
+                    root.remove_controller(&ctrl);
+                }
+            }
+        });
+
         self.children.push(Box::new(track_list));
         listview
     }

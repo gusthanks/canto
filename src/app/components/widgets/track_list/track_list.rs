@@ -401,10 +401,40 @@ fn list_entry(item: &glib::Object) -> Option<ListEntry> {
 
 type RowFilter = Box<dyn Fn(&SongModel) -> bool>;
 
+/// Sort order applied on top of a track list's projection without altering
+/// the underlying [`SongListModel`] indices.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum TrackSortOrder {
+    #[default]
+    Original,
+    Title,
+    Artist,
+    Duration,
+}
+
+fn matches_track_filter(song: &SongModel, query: &str) -> bool {
+    let q = query.trim().to_lowercase();
+    if q.is_empty() {
+        return true;
+    }
+    let track = song.description();
+    let title_l = track.title.to_lowercase();
+    let artist_l = track.artists_name().to_lowercase();
+    let album_l = track
+        .album
+        .as_ref()
+        .map(|a| a.name.to_lowercase())
+        .unwrap_or_default();
+    q.split_whitespace()
+        .all(|tok| title_l.contains(tok) || artist_l.contains(tok) || album_l.contains(tok))
+}
+
 #[derive(Default)]
 struct Projection {
     show_disc_headers: bool,
     show_skeleton: bool,
+    filter_query: String,
+    sort_order: TrackSortOrder,
     positions: Vec<Option<usize>>,
     /// The wrapper object for each entry, keyed by (entry, occurrence), kept
     /// across rebuilds so unchanged rows keep their widgets.
@@ -417,29 +447,83 @@ impl Projection {
     /// placeholders. Every position gets its own wrapper object: a track
     /// listed twice is the same SongModel twice, and ListView can't handle
     /// duplicate items (it warns, then may crash on a stale row widget).
-    fn rebuild(&mut self, songs: &SongListModel, store: &gio::ListStore) {
-        let tracks: Vec<(usize, SongModel)> = (0..songs.partial_len())
+    /// Returns the number of visible track rows after filtering.
+    fn rebuild(&mut self, songs: &SongListModel, store: &gio::ListStore) -> usize {
+        let mut tracks: Vec<(usize, SongModel)> = (0..songs.partial_len())
             .filter_map(|i| songs.index_continuous(i).map(|song| (i, song)))
-            .filter(|(_, song)| !self.hides_row.as_ref().is_some_and(|hides| hides(song)))
+            .filter(|(_, song)| {
+                !self.hides_row.as_ref().is_some_and(|hides| hides(song))
+                    && matches_track_filter(song, &self.filter_query)
+            })
             .collect();
+
+        match self.sort_order {
+            TrackSortOrder::Original => {}
+            TrackSortOrder::Title => tracks.sort_by(|(ai, a), (bi, b)| {
+                a.description()
+                    .title
+                    .to_lowercase()
+                    .cmp(&b.description().title.to_lowercase())
+                    .then_with(|| ai.cmp(bi))
+            }),
+            TrackSortOrder::Artist => tracks.sort_by(|(ai, a), (bi, b)| {
+                a.description()
+                    .artists_name()
+                    .to_lowercase()
+                    .cmp(&b.description().artists_name().to_lowercase())
+                    .then_with(|| {
+                        a.description()
+                            .title
+                            .to_lowercase()
+                            .cmp(&b.description().title.to_lowercase())
+                    })
+                    .then_with(|| ai.cmp(bi))
+            }),
+            TrackSortOrder::Duration => tracks.sort_by(|(ai, a), (bi, b)| {
+                a.description()
+                    .duration_ms
+                    .cmp(&b.description().duration_ms)
+                    .then_with(|| {
+                        a.description()
+                            .title
+                            .to_lowercase()
+                            .cmp(&b.description().title.to_lowercase())
+                    })
+                    .then_with(|| ai.cmp(bi))
+            }),
+        }
+
+        let visible_tracks = tracks.len();
+        let filter_active = !self.filter_query.trim().is_empty();
+        let show_headers = !filter_active && self.sort_order == TrackSortOrder::Original;
+
         let discs: Vec<Option<u32>> = tracks
             .iter()
             .map(|(_, song)| song.description().disc_number)
             .collect();
         let groups: Vec<Option<String>> = tracks.iter().map(|(_, song)| song.group()).collect();
-        let multi_disc = self.show_disc_headers && discs.iter().any(|d| *d != discs[0]);
-        let headers: Vec<Option<(String, bool)>> = (0..tracks.len())
-            .map(|n| {
-                let new_group = n == 0 || groups[n] != groups[n - 1];
-                let new_disc =
-                    multi_disc && discs[n].is_some() && (n == 0 || discs[n] != discs[n - 1]);
-                match &groups[n] {
-                    Some(group) if new_group => Some((group.clone(), false)),
-                    _ if new_disc => Some((disc_header_text(discs[n].unwrap_or_default()), true)),
-                    _ => None,
-                }
-            })
-            .collect();
+        let multi_disc = show_headers
+            && self.show_disc_headers
+            && !tracks.is_empty()
+            && discs.iter().any(|d| *d != discs[0]);
+        let headers: Vec<Option<(String, bool)>> = if show_headers {
+            (0..tracks.len())
+                .map(|n| {
+                    let new_group = n == 0 || groups[n] != groups[n - 1];
+                    let new_disc =
+                        multi_disc && discs[n].is_some() && (n == 0 || discs[n] != discs[n - 1]);
+                    match &groups[n] {
+                        Some(group) if new_group => Some((group.clone(), false)),
+                        _ if new_disc => {
+                            Some((disc_header_text(discs[n].unwrap_or_default()), true))
+                        }
+                        _ => None,
+                    }
+                })
+                .collect()
+        } else {
+            vec![None; tracks.len()]
+        };
         let has_header = |n: usize| headers.get(n).is_some_and(Option::is_some);
         let last = tracks.len().saturating_sub(1);
 
@@ -460,7 +544,7 @@ impl Projection {
             entries.push((song.row_key(), entry, Some(i)));
         }
 
-        if self.show_skeleton && entries.is_empty() && !songs.is_complete() {
+        if self.show_skeleton && !filter_active && entries.is_empty() && !songs.is_complete() {
             for n in 0..SKELETON_ROW_COUNT {
                 let entry = ListEntry::Placeholder {
                     disc_start: n == 0,
@@ -488,6 +572,67 @@ impl Projection {
         }
         self.wrappers = wrappers;
         store.splice(0, store.n_items(), &items);
+        visible_tracks
+    }
+}
+
+type FilterStateCallback = Rc<RefCell<Option<Rc<dyn Fn(bool, usize)>>>>;
+
+/// Handle for updating a [`TrackList`]'s in-page filter and sort order after
+/// ownership of the component has moved into a parent's listener list.
+#[derive(Clone)]
+pub struct TrackListController {
+    songs: SongListModel,
+    store: gio::ListStore,
+    projection: Rc<RefCell<Projection>>,
+    on_filter_state: FilterStateCallback,
+}
+
+impl TrackListController {
+    fn rebuild(&self) {
+        let (count, active) = {
+            let mut proj = self.projection.borrow_mut();
+            let count = proj.rebuild(&self.songs, &self.store);
+            let active = !proj.filter_query.trim().is_empty();
+            (count, active)
+        };
+        if let Some(cb) = self.on_filter_state.borrow().as_ref().cloned() {
+            cb(active, count);
+        }
+    }
+
+    pub fn set_filter_query(&self, query: &str) {
+        let changed = {
+            let mut proj = self.projection.borrow_mut();
+            if proj.filter_query == query {
+                false
+            } else {
+                proj.filter_query = query.to_string();
+                true
+            }
+        };
+        if changed {
+            self.rebuild();
+        }
+    }
+
+    pub fn set_sort_order(&self, order: TrackSortOrder) {
+        let changed = {
+            let mut proj = self.projection.borrow_mut();
+            if proj.sort_order == order {
+                false
+            } else {
+                proj.sort_order = order;
+                true
+            }
+        };
+        if changed {
+            self.rebuild();
+        }
+    }
+
+    pub fn connect_filter_state_changed<F: Fn(bool, usize) + 'static>(&self, f: F) {
+        *self.on_filter_state.borrow_mut() = Some(Rc::new(f));
     }
 }
 
@@ -496,6 +641,7 @@ pub struct TrackList<Model> {
     listview: gtk::ListView,
     model: Rc<Model>,
     projection: Rc<RefCell<Projection>>,
+    controller: TrackListController,
 }
 
 impl<Model> TrackList<Model>
@@ -515,6 +661,7 @@ where
             })),
             ..Default::default()
         }));
+        let on_filter_state: FilterStateCallback = Default::default();
         projection.borrow_mut().rebuild(&songs, &store);
         // Synchronous, like SongListModel's own change notification: a
         // deferred rebuild could let the ListView see a torn model.
@@ -523,10 +670,26 @@ where
             store,
             #[weak]
             projection,
+            #[weak]
+            on_filter_state,
             move |songs, _, _, _| {
-                projection.borrow_mut().rebuild(songs, &store);
+                let (count, active) = {
+                    let mut proj = projection.borrow_mut();
+                    let count = proj.rebuild(songs, &store);
+                    let active = !proj.filter_query.trim().is_empty();
+                    (count, active)
+                };
+                if let Some(cb) = on_filter_state.borrow().as_ref().cloned() {
+                    cb(active, count);
+                }
             }
         ));
+        let controller = TrackListController {
+            songs: songs.clone(),
+            store: store.clone(),
+            projection: Rc::clone(&projection),
+            on_filter_state,
+        };
 
         let reorder = model
             .is_reorderable()
@@ -624,8 +787,17 @@ where
                     .flatten();
                 match range_start {
                     Some(start) => {
-                        let keys: Vec<String> = (start.min(index)..=start.max(index))
-                            .filter_map(|i| songs.index_continuous(i))
+                        let positions = &projection.borrow().positions;
+                        let vis_pos = position as usize;
+                        let vis_start = positions
+                            .iter()
+                            .position(|p| *p == Some(start))
+                            .unwrap_or(vis_pos);
+                        let keys: Vec<String> = positions
+                            [vis_start.min(vis_pos)..=vis_start.max(vis_pos)]
+                            .iter()
+                            .flatten()
+                            .filter_map(|&i| songs.index_continuous(i))
                             .map(|song| song.row_key())
                             .collect();
                         model.select_songs(&keys);
@@ -653,11 +825,16 @@ where
             listview,
             model,
             projection,
+            controller,
         };
         track_list.update_paused();
         track_list.update_selection_mode();
         track_list.update_song_states(false);
         track_list
+    }
+
+    pub fn controller(&self) -> TrackListController {
+        self.controller.clone()
     }
 
     fn update_paused(&self) {
@@ -1766,5 +1943,98 @@ mod tests {
             ]
         );
         assert_eq!(menu(false), ["song.queue", "song.select", "song.copy_link"]);
+    }
+
+    fn make_rich_track(
+        id: &str,
+        title: &str,
+        artist: &str,
+        album: &str,
+        duration_ms: u32,
+        disc_number: Option<u32>,
+    ) -> crate::app::models::Track {
+        use canto_api::models::{AlbumRef, ArtistRef, Provider};
+        let mut track = crate::app::models::make_track(id);
+        track.title = title.to_string();
+        track.artists = vec![ArtistRef {
+            rri: canto_api::models::ResourceId::new(Provider::Spotify, format!("art-{id}")),
+            name: artist.to_string(),
+        }];
+        track.album = Some(AlbumRef {
+            rri: canto_api::models::ResourceId::new(Provider::Spotify, format!("alb-{id}")),
+            name: album.to_string(),
+        });
+        track.duration_ms = duration_ms;
+        track.disc_number = disc_number;
+        track
+    }
+
+    #[test]
+    fn test_projection_filter_and_sort_preserve_underlying_positions() {
+        let mut list_model = SongListModel::new(50);
+        list_model
+            .append(vec![
+                make_rich_track("0", "Zulu", "Beto", "Moon", 240_000, Some(1)),
+                make_rich_track("1", "Alpha", "Carlos", "Sun Rise", 180_000, Some(2)),
+                make_rich_track("2", "Midnight Sun", "Ana", "Stars", 120_000, Some(2)),
+            ])
+            .commit();
+        let store = gio::ListStore::new::<glib::Object>();
+        let mut projection = Projection {
+            show_disc_headers: true,
+            ..Default::default()
+        };
+
+        // Multi-token filter matching artist + album across fields
+        projection.filter_query = "carlos sun".to_string();
+        let visible = projection.rebuild(&list_model, &store);
+        assert_eq!(visible, 1);
+        assert_eq!(projection.positions, vec![Some(1)]);
+        assert_eq!(store.n_items(), 1);
+
+        // Non-matching filter leaves store empty cleanly (even with show_disc_headers)
+        projection.filter_query = "nomatch".to_string();
+        let visible = projection.rebuild(&list_model, &store);
+        assert_eq!(visible, 0);
+        assert!(projection.positions.is_empty());
+        assert_eq!(store.n_items(), 0);
+
+        // Sorting by Title drops disc headers and maps back to original indices
+        projection.filter_query.clear();
+        projection.sort_order = TrackSortOrder::Title;
+        let visible = projection.rebuild(&list_model, &store);
+        assert_eq!(visible, 3);
+        assert_eq!(projection.positions, vec![Some(1), Some(2), Some(0)]);
+
+        // Sorting by Artist
+        projection.sort_order = TrackSortOrder::Artist;
+        projection.rebuild(&list_model, &store);
+        assert_eq!(projection.positions, vec![Some(2), Some(0), Some(1)]);
+
+        // Sorting by Duration ascending
+        projection.sort_order = TrackSortOrder::Duration;
+        projection.rebuild(&list_model, &store);
+        assert_eq!(projection.positions, vec![Some(2), Some(1), Some(0)]);
+
+        // Restoring Original restores disc headers too
+        projection.sort_order = TrackSortOrder::Original;
+        projection.rebuild(&list_model, &store);
+        assert_eq!(
+            projection.positions,
+            vec![None, Some(0), None, Some(1), Some(2)]
+        );
+    }
+
+    #[test]
+    fn test_projection_filter_suppresses_loading_skeleton() {
+        let list_model = SongListModel::new(50);
+        let store = gio::ListStore::new::<glib::Object>();
+        let mut projection = Projection {
+            show_skeleton: true,
+            filter_query: "anything".to_string(),
+            ..Default::default()
+        };
+        projection.rebuild(&list_model, &store);
+        assert_eq!(store.n_items(), 0);
     }
 }

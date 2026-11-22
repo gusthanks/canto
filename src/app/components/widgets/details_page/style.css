@@ -235,7 +235,15 @@ headerbar.details__headerbar windowtitle {
 }
 
 .details-section--tracks .details-section__header {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+}
+
+.details-section__sort {
+  min-height: 30px;
+}
+
+.details-section__filter-entry {
+  margin-bottom: 12px;
 }
 
 .artist-releases {

@@ -25,6 +25,10 @@ gtk_tests! {
     no_lines_between_songs => assert_no_lines_between_songs,
     album_page_fits => assert_album_page_fits,
     sidebar_grid => assert_sidebar_grid,
+    track_list_filter_and_sort => || {
+        force_dark();
+        assert_track_list_filter_and_sort();
+    },
 }
 
 /// The sidebar's grid of covers: section titles stay out of it, and in the
@@ -867,4 +871,133 @@ fn assert_album_page_fits() {
         );
     }
     eprintln!("album page ok");
+}
+
+/// Filtering and sorting a TrackList maps activated visible rows back to
+/// their true underlying track indices and recovers cleanly after clearing.
+fn assert_track_list_filter_and_sort() {
+    use crate::app::components::{DetailsSectionWidget, TrackList, TrackListModel, TrackSortOrder};
+    use crate::app::models::{make_track, SongListModel};
+    use crate::app::ProvidesApi;
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    use std::sync::Arc;
+
+    struct DemoModel {
+        songs: SongListModel,
+        played: RefCell<Vec<(usize, String)>>,
+        api: Arc<canto_api::ApiService>,
+    }
+
+    impl ProvidesApi for DemoModel {
+        fn api_service(&self) -> Arc<canto_api::ApiService> {
+            Arc::clone(&self.api)
+        }
+    }
+
+    impl TrackListModel for DemoModel {
+        fn is_paused(&self) -> bool {
+            false
+        }
+        fn song_list_model(&self) -> SongListModel {
+            self.songs.clone()
+        }
+        fn current_song_id(&self) -> Option<String> {
+            None
+        }
+        fn play_song_at(&self, pos: usize, id: &str) {
+            self.played.borrow_mut().push((pos, id.to_string()));
+        }
+    }
+
+    let token_provider: Arc<dyn canto_api::TokenProvider> = Arc::new(|| None::<String>);
+    let api = Arc::new(canto_api::spotify_service(
+        Arc::clone(&token_provider),
+        token_provider,
+        1024 * 1024,
+        1024 * 1024,
+    ));
+
+    let make = |id: &str, title: &str, artist: &str, duration_ms: u32| {
+        use canto_api::models::{ArtistRef, Provider, ResourceId};
+        let mut t = make_track(id);
+        t.title = title.to_string();
+        t.artists = vec![ArtistRef {
+            rri: ResourceId::new(Provider::Spotify, format!("art-{id}")),
+            name: artist.to_string(),
+        }];
+        t.duration_ms = duration_ms;
+        t
+    };
+
+    let mut songs = SongListModel::new(50);
+    songs
+        .append(vec![
+            make("id-0", "Zulu Echo", "Beta", 220_000),
+            make("id-1", "Sunset Drive", "Zeta", 190_000),
+            make("id-2", "Midnight Sun", "Alpha", 150_000),
+        ])
+        .commit();
+
+    let model = Rc::new(DemoModel {
+        songs,
+        played: RefCell::new(Vec::new()),
+        api,
+    });
+
+    let listview = gtk::ListView::new(None::<gtk::NoSelection>, None::<gtk::ListItemFactory>);
+    let section = DetailsSectionWidget::new(Some("Tracks"), &listview);
+    let track_list = TrackList::new(listview.clone(), Rc::clone(&model));
+    let controller = track_list.controller();
+    controller.connect_filter_state_changed(clone!(
+        #[weak]
+        section,
+        #[weak]
+        listview,
+        move |active, count| {
+            let empty = active && count == 0;
+            section.set_empty(empty);
+            listview.set_visible(!empty);
+        }
+    ));
+
+    let window = gtk::Window::new();
+    window.set_default_size(640, 480);
+    window.set_child(Some(&section));
+    window.present();
+    wait_frames(&window, 2);
+
+    assert_eq!(listview.model().unwrap().n_items(), 3);
+
+    // Filter to songs matching "sun" ("Sunset Drive" at index 1, "Midnight Sun" at index 2)
+    // and sort by Title -> "Midnight Sun" (index 2) becomes visible row 0.
+    controller.set_filter_query("sun");
+    controller.set_sort_order(TrackSortOrder::Title);
+    pump(100);
+    assert_eq!(listview.model().unwrap().n_items(), 2);
+
+    listview.emit_by_name::<()>("activate", &[&0u32]);
+    pump(50);
+    assert_eq!(
+        model.played.borrow().as_slice(),
+        &[(2, "id-2".to_string())],
+        "activating filtered+sorted row 0 must play underlying track index 2"
+    );
+
+    // Empty filter result hides list and shows empty label cleanly
+    controller.set_filter_query("nonexistent");
+    pump(50);
+    assert_eq!(listview.model().unwrap().n_items(), 0);
+    assert!(!listview.is_visible());
+
+    // Clearing filter + sorting back to Original restores all 3 rows
+    controller.set_filter_query("");
+    controller.set_sort_order(TrackSortOrder::Original);
+    pump(50);
+    assert!(listview.is_visible());
+    assert_eq!(listview.model().unwrap().n_items(), 3);
+
+    drop(track_list);
+    window.destroy();
+    eprintln!("track list filter and sort ok");
 }
