@@ -153,43 +153,70 @@ impl LyricsPage {
             let weak_widget = weak_widget.clone();
             let dispatcher = dispatcher.clone();
             let sent_song = song.clone();
-            super::add_lyrics::open(button, &song, move |draft, sending| {
-                let lyrics = canto_api::LyricsToPublish {
-                    track_name: sent_song.title.clone(),
-                    artist_name: sent_song.artist.clone(),
-                    album_name: sent_song.album.clone(),
-                    duration_secs: (sent_song.duration_ms + 500) / 1000,
-                    plain_lyrics: draft.plain,
-                    synced_lyrics: draft.synced,
-                };
-                let api = api.clone();
-                let weak_widget = weak_widget.clone();
-                let dispatcher = dispatcher.clone();
-                glib::spawn_future_local(async move {
-                    let result = api
-                        .publish_lyrics_cancellable(&lyrics, sending.cancel_flag())
-                        .await;
-                    if sending.is_cancelled() {
-                        return;
-                    }
-                    match result {
-                        Ok(()) => {
-                            sending.done();
-                            dispatcher.dispatch(crate::app::AppAction::ShowNotification(
-                                // translators: Shown once lyrics the listener added were published.
-                                gettext("Lyrics published to LRCLIB"),
-                            ));
-                            if let Some(widget) = weak_widget.upgrade() {
-                                widget.reload();
+            let pb_pos_model = Rc::downgrade(&model);
+            let pb_play_model = Rc::downgrade(&model);
+            let pb_toggle_disp = dispatcher.clone();
+            let pb_seek_disp = dispatcher.clone();
+            let sync_playback = super::add_lyrics::SyncPlayback {
+                position_ms: Rc::new(move || {
+                    pb_pos_model
+                        .upgrade()
+                        .map_or(0, |m| m.get_state().playback.seek_position())
+                }),
+                is_playing: Rc::new(move || {
+                    pb_play_model
+                        .upgrade()
+                        .is_some_and(|m| m.get_state().playback.is_playing())
+                }),
+                toggle_play: Rc::new(move || {
+                    pb_toggle_disp.dispatch(PlaybackAction::TogglePlay.into());
+                }),
+                seek_ms: Rc::new(move |ms| {
+                    pb_seek_disp.dispatch(PlaybackAction::Seek(ms).into());
+                }),
+            };
+            super::add_lyrics::open_with_playback(
+                button,
+                &song,
+                Some(sync_playback),
+                move |draft, sending| {
+                    let lyrics = canto_api::LyricsToPublish {
+                        track_name: sent_song.title.clone(),
+                        artist_name: sent_song.artist.clone(),
+                        album_name: sent_song.album.clone(),
+                        duration_secs: (sent_song.duration_ms + 500) / 1000,
+                        plain_lyrics: draft.plain,
+                        synced_lyrics: draft.synced,
+                    };
+                    let api = api.clone();
+                    let weak_widget = weak_widget.clone();
+                    let dispatcher = dispatcher.clone();
+                    glib::spawn_future_local(async move {
+                        let result = api
+                            .publish_lyrics_cancellable(&lyrics, sending.cancel_flag())
+                            .await;
+                        if sending.is_cancelled() {
+                            return;
+                        }
+                        match result {
+                            Ok(()) => {
+                                sending.done();
+                                dispatcher.dispatch(crate::app::AppAction::ShowNotification(
+                                    // translators: Shown once lyrics the listener added were published.
+                                    gettext("Lyrics published to LRCLIB"),
+                                ));
+                                if let Some(widget) = weak_widget.upgrade() {
+                                    widget.reload();
+                                }
+                            }
+                            Err(error) => {
+                                warn!("publishing lyrics to LRCLIB failed: {error}");
+                                sending.failed(&error);
                             }
                         }
-                        Err(error) => {
-                            warn!("publishing lyrics to LRCLIB failed: {error}");
-                            sending.failed(&error);
-                        }
-                    }
-                });
-            });
+                    });
+                },
+            );
         });
         self.widget
             .set_word_by_word(self.settings.string(LYRICS_HIGHLIGHT) != "line");

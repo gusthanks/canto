@@ -877,3 +877,30 @@ overlay-split-view.utility-split--floating > border {
   min-height: 28px;
   border-radius: 999px;
 }
+
+/* 1-button Lyrics Sync Studio */
+.sync-studio__clock {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.sync-studio__list > row {
+  border-radius: 8px;
+  margin: 2px 4px;
+}
+
+.sync-studio__row--active {
+  background-color: alpha(@accent_bg_color, 0.16);
+  box-shadow: inset 3px 0 0 @accent_bg_color;
+}
+
+.sync-studio__row--stamped .sync-studio__time {
+  color: @accent_color;
+  font-weight: 600;
+}
+
+.sync-studio__time {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  min-width: 72px;
+}

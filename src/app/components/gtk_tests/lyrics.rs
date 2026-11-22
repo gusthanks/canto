@@ -10,6 +10,7 @@ gtk_tests! {
         force_dark();
         assert_add_lyrics_window();
     },
+    lyrics_sync_studio => assert_lyrics_sync_studio,
 }
 
 /// Word by word or whole line, and the lyrics coming back after a scroll
@@ -473,4 +474,99 @@ fn assert_add_lyrics_window() {
     confirm.force_close();
     dialog.force_close();
     window.destroy();
+}
+
+/// 1-button Lyrics Sync Studio: typing plain lines enables the studio tab,
+/// stamping advances through lines, Undo clears the previous stamp, and the
+/// generated LRC flows straight into `parse_draft` for publishing.
+fn assert_lyrics_sync_studio() {
+    use crate::app::components::pages::lyrics::add_lyrics;
+    use libadwaita::prelude::{AdwDialogExt, AdwWindowExt};
+    use std::cell::Cell;
+    use std::rc::Rc;
+
+    force_dark();
+    let song = add_lyrics::SongForLyrics {
+        title: "Disco Voador".to_string(),
+        artist: "Niink".to_string(),
+        album: "Flowra FM".to_string(),
+        duration_ms: 225_000,
+    };
+    let pos_ms = Rc::new(Cell::new(0u64));
+    let playing = Rc::new(Cell::new(true));
+    let playback = add_lyrics::SyncPlayback {
+        position_ms: {
+            let p = Rc::clone(&pos_ms);
+            Rc::new(move || p.get())
+        },
+        is_playing: {
+            let pl = Rc::clone(&playing);
+            Rc::new(move || pl.get())
+        },
+        toggle_play: {
+            let pl = Rc::clone(&playing);
+            Rc::new(move || pl.set(!pl.get()))
+        },
+        seek_ms: {
+            let p = Rc::clone(&pos_ms);
+            Rc::new(move |ms| p.set(u64::from(ms)))
+        },
+    };
+
+    let window = libadwaita::Window::new();
+    window.set_default_size(580, 740);
+    window.set_content(Some(&gtk::Box::new(gtk::Orientation::Vertical, 0)));
+    window.present();
+    wait_frames(&window, 2);
+
+    let dialog = add_lyrics::open_with_playback(&window, &song, Some(playback), |_, _| {});
+    wait_frames(&window, 3);
+    pump(200);
+
+    let view = add_lyrics::text_view_for_tests(&dialog).expect("the lyrics text view");
+    let (sync_btn, stamp_btn, undo_btn) =
+        add_lyrics::studio_controls_for_tests(&dialog).expect("studio controls");
+    assert!(
+        !sync_btn.is_sensitive(),
+        "Sync Studio stays disabled until lines are pasted or typed"
+    );
+
+    let buffer = view.buffer();
+    buffer.set_text("First sample line\nSecond sample line\nThird sample line");
+    pump(100);
+    assert!(
+        sync_btn.is_sensitive(),
+        "Sync Studio unlocks once lyrics lines exist"
+    );
+
+    sync_btn.set_active(true);
+    pump(150);
+
+    pos_ms.set(12_400);
+    stamp_btn.emit_clicked();
+    pos_ms.set(15_100);
+    stamp_btn.emit_clicked();
+    undo_btn.emit_clicked();
+    pos_ms.set(15_500);
+    stamp_btn.emit_clicked();
+    pos_ms.set(19_000);
+    stamp_btn.emit_clicked();
+    pump(150);
+
+    distinct_colors(window.upcast_ref(), "lyrics-sync-studio-sample");
+
+    let (start, end) = buffer.bounds();
+    let exported = buffer.text(&start, &end, false).to_string();
+    let draft = add_lyrics::parse_draft(&exported);
+    assert_eq!(draft.lines, 3);
+    assert_eq!(
+        draft.synced.as_deref(),
+        Some(
+            "[00:12.40] First sample line\n[00:15.50] Second sample line\n[00:19.00] Third sample line"
+        )
+    );
+
+    dialog.force_close();
+    window.destroy();
+    eprintln!("lyrics sync studio ok");
 }
