@@ -472,6 +472,7 @@ fn matches_track_filter(song: &SongModel, query: &str) -> bool {
 struct Projection {
     show_disc_headers: bool,
     show_skeleton: bool,
+    has_headers: bool,
     filter_query: String,
     sort_order: TrackSortOrder,
     positions: Vec<Option<usize>>,
@@ -479,6 +480,18 @@ struct Projection {
     /// across rebuilds so unchanged rows keep their widgets.
     wrappers: HashMap<(String, usize), glib::BoxedAnyObject>,
     hides_row: Option<RowFilter>,
+}
+
+fn sync_single_card_class(
+    listview: &gtk::ListView,
+    projection: &Projection,
+    store: &gio::ListStore,
+) {
+    set_css_class(
+        listview,
+        "playlist--single-card",
+        !projection.has_headers && store.n_items() > 0,
+    );
 }
 
 impl Projection {
@@ -593,6 +606,10 @@ impl Projection {
             }
         }
 
+        self.has_headers = entries
+            .iter()
+            .any(|(_, entry, _)| matches!(entry, ListEntry::Header { .. }));
+
         let mut occurrences: HashMap<String, usize> = HashMap::new();
         let mut wrappers = HashMap::with_capacity(entries.len());
         let mut items: Vec<glib::Object> = Vec::with_capacity(entries.len());
@@ -621,6 +638,7 @@ type FilterStateCallback = Rc<RefCell<Option<Rc<dyn Fn(bool, usize)>>>>;
 /// ownership of the component has moved into a parent's listener list.
 #[derive(Clone)]
 pub struct TrackListController {
+    listview: gtk::ListView,
     songs: SongListModel,
     store: gio::ListStore,
     projection: Rc<RefCell<Projection>>,
@@ -632,6 +650,7 @@ impl TrackListController {
         let (count, active) = {
             let mut proj = self.projection.borrow_mut();
             let count = proj.rebuild(&self.songs, &self.store);
+            sync_single_card_class(&self.listview, &proj, &self.store);
             let active = !proj.filter_query.trim().is_empty();
             (count, active)
         };
@@ -701,10 +720,16 @@ where
             ..Default::default()
         }));
         let on_filter_state: FilterStateCallback = Default::default();
-        projection.borrow_mut().rebuild(&songs, &store);
+        {
+            let mut proj = projection.borrow_mut();
+            proj.rebuild(&songs, &store);
+            sync_single_card_class(&listview, &proj, &store);
+        }
         // Synchronous, like SongListModel's own change notification: a
         // deferred rebuild could let the ListView see a torn model.
         songs.connect_items_changed(clone!(
+            #[weak]
+            listview,
             #[weak]
             store,
             #[weak]
@@ -715,6 +740,7 @@ where
                 let (count, active) = {
                     let mut proj = projection.borrow_mut();
                     let count = proj.rebuild(songs, &store);
+                    sync_single_card_class(&listview, &proj, &store);
                     let active = !proj.filter_query.trim().is_empty();
                     (count, active)
                 };
@@ -724,6 +750,7 @@ where
             }
         ));
         let controller = TrackListController {
+            listview: listview.clone(),
             songs: songs.clone(),
             store: store.clone(),
             projection: Rc::clone(&projection),
@@ -2037,6 +2064,7 @@ mod tests {
         projection.filter_query = "nomatch".to_string();
         let visible = projection.rebuild(&list_model, &store);
         assert_eq!(visible, 0);
+        assert!(!projection.has_headers);
         assert!(projection.positions.is_empty());
         assert_eq!(store.n_items(), 0);
 
@@ -2045,21 +2073,25 @@ mod tests {
         projection.sort_order = TrackSortOrder::Title;
         let visible = projection.rebuild(&list_model, &store);
         assert_eq!(visible, 3);
+        assert!(!projection.has_headers);
         assert_eq!(projection.positions, vec![Some(1), Some(2), Some(0)]);
 
         // Sorting by Artist
         projection.sort_order = TrackSortOrder::Artist;
         projection.rebuild(&list_model, &store);
+        assert!(!projection.has_headers);
         assert_eq!(projection.positions, vec![Some(2), Some(0), Some(1)]);
 
         // Sorting by Duration ascending
         projection.sort_order = TrackSortOrder::Duration;
         projection.rebuild(&list_model, &store);
+        assert!(!projection.has_headers);
         assert_eq!(projection.positions, vec![Some(2), Some(1), Some(0)]);
 
         // Restoring Original restores disc headers too
         projection.sort_order = TrackSortOrder::Original;
         projection.rebuild(&list_model, &store);
+        assert!(projection.has_headers);
         assert_eq!(
             projection.positions,
             vec![None, Some(0), None, Some(1), Some(2)]

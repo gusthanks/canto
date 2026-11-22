@@ -166,18 +166,20 @@ row:hover .song__menu,
 }
 
 /* Adwaita's card box-shadow, without a line between songs (as Spotify):
-   a 1px line at a fractional display scale (1.6) shifted between pixels
-   while the list scrolled, and flickered */
+   in multi-disc/grouped lists, a 1px bottom shadow in @card_bg_color seals
+   fractional display-scale (e.g. 1.6x) subpixel seams on non-final rows. */
 .playlist .song__card {
   box-shadow: inset 1px 0 rgb(0 0 6 / 3%),
-              inset -1px 0 rgb(0 0 6 / 3%);
+              inset -1px 0 rgb(0 0 6 / 3%),
+              0 1px 0 0 @card_bg_color;
 }
 
 .playlist .song--disc-start .song__card {
   border-radius: 12px 12px 0 0;
   box-shadow: inset 1px 0 rgb(0 0 6 / 3%),
               inset -1px 0 rgb(0 0 6 / 3%),
-              inset 0 1px rgb(0 0 6 / 3%);
+              inset 0 1px rgb(0 0 6 / 3%),
+              0 1px 0 0 @card_bg_color;
 }
 
 .playlist .song--disc-end .song__card {
@@ -194,6 +196,25 @@ row:hover .song__menu,
   box-shadow: inset 0 0 0 1px rgb(0 0 6 / 3%),
               0 2px 3px -1px rgb(0 0 6 / 7%),
               0 4px 6px -2px rgb(0 0 6 / 3%);
+}
+
+/* Single continuous card painted on the ListView itself when there are no
+   disc/group headers: eliminates fractional-scale (1.6x) subpixel seams
+   between adjacent TrackRow cards where the page tint bled through. */
+.playlist.playlist--single-card {
+  background: @card_bg_color;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 6 / 3%),
+              0 2px 3px -1px rgb(0 0 6 / 7%),
+              0 4px 6px -2px rgb(0 0 6 / 3%);
+}
+
+.playlist.playlist--single-card .song__card,
+.playlist.playlist--single-card .song--disc-start .song__card,
+.playlist.playlist--single-card .song--disc-end .song__card,
+.playlist.playlist--single-card .song--disc-start.song--disc-end .song__card {
+  background: transparent;
+  box-shadow: none;
 }
 
 

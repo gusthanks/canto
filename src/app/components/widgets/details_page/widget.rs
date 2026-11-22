@@ -350,6 +350,7 @@ fn sample_tracks_for_tests(count: u32) -> super::DetailsSectionWidget {
     });
     let list = gtk::ListView::new(Some(gtk::NoSelection::new(Some(titles))), Some(factory));
     list.add_css_class("playlist");
+    list.add_css_class("playlist--single-card");
     list.set_show_separators(false);
     list.set_valign(gtk::Align::Start);
     list.set_single_click_activate(true);
