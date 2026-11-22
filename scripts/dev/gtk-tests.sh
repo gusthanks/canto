@@ -91,5 +91,5 @@ if [[ $rc -ne 0 ]]; then
     exit "$rc"
 fi
 grep -Eq '^test result: ok\. [1-9][0-9]* passed' "$log" \
-    || fail "no GTK test ran${filter:+ for filter '$filter'} (full output: $log)"
+    || fail "no GTK test ran${filter:+ for filter \"$filter\"} (full output: $log)"
 echo "GTK-OK"

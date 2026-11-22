@@ -2,12 +2,13 @@
 set -euo pipefail
 
 # Runs the same six gates as the canto-quality CI workflow:
-#   rustfmt       cargo fmt --all -- --check
-#   blueprints    ./scripts/checks/lint-blueprints.sh
-#   shellcheck    shellcheck on every .sh file and on scripts/hooks/*
-#   icons         ./scripts/checks/check-icons.sh
-#   translations  ./scripts/checks/check-translations.sh
-#   docrefs       ./scripts/checks/check-doc-refs.py (names in the docs exist)
+#   - rustfmt       cargo fmt --all -- --check
+#   - blueprints    ./scripts/checks/lint-blueprints.sh
+#   - shellcheck    every .sh file and scripts/hooks/* (a comment line that
+#                   starts with that word reads as a directive to the tool)
+#   - icons         ./scripts/checks/check-icons.sh
+#   - translations  ./scripts/checks/check-translations.sh
+#   - docrefs       ./scripts/checks/check-doc-refs.py (names in the docs exist)
 #
 # Usage: ./scripts/checks/check-quality.sh [gate...]   (default: all six)
 # A gate whose tool is missing fails; name the other gates to run only those.

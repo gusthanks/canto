@@ -144,6 +144,7 @@ SKIP_TRIM="$(echo "$SKIP" | xargs)"
 [[ -n "$not_run" ]] && notes+=("not run: $not_run")
 if [[ ${#notes[@]} -gt 0 ]]; then
     echo "WARNING: not everything ran (${notes[*]}). It counts only if it passed elsewhere on this same code."
-    verdict "ROUND-OK ($(IFS=';'; echo "${notes[*]}" | sed 's/;/; /g'))"
+    joined=$(IFS=';'; echo "${notes[*]}")
+    verdict "ROUND-OK (${joined//;/; })"
 fi
 verdict "ROUND-OK"

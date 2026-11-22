@@ -302,3 +302,10 @@ without the extra part in place, check it builds, commit, restore the copy.
 runs it. List PIDs in one call, kill by number in the next. The same goes for a
 `pgrep -f` wait loop on the same line as the command it waits for: put the
 loop in a script.
+
+**A comment that starts with "shellcheck" is a directive.** CI's ShellCheck
+fails with SC1073 "Couldn't parse this shellcheck directive" on a plain
+comment such as `#   shellcheck    runs on every file`. Start the line with
+another word or a dash. Without `shellcheck` on the machine the local gate
+fails as missing, so run it with `uvx --from shellcheck-py shellcheck` before
+pushing a script. See `scripts/checks/check-quality.sh`.
