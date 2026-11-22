@@ -113,7 +113,11 @@
   <releases>
     <release version="0.1.1" date="2026-11-22">
       <description>
-        <p>Fixes playing a song from search or an album on Spotify Connect devices, which skipped to another song.</p>
+        <p>Fixes in this release:</p>
+        <ul>
+          <li>Playing a song from search or an album on Spotify Connect devices no longer skips to another song</li>
+          <li>Album titles stay readable over white or very dark covers</li>
+        </ul>
       </description>
     </release>
     <release version="0.1.0" date="2026-11-22">
