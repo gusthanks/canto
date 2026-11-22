@@ -650,6 +650,8 @@ fn fetch_lyrics_for_current_track(
             return;
         }
 
+        let notify_updated =
+            force_refresh || fetched.as_ref().is_some_and(|f| f.lyrics.is_synced());
         apply_lyrics_to_widget(
             &w,
             &am,
@@ -661,6 +663,9 @@ fn fetch_lyrics_for_current_track(
             &track_id,
             fetched,
         );
+        if notify_updated {
+            dispatcher.dispatch(crate::app::AppAction::NotifyLyricsUpdated(track_id));
+        }
     });
 }
 

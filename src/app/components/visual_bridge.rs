@@ -179,6 +179,15 @@ impl VisualBridge {
         theme_engine: Rc<ThemeEngine>,
         level_meter: LevelMeterController,
     ) -> Self {
+        Self::new_with_path(app_model, theme_engine, level_meter, runtime_state_path())
+    }
+
+    pub fn new_with_path(
+        app_model: Rc<AppModel>,
+        theme_engine: Rc<ThemeEngine>,
+        level_meter: LevelMeterController,
+        state_path: PathBuf,
+    ) -> Self {
         let settings = gio::Settings::new(SETTINGS);
         let enabled = settings.boolean(VISUAL_BRIDGE_ENABLED);
         let lyrics_offset_ms = settings.int(LYRICS_OFFSET_MS);
@@ -191,7 +200,7 @@ impl VisualBridge {
             _settings: settings.clone(),
             enabled: Cell::new(enabled),
             timer: RefCell::new(None),
-            state_path: runtime_state_path(),
+            state_path,
             lyrics_track_id: RefCell::new(None),
             lyrics: RefCell::new(None),
             lyrics_offset_ms: Cell::new(lyrics_offset_ms),
@@ -228,6 +237,16 @@ impl VisualBridge {
         }
 
         Self { inner }
+    }
+}
+
+impl Drop for VisualBridge {
+    fn drop(&mut self) {
+        self.inner.stop_timer();
+        if self.inner.enabled.replace(false) {
+            self.inner.level_meter.set_enabled(false);
+            self.inner.write_snapshot(false);
+        }
     }
 }
 
@@ -319,6 +338,32 @@ impl Inner {
                 }
             }
         });
+    }
+
+    fn refresh_cached_lyrics_for(&self, updated_track_id: &str) {
+        if !self.enabled.get() {
+            return;
+        }
+        let Some(track) = self.app_model.get_state().playback.current_song() else {
+            return;
+        };
+        if track.rri.id != updated_track_id {
+            return;
+        }
+        let key = track
+            .rri
+            .uri
+            .clone()
+            .unwrap_or_else(|| track.rri.id.clone());
+        let cached = self
+            .app_model
+            .api()
+            .cached_lyrics(&key, false)
+            .map(|found| found.lyrics)
+            .filter(Lyrics::is_synced);
+        *self.lyrics_track_id.borrow_mut() = Some(track.rri.id.clone());
+        *self.lyrics.borrow_mut() = cached;
+        self.write_snapshot(true);
     }
 
     fn sync_timer_and_write(self: &Rc<Self>) {
@@ -420,6 +465,7 @@ impl EventListener for VisualBridge {
         }
         match event {
             AppEvent::Started => self.inner.sync_timer_and_write(),
+            AppEvent::LyricsUpdated(track_id) => self.inner.refresh_cached_lyrics_for(track_id),
             AppEvent::PlaybackEvent(
                 PlaybackEvent::TrackChanged(_)
                 | PlaybackEvent::TrackSynced

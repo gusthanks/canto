@@ -10,6 +10,7 @@ gtk_tests! {
     soloist_guide_and_banner => assert_soloist_guide_and_banner,
     login_custom_client_id => assert_login_custom_client_id,
     theme_and_cover_accent => assert_theme_and_cover_accent,
+    visual_bridge_runtime => assert_visual_bridge_runtime,
 }
 
 /// The Genius guide offers a copy button for each value to type in.
@@ -559,7 +560,7 @@ fn assert_theme_and_cover_accent() {
     use canto_config::settings::{
         ADAPTIVE_COVER_ACCENT, ADAPTIVE_COVER_COLORS, APP_THEME, SETTINGS,
     };
-    use libadwaita::prelude::ActionRowExt;
+    use libadwaita::prelude::{ActionRowExt, AdwWindowExt};
     use std::cell::Cell;
     use std::rc::Rc;
 
@@ -705,7 +706,66 @@ fn assert_theme_and_cover_accent() {
         format!("kind={}, bg={}", renamed_snap.kind, renamed_snap.background),
     );
 
-    // Enabling Cover Accent on Controls adjusts a dark cover color to WCAG AA (>= 4.5:1).
+    // First-time creation of a previously non-existent palette directory (`matugen/`)
+    // attaches a monitor live via its parent directory and overrides pywal by priority.
+    let matugen_dir = dir.join("matugen");
+    let matugen_path = matugen_dir.join("colors.json");
+    std::fs::create_dir_all(&matugen_dir).expect("create matugen dir");
+    std::fs::write(
+        &matugen_path,
+        r##"{"colors":{"dark":{"background":"#10131a","on_background":"#e2e2e9","primary":"#a8c7fa"}}}"##,
+    )
+    .expect("write matugen colors");
+    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(1500);
+    while engine.current_snapshot().kind != "matugen" && std::time::Instant::now() < deadline {
+        pump(30);
+    }
+    let matugen_snap = engine.current_snapshot();
+    check(
+        "Follow System attaches monitor and live-reloads when matugen/ is created for the first time",
+        matugen_snap.kind == "matugen" && matugen_snap.background == "#10131a",
+        format!("kind={}, bg={}", matugen_snap.kind, matugen_snap.background),
+    );
+
+    // Moving a palette file out of its directory (MovedOut) falls back live to pywal.
+    let moved_out = dir.join("matugen_moved.json");
+    std::fs::rename(&matugen_path, &moved_out).expect("move matugen colors out");
+    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(1500);
+    while engine.current_snapshot().kind != "pywal" && std::time::Instant::now() < deadline {
+        pump(30);
+    }
+    let moved_snap = engine.current_snapshot();
+    check(
+        "Follow System live-reloads and falls back when a higher-priority palette file is moved out",
+        moved_snap.kind == "pywal" && moved_snap.background == "#1c1824",
+        format!("kind={}, bg={}", moved_snap.kind, moved_snap.background),
+    );
+
+    // Replacing the palette directory (`rm -rf` + `mkdir` + write) reattaches monitors live.
+    std::fs::remove_dir_all(&wal_dir).expect("remove wal dir");
+    std::fs::create_dir_all(&wal_dir).expect("recreate wal dir");
+    std::fs::write(
+        &pywal_path,
+        r##"{"special":{"background":"#101815","foreground":"#e4f2ea"},"colors":{"color4":"#4ec48b"}}"##,
+    )
+    .expect("write recreated pywal colors");
+    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(1500);
+    while engine.current_snapshot().background != "#101815" && std::time::Instant::now() < deadline
+    {
+        pump(30);
+    }
+    let replaced_snap = engine.current_snapshot();
+    check(
+        "Follow System reattaches monitors and reloads after palette directory replacement",
+        replaced_snap.kind == "pywal" && replaced_snap.background == "#101815",
+        format!(
+            "kind={}, bg={}",
+            replaced_snap.kind, replaced_snap.background
+        ),
+    );
+
+    // Enabling Cover Accent on Controls adjusts a dark cover color to WCAG AA (>= 4.5:1)
+    // and updates real mounted GTK widgets (.suggested-action and .navigation-row__liked).
     gsettings.set_boolean(ADAPTIVE_COVER_ACCENT, true).unwrap();
     engine.set_cover_accent(Some("#182448".into()));
     pump(40);
@@ -720,10 +780,241 @@ fn assert_theme_and_cover_accent() {
         ),
     );
 
+    // Mount real widgets and verify bright cover accents switch foreground text/icons
+    // to dark (`@accent_fg_color`), never unreadable white, on both suggested buttons
+    // and `.navigation-row__liked`.
+    let preview = libadwaita::Window::new();
+    preview.set_default_size(320, 120);
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+    let btn = gtk::Button::with_label("Play");
+    btn.add_css_class("suggested-action");
+    let liked = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    liked.add_css_class("navigation-row__liked");
+    row.append(&btn);
+    row.append(&liked);
+    preview.set_content(Some(&row));
+    preview.present();
+    engine.set_cover_accent(Some("#f0e27b".into()));
+    wait_frames(&preview, 3);
+    let btn_fg = btn.color();
+    let liked_fg = liked.color();
+    check(
+        "Bright cover accent switches .suggested-action and .navigation-row__liked foreground to dark text",
+        btn_fg.red() < 0.2
+            && btn_fg.green() < 0.2
+            && btn_fg.blue() < 0.2
+            && liked_fg.red() < 0.2
+            && liked_fg.green() < 0.2
+            && liked_fg.blue() < 0.2,
+        format!("btn_fg={:?}, liked_fg={:?}", btn_fg, liked_fg),
+    );
+    preview.destroy();
+
     drop(engine);
     let _ = std::fs::remove_dir_all(&dir);
     gsettings.reset(APP_THEME);
     gsettings.reset(ADAPTIVE_COVER_COLORS);
     gsettings.reset(ADAPTIVE_COVER_ACCENT);
+    force_dark();
+}
+
+/// End-to-end runtime verification of VisualBridge:
+/// - strictly dormant when disabled (zero file writes, level meter off)
+/// - publishes active synced lyric immediately on enable, seek, and offset change
+/// - clears stale lyric on track change and refreshes when AppEvent::LyricsUpdated arrives
+/// - writes a clean inactive frame on toggle-off and on Drop (shutdown)
+fn assert_visual_bridge_runtime() {
+    use crate::app::components::{EventListener, VisualBridge};
+    use crate::app::models::make_track;
+    use crate::app::state::{AppState, PlaybackAction, PlaybackEvent};
+    use crate::app::theme::{SystemThemePaths, ThemeEngine};
+    use crate::app::{AppEvent, AppModel};
+    use canto_api::{LyricLine, Lyrics};
+    use canto_audio_engine::LevelMeterController;
+    use canto_config::settings::{LYRICS_OFFSET_MS, SETTINGS, VISUAL_BRIDGE_ENABLED};
+    use std::rc::Rc;
+    use std::sync::Arc;
+
+    force_dark();
+    no_animations();
+
+    let gsettings = gio::Settings::new(SETTINGS);
+    gsettings.set_boolean(VISUAL_BRIDGE_ENABLED, false).unwrap();
+    gsettings.set_int(LYRICS_OFFSET_MS, 0).unwrap();
+
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let tag = format!("{}_{}", std::process::id(), nanos);
+    let dir = std::env::temp_dir().join(format!("canto_gtk_vb_test_{tag}"));
+    let state_path = dir.join("state.json");
+
+    let token_provider: Arc<dyn canto_api::TokenProvider> = Arc::new(|| None::<String>);
+    let api = Arc::new(canto_api::spotify_service(
+        Arc::clone(&token_provider),
+        token_provider,
+        1024 * 1024,
+        1024 * 1024,
+    ));
+
+    let id1 = format!("canto_vb_t1_{tag}");
+    let id2 = format!("canto_vb_t2_{tag}");
+    let mut track1 = make_track(&id1);
+    track1.title = "First Song".into();
+    let mut track2 = make_track(&id2);
+    track2.title = "Second Song".into();
+
+    let lyrics_cache = api.lyrics_service().cache().clone();
+    let synced1 = Lyrics::Synced(vec![
+        LyricLine::new(5_000, "First line"),
+        LyricLine::new(15_000, "Second line"),
+    ]);
+    let plain2 = Lyrics::Plain(vec!["Unsynced line".into()]);
+    let synced2 = Lyrics::Synced(vec![LyricLine::new(2_000, "Added synced line")]);
+    lyrics_cache.store(&id1, &synced1).expect("store synced1");
+    lyrics_cache.store(&id2, &plain2).expect("store plain2");
+
+    let mut state = AppState::new();
+    let album = crate::app::SongsSource::Album("vb_album".into());
+    state.update_state(PlaybackAction::LoadContextSongs(album, vec![track1, track2]).into());
+    state.update_state(PlaybackAction::Load(id1.clone()).into());
+    state.update_state(PlaybackAction::SyncSeek(6_000).into());
+
+    let app_model = Rc::new(AppModel::new(state, Arc::clone(&api)));
+    let theme_engine = ThemeEngine::install_with_paths(SystemThemePaths {
+        omarchy: dir.join("omarchy/current/theme/colors.toml"),
+        matugen: vec![dir.join("matugen/colors.json")],
+        pywal: vec![dir.join("wal/colors.json")],
+        wallust: vec![dir.join("wallust/colors.json")],
+    });
+    let level_meter = LevelMeterController::new(false);
+    let mut bridge = VisualBridge::new_with_path(
+        Rc::clone(&app_model),
+        Rc::clone(&theme_engine),
+        level_meter.clone(),
+        state_path.clone(),
+    );
+
+    // 1. Strictly dormant when disabled.
+    bridge.on_event(&AppEvent::Started);
+    bridge.on_event(&AppEvent::PlaybackEvent(PlaybackEvent::TrackChanged(
+        id1.clone(),
+    )));
+    bridge.on_event(&AppEvent::PlaybackEvent(PlaybackEvent::TrackSeeked(6_000)));
+    bridge.on_event(&AppEvent::LyricsUpdated(id1.clone()));
+    pump(50);
+    check(
+        "VisualBridge stays dormant with zero disk writes and level meter off when disabled",
+        !state_path.exists() && !level_meter.is_enabled(),
+        format!(
+            "exists={}, meter_enabled={}",
+            state_path.exists(),
+            level_meter.is_enabled()
+        ),
+    );
+
+    let read_state = || -> serde_json::Value {
+        let text = std::fs::read_to_string(&state_path).expect("state.json readable");
+        serde_json::from_str(&text).expect("valid state.json")
+    };
+
+    // 2. Enabling mid-track writes active state + synced lyric immediately.
+    gsettings.set_boolean(VISUAL_BRIDGE_ENABLED, true).unwrap();
+    pump(60);
+    let snap1 = read_state();
+    check(
+        "Enabling VisualBridge mid-track immediately publishes track and active synced lyric",
+        snap1["active"] == true
+            && snap1["track"]["id"] == id1
+            && snap1["lyric"] == "First line"
+            && level_meter.is_enabled(),
+        format!("snap1={snap1}"),
+    );
+
+    // 3. Seek and lyrics offset update `"lyric"` immediately.
+    app_model.update_state(PlaybackAction::SyncSeek(16_000).into());
+    bridge.on_event(&AppEvent::PlaybackEvent(PlaybackEvent::TrackSeeked(16_000)));
+    let snap_seek = read_state();
+    check(
+        "Seeking updates the active synced lyric in state.json",
+        snap_seek["lyric"] == "Second line",
+        format!("snap_seek={snap_seek}"),
+    );
+
+    gsettings.set_int(LYRICS_OFFSET_MS, -2_000).unwrap();
+    pump(50);
+    let snap_offset = read_state();
+    check(
+        "Changing lyrics-offset-ms shifts the published synced lyric live",
+        snap_offset["lyric"] == "First line",
+        format!("snap_offset={snap_offset}"),
+    );
+    gsettings.set_int(LYRICS_OFFSET_MS, 0).unwrap();
+    pump(40);
+
+    // 4. Switching to an unsynced track clears stale lyrics to null.
+    app_model.update_state(PlaybackAction::Load(id2.clone()).into());
+    app_model.update_state(PlaybackAction::SyncSeek(4_000).into());
+    bridge.on_event(&AppEvent::PlaybackEvent(PlaybackEvent::TrackChanged(
+        id2.clone(),
+    )));
+    let snap2 = read_state();
+    check(
+        "Switching to a track without synced lyrics clears stale lyric to null",
+        snap2["track"]["id"] == id2 && snap2["lyric"].is_null(),
+        format!("snap2={snap2}"),
+    );
+
+    // 5. Publishing/reloading synced lyrics for the active track updates state.json via LyricsUpdated.
+    lyrics_cache.store(&id2, &synced2).expect("store synced2");
+    bridge.on_event(&AppEvent::LyricsUpdated(id2.clone()));
+    let snap2_updated = read_state();
+    check(
+        "AppEvent::LyricsUpdated refreshes state.json with newly added synced lyrics",
+        snap2_updated["lyric"] == "Added synced line",
+        format!("snap2_updated={snap2_updated}"),
+    );
+
+    // 6. Disabling writes a clean inactive frame once and turns off level meter.
+    gsettings.set_boolean(VISUAL_BRIDGE_ENABLED, false).unwrap();
+    pump(50);
+    let snap_off = read_state();
+    check(
+        "Turning VisualBridge off writes a clean inactive frame and disables level meter",
+        snap_off["active"] == false
+            && snap_off["playing"] == false
+            && snap_off["track"].is_null()
+            && snap_off["lyric"].is_null()
+            && !level_meter.is_enabled(),
+        format!("snap_off={snap_off}"),
+    );
+
+    // 7. Re-enabling then dropping VisualBridge (app exit) writes a clean inactive frame.
+    gsettings.set_boolean(VISUAL_BRIDGE_ENABLED, true).unwrap();
+    pump(50);
+    check(
+        "Re-enabling VisualBridge restores active state",
+        read_state()["active"] == true,
+        format!("state={}", read_state()),
+    );
+    drop(bridge);
+    let snap_dropped = read_state();
+    check(
+        "Dropping an active VisualBridge writes a clean inactive frame on shutdown",
+        snap_dropped["active"] == false
+            && snap_dropped["playing"] == false
+            && snap_dropped["track"].is_null()
+            && snap_dropped["lyric"].is_null()
+            && !level_meter.is_enabled(),
+        format!("snap_dropped={snap_dropped}"),
+    );
+
+    drop(theme_engine);
+    let _ = std::fs::remove_file(lyrics_cache.cache_path(&id1));
+    let _ = std::fs::remove_file(lyrics_cache.cache_path(&id2));
+    let _ = std::fs::remove_dir_all(&dir);
+    gsettings.reset(VISUAL_BRIDGE_ENABLED);
+    gsettings.reset(LYRICS_OFFSET_MS);
     force_dark();
 }

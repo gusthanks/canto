@@ -35,6 +35,7 @@ pub enum AppAction {
     UseOfficialClient,
     OfficialClientFailed,
     SetConnectionLost(bool),
+    NotifyLyricsUpdated(String),
     // Cross-state actions
     QueueSelection,
     QueueTracks { tracks: Vec<Track> },
@@ -108,6 +109,7 @@ pub enum AppEvent {
     OfficialClientRequested,
     OfficialClientFailed,
     ConnectionLostChanged(bool),
+    LyricsUpdated(String),
     SettingsEvent(SettingsEvent),
 }
 
@@ -162,6 +164,7 @@ impl AppState {
                 }
             }
             AppAction::Raise => vec![AppEvent::Raised],
+            AppAction::NotifyLyricsUpdated(track_id) => vec![AppEvent::LyricsUpdated(track_id)],
             // Cross-state actions: multiple "substates" are affected by these actions, that's why they're handled here
             // Might need some clean-up
             AppAction::QueueSelection => {

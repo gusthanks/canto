@@ -20,8 +20,8 @@ $XDG_RUNTIME_DIR/canto/state.json
 Writes go to a sibling temporary file first and replace the target via rename,
 so readers never see a half-written JSON file. Updates run at roughly 15 Hz
 while music is playing, immediately on track, play-state, seek, lyric-offset,
-or theme changes, and once with `"active": false` when Visual Bridge is turned
-off.
+lyrics-update, or theme changes, and once with `"active": false` when Visual
+Bridge is turned off or Canto exits.
 
 ## JSON Format (`VisualBridgeState`)
 
@@ -84,6 +84,7 @@ Add a custom module to your Waybar config (requires `jq`):
 "custom/canto": {
   "interval": 1,
   "return-type": "json",
+  "escape": true,
   "exec-if": "test -s \"$XDG_RUNTIME_DIR/canto/state.json\"",
   "exec": "jq -rc 'if .active and .track then {text: (.lyric // (.track.title + \" - \" + (.track.artists | join(\", \")))), tooltip: (.track.title + \"\\n\" + (.track.artists | join(\", \"))), class: (if .playing then \"playing\" else \"paused\" end)} else empty end' \"$XDG_RUNTIME_DIR/canto/state.json\"",
   "max-length": 48
@@ -101,16 +102,17 @@ import Quickshell.Io
 
 Text {
     id: root
-    property var state: null
+    property var bridge: null
     FileView {
+        id: bridgeFile
         path: Quickshell.env("XDG_RUNTIME_DIR") + "/canto/state.json"
         watchChanges: true
-        onFileChanged: reload()
-        onLoaded: try { root.state = JSON.parse(text()) } catch (e) {}
+        onFileChanged: this.reload()
+        onLoaded: { try { root.bridge = JSON.parse(text()) } catch (e) {} }
     }
-    visible: !!(state && state.active && state.track)
-    color: state?.theme?.accent ?? "#ffffff"
-    text: state?.lyric ?? (state?.track ? `${state.track.title} - ${state.track.artists.join(", ")}` : "")
+    visible: !!(bridge && bridge.active && bridge.track)
+    color: bridge?.theme?.accent ?? "#ffffff"
+    text: bridge?.lyric ?? (bridge?.track ? `${bridge.track.title} - ${bridge.track.artists.join(", ")}` : "")
 }
 ```
 
@@ -120,6 +122,7 @@ Poll `$XDG_RUNTIME_DIR/canto/state.json` in `yuck` and style with the active the
 
 ```yuck
 (defpoll canto :interval "1s"
+  :initial '{"active":false,"track":null,"lyric":null,"theme":{"accent":"#ffffff"}}'
   `cat "${XDG_RUNTIME_DIR}/canto/state.json" 2>/dev/null || echo '{"active":false,"track":null,"lyric":null,"theme":{"accent":"#ffffff"}}'`)
 
 (defwidget canto-now []

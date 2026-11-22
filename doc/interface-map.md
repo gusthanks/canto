@@ -352,8 +352,9 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   `src/app/theme.rs`: `resolve_system_palette` checks `SystemThemePaths` in
   order (Omarchy via `omarchy_colors_path` / `parse_omarchy_colors_toml`,
   matugen via `parse_matugen_colors_json`, pywal via `parse_pywal_colors_json`,
-  and wallust via `parse_wallust_colors_json`), watching present directories
-  for live updates, and falls back to the native system theme via
+  and wallust via `parse_wallust_colors_json`), watching present palette
+  directories and their immediate parents for live creation, move, or
+  replacement updates, and falls back to the native system theme via
   `AdwStyleManager` (`None`, respecting system light/dark preference and
   desktop accent color) rather than a fixed preset. The other themes are fixed
   palettes in the same file.
@@ -366,8 +367,9 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
 - `VisualBridge` (`src/app/components/visual_bridge.rs`, enabled via
   `visual_bridge_switch` / `visual-bridge-enabled`) publishes
   `VisualBridgeState` including the live synced lyric line
-  (`active_synced_lyric`) to `$XDG_RUNTIME_DIR/canto/state.json` and stays
-  dormant when off (see `doc/VisualBridge.md`).
+  (`active_synced_lyric`, refreshed on `AppEvent::LyricsUpdated`) to
+  `$XDG_RUNTIME_DIR/canto/state.json`, writes a final inactive frame on disable
+  or `Drop`, and stays dormant when off (see `doc/VisualBridge.md`).
 - Scrollbars: GTK thickens the overlay scrollbar on hover and draws a dark
   trough over the content. A global rule in `src/app.css`
   (`scrollbar.overlay-indicator`) keeps it thin and transparent; widgets at
