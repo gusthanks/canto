@@ -499,29 +499,7 @@ mod imp {
                 scroll.set_propagation_phase(gtk::PropagationPhase::Capture);
                 let slider = self.volume_slider.clone();
                 scroll.connect_scroll(move |controller, _, dy| {
-                    // With natural scrolling the fingers
-                    // going up scroll down: the volume follows the fingers
-                    let event = controller
-                        .current_event()
-                        .and_then(|event| event.downcast::<gtk::gdk::ScrollEvent>().ok());
-                    let natural = event.as_ref().is_some_and(|event| {
-                        let hyprland = std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE")
-                            .map(|_| super::hyprland_natural_scroll());
-                        let natural = super::is_natural_scroll(
-                            event.relative_direction(),
-                            event.unit(),
-                            hyprland,
-                        );
-                        log::debug!(
-                            "volume scroll: dy={} unit={:?} rel={:?} natural={}",
-                            dy,
-                            event.unit(),
-                            event.relative_direction(),
-                            natural
-                        );
-                        natural
-                    });
-                    let steps = super::scroll_steps(dy, natural);
+                    let steps = super::scroll_steps_from_event(controller, dy);
                     slider.set_value(super::volume_after_scroll(slider.value(), steps));
                     glib::Propagation::Stop
                 });
@@ -1003,9 +981,32 @@ fn scroll_steps(dy: f64, natural: bool) -> f64 {
     }
 }
 
+/// Resolves physical scroll steps from a GTK scroll controller's current event,
+/// accounting for Wayland `relative_direction` and Hyprland's `natural_scroll`
+/// fallback so volume always follows physical hand motion.
+pub(crate) fn scroll_steps_from_event(controller: &gtk::EventControllerScroll, dy: f64) -> f64 {
+    let event = controller
+        .current_event()
+        .and_then(|event| event.downcast::<gtk::gdk::ScrollEvent>().ok());
+    let natural = event.as_ref().is_some_and(|event| {
+        let hyprland =
+            std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE").map(|_| hyprland_natural_scroll());
+        let natural = is_natural_scroll(event.relative_direction(), event.unit(), hyprland);
+        log::debug!(
+            "volume scroll: dy={} unit={:?} rel={:?} natural={}",
+            dy,
+            event.unit(),
+            event.relative_direction(),
+            natural
+        );
+        natural
+    });
+    scroll_steps(dy, natural)
+}
+
 /// The volume after `steps` of the wheel or the touchpad (negative: up),
 /// each the step of Ctrl+Up and Ctrl+Down.
-fn volume_after_scroll(value: f64, steps: f64) -> f64 {
+pub(crate) fn volume_after_scroll(value: f64, steps: f64) -> f64 {
     (value - steps * crate::VOLUME_STEP).clamp(0.0, 1.0)
 }
 

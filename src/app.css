@@ -511,6 +511,30 @@ bottom-sheet.bottom-sheet--padded > sheet {
   color: @accent_fg_color;
 }
 
+.mini-player__lyrics-toggle:checked {
+  color: @accent_color;
+}
+
+.mini-player__lyric {
+  font-size: 0.78rem;
+  min-height: 16px;
+}
+
+.mini-player__progress,
+.mini-player__progress trough,
+.mini-player__progress progress {
+  min-height: 2px;
+  border-radius: 0;
+}
+
+.mini-player__progress trough {
+  background-color: alpha(currentColor, 0.14);
+}
+
+.mini-player__progress progress {
+  background-color: @accent_bg_color;
+}
+
 /* Lyrics translation, under each line */
 .lyric-translation {
   font-size: 0.78em;

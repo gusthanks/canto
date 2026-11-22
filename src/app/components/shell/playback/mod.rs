@@ -5,6 +5,7 @@ mod playback_widget;
 pub use component::*;
 #[cfg(test)]
 pub(crate) use playback_widget::PlaybackWidget;
+pub(crate) use playback_widget::{scroll_steps_from_event, volume_after_scroll};
 
 use glib::prelude::*;
 

@@ -307,6 +307,11 @@
       <default>true</default>
       <summary>Show the Mini Player button in the player bar</summary>
     </key>
+    <key name="mini-player-lyrics" type="b">
+      <default>true</default>
+      <summary>Show a live synced lyric line in the Mini Player</summary>
+      <description>Display a discreet single-line synced lyric strip under the Mini Player controls when synced lyrics are available.</description>
+    </key>
     <key name="player-bar-side-panel" type="b">
       <default>true</default>
       <summary>Show the side panel button in the player bar</summary>

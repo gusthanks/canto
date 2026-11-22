@@ -88,6 +88,10 @@ impl PlaybackState {
         self.seek_position.current()
     }
 
+    pub fn volume(&self) -> Option<f64> {
+        (self.volume >= 0.0).then_some(self.volume)
+    }
+
     pub fn is_shuffled(&self) -> bool {
         self.queue.is_shuffled()
     }

@@ -64,6 +64,7 @@ pub const PLAYER_BAR_QUEUE: &str = "player-bar-queue";
 pub const PLAYER_BAR_DEVICE: &str = "player-bar-device";
 pub const PLAYER_BAR_VOLUME: &str = "player-bar-volume";
 pub const PLAYER_BAR_MINI_PLAYER: &str = "player-bar-mini-player";
+pub const MINI_PLAYER_LYRICS: &str = "mini-player-lyrics";
 pub const PLAYER_BAR_SIDE_PANEL: &str = "player-bar-side-panel";
 /// Order of the buttons at the end of the player bar, by id
 pub const PLAYER_BAR_ORDER: &str = "player-bar-order";
@@ -204,6 +205,21 @@ mod player_bar_order_tests {
             .and_then(|d| d.split("</default>").next())
             .expect("its default");
         assert_eq!(default.trim(), "false");
+    }
+
+    #[test]
+    fn the_gschema_defines_mini_player_lyrics() {
+        let schema = include_str!("../../../data/io.github.gusthanks.Canto.gschema.xml");
+        let key = schema
+            .split("<key name=\"mini-player-lyrics\"")
+            .nth(1)
+            .expect("the mini-player-lyrics key");
+        let default = key
+            .split("<default>")
+            .nth(1)
+            .and_then(|d| d.split("</default>").next())
+            .expect("its default");
+        assert_eq!(default.trim(), "true");
     }
 }
 pub const LYRICS_TRANSLATION: &str = "lyrics-translation";

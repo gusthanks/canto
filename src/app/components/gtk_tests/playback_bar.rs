@@ -11,6 +11,7 @@ gtk_tests! {
     bar_tiers => assert_bar_tiers,
     more_options_rows => assert_more_options_rows,
     more_options_equalizer_visibility => assert_more_options_equalizer_visibility,
+    mini_player_evolved => assert_mini_player_evolved,
 }
 
 /// The wheel or the touchpad over the volume changes it 5% a step, as
@@ -822,4 +823,242 @@ fn assert_more_options_equalizer_visibility() {
         eq_row.get_visible(),
         format!("visible={}", eq_row.get_visible()),
     );
+}
+
+/// The evolved Mini Player shows a 2px seekable progress bar flush along the
+/// bottom edge, adjusts volume in 5% steps via wheel/touchpad scroll using the
+/// shared natural-scroll helper, and displays an optional discreet 1-line live
+/// synced lyric strip that tracks playback, lyrics-offset-ms, LyricsUpdated,
+/// and the toggle.
+fn assert_mini_player_evolved() {
+    use crate::app::components::shell::mini_player::MiniPlayer;
+    use crate::app::components::EventListener;
+    use crate::app::models::make_track;
+    use crate::app::state::{AppState, PlaybackAction};
+    use crate::app::{AppAction, AppEvent, AppModel, Dispatcher, SongsSource};
+    use canto_api::{LyricLine, Lyrics};
+    use canto_config::settings::{LYRICS_OFFSET_MS, MINI_PLAYER_LYRICS, SETTINGS};
+    use std::rc::Rc;
+    use std::sync::Arc;
+
+    force_dark();
+    no_animations();
+
+    let gsettings = gio::Settings::new(SETTINGS);
+    gsettings.set_boolean(MINI_PLAYER_LYRICS, true).unwrap();
+    gsettings.set_int(LYRICS_OFFSET_MS, 0).unwrap();
+
+    let token_provider: Arc<dyn canto_api::TokenProvider> = Arc::new(|| None::<String>);
+    let api = Arc::new(canto_api::spotify_service(
+        Arc::clone(&token_provider),
+        token_provider,
+        1024 * 1024,
+        1024 * 1024,
+    ));
+
+    let unique = format!(
+        "mp_evolved_{}_{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos()
+    );
+    let mut track = make_track(&unique);
+    track.title = "Mini Track".into();
+    track.duration_ms = 200_000;
+
+    let mut state = AppState::new();
+    state.update_state(
+        PlaybackAction::LoadContextSongs(SongsSource::Album("mp_alb".into()), vec![track]).into(),
+    );
+    state.update_state(PlaybackAction::Load(unique.clone()).into());
+    state.update_state(PlaybackAction::SetVolume(0.50).into());
+    state.update_state(PlaybackAction::SyncSeek(40_000).into());
+
+    let app_model = Rc::new(AppModel::new(state, Arc::clone(&api)));
+    let (sender, mut receiver) = futures::channel::mpsc::unbounded();
+    let dispatcher = Dispatcher::new(sender);
+    let mut mini = MiniPlayer::new_for_tests(Rc::clone(&app_model), dispatcher);
+    let parts = mini.present_for_tests();
+    wait_mapped(&parts.window, 150);
+    wait_frames(&parts.window, 4);
+
+    // 1. Progress bar renders as a 2px strip along the bottom edge and smoothly
+    // tracks the live playback position while playing.
+    let bar_bounds = parts
+        .progress
+        .compute_bounds(&parts.window)
+        .expect("progress bar bounds");
+    let win_bounds = parts
+        .window
+        .compute_bounds(&parts.window)
+        .expect("mini player bounds");
+    let expected_fraction =
+        (app_model.get_state().playback.seek_position() as f64 / 200_000.0).clamp(0.0, 1.0);
+    let initial_fraction = parts.progress.fraction();
+    pump(260);
+    let ticked_fraction = parts.progress.fraction();
+    check(
+        "mini player progress bar is 2px tall at the bottom edge and updates live while playing",
+        (bar_bounds.height() - 2.0).abs() <= 1.0
+            && (bar_bounds.y() + bar_bounds.height() - win_bounds.height()).abs() <= 1.5
+            && (initial_fraction - expected_fraction).abs() < 0.01
+            && ticked_fraction > initial_fraction,
+        format!(
+            "bar={:?}, win={:?}, initial={}, expected={}, ticked={}",
+            bar_bounds, win_bounds, initial_fraction, expected_fraction, ticked_fraction
+        ),
+    );
+    // Pause so subsequent lyric offset assertions read a deterministic seek position.
+    app_model.update_state(PlaybackAction::Pause.into());
+    app_model.update_state(PlaybackAction::SyncSeek(40_000).into());
+    mini.on_event(&AppEvent::PlaybackEvent(
+        crate::app::state::PlaybackEvent::PlaybackPaused,
+    ));
+    mini.on_event(&AppEvent::PlaybackEvent(
+        crate::app::state::PlaybackEvent::SeekSynced(40_000),
+    ));
+
+    // 2. Clicking the progress bar seeks to the clicked fraction.
+    let mid_x = f64::from(parts.progress_hit.width()) / 2.0;
+    mini.simulate_seek_click_for_tests(mid_x);
+    let mut seeked_to = None;
+    while let Ok(action) = receiver.try_recv() {
+        if let AppAction::PlaybackAction(PlaybackAction::Seek(ms)) = action {
+            seeked_to = Some(ms);
+        }
+    }
+    check(
+        "clicking the midpoint of the mini player progress bar seeks to 50%",
+        seeked_to.is_some_and(|ms| (ms as i64 - 100_000).abs() <= 1_500)
+            && (parts.progress.fraction() - 0.50).abs() < 0.02,
+        format!(
+            "seeked_to={:?}, fraction={}",
+            seeked_to,
+            parts.progress.fraction()
+        ),
+    );
+
+    // 3. Volume scroll controller is Capture-phase and changes volume in 5% steps.
+    let controllers = parts.window.observe_controllers();
+    let scroll = (0..controllers.n_items())
+        .filter_map(|i| {
+            controllers
+                .item(i)
+                .and_downcast::<gtk::EventControllerScroll>()
+        })
+        .next();
+    let Some(scroll) = scroll else {
+        check(
+            "mini player attaches a Capture scroll controller for volume",
+            false,
+            "missing scroll controller",
+        );
+        parts.window.close();
+        return;
+    };
+    let handled_up: bool = scroll.emit_by_name("scroll", &[&0.0f64, &-1.0f64]);
+    let after_up = (mini.local_volume_for_tests() * 100.0).round() as i32;
+    let handled_down: bool = scroll.emit_by_name("scroll", &[&0.0f64, &2.0f64]);
+    let after_down = (mini.local_volume_for_tests() * 100.0).round() as i32;
+    pump(140);
+    let mut dispatched_vol = None;
+    while let Ok(action) = receiver.try_recv() {
+        if let AppAction::PlaybackAction(PlaybackAction::SetVolume(v)) = action {
+            dispatched_vol = Some((v * 100.0).round() as i32);
+        }
+    }
+    check(
+        "scrolling over the mini player adjusts volume in 5% steps and dispatches SetVolume",
+        scroll.propagation_phase() == gtk::PropagationPhase::Capture
+            && handled_up
+            && handled_down
+            && after_up == 55
+            && after_down == 45
+            && dispatched_vol == Some(45),
+        format!(
+            "phase={:?}, handled=({}, {}), levels=({}, {}), dispatched={:?}",
+            scroll.propagation_phase(),
+            handled_up,
+            handled_down,
+            after_up,
+            after_down,
+            dispatched_vol
+        ),
+    );
+
+    // 4. Live synced lyric strip: hidden when unavailable, visible when synced
+    // lyrics match, follows lyrics-offset-ms and AppEvent::LyricsUpdated, and
+    // hides cleanly when toggled off.
+    check(
+        "lyric strip is hidden when no synced lyrics are available",
+        !parts.lyric_label.get_visible(),
+        format!("visible={}", parts.lyric_label.get_visible()),
+    );
+
+    let synced = Lyrics::Synced(vec![
+        LyricLine::new(35_000, "First synced line"),
+        LyricLine::new(45_000, "Second synced line"),
+    ]);
+    mini.set_lyrics_for_tests(&unique, Some(synced));
+    pump(40);
+    check(
+        "lyric strip displays active synced lyric at current position",
+        parts.lyric_label.get_visible() && parts.lyric_label.text() == "First synced line",
+        format!(
+            "visible={}, text={:?}",
+            parts.lyric_label.get_visible(),
+            parts.lyric_label.text()
+        ),
+    );
+
+    gsettings.set_int(LYRICS_OFFSET_MS, 6_000).unwrap();
+    pump(40);
+    check(
+        "lyric strip respects lyrics-offset-ms live",
+        parts.lyric_label.get_visible() && parts.lyric_label.text() == "Second synced line",
+        format!(
+            "visible={}, text={:?}",
+            parts.lyric_label.get_visible(),
+            parts.lyric_label.text()
+        ),
+    );
+    gsettings.set_int(LYRICS_OFFSET_MS, 0).unwrap();
+    pump(40);
+
+    // Refresh via AppEvent::LyricsUpdated from the disk cache.
+    let cache = canto_api::LyricsCache::default();
+    let updated = Lyrics::Synced(vec![LyricLine::new(35_000, "Updated via cache event")]);
+    cache.store(&unique, &updated).expect("store cached lyric");
+    mini.on_event(&AppEvent::LyricsUpdated(unique.clone()));
+    pump(40);
+    check(
+        "lyric strip refreshes immediately on AppEvent::LyricsUpdated",
+        parts.lyric_label.get_visible() && parts.lyric_label.text() == "Updated via cache event",
+        format!(
+            "visible={}, text={:?}",
+            parts.lyric_label.get_visible(),
+            parts.lyric_label.text()
+        ),
+    );
+    let _ = std::fs::remove_file(cache.cache_path(&unique));
+
+    // Toggling off hides the lyric strip cleanly.
+    parts.lyrics_toggle.set_active(false);
+    pump(40);
+    check(
+        "toggling lyrics off hides the strip and updates mini-player-lyrics",
+        !parts.lyric_label.get_visible() && !gsettings.boolean(MINI_PLAYER_LYRICS),
+        format!(
+            "visible={}, setting={}",
+            parts.lyric_label.get_visible(),
+            gsettings.boolean(MINI_PLAYER_LYRICS)
+        ),
+    );
+
+    // Restore default and close cleanly.
+    gsettings.set_boolean(MINI_PLAYER_LYRICS, true).unwrap();
+    gsettings.set_int(LYRICS_OFFSET_MS, 0).unwrap();
+    parts.window.close();
 }
