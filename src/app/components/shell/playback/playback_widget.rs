@@ -22,6 +22,8 @@ use std::sync::Arc;
 
 use super::playback_controls::{repeat_icon_name, PlaybackControlsWidget};
 use super::playback_info::PlaybackInfoWidget;
+use super::volume_scroll::volume_icon_name;
+pub(crate) use super::volume_scroll::{scroll_steps_from_event, volume_after_scroll};
 use libadwaita::{BreakpointCondition, BreakpointConditionLengthType, LengthUnit};
 
 /// Matches the artwork size request in playback_info.blp.
@@ -906,128 +908,11 @@ fn pressed(on: bool) -> gtk::AccessibleTristate {
     }
 }
 
-/// Parses the boolean field from `hyprctl -j getoption <name>`
-/// (`"bool"` on Hyprland 0.56+, `"int"` on older releases).
-fn parse_hyprctl_bool_option(stdout: &str) -> Option<bool> {
-    let value = serde_json::from_str::<serde_json::Value>(stdout).ok()?;
-    if let Some(flag) = value.get("bool").and_then(|v| v.as_bool()) {
-        return Some(flag);
-    }
-    value.get("int").and_then(|v| v.as_i64()).map(|n| n != 0)
-}
-
-fn query_hyprctl_bool_option(option: &str) -> bool {
-    std::process::Command::new("hyprctl")
-        .args(["-j", "getoption", option])
-        .output()
-        .ok()
-        .filter(|out| out.status.success())
-        .and_then(|out| String::from_utf8(out.stdout).ok())
-        .and_then(|stdout| parse_hyprctl_bool_option(&stdout))
-        .unwrap_or(false)
-}
-
-/// Reads Hyprland's `(touchpad, pointer)` `natural_scroll` settings, cached
-/// for a few seconds so rapid scroll events never spawn repeated commands.
-fn hyprland_natural_scroll() -> (bool, bool) {
-    static CACHE: std::sync::Mutex<Option<(std::time::Instant, (bool, bool))>> =
-        std::sync::Mutex::new(None);
-    let now = std::time::Instant::now();
-    if let Ok(cache) = CACHE.lock() {
-        if let Some((at, pair)) = *cache {
-            if now.duration_since(at) < std::time::Duration::from_secs(10) {
-                return pair;
-            }
-        }
-    }
-    let pair = (
-        query_hyprctl_bool_option("input:touchpad:natural_scroll"),
-        query_hyprctl_bool_option("input:natural_scroll"),
-    );
-    if let Ok(mut cache) = CACHE.lock() {
-        *cache = Some((now, pair));
-    }
-    pair
-}
-
-/// Whether `event`'s scroll delta is inverted relative to physical motion.
-/// Wayland compositors should report this through `relative_direction`, but some
-/// (such as Hyprland) always report `Identical`, so we fall back to checking the
-/// compositor's `natural_scroll` setting for touchpad (`Surface`) vs mouse (`Wheel`).
-fn is_natural_scroll(
-    relative: gtk::gdk::ScrollRelativeDirection,
-    unit: gtk::gdk::ScrollUnit,
-    hyprland_fallback: Option<(bool, bool)>,
-) -> bool {
-    if relative == gtk::gdk::ScrollRelativeDirection::Inverted {
-        true
-    } else if let Some((touchpad, pointer)) = hyprland_fallback {
-        match unit {
-            gtk::gdk::ScrollUnit::Surface => touchpad,
-            _ => pointer,
-        }
-    } else {
-        false
-    }
-}
-
-/// Steps of the wheel or the touchpad as the hand moved them (negative:
-/// up). With natural scrolling the fingers going up send a scroll down.
-fn scroll_steps(dy: f64, natural: bool) -> f64 {
-    if natural {
-        -dy
-    } else {
-        dy
-    }
-}
-
-/// Resolves physical scroll steps from a GTK scroll controller's current event,
-/// accounting for Wayland `relative_direction` and Hyprland's `natural_scroll`
-/// fallback so volume always follows physical hand motion.
-pub(crate) fn scroll_steps_from_event(controller: &gtk::EventControllerScroll, dy: f64) -> f64 {
-    let event = controller
-        .current_event()
-        .and_then(|event| event.downcast::<gtk::gdk::ScrollEvent>().ok());
-    let natural = event.as_ref().is_some_and(|event| {
-        let hyprland =
-            std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE").map(|_| hyprland_natural_scroll());
-        let natural = is_natural_scroll(event.relative_direction(), event.unit(), hyprland);
-        log::debug!(
-            "volume scroll: dy={} unit={:?} rel={:?} natural={}",
-            dy,
-            event.unit(),
-            event.relative_direction(),
-            natural
-        );
-        natural
-    });
-    scroll_steps(dy, natural)
-}
-
-/// The volume after `steps` of the wheel or the touchpad (negative: up),
-/// each the step of Ctrl+Up and Ctrl+Down.
-pub(crate) fn volume_after_scroll(value: f64, steps: f64) -> f64 {
-    (value - steps * crate::VOLUME_STEP).clamp(0.0, 1.0)
-}
-
 /// The volume's tooltip: its level, and the keys that change it.
 fn volume_tooltip(value: f64) -> String {
     // translators: Tooltip of the volume slider. {} is the volume in percent (the % follows it); Ctrl+↑ and Ctrl+↓ are the keys that change it.
     gettext("Volume {}% · Ctrl+↑ / Ctrl+↓")
         .replace("{}", &((value * 100.0).round() as i32).to_string())
-}
-
-/// Standard speaker icon for a volume level in `0.0..=1.0`.
-fn volume_icon_name(value: f64) -> &'static str {
-    if value <= 0.01 {
-        "audio-volume-muted-symbolic"
-    } else if value < 0.34 {
-        "audio-volume-low-symbolic"
-    } else if value < 0.67 {
-        "audio-volume-medium-symbolic"
-    } else {
-        "audio-volume-high-symbolic"
-    }
 }
 
 glib::wrapper! {
@@ -1396,116 +1281,5 @@ impl PlaybackWidget {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn the_wheel_moves_the_volume_a_key_step_at_a_time() {
-        let close = |a: f64, b: f64| (a - b).abs() < 1e-9;
-        assert!(close(volume_after_scroll(0.40, -1.0), 0.45));
-        assert!(close(volume_after_scroll(0.40, 2.0), 0.30));
-        assert!(close(volume_after_scroll(0.98, -1.0), 1.0));
-        assert!(close(volume_after_scroll(0.02, 1.0), 0.0));
-        assert_eq!(volume_tooltip(0.45), "Volume 45% · Ctrl+↑ / Ctrl+↓");
-        // A wheel up, and fingers up with natural scrolling: louder
-        assert!(close(
-            volume_after_scroll(0.40, scroll_steps(-1.0, false)),
-            0.45
-        ));
-        assert!(close(
-            volume_after_scroll(0.40, scroll_steps(1.0, true)),
-            0.45
-        ));
-        assert_eq!(volume_tooltip(0.0), "Volume 0% · Ctrl+↑ / Ctrl+↓");
-    }
-
-    #[test]
-    fn hyprland_fallback_detects_touchpad_natural_scroll_when_relative_stays_identical() {
-        use gtk::gdk::{ScrollRelativeDirection as Rel, ScrollUnit};
-        let close = |a: f64, b: f64| (a - b).abs() < 1e-9;
-
-        assert_eq!(
-            parse_hyprctl_bool_option(
-                r#"{"option": "input:touchpad:natural_scroll", "bool": true, "set": true }"#
-            ),
-            Some(true)
-        );
-        assert_eq!(
-            parse_hyprctl_bool_option(
-                r#"{"option": "input:natural_scroll", "bool": false, "set": false }"#
-            ),
-            Some(false)
-        );
-        assert_eq!(
-            parse_hyprctl_bool_option(
-                r#"{"option":"input:touchpad:natural_scroll","int":1,"set":true}"#
-            ),
-            Some(true)
-        );
-        assert_eq!(
-            parse_hyprctl_bool_option(r#"{"option":"input:natural_scroll","int":0,"set":false}"#),
-            Some(false)
-        );
-        assert_eq!(parse_hyprctl_bool_option("{}"), None);
-        assert_eq!(parse_hyprctl_bool_option("not json"), None);
-
-        assert!(is_natural_scroll(Rel::Inverted, ScrollUnit::Wheel, None));
-        assert!(is_natural_scroll(
-            Rel::Inverted,
-            ScrollUnit::Surface,
-            Some((false, false))
-        ));
-        assert!(is_natural_scroll(
-            Rel::Identical,
-            ScrollUnit::Surface,
-            Some((true, false))
-        ));
-        assert!(!is_natural_scroll(
-            Rel::Identical,
-            ScrollUnit::Wheel,
-            Some((true, false))
-        ));
-        assert!(!is_natural_scroll(
-            Rel::Identical,
-            ScrollUnit::Surface,
-            None
-        ));
-
-        // Fingers up on a touchpad with natural scroll (dy=+1, Identical on Hyprland): louder
-        let natural = is_natural_scroll(Rel::Identical, ScrollUnit::Surface, Some((true, false)));
-        assert!(close(
-            volume_after_scroll(0.40, scroll_steps(1.0, natural)),
-            0.45
-        ));
-        // Mouse wheel up without natural scroll (dy=-1): louder
-        let mouse_natural =
-            is_natural_scroll(Rel::Identical, ScrollUnit::Wheel, Some((true, false)));
-        assert!(close(
-            volume_after_scroll(0.40, scroll_steps(-1.0, mouse_natural)),
-            0.45
-        ));
-    }
-
-    #[test]
-    fn volume_icon_follows_level() {
-        assert_eq!(volume_icon_name(0.0), "audio-volume-muted-symbolic");
-        assert_eq!(volume_icon_name(0.2), "audio-volume-low-symbolic");
-        assert_eq!(volume_icon_name(0.5), "audio-volume-medium-symbolic");
-        assert_eq!(volume_icon_name(0.9), "audio-volume-high-symbolic");
-    }
-
-    #[test]
-    fn eq_presets_have_valid_10_band_ranges() {
-        for (name, gains) in EQ_PRESETS {
-            assert_eq!(gains.len(), 10, "preset {} should define 10 bands", name);
-            for g in gains {
-                assert!(
-                    (-12.0..=12.0).contains(&g),
-                    "preset {} gain {} out of gschema range",
-                    name,
-                    g
-                );
-            }
-        }
-    }
-}
+#[path = "playback_widget_tests.rs"]
+mod tests;
