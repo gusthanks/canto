@@ -174,6 +174,21 @@ mod player_bar_order_tests {
             .collect();
         assert_eq!(ids, PLAYER_BAR_DEFAULT_ORDER.to_vec());
     }
+
+    #[test]
+    fn the_gschema_defines_spotify_client_id() {
+        let schema = include_str!("../../../data/io.github.gusthanks.Canto.gschema.xml");
+        let key = schema
+            .split("<key name=\"spotify-client-id\"")
+            .nth(1)
+            .expect("the spotify-client-id key");
+        let default = key
+            .split("<default>")
+            .nth(1)
+            .and_then(|d| d.split("</default>").next())
+            .expect("its default");
+        assert_eq!(default.trim(), "\"\"");
+    }
 }
 pub const LYRICS_TRANSLATION: &str = "lyrics-translation";
 pub const LIBRARY_SORT: &str = "library-sort";
@@ -200,6 +215,19 @@ pub const LASTFM_LOVE_ON_LIKE: &str = "lastfm-love-on-like";
 pub const LISTENBRAINZ_TOKEN: &str = "listenbrainz-token";
 pub const SMART_QUEUE_CONTINUATION: &str = "smart-queue-continuation";
 pub const VISUAL_BRIDGE_ENABLED: &str = "visual-bridge-enabled";
+pub const SPOTIFY_CLIENT_ID: &str = "spotify-client-id";
+
+pub fn spotify_client_id() -> Option<String> {
+    let value = gio::Settings::new(SETTINGS)
+        .string(SPOTIFY_CLIENT_ID)
+        .trim()
+        .to_string();
+    (!value.is_empty()).then_some(value)
+}
+
+pub fn set_spotify_client_id(client_id: &str) {
+    let _ = gio::Settings::new(SETTINGS).set_string(SPOTIFY_CLIENT_ID, client_id.trim());
+}
 
 /// Keys whose changes only apply after restarting the app.
 pub const RESTART_REQUIRED_KEYS: &[&str] = &[

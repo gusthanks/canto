@@ -142,6 +142,62 @@ template $LoginWindow : Adw.Window {
             halign: center;
             styles ["pill", "suggested-action"]
           }
+
+          Box {
+            orientation: vertical;
+            spacing: 12;
+
+            ToggleButton custom_client_id_toggle {
+              /* Translators: Discreet advanced toggle on the login window that reveals an optional field for using a personal Spotify Developer Client ID. */
+              label: _("Use my own Client ID");
+              halign: center;
+              styles ["flat", "caption"]
+            }
+
+            Revealer custom_client_id_revealer {
+              reveal-child: bind custom_client_id_toggle.active;
+              transition-type: slide_down;
+
+              child: Box {
+                orientation: vertical;
+                spacing: 8;
+
+                ListBox {
+                  selection-mode: none;
+                  styles ["boxed-list"]
+
+                  Adw.EntryRow custom_client_id_entry {
+                    /* Translators: Title of the optional custom Spotify Client ID entry on the login window. */
+                    title: _("Spotify Client ID");
+                  }
+
+                  Adw.ActionRow redirect_uri_row {
+                    /* Translators: Title of the row showing the OAuth Redirect URI to register in a personal Spotify Developer app. */
+                    title: _("Redirect URI");
+                    subtitle: "http://127.0.0.1:8898/login";
+
+                    Button copy_redirect_uri_button {
+                      icon-name: "edit-copy-symbolic";
+                      valign: center;
+                      /* Translators: Tooltip of the button copying the OAuth Redirect URI. */
+                      tooltip-text: _("Copy");
+                      styles ["flat"]
+                    }
+                  }
+                }
+
+                Label custom_client_id_hint {
+                  /* Translators: Hint under the optional custom Spotify Client ID field on the login window. */
+                  label: _("Optional. Leave empty to use Canto’s built-in Client ID.");
+                  wrap: true;
+                  wrap-mode: word_char;
+                  halign: start;
+                  xalign: 0;
+                  styles ["caption", "dim-label"]
+                }
+              };
+            }
+          }
         }
       }
     }

@@ -349,7 +349,11 @@ impl SpotifyPlayer {
             pitch_controller,
             mix_controller,
             level_meter_controller,
-            oauth_client: Arc::new(CantoOauthClient::new(token_store, session_tokens)),
+            oauth_client: Arc::new(CantoOauthClient::with_client_id(
+                token_store,
+                session_tokens,
+                crate::settings::spotify_client_id().as_deref(),
+            )),
             auth_challenge: None,
             command_sender,
 
@@ -490,6 +494,9 @@ impl SpotifyPlayer {
                 Ok(())
             }
             Command::Logout => {
+                if let Some(challenge) = self.auth_challenge.take() {
+                    challenge.cancel().await;
+                }
                 self.oauth_client.clear_credentials().await;
                 if let Some(handle) = self.token_refresh_task.take() {
                     handle.abort();
@@ -512,6 +519,8 @@ impl SpotifyPlayer {
             }
             Command::Restore => {
                 info!("Attempting to restore session from stored credentials");
+                self.oauth_client
+                    .set_client_id(crate::settings::spotify_client_id().as_deref());
                 let credentials =
                     self.oauth_client
                         .get_valid_token()
@@ -544,6 +553,12 @@ impl SpotifyPlayer {
                 self.begin_login(credentials, None).await
             }
             Command::InitLogin => {
+                let configured = crate::settings::spotify_client_id();
+                if self.oauth_client.set_client_id(configured.as_deref()) {
+                    if let Some(challenge) = self.auth_challenge.take() {
+                        challenge.cancel().await;
+                    }
+                }
                 let auth_url = match self.auth_challenge.as_ref() {
                     Some(challenge) => challenge.auth_url.clone(),
                     None => {

@@ -490,6 +490,11 @@
       <summary>Enable visual bridge</summary>
       <description>Opt-in runtime JSON state and lock-free audio energy output for external visualizers.</description>
     </key>
+    <key name="spotify-client-id" type="s">
+      <default>""</default>
+      <summary>Custom Spotify Web API Client ID</summary>
+      <description>Optional Spotify Developer app Client ID used for OAuth login instead of Canto's built-in one. Overridden by the CANTO_SPOTIFY_CLIENT_ID environment variable when set.</description>
+    </key>
     <key name="migrated-from-riff" type="b">
       <default>false</default>
       <summary>Settings copied from the old app id</summary>

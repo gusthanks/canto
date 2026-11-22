@@ -1,7 +1,10 @@
+use gettextrs::gettext;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::CompositeTemplate;
+use std::cell::Cell;
 use std::rc::Rc;
+use std::time::Duration;
 use url::Url;
 
 use crate::app::components::EventListener;
@@ -23,6 +26,23 @@ mod imp {
 
         #[template_child]
         pub status_stack: TemplateChild<gtk::Stack>,
+
+        #[template_child]
+        pub custom_client_id_toggle: TemplateChild<gtk::ToggleButton>,
+
+        #[template_child]
+        pub custom_client_id_revealer: TemplateChild<gtk::Revealer>,
+
+        #[template_child]
+        pub custom_client_id_entry: TemplateChild<libadwaita::EntryRow>,
+
+        #[template_child]
+        pub copy_redirect_uri_button: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub custom_client_id_hint: TemplateChild<gtk::Label>,
+
+        pub syncing_client_id: Cell<bool>,
     }
 
     #[glib::object_subclass]
@@ -40,7 +60,12 @@ mod imp {
         }
     }
 
-    impl ObjectImpl for LoginWindow {}
+    impl ObjectImpl for LoginWindow {
+        fn constructed(&self) {
+            self.parent_constructed();
+            self.obj().setup_custom_client_id();
+        }
+    }
     impl WidgetImpl for LoginWindow {}
     impl AdwWindowImpl for LoginWindow {}
     impl WindowImpl for LoginWindow {}
@@ -60,6 +85,95 @@ impl Default for LoginWindow {
 impl LoginWindow {
     pub fn new() -> Self {
         glib::Object::new()
+    }
+
+    fn setup_custom_client_id(&self) {
+        let imp = self.imp();
+        let weak_self = self.downgrade();
+        imp.custom_client_id_entry.connect_changed(move |entry| {
+            let Some(window) = weak_self.upgrade() else {
+                return;
+            };
+            if window.imp().syncing_client_id.get() || !entry.is_sensitive() {
+                return;
+            }
+            canto_config::settings::set_spotify_client_id(entry.text().as_str());
+        });
+
+        imp.copy_redirect_uri_button.connect_clicked(|button| {
+            button.clipboard().set_text(canto_auth::REDIRECT_URI);
+            button.set_icon_name("object-select-symbolic");
+            let weak_btn = button.downgrade();
+            glib::timeout_add_local_once(Duration::from_millis(1500), move || {
+                if let Some(btn) = weak_btn.upgrade() {
+                    btn.set_icon_name("edit-copy-symbolic");
+                }
+            });
+        });
+
+        self.sync_custom_client_id();
+    }
+
+    /// Loads the persisted Client ID (or `CANTO_SPOTIFY_CLIENT_ID` override)
+    /// into the discreet advanced section on the login window.
+    pub fn sync_custom_client_id(&self) {
+        let env_override = std::env::var(canto_auth::ENV_CLIENT_ID)
+            .ok()
+            .map(|v| v.trim().to_string())
+            .filter(|v| !v.is_empty());
+        let saved = canto_config::settings::spotify_client_id();
+        self.apply_custom_client_id_state(env_override.as_deref(), saved.as_deref());
+    }
+
+    fn apply_custom_client_id_state(&self, env_override: Option<&str>, saved: Option<&str>) {
+        let imp = self.imp();
+        imp.syncing_client_id.set(true);
+        if let Some(env_id) = env_override {
+            imp.custom_client_id_entry.set_text(env_id);
+            imp.custom_client_id_entry.set_sensitive(false);
+            // Translators: Shown on the login window when the CANTO_SPOTIFY_CLIENT_ID environment variable overrides the Client ID field.
+            imp.custom_client_id_hint.set_label(&gettext(
+                "Using CANTO_SPOTIFY_CLIENT_ID from the environment.",
+            ));
+            imp.custom_client_id_toggle.set_active(true);
+        } else {
+            let value = saved.unwrap_or("");
+            imp.custom_client_id_entry.set_text(value);
+            imp.custom_client_id_entry.set_sensitive(true);
+            // Translators: Hint under the optional custom Spotify Client ID field on the login window.
+            imp.custom_client_id_hint.set_label(&gettext(
+                "Optional. Leave empty to use Canto’s built-in Client ID.",
+            ));
+            imp.custom_client_id_toggle.set_active(!value.is_empty());
+        }
+        imp.syncing_client_id.set(false);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn custom_client_id_parts_for_tests(
+        &self,
+    ) -> (
+        gtk::ToggleButton,
+        gtk::Revealer,
+        libadwaita::EntryRow,
+        gtk::Label,
+    ) {
+        let imp = self.imp();
+        (
+            imp.custom_client_id_toggle.get(),
+            imp.custom_client_id_revealer.get(),
+            imp.custom_client_id_entry.get(),
+            imp.custom_client_id_hint.get(),
+        )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn apply_custom_client_id_for_tests(
+        &self,
+        env_override: Option<&str>,
+        saved: Option<&str>,
+    ) {
+        self.apply_custom_client_id_state(env_override, saved);
     }
 
     fn connect_close<F>(&self, on_close: F)
@@ -142,6 +256,7 @@ impl Login {
     }
 
     fn show_self(&self) {
+        self.login_window.sync_custom_client_id();
         self.window().set_transient_for(Some(&self.parent));
         self.window().set_modal(true);
         self.window().set_visible(true);

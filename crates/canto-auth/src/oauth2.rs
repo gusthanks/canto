@@ -21,7 +21,7 @@ use oauth2::{EndpointNotSet, EndpointSet, PkceCodeVerifier, RefreshToken, Reques
 use std::collections::HashMap;
 use std::io;
 use std::net::SocketAddr;
-use std::sync::OnceLock;
+use std::sync::{OnceLock, RwLock};
 use std::time::{Duration, SystemTime};
 use thiserror::Error;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -32,6 +32,7 @@ use crate::session_tokens::SessionTokens;
 use crate::token_store::TokenStore;
 
 pub const CLIENT_ID: &str = "782ae96ea60f4cdf986a766049607005";
+pub const ENV_CLIENT_ID: &str = "CANTO_SPOTIFY_CLIENT_ID";
 pub const REDIRECT_URI: &str = "http://127.0.0.1:8898/login";
 pub const SCOPES: &str = "user-read-private,\
 playlist-read-private,\
@@ -47,8 +48,27 @@ playlist-modify-public,\
 playlist-modify-private,\
 user-modify-playback-state,\
 streaming,\
-playlist-modify-public,\
 ugc-image-upload";
+
+/// Resolves the Spotify Web API Client ID using precedence:
+/// 1. `CANTO_SPOTIFY_CLIENT_ID` environment variable (when non-empty),
+/// 2. Persisted user setting (when non-empty),
+/// 3. Built-in [`CLIENT_ID`].
+pub fn resolve_client_id(env_override: Option<&str>, configured: Option<&str>) -> String {
+    for candidate in [env_override, configured] {
+        if let Some(id) = candidate.map(str::trim).filter(|s| !s.is_empty()) {
+            return id.to_string();
+        }
+    }
+    CLIENT_ID.to_string()
+}
+
+/// Resolves the active Spotify Web API Client ID using [`ENV_CLIENT_ID`] from
+/// the environment, falling back to `configured`, then [`CLIENT_ID`].
+pub fn effective_client_id(configured: Option<&str>) -> String {
+    let env_override = std::env::var(ENV_CLIENT_ID).ok();
+    resolve_client_id(env_override.as_deref(), configured)
+}
 
 pub const SESSION_CLIENT_ID: &str = "65b708073fc0480ea92a077233ca87bd";
 // The playlist scopes are for the internal API, which makes a playlist private
@@ -86,7 +106,7 @@ fn http_client() -> &'static reqwest::Client {
 }
 
 pub struct CantoOauthClient {
-    client: OauthClient,
+    client: RwLock<(String, OauthClient)>,
     token_store: TokenStore,
     session_tokens: SessionTokens,
 }
@@ -96,6 +116,14 @@ pub struct AuthcodeChallenge {
     session_pkce_verifier: PkceCodeVerifier,
     pub auth_url: Url,
     listener: JoinHandle<Result<AuthCodes, OAuthError>>,
+}
+
+impl AuthcodeChallenge {
+    /// Cancels a pending login listener and waits for its TCP socket to close.
+    pub async fn cancel(self) {
+        self.listener.abort();
+        let _ = self.listener.await;
+    }
 }
 
 pub struct LoginCredentials {
@@ -127,11 +155,53 @@ fn authorization(client: &OauthClient, scopes: &str) -> (Url, CsrfToken, PkceCod
 
 impl CantoOauthClient {
     pub fn new(token_store: TokenStore, session_tokens: SessionTokens) -> Self {
+        Self::with_client_id(token_store, session_tokens, None)
+    }
+
+    pub fn with_client_id(
+        token_store: TokenStore,
+        session_tokens: SessionTokens,
+        configured_client_id: Option<&str>,
+    ) -> Self {
+        let client_id = effective_client_id(configured_client_id);
+        let client = Self::build_client(&client_id);
         Self {
-            client: Self::build_client(CLIENT_ID),
+            client: RwLock::new((client_id, client)),
             token_store,
             session_tokens,
         }
+    }
+
+    /// Returns the currently active Spotify Web API Client ID.
+    pub fn client_id(&self) -> String {
+        self.client
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .0
+            .clone()
+    }
+
+    /// Re-resolves the active Spotify Web API Client ID (respecting
+    /// `CANTO_SPOTIFY_CLIENT_ID` over `configured_client_id`). Returns `true`
+    /// if the active Client ID changed.
+    pub fn set_client_id(&self, configured_client_id: Option<&str>) -> bool {
+        let next = effective_client_id(configured_client_id);
+        let mut guard = self.client.write().unwrap_or_else(|e| e.into_inner());
+        if guard.0 == next {
+            return false;
+        }
+        info!("Switching Spotify OAuth Client ID");
+        guard.1 = Self::build_client(&next);
+        guard.0 = next;
+        true
+    }
+
+    fn oauth_client(&self) -> OauthClient {
+        self.client
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .1
+            .clone()
     }
 
     pub(crate) fn build_client(client_id: &str) -> OauthClient {
@@ -150,7 +220,8 @@ impl CantoOauthClient {
         &self,
         notify_complete: impl FnOnce() + Send + 'static,
     ) -> Result<AuthcodeChallenge, OAuthError> {
-        let (auth_url, state, pkce_verifier) = authorization(&self.client, SCOPES);
+        let client = self.oauth_client();
+        let (auth_url, state, pkce_verifier) = authorization(&client, SCOPES);
         let (session_auth_url, session_state, session_pkce_verifier) =
             authorization(self.session_tokens.client(), SESSION_SCOPES);
 
@@ -178,7 +249,8 @@ impl CantoOauthClient {
             .await
             .map_err(|_| OAuthError::AuthCodeListenerTerminated)??;
 
-        let web_api = Self::exchange(&self.client, codes.code, challenge.pkce_verifier).await?;
+        let client = self.oauth_client();
+        let web_api = Self::exchange(&client, codes.code, challenge.pkce_verifier).await?;
         let session = Self::exchange(
             self.session_tokens.client(),
             codes.session_code,
@@ -250,7 +322,8 @@ impl CantoOauthClient {
     }
 
     pub async fn get_valid_token(&self) -> Result<Credentials, OAuthError> {
-        Self::valid_token(&self.client, &self.token_store).await
+        let client = self.oauth_client();
+        Self::valid_token(&client, &self.token_store).await
     }
 
     pub(crate) async fn valid_token(
@@ -282,7 +355,8 @@ impl CantoOauthClient {
     /// ([`OAuthError::RefreshTransient`]) and the credentials are left intact so
     /// a caller can poll and try again later.
     pub async fn refresh_token(&self, old_token: Credentials) -> Result<Credentials, OAuthError> {
-        Self::refresh(&self.client, &self.token_store, old_token).await
+        let client = self.oauth_client();
+        Self::refresh(&client, &self.token_store, old_token).await
     }
 
     async fn refresh(
@@ -343,7 +417,8 @@ impl CantoOauthClient {
     }
 
     pub async fn refresh_token_at_expiry(&self) -> Result<Credentials, OAuthError> {
-        Self::refresh_at_expiry(&self.client, &self.token_store).await
+        let client = self.oauth_client();
+        Self::refresh_at_expiry(&client, &self.token_store).await
     }
 
     pub(crate) async fn refresh_at_expiry(
@@ -716,6 +791,66 @@ mod test {
             codes.await.unwrap(),
             Err(OAuthError::AuthCodeNotFound)
         ));
+    }
+
+    #[test]
+    fn scopes_have_no_duplicates() {
+        for (name, raw) in [("SCOPES", SCOPES), ("SESSION_SCOPES", SESSION_SCOPES)] {
+            let mut seen = std::collections::HashSet::new();
+            for scope in raw.split(',') {
+                assert!(!scope.is_empty(), "{name} contains an empty scope");
+                assert!(
+                    seen.insert(scope),
+                    "{name} contains duplicate scope {scope:?}"
+                );
+            }
+        }
+        assert!(SCOPES.split(',').any(|s| s == "playlist-modify-public"));
+    }
+
+    #[test]
+    fn resolve_client_id_follows_env_then_setting_then_default() {
+        assert_eq!(
+            resolve_client_id(Some("  env-id  "), Some("saved-id")),
+            "env-id"
+        );
+        assert_eq!(
+            resolve_client_id(Some("   "), Some("  saved-id  ")),
+            "saved-id"
+        );
+        assert_eq!(resolve_client_id(None, Some("saved-id")), "saved-id");
+        assert_eq!(resolve_client_id(None, Some("")), CLIENT_ID);
+        assert_eq!(resolve_client_id(Some(""), Some("   ")), CLIENT_ID);
+        assert_eq!(resolve_client_id(None, None), CLIENT_ID);
+    }
+
+    #[test]
+    fn set_client_id_updates_authorization_url() {
+        if std::env::var(ENV_CLIENT_ID)
+            .ok()
+            .is_some_and(|v| !v.trim().is_empty())
+        {
+            return;
+        }
+        let client = CantoOauthClient::with_client_id(
+            TokenStore::new(),
+            SessionTokens::new(),
+            Some("custom-id-1"),
+        );
+        assert_eq!(client.client_id(), "custom-id-1");
+        assert!(!client.set_client_id(Some("  custom-id-1  ")));
+        assert!(client.set_client_id(Some("custom-id-2")));
+        assert_eq!(client.client_id(), "custom-id-2");
+
+        let (url, _, _) = authorization(&client.oauth_client(), SCOPES);
+        let client_id_param = url
+            .query_pairs()
+            .find(|(k, _)| k == "client_id")
+            .map(|(_, v)| v.into_owned());
+        assert_eq!(client_id_param.as_deref(), Some("custom-id-2"));
+
+        assert!(client.set_client_id(None));
+        assert_eq!(client.client_id(), CLIENT_ID);
     }
 }
 
