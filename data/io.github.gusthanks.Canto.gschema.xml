@@ -253,11 +253,16 @@
         <choice value='purple-night'/>
       </choices>
       <default>'omarchy'</default>
-      <summary>Selected color theme preset or Omarchy live theme</summary>
+      <summary>Selected color theme preset or live system theme</summary>
     </key>
     <key name="adaptive-cover-colors" type="b">
       <default>true</default>
       <summary>Subtly tint Now Playing and Lyrics surfaces with the active album art accent color</summary>
+    </key>
+    <key name="adaptive-cover-accent" type="b">
+      <default>false</default>
+      <summary>Apply the playing album cover color to UI buttons and active controls</summary>
+      <description>When Adaptive Cover Colors is enabled, also apply a contrast-safe color extracted from the playing album cover to accent buttons, sliders, and active highlights.</description>
     </key>
     <key name="lyrics-offset-ms" type="i">
       <range min="-10000" max="10000"/>
@@ -488,7 +493,7 @@
     <key name="visual-bridge-enabled" type="b">
       <default>false</default>
       <summary>Enable visual bridge</summary>
-      <description>Opt-in runtime JSON state and lock-free audio energy output for external visualizers.</description>
+      <description>Opt-in runtime JSON state (active track, synced lyric, theme colors) and lock-free audio energy output for status bars, widgets, and external visualizers.</description>
     </key>
     <key name="spotify-client-id" type="s">
       <default>""</default>

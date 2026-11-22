@@ -32,10 +32,10 @@ template $SettingsWindow : Adw.PreferencesDialog {
         /* Translators: Title for the live color theme selector in settings */
         title: _("Color Theme");
         /* Translators: Subtitle for the color theme selector. "Follow System" is its first option. */
-        subtitle: _("Follow System uses your Omarchy theme and changes with it");
+        subtitle: _("Follow System uses Omarchy, matugen, pywal, wallust, or your desktop theme live");
         model: StringList {
           strings [
-            /* Translators: Color theme option: the desktop's colors (the Omarchy theme when there is one), live. */
+            /* Translators: Color theme option: follows Omarchy, matugen/pywal/wallust, or the native desktop theme live. */
             _("Follow System"),
             _("Neutral (Adwaita)"),
             /* Translators: Color theme option, a dark theme with green accents. */
@@ -65,6 +65,14 @@ template $SettingsWindow : Adw.PreferencesDialog {
         title: _("Adaptive Cover Colors");
         /* Translators: Description for adaptive album cover tinting */
         subtitle: _("Subtle background tint from the playing album cover");
+      }
+
+      Adw.SwitchRow adaptive_cover_accent {
+        /* Translators: Title for applying the playing album cover color to UI buttons and highlights */
+        title: _("Cover Accent on Controls");
+        /* Translators: Description for applying the playing album cover color to UI buttons and highlights */
+        subtitle: _("Use the playing album cover's color for buttons, sliders, and highlights");
+        sensitive: bind adaptive_cover_colors.active;
       }
 
       Adw.SwitchRow queue_side_panel_switch {
@@ -613,12 +621,12 @@ template $SettingsWindow : Adw.PreferencesDialog {
     }
 
     Adw.PreferencesGroup {
-      title: _("Visual Bridge (External Visualizers)");
-      description: _("Opt-in lightweight local state and audio RMS/peak output for external 3D visualizers.");
+      title: _("Visual Bridge");
+      description: _("Opt-in lightweight local state and audio RMS/peak output for status bars, widgets, and external visualizers.");
 
       Adw.SwitchRow visual_bridge_switch {
         title: _("Enable Visual Bridge");
-        subtitle: _("Write active track, theme colors, and audio energy levels to $XDG_RUNTIME_DIR/canto/state.json");
+        subtitle: _("Write active track, synced lyric, theme colors, and audio levels to $XDG_RUNTIME_DIR/canto/state.json");
       }
     }
   }

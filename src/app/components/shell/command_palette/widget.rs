@@ -787,13 +787,18 @@ fn build_local_entries(runtime: &PaletteRuntime) -> Vec<PaletteEntry> {
         } else {
             gettext("Switch theme live")
         };
+        let extra_keywords = if key == "omarchy" {
+            " system matugen pywal wallust desktop"
+        } else {
+            ""
+        };
         entries.push(PaletteEntry {
             title: label.clone(),
             subtitle: active_marker,
             category: theme_cat.clone(),
             icon_name: "preferences-other-symbolic",
             shortcut_hint: None,
-            keywords: format!("theme {label} {key}"),
+            keywords: format!("theme {label} {key}{extra_keywords}"),
             cover_url: None,
             round_cover: false,
             action: PaletteAction::SetTheme(key),

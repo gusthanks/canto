@@ -98,6 +98,9 @@ mod imp {
         pub adaptive_cover_colors: TemplateChild<libadwaita::SwitchRow>,
 
         #[template_child]
+        pub adaptive_cover_accent: TemplateChild<libadwaita::SwitchRow>,
+
+        #[template_child]
         pub queue_side_panel_switch: TemplateChild<libadwaita::SwitchRow>,
 
         #[template_child]
@@ -307,6 +310,22 @@ impl SettingsDialog {
         .iter()
         .filter_map(|name| name.as_ref().map(|s| s.to_string()))
         .collect()
+    }
+
+    #[cfg(test)]
+    pub fn theme_rows_for_tests(
+        &self,
+    ) -> (
+        libadwaita::ComboRow,
+        libadwaita::SwitchRow,
+        libadwaita::SwitchRow,
+    ) {
+        let imp = self.imp();
+        (
+            imp.app_theme.get(),
+            imp.adaptive_cover_colors.get(),
+            imp.adaptive_cover_accent.get(),
+        )
     }
 
     pub fn new() -> Self {
@@ -817,6 +836,14 @@ impl SettingsDialog {
             .bind(
                 canto_config::settings::ADAPTIVE_COVER_COLORS,
                 &*widget.adaptive_cover_colors,
+                "active",
+            )
+            .build();
+
+        settings
+            .bind(
+                canto_config::settings::ADAPTIVE_COVER_ACCENT,
+                &*widget.adaptive_cover_accent,
                 "active",
             )
             .build();

@@ -9,6 +9,7 @@ gtk_tests! {
     preferences_pages_and_search => assert_preferences_pages_and_search,
     soloist_guide_and_banner => assert_soloist_guide_and_banner,
     login_custom_client_id => assert_login_custom_client_id,
+    theme_and_cover_accent => assert_theme_and_cover_accent,
 }
 
 /// The Genius guide offers a copy button for each value to type in.
@@ -269,6 +270,15 @@ fn assert_preferences_pages_and_search() {
         check(
             "Preferences search finds Integrations rows across pages",
             results.iter().any(|t| t.contains("Scrobbling")),
+            format!("results={:?}", results),
+        );
+
+        entry.set_text("Cover Accent");
+        wait_frames(&window, 3);
+        let results = visible_search_result_titles(dialog.upcast_ref());
+        check(
+            "Preferences search finds Cover Accent on Controls",
+            results.iter().any(|t| t.contains("Cover Accent")),
             format!("results={:?}", results),
         );
 
@@ -538,4 +548,182 @@ fn assert_login_custom_client_id() {
 
     login.destroy();
     gsettings.reset(SPOTIFY_CLIENT_ID);
+}
+
+/// Color Theme describes the full system cascade, "Cover Accent on Controls"
+/// follows "Adaptive Cover Colors" sensitivity and GSettings persistence, and
+/// ThemeEngine resolves Follow System live from native fallback to pywal/cover
+/// accents without leaking into unrelated themes.
+fn assert_theme_and_cover_accent() {
+    use crate::app::theme::{wcag_contrast_ratio_hex, SystemThemePaths, ThemeEngine};
+    use canto_config::settings::{
+        ADAPTIVE_COVER_ACCENT, ADAPTIVE_COVER_COLORS, APP_THEME, SETTINGS,
+    };
+    use libadwaita::prelude::ActionRowExt;
+    use std::cell::Cell;
+    use std::rc::Rc;
+
+    force_dark();
+    no_animations();
+
+    let gsettings = gio::Settings::new(SETTINGS);
+    gsettings.reset(APP_THEME);
+    gsettings.reset(ADAPTIVE_COVER_COLORS);
+    gsettings.reset(ADAPTIVE_COVER_ACCENT);
+
+    let dialog = SettingsDialog::new();
+    let (app_theme, cover_colors, cover_accent) = dialog.theme_rows_for_tests();
+    let subtitle = app_theme.subtitle().unwrap_or_default().to_string();
+    check(
+        "Color Theme subtitle documents Omarchy, matugen, pywal, wallust, and desktop theme",
+        subtitle.contains("Omarchy")
+            && subtitle.contains("matugen")
+            && subtitle.contains("pywal")
+            && subtitle.contains("wallust"),
+        format!("subtitle={:?}", subtitle),
+    );
+    check(
+        "Cover Accent on Controls starts off and sensitive while Adaptive Cover Colors is on",
+        cover_colors.is_active() && !cover_accent.is_active() && cover_accent.is_sensitive(),
+        format!(
+            "colors_active={}, accent_active={}, accent_sensitive={}",
+            cover_colors.is_active(),
+            cover_accent.is_active(),
+            cover_accent.is_sensitive()
+        ),
+    );
+
+    cover_colors.set_active(false);
+    pump(40);
+    check(
+        "Turning off Adaptive Cover Colors disables Cover Accent on Controls",
+        !cover_accent.is_sensitive() && !gsettings.boolean(ADAPTIVE_COVER_COLORS),
+        format!(
+            "sensitive={}, gsettings={}",
+            cover_accent.is_sensitive(),
+            gsettings.boolean(ADAPTIVE_COVER_COLORS)
+        ),
+    );
+
+    cover_colors.set_active(true);
+    pump(40);
+    cover_accent.set_active(true);
+    pump(40);
+    check(
+        "Turning on Cover Accent on Controls persists to GSettings",
+        cover_accent.is_sensitive() && gsettings.boolean(ADAPTIVE_COVER_ACCENT),
+        format!(
+            "sensitive={}, gsettings={}",
+            cover_accent.is_sensitive(),
+            gsettings.boolean(ADAPTIVE_COVER_ACCENT)
+        ),
+    );
+    drop(dialog);
+
+    // Exercise ThemeEngine with isolated temp paths: native fallback -> live pywal -> cover accent.
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let dir = std::env::temp_dir().join(format!(
+        "canto_gtk_theme_test_{}_{}",
+        std::process::id(),
+        nanos
+    ));
+    let wal_dir = dir.join("wal");
+    std::fs::create_dir_all(&wal_dir).expect("create wal dir");
+    let pywal_path = wal_dir.join("colors.json");
+    let paths = SystemThemePaths {
+        omarchy: dir.join("omarchy/current/theme/colors.toml"),
+        matugen: vec![dir.join("matugen/colors.json")],
+        pywal: vec![pywal_path.clone()],
+        wallust: vec![dir.join("wallust/colors.json")],
+    };
+
+    gsettings.set_string(APP_THEME, "omarchy").unwrap();
+    gsettings.set_boolean(ADAPTIVE_COVER_COLORS, true).unwrap();
+    gsettings.set_boolean(ADAPTIVE_COVER_ACCENT, false).unwrap();
+
+    let engine = ThemeEngine::install_with_paths(paths);
+    let snap = engine.current_snapshot();
+    check(
+        "Follow System without palette files falls back to native system theme (not SpotifyGreen)",
+        snap.kind == "system"
+            && libadwaita::StyleManager::default().color_scheme()
+                == libadwaita::ColorScheme::Default,
+        format!(
+            "kind={}, scheme={:?}",
+            snap.kind,
+            libadwaita::StyleManager::default().color_scheme()
+        ),
+    );
+
+    // Live file monitor: creating pywal colors.json in the watched directory updates ThemeEngine.
+    let notified = Rc::new(Cell::new(0u32));
+    let n_clone = Rc::clone(&notified);
+    engine.subscribe(Rc::new(move || {
+        n_clone.set(n_clone.get() + 1);
+    }));
+    std::fs::write(
+        &pywal_path,
+        r##"{"special":{"background":"#121316","foreground":"#c5c8c6"},"colors":{"color4":"#5f819d"}}"##,
+    )
+    .expect("write pywal colors");
+    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(1200);
+    while engine.current_snapshot().kind != "pywal" && std::time::Instant::now() < deadline {
+        pump(30);
+    }
+    let pywal_snap = engine.current_snapshot();
+    check(
+        "Follow System live-reloads when pywal colors.json appears",
+        pywal_snap.kind == "pywal" && pywal_snap.background == "#121316" && notified.get() > 0,
+        format!(
+            "kind={}, bg={}, notified={}",
+            pywal_snap.kind,
+            pywal_snap.background,
+            notified.get()
+        ),
+    );
+
+    // Atomic rename in the same directory (standard write-tmp + rename pattern) also reloads live.
+    let tmp_pywal = wal_dir.join("colors.json.tmp");
+    std::fs::write(
+        &tmp_pywal,
+        r##"{"special":{"background":"#1c1824","foreground":"#ece6f5"},"colors":{"color4":"#9b7ee6"}}"##,
+    )
+    .expect("write tmp pywal colors");
+    std::fs::rename(&tmp_pywal, &pywal_path).expect("atomic rename pywal colors");
+    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(1200);
+    while engine.current_snapshot().background != "#1c1824" && std::time::Instant::now() < deadline
+    {
+        pump(30);
+    }
+    let renamed_snap = engine.current_snapshot();
+    check(
+        "Follow System live-reloads on atomic same-directory rename of colors.json",
+        renamed_snap.kind == "pywal" && renamed_snap.background == "#1c1824",
+        format!("kind={}, bg={}", renamed_snap.kind, renamed_snap.background),
+    );
+
+    // Enabling Cover Accent on Controls adjusts a dark cover color to WCAG AA (>= 4.5:1).
+    gsettings.set_boolean(ADAPTIVE_COVER_ACCENT, true).unwrap();
+    engine.set_cover_accent(Some("#182448".into()));
+    pump(40);
+    let cover_snap = engine.current_snapshot();
+    let ratio = wcag_contrast_ratio_hex(&cover_snap.accent, &cover_snap.background).unwrap_or(0.0);
+    check(
+        "Dynamic Cover Accent applies contrast-safe accent (>= 4.5:1) to UI snapshot",
+        cover_snap.accent != "#182448" && ratio >= 4.5,
+        format!(
+            "accent={}, bg={}, ratio={:.2}",
+            cover_snap.accent, cover_snap.background, ratio
+        ),
+    );
+
+    drop(engine);
+    let _ = std::fs::remove_dir_all(&dir);
+    gsettings.reset(APP_THEME);
+    gsettings.reset(ADAPTIVE_COVER_COLORS);
+    gsettings.reset(ADAPTIVE_COVER_ACCENT);
+    force_dark();
 }

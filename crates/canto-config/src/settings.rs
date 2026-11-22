@@ -51,6 +51,7 @@ pub const QUEUE_SIDE_PANEL: &str = "queue-side-panel";
 pub const APP_LANGUAGE: &str = "app-language";
 pub const APP_THEME: &str = "app-theme";
 pub const ADAPTIVE_COVER_COLORS: &str = "adaptive-cover-colors";
+pub const ADAPTIVE_COVER_ACCENT: &str = "adaptive-cover-accent";
 pub const LYRICS_OFFSET_MS: &str = "lyrics-offset-ms";
 /// "word" lights the words as they are sung, "line" the whole line at once.
 pub const LYRICS_HIGHLIGHT: &str = "lyrics-highlight";
@@ -188,6 +189,21 @@ mod player_bar_order_tests {
             .and_then(|d| d.split("</default>").next())
             .expect("its default");
         assert_eq!(default.trim(), "\"\"");
+    }
+
+    #[test]
+    fn the_gschema_defines_adaptive_cover_accent() {
+        let schema = include_str!("../../../data/io.github.gusthanks.Canto.gschema.xml");
+        let key = schema
+            .split("<key name=\"adaptive-cover-accent\"")
+            .nth(1)
+            .expect("the adaptive-cover-accent key");
+        let default = key
+            .split("<default>")
+            .nth(1)
+            .and_then(|d| d.split("</default>").next())
+            .expect("its default");
+        assert_eq!(default.trim(), "false");
     }
 }
 pub const LYRICS_TRANSLATION: &str = "lyrics-translation";
