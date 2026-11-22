@@ -279,3 +279,29 @@ row:hover .song--skeleton .song__menu,
 .playlist row .song--drop-below .song__card {
   background-image: linear-gradient(to top, @accent_bg_color 2px, transparent 2px);
 }
+
+.song-menu-popover contents {
+  padding: 6px;
+  min-width: 220px;
+}
+
+.song-menu__item {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.song-menu__icon,
+.song-menu__chevron {
+  opacity: 0.85;
+}
+
+.song-menu__separator {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.track-details__cover {
+  border-radius: 10px;
+  background-color: alpha(currentColor, 0.08);
+}

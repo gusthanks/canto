@@ -12,3 +12,9 @@ mod reorder;
 
 mod song_actions;
 pub use song_actions::SongActions;
+
+mod song_menu;
+pub use song_menu::*;
+
+mod track_details;
+pub use track_details::*;

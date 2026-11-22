@@ -13,6 +13,7 @@ pub trait SongActions {
     fn make_album_action(&self, dispatcher: Dispatcher) -> SimpleAction;
     fn make_artist_actions(&self, dispatcher: Dispatcher) -> Vec<SimpleAction>;
     fn make_radio_action(&self, app_model: Rc<AppModel>, dispatcher: Dispatcher) -> SimpleAction;
+    fn make_details_action(&self, app_model: Rc<AppModel>, dispatcher: Dispatcher) -> SimpleAction;
 }
 
 fn action(name: &str, activate: impl Fn() + 'static) -> SimpleAction {
@@ -72,6 +73,23 @@ impl SongActions for Track {
         let song = self.clone();
         action("radio", move || {
             start_track_radio(&app_model, &dispatcher, song.clone());
+        })
+    }
+
+    fn make_details_action(&self, app_model: Rc<AppModel>, dispatcher: Dispatcher) -> SimpleAction {
+        let song = self.clone();
+        action("details", move || {
+            use gtk::prelude::{Cast, GtkApplicationExt};
+            let parent = gio::Application::default()
+                .and_then(|app| app.downcast::<gtk::Application>().ok())
+                .and_then(|app| app.active_window())
+                .map(|w| w.upcast::<gtk::Widget>());
+            super::present_track_details(
+                parent.as_ref(),
+                song.clone(),
+                Rc::clone(&app_model),
+                dispatcher.clone(),
+            );
         })
     }
 }

@@ -33,6 +33,10 @@ gtk_tests! {
         force_dark();
         assert_album_artwork_viewer_opens_and_closes();
     },
+    track_menu_sections_icons_and_details_dialog => || {
+        force_dark();
+        assert_track_menu_sections_icons_and_details_dialog();
+    },
 }
 
 /// The sidebar's grid of covers: section titles stay out of it, and in the
@@ -1048,4 +1052,93 @@ fn assert_album_artwork_viewer_opens_and_closes() {
     header_widget.set_clickable_artwork(None);
     assert!(!header_widget.has_clickable_artwork());
     eprintln!("album artwork viewer ok");
+}
+
+fn assert_track_menu_sections_icons_and_details_dialog() {
+    use std::rc::Rc;
+    use std::sync::Arc;
+
+    use libadwaita::prelude::AdwDialogExt;
+
+    use crate::app::components::{
+        build_song_menu_popover, build_song_menu_with_radio, present_track_details, QueueMenuEntry,
+        REMOVE_FROM_PLAYLIST_ACTION,
+    };
+    use crate::app::models::make_track;
+    use crate::app::state::AppState;
+    use crate::app::{AppModel, Dispatcher};
+
+    let mut song = make_track("trk-menu-1");
+    song.title = "Sample Song".to_string();
+    song.duration_ms = 215_000;
+    let menu = build_song_menu_with_radio(
+        &song,
+        true,
+        None,
+        QueueMenuEntry::Add,
+        Some(false),
+        Some(false),
+        true,
+    );
+
+    let actions = gio::SimpleActionGroup::new();
+    let rm = gio::SimpleAction::new(REMOVE_FROM_PLAYLIST_ACTION, None);
+    rm.set_enabled(false);
+    actions.add_action(&rm);
+
+    let owner = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    let popover = build_song_menu_popover(owner.upcast_ref(), &menu, None, Some(actions.upcast()));
+    let stack = popover.child().and_downcast::<gtk::Stack>().unwrap();
+    let main_box = stack
+        .child_by_name("main")
+        .and_downcast::<gtk::Box>()
+        .unwrap();
+
+    // Count visible sections and separators
+    let mut visible_sections = 0;
+    let mut visible_seps = 0;
+    let mut icon_count = 0;
+    let mut child = main_box.first_child();
+    while let Some(c) = child {
+        child = c.next_sibling();
+        if c.is::<gtk::Separator>() && c.get_visible() {
+            visible_seps += 1;
+        } else if let Some(sec) = c.downcast_ref::<gtk::Box>() {
+            if sec.get_visible() {
+                visible_sections += 1;
+                let mut item = sec.first_child();
+                while let Some(btn) = item {
+                    item = btn.next_sibling();
+                    if btn.get_visible() {
+                        icon_count += 1;
+                    }
+                }
+            }
+        }
+    }
+    assert_eq!(visible_sections, 4, "expected 4 logical sections");
+    assert_eq!(visible_seps, 3, "expected 3 separators between 4 sections");
+    assert!(icon_count >= 8, "expected iconized rows across sections");
+
+    let token_provider: Arc<dyn canto_api::TokenProvider> = Arc::new(|| None::<String>);
+    let api = Arc::new(canto_api::spotify_service(
+        Arc::clone(&token_provider),
+        token_provider,
+        1024 * 1024,
+        1024 * 1024,
+    ));
+    let app_model = Rc::new(AppModel::new(AppState::new(), Arc::clone(&api)));
+    let (sender, _receiver) = futures::channel::mpsc::unbounded();
+    let dispatcher = Dispatcher::new(sender);
+    let window = gtk::Window::new();
+    window.set_default_size(600, 680);
+    window.present();
+    pump(50);
+
+    let dialog = present_track_details(Some(window.upcast_ref()), song, app_model, dispatcher);
+    pump(80);
+    dialog.close();
+    pump(50);
+    window.destroy();
+    eprintln!("track menu icons & details dialog ok");
 }

@@ -337,10 +337,17 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   adds an inline filter toggle, `.details-section__filter-entry` (focused via
   map-scoped `<Ctrl>F` when no modal dialog is open) and `.details-section__sort`
   (`TrackSortOrder`) controlled through `TrackListController`.
+- Row context menus are grouped into four logical sections (playback/queue,
+  library, explore, utility actions) built in `track_list.rs` and rendered with
+  16 px symbolic icons plus an inline `PlaylistPicker` stack page by
+  `build_song_menu_popover` (`src/app/components/widgets/track_list/song_menu.rs`).
+  The Track Details item opens `present_track_details`
+  (`src/app/components/widgets/track_list/track_details.rs`) for any track.
 - Tests: `assert_release_filters_are_buttons`,
   `assert_filtered_card_grid_keeps_its_columns`, `assert_card_artist_links`,
-  `assert_no_lines_between_songs`, `assert_album_page_fits` and
-  `assert_track_list_filter_and_sort` (`library.rs`).
+  `assert_no_lines_between_songs`, `assert_album_page_fits`,
+  `assert_track_list_filter_and_sort`, and
+  `assert_track_menu_sections_icons_and_details_dialog` (`library.rs`).
 
 ## 9. Ctrl+K and the stats dialog
 

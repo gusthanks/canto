@@ -114,6 +114,9 @@ lazy_static! {
 
     // translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
     pub static ref START_TRACK_RADIO: String = gettext("Start Track Radio");
+
+    // translators: Contextual menu entry opening a dialog with metadata, credits, and story for a single track.
+    pub static ref TRACK_DETAILS: String = gettext("Track Details");
 }
 
 pub fn added_to_playlist_label(playlist: &str) -> String {

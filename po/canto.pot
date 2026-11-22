@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: canto\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-22 11:45-0300\n"
+"POT-Creation-Date: 2026-11-22 12:44-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -199,11 +199,13 @@ msgstr ""
 
 #. translators: This is the caption shown in the header of an album's detail page when the release is a full album.
 #. translators: An album in the back/forward history menu, while its name is loading.
-#: src/app/components/labels.rs:101 src/app/components/labels.rs:186
+#. translators: Row title for album name in the Track Details dialog.
+#: src/app/components/labels.rs:101 src/app/components/labels.rs:189
 #: src/app/components/shell/command_palette/widget.rs:880
 #: src/app/components/shell/command_palette/widget.rs:964
 #: src/app/components/shell/navigation_panel/model.rs:419
 #: src/app/components/shell/navigation_panel/model.rs:887
+#: src/app/components/widgets/track_list/track_details.rs:239
 #: src/app/components/pages/settings/settings.blp:374
 msgid "Album"
 msgstr ""
@@ -237,20 +239,25 @@ msgstr ""
 msgid "Start Track Radio"
 msgstr ""
 
+#. translators: Contextual menu entry opening a dialog with metadata, credits, and story for a single track.
+#: src/app/components/labels.rs:119
+msgid "Track Details"
+msgstr ""
+
 #. translators: This notification is shown when a track was added to a playlist; {} is the name of the playlist.
-#: src/app/components/labels.rs:121
+#: src/app/components/labels.rs:124
 #, rust-format
 msgid "Added to {}"
 msgstr ""
 
 #. translators: This notification is shown when nothing was added to a playlist, as it already lists the tracks; {} is the name of the playlist.
-#: src/app/components/labels.rs:126
+#: src/app/components/labels.rs:129
 #, rust-format
 msgid "Already in {}"
 msgstr ""
 
 #. translators: This notification is shown when tracks were added to a playlist, except those it already lists; the first {} is the name of the playlist, the second {} is how many tracks were left out.
-#: src/app/components/labels.rs:132
+#: src/app/components/labels.rs:135
 #, rust-format
 msgid "Added to {}, skipping {} track already in it"
 msgid_plural "Added to {}, skipping {} tracks already in it"
@@ -258,7 +265,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: This shows up when in selection mode. This text should be as short as possible.
-#: src/app/components/labels.rs:141
+#: src/app/components/labels.rs:144
 #, rust-format
 msgid "{} track selected"
 msgid_plural "{} tracks selected"
@@ -266,13 +273,13 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: Header above the rest of the album, playlist or artist being played, on the queue page. {} is its name.
-#: src/app/components/labels.rs:159
+#: src/app/components/labels.rs:162
 #, rust-format
 msgid "Next from: {}"
 msgstr ""
 
 #. translators: Description of the shuffle separation preference. {} is the number of other songs, chosen by the user. "When possible" because an album or playlist can have too few songs.
-#: src/app/components/labels.rs:165
+#: src/app/components/labels.rs:168
 #, rust-format
 msgid ""
 "When possible, shuffle and repeat mode will play at least {} other song "
@@ -284,20 +291,20 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: This is part of a contextual menu attached to a single track; the full text is "More from <artist>".
-#: src/app/components/labels.rs:174
+#: src/app/components/labels.rs:177
 #, rust-format
 msgid "More from {}"
 msgstr ""
 
 #. translators: This is part of a larger label that reads "<Album> by <Artist>"
-#: src/app/components/labels.rs:179
+#: src/app/components/labels.rs:182
 #, rust-format
 msgid "{} by {}"
 msgstr ""
 
 #. translators: An artist in the back/forward history menu, while their name is loading.
 #. translators: Track sort option sorting alphabetically by artist name.
-#: src/app/components/labels.rs:188
+#: src/app/components/labels.rs:191
 #: src/app/components/shell/command_palette/widget.rs:881
 #: src/app/components/shell/command_palette/widget.rs:965
 #: src/app/components/shell/navigation_panel/model.rs:421
@@ -307,7 +314,7 @@ msgid "Artist"
 msgstr ""
 
 #. translators: A playlist in the back/forward history menu, while its name is loading.
-#: src/app/components/labels.rs:190
+#: src/app/components/labels.rs:193
 #: src/app/components/pages/details_playlist/model.rs:155
 #: src/app/components/pages/saved_tracks/model.rs:63
 #: src/app/components/shell/command_palette/widget.rs:882
@@ -318,12 +325,12 @@ msgid "Playlist"
 msgstr ""
 
 #. translators: A user's page in the back/forward history menu, while their name is loading.
-#: src/app/components/labels.rs:192
+#: src/app/components/labels.rs:195
 msgid "User"
 msgstr ""
 
 #. translators: The search page in the back/forward history menu.
-#: src/app/components/labels.rs:194
+#: src/app/components/labels.rs:197
 #: src/app/components/shell/command_palette/widget.rs:590 src/window.blp:196
 #: src/window.blp:224
 msgid "Search"
@@ -514,7 +521,7 @@ msgstr ""
 #: src/app/components/pages/settings/settings.blp:603
 #: src/app/components/shell/playback/playback_widget.blp:124
 #: src/app/components/shell/utility_panel/utility_panel.blp:74
-#: src/app/components/shell/playback/playback_widget.rs:528
+#: src/app/components/shell/playback/playback_widget.rs:530
 msgid "Lyrics"
 msgstr ""
 
@@ -594,7 +601,7 @@ msgstr ""
 #: src/app/components/pages/queue/component.rs:157
 #: src/app/components/shell/playback/playback_widget.blp:144
 #: src/app/components/shell/utility_panel/utility_panel.blp:67
-#: src/app/components/shell/playback/playback_widget.rs:534
+#: src/app/components/shell/playback/playback_widget.rs:536
 msgid "Queue"
 msgstr ""
 
@@ -1043,7 +1050,7 @@ msgid "Sleep Timer"
 msgstr ""
 
 #: src/app/components/shell/command_palette/widget.rs:565
-#: src/app/components/shell/playback/playback_widget.rs:541
+#: src/app/components/shell/playback/playback_widget.rs:543
 msgid "Device"
 msgstr ""
 
@@ -1139,7 +1146,7 @@ msgstr ""
 #. Translators: Tooltip of the player bar button that opens the small player window.
 #: src/app/components/shell/command_palette/widget.rs:707
 #: src/app/components/shell/playback/playback_widget.blp:390
-#: src/app/components/shell/playback/playback_widget.rs:554
+#: src/app/components/shell/playback/playback_widget.rs:556
 msgid "Mini Player"
 msgstr ""
 
@@ -1243,7 +1250,9 @@ msgstr ""
 msgid "Transfer playback to device"
 msgstr ""
 
+#. translators: Row title for disc and track number in the Track Details dialog.
 #: src/app/components/shell/command_palette/widget.rs:879
+#: src/app/components/widgets/track_list/track_details.rs:243
 #: src/app/components/pages/settings/settings.blp:373
 msgid "Track"
 msgstr ""
@@ -1460,11 +1469,13 @@ msgstr ""
 
 #: src/app/components/shell/now_panel/mod.rs:603
 #: src/app/components/shell/now_panel/about.rs:309
+#: src/app/components/widgets/track_list/track_details.rs:330
 msgid "Producer(s)"
 msgstr ""
 
 #: src/app/components/shell/now_panel/mod.rs:604
 #: src/app/components/shell/now_panel/about.rs:310
+#: src/app/components/widgets/track_list/track_details.rs:334
 msgid "Writer(s)"
 msgstr ""
 
@@ -1609,11 +1620,13 @@ msgid "Website"
 msgstr ""
 
 #: src/app/components/shell/now_panel/about.rs:308
+#: src/app/components/widgets/track_list/track_details.rs:324
 msgid "Featured Artists"
 msgstr ""
 
 #. translators: About tab: the studio or place where the song was recorded.
 #: src/app/components/shell/now_panel/about.rs:323
+#: src/app/components/widgets/track_list/track_details.rs:343
 msgid "Recorded At"
 msgstr ""
 
@@ -1652,6 +1665,7 @@ msgstr ""
 
 #. Translators: Tooltip of the lyrics button that opens the song's page on Genius (to read or fix its lyrics).
 #: src/app/components/shell/now_panel/about.rs:379
+#: src/app/components/widgets/track_list/track_details.rs:374
 #: src/app/components/pages/lyrics/lyrics_page.blp:169
 msgid "Open on Genius"
 msgstr ""
@@ -1954,6 +1968,7 @@ msgstr ""
 
 #. translators: Track sort option sorting by track duration.
 #: src/app/components/widgets/details_page/component.rs:109
+#: src/app/components/widgets/track_list/track_details.rs:233
 msgid "Duration"
 msgstr ""
 
@@ -1977,15 +1992,88 @@ msgstr ""
 msgid "Add to Library"
 msgstr ""
 
-#: src/app/components/widgets/details_page/model.rs:376
+#: src/app/components/widgets/details_page/model.rs:379
 msgid "Link copied to clipboard"
 msgstr ""
 
-#: src/app/components/widgets/track_list/track_row.rs:383
+#. Translators: Tooltip for the header bar button that navigates back.
+#: src/app/components/widgets/track_list/song_menu.rs:217
+#: src/app/components/shell/headerbar/headerbar.blp:54
+msgid "Back"
+msgstr ""
+
+#. translators: Music source label in the Track Details dialog for local audio files.
+#: src/app/components/widgets/track_list/track_details.rs:24
+#: src/app/components/pages/settings/settings.blp:533
+msgid "Local Files"
+msgstr ""
+
+#. translators: Fallback source label in the Track Details dialog when the provider is unknown.
+#: src/app/components/widgets/track_list/track_details.rs:31
+msgid "Unknown"
+msgstr ""
+
+#. translators: Position of a song on a multi-disc album, e.g. "Disc 1 · Track 3".
+#: src/app/components/widgets/track_list/track_details.rs:39
+#, rust-format
+msgid "Disc {} · Track {}"
+msgstr ""
+
+#. translators: Position of a song on an album, e.g. "Track 3".
+#: src/app/components/widgets/track_list/track_details.rs:44
+#, rust-format
+msgid "Track {}"
+msgstr ""
+
+#. translators: Disc number when the track number is absent, e.g. "Disc 2".
+#. translators: Header shown above the tracks of disc {} in a
+#. multi-disc album.
+#: src/app/components/widgets/track_list/track_details.rs:49
+#: src/app/components/widgets/track_list/track_list.rs:480
+#, rust-format
+msgid "Disc {}"
+msgstr ""
+
+#. translators: Section title in the Track Details dialog for core track metadata.
+#: src/app/components/widgets/track_list/track_details.rs:226
+msgid "Track Info"
+msgstr ""
+
+#. translators: Row title and value when a song is marked explicit.
+#: src/app/components/widgets/track_list/track_details.rs:247
+msgid "Content"
+msgstr ""
+
+#: src/app/components/widgets/track_list/track_details.rs:247
+msgid "Explicit"
+msgstr ""
+
+#. Translators: Sort option. Orders items by their popularity score, with
+#. the most popular items appearing first.
+#: src/app/components/widgets/track_list/track_details.rs:253
+#: src/app/models/card_enums.rs:63
+msgid "Popularity"
+msgstr ""
+
+#: src/app/components/widgets/track_list/track_details.rs:263
+msgid "Source"
+msgstr ""
+
+#. translators: Section title in the Track Details dialog for Genius credits and song bio.
+#: src/app/components/widgets/track_list/track_details.rs:274
+msgid "Credits & Story"
+msgstr ""
+
+#. translators: Release date row in the Track Details dialog.
+#: src/app/components/widgets/track_list/track_details.rs:317
+msgid "Release Date"
+msgstr ""
+
+#: src/app/components/widgets/track_list/track_row.rs:382
 msgid "Explicit Content is Disabled"
 msgstr ""
 
-#: src/app/components/widgets/track_list/track_row.rs:385
+#: src/app/components/widgets/track_list/track_row.rs:384
 msgid "Not Available in Your Region"
 msgstr ""
 
@@ -2010,13 +2098,6 @@ msgstr ""
 msgid "Clear"
 msgstr ""
 
-#. translators: Header shown above the tracks of disc {} in a
-#. multi-disc album.
-#: src/app/components/widgets/track_list/track_list.rs:414
-#, rust-format
-msgid "Disc {}"
-msgstr ""
-
 #. Translators: Sort option. Orders items alphabetically by their title
 #. (A-Z, case-insensitive).
 #: src/app/models/card_enums.rs:54
@@ -2027,12 +2108,6 @@ msgstr ""
 #. newest releases appearing first.
 #: src/app/models/card_enums.rs:60
 msgid "Date Released"
-msgstr ""
-
-#. Translators: Sort option. Orders items by their popularity score, with
-#. the most popular items appearing first.
-#: src/app/models/card_enums.rs:63
-msgid "Popularity"
 msgstr ""
 
 #: src/app/models/card_enums.rs:174
@@ -3003,10 +3078,6 @@ msgstr ""
 msgid "Active Source"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:533
-msgid "Local Files"
-msgstr ""
-
 #: src/app/components/pages/settings/settings.blp:540
 msgid "Local Music Folders"
 msgstr ""
@@ -3244,11 +3315,6 @@ msgstr ""
 msgid "Refresh Devices"
 msgstr ""
 
-#. Translators: Tooltip for the header bar button that navigates back.
-#: src/app/components/shell/headerbar/headerbar.blp:54
-msgid "Back"
-msgstr ""
-
 #. Translators: Tooltip for the header bar button that navigates forward.
 #: src/app/components/shell/headerbar/headerbar.blp:74
 msgid "Forward"
@@ -3256,7 +3322,7 @@ msgstr ""
 
 #: src/app/components/shell/playback/playback_widget.blp:226
 #: src/app/components/shell/playback/playback_widget.blp:783
-#: src/app/components/shell/playback/playback_widget.rs:896
+#: src/app/components/shell/playback/playback_widget.rs:898
 msgid "Off"
 msgstr ""
 
@@ -3290,14 +3356,14 @@ msgid "Mute / Unmute"
 msgstr ""
 
 #: src/app/components/shell/playback/playback_widget.blp:360
-#: src/app/components/shell/playback/playback_widget.rs:548
+#: src/app/components/shell/playback/playback_widget.rs:550
 msgid "Volume"
 msgstr ""
 
 #. Translators: Tooltip of the player bar button that opens the sleep timer, equalizer and audio options.
 #: src/app/components/shell/playback/playback_widget.blp:408
 #: src/app/components/widgets/details_page/header.blp:219
-#: src/app/components/shell/playback/playback_widget.rs:561
+#: src/app/components/shell/playback/playback_widget.rs:563
 msgid "More Options"
 msgstr ""
 
@@ -3338,7 +3404,7 @@ msgstr ""
 
 #. Translators: Tooltip of the player bar button that shows or hides the right side panel (Now Playing, Queue, Lyrics).
 #: src/app/components/shell/playback/playback_widget.blp:870
-#: src/app/components/shell/playback/playback_widget.rs:567
+#: src/app/components/shell/playback/playback_widget.rs:569
 msgid "Side Panel"
 msgstr ""
 
@@ -3594,34 +3660,34 @@ msgid "Connecting…"
 msgstr ""
 
 #. translators: Heading of the popover that chooses which buttons the player bar shows.
-#: src/app/components/shell/playback/playback_widget.rs:577
+#: src/app/components/shell/playback/playback_widget.rs:579
 msgid "Show in the Bar"
 msgstr ""
 
 #. translators: Tooltip of the arrow that moves a button earlier in the player bar.
-#: src/app/components/shell/playback/playback_widget.rs:608
+#: src/app/components/shell/playback/playback_widget.rs:610
 msgid "Move Left"
 msgstr ""
 
 #. translators: Tooltip of the arrow that moves a button later in the player bar.
-#: src/app/components/shell/playback/playback_widget.rs:611
+#: src/app/components/shell/playback/playback_widget.rs:613
 msgid "Move Right"
 msgstr ""
 
 #. translators: What a screen reader says of the Repeat row in the player bar's More Options menu while the whole album or playlist repeats.
-#: src/app/components/shell/playback/playback_widget.rs:893
+#: src/app/components/shell/playback/playback_widget.rs:895
 msgid "Repeat All"
 msgstr ""
 
 #. translators: What a screen reader says of the Repeat row in the player bar's More Options menu while the song playing repeats.
-#: src/app/components/shell/playback/playback_widget.rs:895
+#: src/app/components/shell/playback/playback_widget.rs:897
 msgid "Repeat This Song"
 msgstr ""
 
 #. / The volume's tooltip: its level, and the keys that change it.
 
 #. translators: Tooltip of the volume slider. {} is the volume in percent (the % follows it); Ctrl+↑ and Ctrl+↓ are the keys that change it.
-#: src/app/components/shell/playback/playback_widget.rs:1016
+#: src/app/components/shell/playback/playback_widget.rs:914
 #, rust-format
 msgid "Volume {}% · Ctrl+↑ / Ctrl+↓"
 msgstr ""

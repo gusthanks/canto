@@ -15,9 +15,7 @@ use libadwaita::prelude::*;
 
 use crate::app::components::level_bars::{self, LevelBars};
 use crate::app::components::utils::{add_hover_class, decode_px, set_css_class, set_missing_art};
-use crate::app::components::{
-    display_add_css_provider, labels, SubtitleLinksBox, PLAYLIST_PICKER_MENU_ID,
-};
+use crate::app::components::{display_add_css_provider, labels, SubtitleLinksBox};
 use crate::app::load;
 use crate::app::models::{SongModel, Track};
 
@@ -132,6 +130,7 @@ mod imp {
         #[template_child]
         pub menu_btn: TemplateChild<gtk::MenuButton>,
         pub menu: RefCell<Option<RowMenu>>,
+        pub actions: RefCell<Option<gio::ActionGroup>>,
 
         // Inputs to update_layout.
         pub(super) width: Cell<RowWidth>,
@@ -391,12 +390,14 @@ impl TrackRow {
     }
 
     pub fn set_actions(&self, actions: Option<&gio::ActionGroup>) {
+        self.imp().actions.replace(actions.cloned());
         self.insert_action_group("song", actions);
     }
 
     pub fn set_menu(&self, build: Option<MenuBuilder>, hooks: Option<&MenuHooks>) {
         let menu_btn = &self.imp().menu_btn;
         menu_btn.set_menu_model(None::<&MenuModel>);
+        menu_btn.set_popover(None::<&gtk::Popover>);
         menu_btn.set_visible(build.is_some());
         self.imp().menu.replace(build.map(|build| RowMenu {
             build,
@@ -406,32 +407,11 @@ impl TrackRow {
 
     fn build_menu(&self) -> Option<gtk::Popover> {
         let RowMenu { build, hooks } = self.imp().menu.borrow().clone()?;
-        let menu_btn = &self.imp().menu_btn;
-        menu_btn.set_menu_model(build().as_ref());
-        let popover = menu_btn.popover()?;
-        popover.set_has_arrow(false);
+        let model = build()?;
+        let actions = self.imp().actions.borrow().clone();
+        let popover = super::build_song_menu_popover(self.upcast_ref(), &model, hooks, actions);
         popover.connect_closed(|popover| popover.set_pointing_to(None));
-
-        let Some((hooks, popover_menu)) = hooks.zip(popover.downcast_ref::<gtk::PopoverMenu>())
-        else {
-            return Some(popover);
-        };
-        let shown: RefCell<Option<gtk::Widget>> = RefCell::default();
-        popover_menu.connect_show(clone!(
-            #[strong]
-            hooks,
-            move |popover| {
-                (hooks.opening)();
-                if let Some(previous) = shown.take() {
-                    popover.remove_child(&previous);
-                }
-                if let Some(child) = (hooks.picker)() {
-                    if popover.add_child(&child, PLAYLIST_PICKER_MENU_ID) {
-                        shown.replace(Some(child));
-                    }
-                }
-            }
-        ));
+        self.imp().menu_btn.set_popover(Some(&popover));
         Some(popover)
     }
 

@@ -41,6 +41,8 @@ src/app/components/widgets/details_page/artwork_viewer.rs
 src/app/components/widgets/details_page/component.rs
 src/app/components/widgets/details_page/header.rs
 src/app/components/widgets/details_page/model.rs
+src/app/components/widgets/track_list/song_menu.rs
+src/app/components/widgets/track_list/track_details.rs
 src/app/components/widgets/track_list/track_row.rs
 src/app/components/widgets/selection/component.rs
 src/app/components/widgets/queue_list/model.rs

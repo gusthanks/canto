@@ -287,6 +287,9 @@ impl DetailsPageModel {
         group.add_action(
             &song.make_radio_action(Rc::clone(&self.app_model), self.dispatcher.clone()),
         );
+        group.add_action(
+            &song.make_details_action(Rc::clone(&self.app_model), self.dispatcher.clone()),
+        );
         for action in song.make_queue_actions(self.dispatcher.clone()) {
             group.add_action(&action);
         }

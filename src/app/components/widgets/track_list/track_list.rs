@@ -135,6 +135,12 @@ pub fn build_queue_song_menu(
     )
 }
 
+fn menu_item(label: &str, action: &str, icon: &str) -> gio::MenuItem {
+    let item = gio::MenuItem::new(Some(label), Some(action));
+    item.set_attribute_value(super::MENU_ICON_ATTR, Some(&icon.to_variant()));
+    item
+}
+
 #[allow(clippy::too_many_arguments)]
 fn build_song_menu_impl(
     song: &Track,
@@ -147,83 +153,143 @@ fn build_song_menu_impl(
     include_radio: bool,
     movable_in_queue: bool,
 ) -> gio::MenuModel {
-    let track_section = gio::Menu::new();
+    // 1. Playback & queue controls
+    let playback_section = gio::Menu::new();
+    match queue_entry {
+        QueueMenuEntry::None => {}
+        QueueMenuEntry::Add => {
+            playback_section.append_item(&menu_item(
+                &labels::ADD_TO_QUEUE,
+                "song.queue",
+                "canto-queue-symbolic",
+            ));
+        }
+        QueueMenuEntry::Queued => {
+            playback_section.append_item(&menu_item(
+                &labels::REMOVE_FROM_QUEUE,
+                "song.dequeue",
+                "list-remove-symbolic",
+            ));
+        }
+        QueueMenuEntry::Context => {
+            playback_section.append_item(&menu_item(
+                &labels::ADD_TO_QUEUE,
+                "song.queue",
+                "canto-queue-symbolic",
+            ));
+            playback_section.append_item(&menu_item(
+                &labels::REMOVE_FROM_QUEUE,
+                "song.dequeue",
+                "list-remove-symbolic",
+            ));
+        }
+    }
+    if movable_in_queue {
+        let up = menu_item(&labels::MOVE_UP, "song.move_up", "go-up-symbolic");
+        up.set_attribute_value("hidden-when", Some(&"action-disabled".to_variant()));
+        playback_section.append_item(&up);
+        let down = menu_item(&labels::MOVE_DOWN, "song.move_down", "go-down-symbolic");
+        down.set_attribute_value("hidden-when", Some(&"action-disabled".to_variant()));
+        playback_section.append_item(&down);
+    }
+    if include_radio {
+        playback_section.append_item(&menu_item(
+            &labels::START_TRACK_RADIO,
+            "song.radio",
+            "audio-x-generic-symbolic",
+        ));
+    }
+
+    // 2. Library & playlists
+    let library_section = gio::Menu::new();
     if song.rri.uri.is_some() {
         let picker = gio::Menu::new();
         let item = gio::MenuItem::new(None, None);
         item.set_attribute_value("custom", Some(&PLAYLIST_PICKER_MENU_ID.to_variant()));
         picker.append_item(&item);
-        track_section.append_submenu(Some(&*labels::ADD_TO_PLAYLIST), &picker);
+        let submenu = gio::MenuItem::new_submenu(Some(&*labels::ADD_TO_PLAYLIST), &picker);
+        submenu.set_attribute_value(
+            super::MENU_ICON_ATTR,
+            Some(&"playlist2-symbolic".to_variant()),
+        );
+        library_section.append_item(&submenu);
     }
     if removable_from_playlist {
-        let item = gio::MenuItem::new(
-            Some(&*labels::REMOVE_FROM_PLAYLIST),
-            Some(&format!("song.{REMOVE_FROM_PLAYLIST_ACTION}")),
+        let item = menu_item(
+            &labels::REMOVE_FROM_PLAYLIST,
+            &format!("song.{REMOVE_FROM_PLAYLIST_ACTION}"),
+            "user-trash-symbolic",
         );
         item.set_attribute_value("hidden-when", Some(&"action-disabled".to_variant()));
-        track_section.append_item(&item);
+        library_section.append_item(&item);
     }
     if let Some(liked) = liked {
-        let label = if liked {
-            &*labels::UNLIKE
+        let (label, icon) = if liked {
+            (&*labels::UNLIKE, "canto-heart-filled-symbolic")
         } else {
-            &*labels::LIKE
+            (&*labels::LIKE, "canto-heart-symbolic")
         };
-        track_section.append(Some(label), Some("song.like"));
+        library_section.append_item(&menu_item(label, "song.like", icon));
     }
     if let Some(pinned) = pinned {
-        let label = if pinned {
-            &*labels::UNPIN_FROM_SIDEBAR
+        let (label, icon) = if pinned {
+            (&*labels::UNPIN_FROM_SIDEBAR, "view-pin-symbolic")
         } else {
-            &*labels::PIN_TO_SIDEBAR
+            (&*labels::PIN_TO_SIDEBAR, "view-pin-outline-symbolic")
         };
-        track_section.append(Some(label), Some("song.pin"));
+        library_section.append_item(&menu_item(label, "song.pin", icon));
     }
-    match queue_entry {
-        QueueMenuEntry::None => {}
-        QueueMenuEntry::Add => {
-            track_section.append(Some(&*labels::ADD_TO_QUEUE), Some("song.queue"));
-        }
-        QueueMenuEntry::Queued => {
-            track_section.append(Some(&*labels::REMOVE_FROM_QUEUE), Some("song.dequeue"));
-        }
-        QueueMenuEntry::Context => {
-            track_section.append(Some(&*labels::ADD_TO_QUEUE), Some("song.queue"));
-            track_section.append(Some(&*labels::REMOVE_FROM_QUEUE), Some("song.dequeue"));
-        }
-    }
-    if movable_in_queue {
-        let up = gio::MenuItem::new(Some(&*labels::MOVE_UP), Some("song.move_up"));
-        up.set_attribute_value("hidden-when", Some(&"action-disabled".to_variant()));
-        track_section.append_item(&up);
-        let down = gio::MenuItem::new(Some(&*labels::MOVE_DOWN), Some("song.move_down"));
-        down.set_attribute_value("hidden-when", Some(&"action-disabled".to_variant()));
-        track_section.append_item(&down);
-    }
-    if include_radio {
-        track_section.append(Some(&*labels::START_TRACK_RADIO), Some("song.radio"));
-    }
-    track_section.append(Some(&*labels::SELECT), Some("song.select"));
 
-    let go_to_section = gio::Menu::new();
+    // 3. Explore (Track Details, Album, Artists)
+    let explore_section = gio::Menu::new();
+    explore_section.append_item(&menu_item(
+        &labels::TRACK_DETAILS,
+        "song.details",
+        "dialog-information-symbolic",
+    ));
+    if show_view_album {
+        explore_section.append_item(&menu_item(
+            &labels::VIEW_ALBUM,
+            "song.view_album",
+            "media-optical-cd-audio-symbolic",
+        ));
+    }
     for artist in song
         .artists
         .iter()
         .filter(|a| exclude_artist_id != Some(a.rri.id.as_str()))
     {
-        go_to_section.append(
-            Some(&labels::more_from_label(&artist.name)),
-            Some(&format!("song.view_artist_{}", artist.rri.id)),
-        );
+        explore_section.append_item(&menu_item(
+            &labels::more_from_label(&artist.name),
+            &format!("song.view_artist_{}", artist.rri.id),
+            "avatar-default-symbolic",
+        ));
     }
-    if show_view_album {
-        go_to_section.append(Some(&*labels::VIEW_ALBUM), Some("song.view_album"));
-    }
-    go_to_section.append(Some(&*labels::COPY_LINK), Some("song.copy_link"));
+
+    // 4. Utility actions
+    let actions_section = gio::Menu::new();
+    actions_section.append_item(&menu_item(
+        &labels::SELECT,
+        "song.select",
+        "object-select-symbolic",
+    ));
+    actions_section.append_item(&menu_item(
+        &labels::COPY_LINK,
+        "song.copy_link",
+        "edit-copy-symbolic",
+    ));
 
     let menu = gio::Menu::new();
-    menu.append_section(None, &track_section);
-    menu.append_section(None, &go_to_section);
+    for section in [
+        playback_section,
+        library_section,
+        explore_section,
+        actions_section,
+    ] {
+        if section.n_items() > 0 {
+            menu.append_section(None, &section);
+        }
+    }
     menu.upcast()
 }
 
@@ -1963,10 +2029,12 @@ mod tests {
             Some(false),
             false,
         );
-        assert_eq!(
-            menu_actions(&menu)[0],
-            ["song.like", "song.pin", "song.queue", "song.select"]
-        );
+        let sections = menu_actions(&menu);
+        assert_eq!(sections.len(), 4);
+        assert_eq!(sections[0], ["song.queue"]);
+        assert_eq!(sections[1], ["song.like", "song.pin"]);
+        assert_eq!(sections[2], ["song.details"]);
+        assert_eq!(sections[3], ["song.select", "song.copy_link"]);
     }
 
     #[test]
@@ -2004,13 +2072,59 @@ mod tests {
         assert_eq!(
             menu(true),
             [
-                "song.remove_from_playlist",
                 "song.queue",
+                "song.remove_from_playlist",
+                "song.details",
                 "song.select",
                 "song.copy_link"
             ]
         );
-        assert_eq!(menu(false), ["song.queue", "song.select", "song.copy_link"]);
+        assert_eq!(
+            menu(false),
+            [
+                "song.queue",
+                "song.details",
+                "song.select",
+                "song.copy_link"
+            ]
+        );
+    }
+
+    #[test]
+    fn song_menu_assigns_icons_and_four_sections() {
+        let mut track = make_rich_track("a", "Title", "Artist", "Album", 180_000, None);
+        track.rri.uri = Some("spotify:track:a".to_string());
+        let menu = build_song_menu_with_radio(
+            &track,
+            true,
+            None,
+            QueueMenuEntry::Add,
+            Some(false),
+            Some(false),
+            false,
+        );
+        let sections = menu_actions(&menu);
+        assert_eq!(sections[0], ["song.queue", "song.radio"]);
+        assert_eq!(
+            sections[2],
+            ["song.details", "song.view_album", "song.view_artist_art-a"]
+        );
+        assert_eq!(sections[3], ["song.select", "song.copy_link"]);
+
+        for i in 0..menu.n_items() {
+            let section = menu.item_link(i, gio::MENU_LINK_SECTION).unwrap();
+            for j in 0..section.n_items() {
+                let icon = section
+                    .item_attribute_value(j, super::super::MENU_ICON_ATTR, None)
+                    .and_then(|v| v.get::<String>());
+                assert!(
+                    icon.is_some(),
+                    "menu item ({},{}) missing icon attribute",
+                    i,
+                    j
+                );
+            }
+        }
     }
 
     fn make_rich_track(
