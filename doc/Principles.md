@@ -11,11 +11,10 @@ filter: does it serve someone who wants everything in one place, arranged
 their way? Personalization can grow into an endless list of options, so until
 the first release it rests on two pillars only.
 
-1. **Colors follow the system.** "Follow System" is the first theme. On
-   Omarchy it reads the current theme's colors and accent and changes live
-   when the desktop's theme changes. Other desktops get the fixed Green
-   palette for now; following them is still to do. The fixed themes are a
-   choice, never the default.
+1. **Colors follow the system.** "Follow System" is the first theme. It
+   resolves live palettes in order (Omarchy, matugen, pywal, wallust) and
+   falls back to the native desktop's light/dark preference and accent color
+   through libadwaita. The fixed themes are a choice, never the default.
 2. **A player bar each user arranges.** Every optional button can be shown,
    hidden and moved ("Customize Bar…", or a right click on the bar). The gear
    never leaves, so there is always a way back.

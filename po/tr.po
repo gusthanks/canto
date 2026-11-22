@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-21 23:29-0300\n"
+"POT-Creation-Date: 2026-11-22 01:14-0300\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -196,10 +196,10 @@ msgstr "Yeni Çalma Listesi"
 #. translators: This is the caption shown in the header of an album's detail page when the release is a full album.
 #. translators: An album in the back/forward history menu, while its name is loading.
 #: src/app/components/labels.rs:95 src/app/components/labels.rs:180
-#: src/app/components/shell/command_palette/widget.rs:856
+#: src/app/components/shell/command_palette/widget.rs:861
 #: src/app/components/shell/navigation_panel/model.rs:419
 #: src/app/components/shell/navigation_panel/model.rs:887
-#: src/app/components/pages/settings/settings.blp:387
+#: src/app/components/pages/settings/settings.blp:360
 #, fuzzy
 msgid "Album"
 msgstr "Albümler"
@@ -230,7 +230,7 @@ msgstr "Normal"
 #. translators: Contextual menu entry starting a Track Radio queue of similar tracks based on this song.
 #: src/app/components/labels.rs:110
 #: src/app/components/shell/command_palette/widget.rs:716
-#: src/app/components/shell/playback/playback_widget.blp:576 src/window.blp:499
+#: src/app/components/shell/playback/playback_widget.blp:576 src/window.blp:514
 msgid "Start Track Radio"
 msgstr ""
 
@@ -294,7 +294,7 @@ msgstr "{}, {}"
 
 #. translators: An artist in the back/forward history menu, while their name is loading.
 #: src/app/components/labels.rs:182
-#: src/app/components/shell/command_palette/widget.rs:857
+#: src/app/components/shell/command_palette/widget.rs:862
 #: src/app/components/shell/navigation_panel/model.rs:421
 #: src/app/components/shell/navigation_panel/model.rs:912
 #, fuzzy
@@ -305,7 +305,7 @@ msgstr "Sanatçılar"
 #: src/app/components/labels.rs:184
 #: src/app/components/pages/details_playlist/model.rs:155
 #: src/app/components/pages/saved_tracks/model.rs:63
-#: src/app/components/shell/command_palette/widget.rs:858
+#: src/app/components/shell/command_palette/widget.rs:863
 #: src/app/components/shell/navigation_panel/model.rs:440
 #: src/app/components/shell/navigation_panel/model.rs:825
 #, fuzzy
@@ -456,7 +456,7 @@ msgstr ""
 #: src/app/components/pages/lyrics/component.rs:89
 #: src/app/components/shell/now_panel/mod.rs:450
 #: src/app/components/shell/fullscreen_lyrics.rs:101
-#: src/app/components/pages/settings/settings.blp:523
+#: src/app/components/pages/settings/settings.blp:531
 #: src/app/components/shell/playback/playback_widget.blp:124
 #: src/app/components/shell/utility_panel/utility_panel.blp:74
 #: src/app/components/shell/playback/playback_widget.rs:550
@@ -666,228 +666,228 @@ msgstr "Albümler"
 msgid "Playlists"
 msgstr "Oynatma listesi"
 
-#: src/app/components/pages/settings/settings.rs:373
+#: src/app/components/pages/settings/settings.rs:439
 msgid "Unsupported due to legal restrictions."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:979
+#: src/app/components/pages/settings/settings.rs:1053
 msgid "Experimental Features"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:981
+#: src/app/components/pages/settings/settings.rs:1055
 msgid ""
 "These features are still in development and may be unstable or incomplete."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1144
+#: src/app/components/pages/settings/settings.rs:1272
 msgid "Couldn't save the key in the keyring"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1168
+#: src/app/components/pages/settings/settings.rs:1296
 msgid "Soloist API Key (saved; type a new one to replace it)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1170
-#: src/app/components/pages/settings/settings.blp:267
+#: src/app/components/pages/settings/settings.rs:1298
+#: src/app/components/pages/settings/settings.blp:488
 msgid "Soloist API Key"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1244
-#: src/app/components/pages/settings/settings.rs:1266
+#: src/app/components/pages/settings/settings.rs:1372
+#: src/app/components/pages/settings/settings.rs:1394
 msgid "Step 1 opened in browser. Approve access, then click 2. Complete."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1246
+#: src/app/components/pages/settings/settings.rs:1374
 msgid ""
 "Last.fm no longer accepts this connection. Your plays are kept: click 1. "
 "Open Auth to connect again"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1253
-#: src/app/components/pages/settings/settings.rs:1357
+#: src/app/components/pages/settings/settings.rs:1381
+#: src/app/components/pages/settings/settings.rs:1485
 msgid "Connected to Last.fm"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1255
+#: src/app/components/pages/settings/settings.rs:1383
 msgid "Connected as"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1268
+#: src/app/components/pages/settings/settings.rs:1396
 msgid "Click 1. Open Auth to approve Canto in your browser"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1270
-#: src/app/components/pages/settings/settings.blp:575
+#: src/app/components/pages/settings/settings.rs:1398
+#: src/app/components/pages/settings/settings.blp:583
 msgid "Enter API Key and Secret above, then connect your account"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1287
-#: src/app/components/pages/settings/settings.rs:1334
+#: src/app/components/pages/settings/settings.rs:1415
+#: src/app/components/pages/settings/settings.rs:1462
 msgid "Enter your Last.fm API Key and Secret first"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1313
+#: src/app/components/pages/settings/settings.rs:1441
 msgid ""
 "Could not start Last.fm authorization. Check API credentials and network."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1326
+#: src/app/components/pages/settings/settings.rs:1454
 msgid "Run Step 1 first to open browser authorization"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1359
+#: src/app/components/pages/settings/settings.rs:1487
 msgid "Connected to Last.fm as"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1366
+#: src/app/components/pages/settings/settings.rs:1494
 msgid ""
 "Last.fm authorization is not approved yet. Approve in browser, then try Step "
 "2 again."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1394
+#: src/app/components/pages/settings/settings.rs:1522
 msgid "Locked by a Family plan parental control and cannot be changed here."
 msgstr ""
 
 #. translators: Genius form field that should be left untouched.
-#: src/app/components/pages/settings/settings.rs:1536
+#: src/app/components/pages/settings/settings.rs:1669
 msgid "Keep the default"
 msgstr ""
 
 #. translators: Tooltip of the button copying a value for a form field.
 #. Translators: Tooltip of the button copying the OAuth Redirect URI.
-#: src/app/components/pages/settings/settings.rs:1545
-#: src/app/components/pages/login/login.blp:183
+#: src/app/components/pages/settings/settings.rs:1678
+#: src/app/components/pages/login/login.blp:184
 #, fuzzy
 msgid "Copy"
 msgstr "Bağlantıyı kopyala"
 
 #. translators: Toast after copying a value; {} is the value.
-#: src/app/components/pages/settings/settings.rs:1552
+#: src/app/components/pages/settings/settings.rs:1685
 #, rust-format
 msgid "Copied {}"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1574
+#: src/app/components/pages/settings/settings.rs:1707
 msgid ""
 "1. Click the button below to open the New API Client form on Genius (sign in "
 "if asked)."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1577
+#: src/app/components/pages/settings/settings.rs:1710
 msgid "2. Fill in the form like this, then click 'Save':"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1589
+#: src/app/components/pages/settings/settings.rs:1722
 msgid ""
 "3. On the next page, click 'Generate Access Token' and copy the Client "
 "Access Token. Canto doesn't need the Client ID or Client Secret."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1592
+#: src/app/components/pages/settings/settings.rs:1725
 msgid "4. Back in Canto, paste it into Client Access Token, under Genius."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1599
+#: src/app/components/pages/settings/settings.rs:1732
 #, fuzzy
 msgid "Open Genius"
 msgstr "Spotify'da Ara."
 
-#: src/app/components/pages/settings/settings.rs:1607
-#: src/app/components/pages/settings/settings.rs:1700
-#: src/app/components/pages/settings/settings.rs:1768
+#: src/app/components/pages/settings/settings.rs:1740
+#: src/app/components/pages/settings/settings.rs:1833
+#: src/app/components/pages/settings/settings.rs:1901
 #: src/app/components/shell/window/close_dialog.rs:67
 msgid "Close"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1619
+#: src/app/components/pages/settings/settings.rs:1752
 msgid "How to Get a Genius Token"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1644
+#: src/app/components/pages/settings/settings.rs:1777
 msgid "How to Set Up Scrobbling"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1657
+#: src/app/components/pages/settings/settings.rs:1790
 msgid "Last.fm (API Key + Browser Auth)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1663
+#: src/app/components/pages/settings/settings.rs:1796
 msgid ""
 "1. Open last.fm/api/account/create, create an API application, and copy the "
 "API Key and Shared Secret into Canto."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1666
+#: src/app/components/pages/settings/settings.rs:1799
 msgid ""
 "2. Click '1. Open Auth' to open Last.fm in your browser and approve access "
 "for Canto."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1669
+#: src/app/components/pages/settings/settings.rs:1802
 msgid ""
 "3. Return to Canto and click '2. Complete' to store your persistent session "
 "key."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1672
+#: src/app/components/pages/settings/settings.rs:1805
 msgid "ListenBrainz (User Token)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1679
+#: src/app/components/pages/settings/settings.rs:1812
 msgid ""
 "Open listenbrainz.org/settings, copy your User Token, and paste it into "
 "ListenBrainz User Token."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1686
+#: src/app/components/pages/settings/settings.rs:1819
 msgid "Open Last.fm API"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1693
+#: src/app/components/pages/settings/settings.rs:1826
 msgid "Open ListenBrainz"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1731
+#: src/app/components/pages/settings/settings.rs:1864
 msgid ""
 "Spotify blocks built-in playback on some accounts. Spotify Soloist is "
 "Spotify’s official headless player for Linux, using a fraction of the memory "
 "of the desktop app."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1734
+#: src/app/components/pages/settings/settings.rs:1867
 msgid "1. Open the Spotify Soloist Dashboard below and create a free API key."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1737
+#: src/app/components/pages/settings/settings.rs:1870
 msgid ""
 "2. In Canto, go to Preferences → Audio → Spotify Soloist, paste the key into "
 "Soloist API Key, and press Apply."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1741
+#: src/app/components/pages/settings/settings.rs:1874
 msgid ""
 "3. Automatic download is only available on x86_64. Install Soloist manually "
 "in PATH or set CANTO_SOLOIST_CMD, then press play and pick “Canto” once in "
 "Spotify on your phone to link it."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1744
+#: src/app/components/pages/settings/settings.rs:1877
 msgid ""
 "3. Press play in Canto: Canto downloads Soloist automatically. On first use, "
 "open Spotify on your phone once and pick “Canto” in the device list to link "
 "it."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1755
+#: src/app/components/pages/settings/settings.rs:1888
 msgid "Open Dashboard"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1763
+#: src/app/components/pages/settings/settings.rs:1896
 msgid "Soloist Settings"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.rs:1779
+#: src/app/components/pages/settings/settings.rs:1915
 msgid "Set Up Spotify Soloist"
 msgstr ""
 
@@ -920,7 +920,7 @@ msgid "Open"
 msgstr ""
 
 #: src/app/components/shell/command_palette/command_palette.blp:5
-#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:494
+#: src/app/components/pages/shortcuts/shortcuts.blp:69 src/window.blp:509
 msgid "Command Palette"
 msgstr ""
 
@@ -1076,7 +1076,7 @@ msgstr ""
 
 #. translators: Title of the window with the user's Last.fm listening stats.
 #: src/app/components/shell/command_palette/widget.rs:702
-#: src/app/components/shell/stats_dialog.rs:49 src/window.blp:504
+#: src/app/components/shell/stats_dialog.rs:49 src/window.blp:519
 #, fuzzy
 msgid "Your Stats"
 msgstr "Kütüphane"
@@ -1109,7 +1109,7 @@ msgstr ""
 msgid "minutes"
 msgstr ""
 
-#. Translators: Color theme option: the desktop's colors (the Omarchy theme when there is one), live.
+#. Translators: Color theme option: follows Omarchy, matugen/pywal/wallust, or the native desktop theme live.
 #: src/app/components/shell/command_palette/widget.rs:776
 #: src/app/components/pages/settings/settings.blp:24
 #: src/app/components/pages/settings/settings.blp:39
@@ -1151,35 +1151,35 @@ msgstr ""
 msgid "Switch theme live"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:807
+#: src/app/components/shell/command_palette/widget.rs:812
 #: src/app/components/shell/device_selector/widget.rs:149
 #: src/app/components/shell/device_selector/device_selector.blp:58
 msgid "This Device"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:809
+#: src/app/components/shell/command_palette/widget.rs:814
 msgid "Active playback device"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:811
+#: src/app/components/shell/command_palette/widget.rs:816
 msgid "Transfer playback locally"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:839
+#: src/app/components/shell/command_palette/widget.rs:844
 msgid "Active Connect device"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:841
+#: src/app/components/shell/command_palette/widget.rs:846
 msgid "Transfer playback to device"
 msgstr ""
 
-#: src/app/components/shell/command_palette/widget.rs:855
-#: src/app/components/pages/settings/settings.blp:386
+#: src/app/components/shell/command_palette/widget.rs:860
+#: src/app/components/pages/settings/settings.blp:359
 #, fuzzy
 msgid "Track"
 msgstr "Parça"
 
-#: src/app/components/shell/command_palette/widget.rs:901
+#: src/app/components/shell/command_palette/widget.rs:906
 msgid "Open artist page"
 msgstr ""
 
@@ -1865,14 +1865,14 @@ msgid "How should Canto close while audio is playing?"
 msgstr ""
 
 #: src/app/components/shell/window/close_dialog.rs:16
-#: src/app/components/pages/settings/settings.blp:97
+#: src/app/components/pages/settings/settings.blp:105
 #, fuzzy
 msgid "Run in Background"
 msgstr "Ses Arka Ucu"
 
 #: src/app/components/shell/window/close_dialog.rs:17
-#: src/app/components/pages/settings/settings.blp:98
-#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:538
+#: src/app/components/pages/settings/settings.blp:106
+#: src/app/components/pages/shortcuts/shortcuts.blp:133 src/window.blp:553
 msgid "Quit"
 msgstr "Çık"
 
@@ -1915,7 +1915,7 @@ msgstr ""
 #. translators: Button of the dialog asking to confirm clearing the play queue: clears it.
 #. Translators: Label for the button that clears the cache
 #: src/app/components/widgets/queue_list/model.rs:262
-#: src/app/components/pages/settings/settings.blp:231
+#: src/app/components/pages/settings/settings.blp:239
 msgid "Clear"
 msgstr ""
 
@@ -2000,71 +2000,71 @@ msgid ""
 "first."
 msgstr ""
 
-#: src/connect/soloist.rs:598
+#: src/connect/soloist.rs:624
 msgid "Not installed yet: Canto gets it from Spotify when you press play"
 msgstr ""
 
-#: src/connect/soloist.rs:601
+#: src/connect/soloist.rs:627
 msgid ""
 "Not installed. Canto plays through the Spotify app hidden in the background."
 msgstr ""
 
-#: src/connect/soloist.rs:604
+#: src/connect/soloist.rs:630
 msgid ""
 "Not installed. Automatic download is only available on x86_64; install "
 "Soloist manually or set CANTO_SOLOIST_CMD."
 msgstr ""
 
-#: src/connect/soloist.rs:607
+#: src/connect/soloist.rs:633
 msgid ""
 "Not installed. Automatic download is only available on x86_64; install "
 "Soloist manually, or Canto uses the hidden Spotify app."
 msgstr ""
 
-#: src/connect/soloist.rs:610
+#: src/connect/soloist.rs:636
 msgid "Not found at the path set in CANTO_SOLOIST_CMD."
 msgstr ""
 
-#: src/connect/soloist.rs:614
+#: src/connect/soloist.rs:640
 msgid "Installed, waiting for a key"
 msgstr ""
 
-#: src/connect/soloist.rs:616
+#: src/connect/soloist.rs:642
 msgid "Ready. It starts when you press play."
 msgstr ""
 
-#: src/connect/soloist.rs:618
+#: src/connect/soloist.rs:644
 msgid ""
 "Running, not logged in yet: in Spotify on your phone, pick “Canto” in the "
 "device list once"
 msgstr ""
 
-#: src/connect/soloist.rs:620
+#: src/connect/soloist.rs:646
 msgid "Running and playing through Canto"
 msgstr ""
 
-#: src/connect/soloist.rs:622
+#: src/connect/soloist.rs:648
 msgid "Running and logged in"
 msgstr ""
 
-#: src/connect/soloist.rs:629
+#: src/connect/soloist.rs:655
 msgid ""
 "This Soloist build has expired; Canto gets the new one when you press play"
 msgstr ""
 
-#: src/connect/soloist.rs:632
+#: src/connect/soloist.rs:658
 msgid ""
 "This Soloist build has expired; automatic updates are only available on "
 "x86_64, so update Soloist manually"
 msgstr ""
 
-#: src/connect/soloist.rs:635
+#: src/connect/soloist.rs:661
 msgid ""
 "This Soloist build has expired; update the binary configured in "
 "CANTO_SOLOIST_CMD"
 msgstr ""
 
-#: src/connect/soloist.rs:642
+#: src/connect/soloist.rs:668
 #, rust-format
 msgid "This Soloist build stops working in {days} days"
 msgstr ""
@@ -2168,7 +2168,7 @@ msgid "Redirect URI"
 msgstr ""
 
 #. Translators: Hint under the optional custom Spotify Client ID field on the login window.
-#: src/app/components/pages/login/login.blp:191
+#: src/app/components/pages/login/login.blp:192
 #: src/app/components/pages/login/login.rs:145
 msgid "Optional. Leave empty to use Canto’s built-in Client ID."
 msgstr ""
@@ -2455,7 +2455,9 @@ msgstr "Tema"
 
 #. Translators: Subtitle for the color theme selector. "Follow System" is its first option.
 #: src/app/components/pages/settings/settings.blp:35
-msgid "Follow System uses your Omarchy theme and changes with it"
+msgid ""
+"Follow System uses Omarchy, matugen, pywal, wallust, or your desktop theme "
+"live"
 msgstr ""
 
 #: src/app/components/pages/settings/settings.blp:40
@@ -2489,366 +2491,337 @@ msgstr ""
 msgid "Subtle background tint from the playing album cover"
 msgstr ""
 
+#. Translators: Title for applying the playing album cover color to UI buttons and highlights
+#: src/app/components/pages/settings/settings.blp:72
+msgid "Cover Accent on Controls"
+msgstr ""
+
+#. Translators: Description for applying the playing album cover color to UI buttons and highlights
+#: src/app/components/pages/settings/settings.blp:74
+msgid ""
+"Use the playing album cover's color for buttons, sliders, and highlights"
+msgstr ""
+
 #. Translators: Title for an item in preferences
-#: src/app/components/pages/settings/settings.blp:73
+#: src/app/components/pages/settings/settings.blp:81
 msgid "Queue Side Panel"
 msgstr ""
 
 #. Translators: Description for the queue side panel preference
-#: src/app/components/pages/settings/settings.blp:77
+#: src/app/components/pages/settings/settings.blp:85
 msgid "Show the queue in a panel at the side of the window"
 msgstr ""
 
 #. Translators: Header for a group of preference items regarding playback and window behavior
-#: src/app/components/pages/settings/settings.blp:84
+#: src/app/components/pages/settings/settings.blp:92
 #: src/app/components/pages/shortcuts/shortcuts.blp:7
 #, fuzzy
 msgid "Playback"
 msgstr "Kesintisiz çalma"
 
 #. Translators: Title for an item in preferences
-#: src/app/components/pages/settings/settings.blp:89
+#: src/app/components/pages/settings/settings.blp:97
 msgid "Close Window Behavior"
 msgstr ""
 
 #. Translators: Description for the close window behavior preference
-#: src/app/components/pages/settings/settings.blp:93
+#: src/app/components/pages/settings/settings.blp:101
 msgid "Canto's behavior when closing the main window"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:96
+#: src/app/components/pages/settings/settings.blp:104
 msgid "Ask"
 msgstr ""
 
 #. Translators: Title for the keep device awake toggle in preferences
-#: src/app/components/pages/settings/settings.blp:106
+#: src/app/components/pages/settings/settings.blp:114
 msgid "Keep Device Awake While Playing"
 msgstr ""
 
 #. Translators: Description for the keep device awake toggle
-#: src/app/components/pages/settings/settings.blp:110
+#: src/app/components/pages/settings/settings.blp:118
 msgid "Prevent the system from automatically suspending while audio is playing"
 msgstr ""
 
 #. Translators: Title for the skip explicit tracks toggle in preferences
-#: src/app/components/pages/settings/settings.blp:116
+#: src/app/components/pages/settings/settings.blp:124
 msgid "Skip Explicit Tracks"
 msgstr ""
 
 #. Translators: Description for the skip explicit tracks toggle
-#: src/app/components/pages/settings/settings.blp:120
+#: src/app/components/pages/settings/settings.blp:128
 msgid "Automatically skip tracks marked as explicit"
 msgstr ""
 
 #. Translators: Title for automatic track radio continuation toggle
-#: src/app/components/pages/settings/settings.blp:125
+#: src/app/components/pages/settings/settings.blp:133
 msgid "Smart Queue Continuation"
 msgstr ""
 
 #. Translators: Description for automatic track radio continuation
-#: src/app/components/pages/settings/settings.blp:127
+#: src/app/components/pages/settings/settings.blp:135
 msgid "Continue playing similar tracks automatically when your queue finishes"
 msgstr ""
 
 #. Translators: Title for the shuffle separation preference
-#: src/app/components/pages/settings/settings.blp:133
+#: src/app/components/pages/settings/settings.blp:141
 msgid "Shuffle Separation"
 msgstr ""
 
 #. Translators: Title for the manual synced lyrics offset preference
-#: src/app/components/pages/settings/settings.blp:147
+#: src/app/components/pages/settings/settings.blp:155
 msgid "Lyrics Sync Offset (ms)"
 msgstr ""
 
 #. Translators: Description explaining positive vs negative lyrics offset
-#: src/app/components/pages/settings/settings.blp:149
+#: src/app/components/pages/settings/settings.blp:157
 msgid "Positive advances lyrics earlier; negative delays them"
 msgstr ""
 
 #. Translators: Header for a group of preference items regarding data caching
-#: src/app/components/pages/settings/settings.blp:162
+#: src/app/components/pages/settings/settings.blp:170
 msgid "Caching"
 msgstr ""
 
 #. Translators: Description under the Caching preferences header
-#: src/app/components/pages/settings/settings.blp:166
+#: src/app/components/pages/settings/settings.blp:174
 msgid "Control how Canto caches data locally."
 msgstr ""
 
 #. Translators: Title for the in-memory cache size preference
-#: src/app/components/pages/settings/settings.blp:171
+#: src/app/components/pages/settings/settings.blp:179
 msgid "Memory Cache Size (MB)"
 msgstr ""
 
 #. Translators: Description for the in-memory cache size preference
-#: src/app/components/pages/settings/settings.blp:175
+#: src/app/components/pages/settings/settings.blp:183
 msgid "Maximum memory allocated for caching data while Canto is running."
 msgstr ""
 
 #. Translators: Title for the on-disk image cache size preference
-#: src/app/components/pages/settings/settings.blp:188
+#: src/app/components/pages/settings/settings.blp:196
 msgid "Disk Cache Size (MB)"
 msgstr ""
 
 #. Translators: Description for the on-disk image cache size preference
-#: src/app/components/pages/settings/settings.blp:192
+#: src/app/components/pages/settings/settings.blp:200
 msgid "Maximum disk space allocated for caching data between sessions."
 msgstr ""
 
 #. Translators: Title for the disk audio cache size preference
-#: src/app/components/pages/settings/settings.blp:205
+#: src/app/components/pages/settings/settings.blp:213
 msgid "Audio Cache Size (MB)"
 msgstr ""
 
 #. Translators: Description for the disk audio cache size preference
-#: src/app/components/pages/settings/settings.blp:209
+#: src/app/components/pages/settings/settings.blp:217
 msgid "Maximum disk space allocated for caching downloaded audio."
 msgstr ""
 
 #. Translators: Title for the clear cache action row
-#: src/app/components/pages/settings/settings.blp:222
+#: src/app/components/pages/settings/settings.blp:230
 msgid "Clear Cache"
 msgstr ""
 
 #. Translators: Description for the clear cache action row
-#: src/app/components/pages/settings/settings.blp:226
+#: src/app/components/pages/settings/settings.blp:234
 msgid "Remove all cached data and images stored on disk"
 msgstr ""
 
 #. Translators: Title of the Audio page in Preferences.
 #. Translators: Header for a group of preference items regarding audio
-#: src/app/components/pages/settings/settings.blp:245
-#: src/app/components/pages/settings/settings.blp:286
+#: src/app/components/pages/settings/settings.blp:253
+#: src/app/components/pages/settings/settings.blp:259
 msgid "Audio"
 msgstr "Ses"
 
-#: src/app/components/pages/settings/settings.blp:249
-msgid "Spotify Soloist"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.blp:250
-msgid ""
-"Spotify's official player for Linux, with no window. Canto plays through it "
-"when this account can't play inside Canto. It needs a free developer key "
-"from Spotify."
-msgstr ""
-
-#: src/app/components/pages/settings/settings.blp:253
-msgid "How to get a key"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.blp:262
-msgid "Play Through Soloist"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.blp:263
-msgid ""
-"When off, or without a key, Canto uses the Spotify app hidden in the "
-"background"
-msgstr ""
-
-#: src/app/components/pages/settings/settings.blp:272
-#, fuzzy
-msgid "Status"
-msgstr "Kütüphane"
-
-#: src/app/components/pages/settings/settings.blp:273
-msgid "Checking…"
-msgstr ""
-
 #. Translators: Title for an item in preferences
-#: src/app/components/pages/settings/settings.blp:278
-#: src/app/components/pages/settings/settings.blp:317
-msgid "Audio Quality"
-msgstr "Ses Kalitesi"
-
-#: src/app/components/pages/settings/settings.blp:279
-msgid ""
-"Spotify picks it. To change it, open Spotify on your phone, tap “Canto” in "
-"the device list and choose the quality."
-msgstr ""
-
-#. Translators: Title for an item in preferences
-#: src/app/components/pages/settings/settings.blp:291
+#: src/app/components/pages/settings/settings.blp:264
 msgid "Audio Backend"
 msgstr "Ses Arka Ucu"
 
 #. Translators: Title for an item in preferences
-#: src/app/components/pages/settings/settings.blp:303
+#: src/app/components/pages/settings/settings.blp:276
 msgid "ALSA Device"
 msgstr "ALSA Aygıtı"
 
 #. Translators: Description for the item (ALSA Device) in preferences
-#: src/app/components/pages/settings/settings.blp:307
+#: src/app/components/pages/settings/settings.blp:280
 msgid "Applied only if audio backend is ALSA"
 msgstr "Sadece, ses arka ucu ALSA ise uygulanır"
 
-#: src/app/components/pages/settings/settings.blp:318
+#. Translators: Title for an item in preferences
+#: src/app/components/pages/settings/settings.blp:290
+#: src/app/components/pages/settings/settings.blp:499
+msgid "Audio Quality"
+msgstr "Ses Kalitesi"
+
+#: src/app/components/pages/settings/settings.blp:291
 msgid "Streaming bitrate from Spotify (higher uses more bandwidth)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:321
+#: src/app/components/pages/settings/settings.blp:294
 msgid "Normal"
 msgstr "Normal"
 
-#: src/app/components/pages/settings/settings.blp:322
+#: src/app/components/pages/settings/settings.blp:295
 msgid "High"
 msgstr "Yüksek"
 
-#: src/app/components/pages/settings/settings.blp:323
+#: src/app/components/pages/settings/settings.blp:296
 msgid "Very High"
 msgstr "Çok yüksek"
 
-#: src/app/components/pages/settings/settings.blp:324
+#: src/app/components/pages/settings/settings.blp:297
 msgid "Lossless"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:330
+#: src/app/components/pages/settings/settings.blp:303
 #, fuzzy
 msgid "Audio Format"
 msgstr "Ses Kalitesi"
 
-#: src/app/components/pages/settings/settings.blp:331
+#: src/app/components/pages/settings/settings.blp:304
 msgid "Sample bit depth for audio output"
 msgstr ""
 
 #. Translators: Title for an item in preferences
-#: src/app/components/pages/settings/settings.blp:347
+#: src/app/components/pages/settings/settings.blp:320
 msgid "Gapless Playback"
 msgstr "Kesintisiz çalma"
 
-#: src/app/components/pages/settings/settings.blp:348
+#: src/app/components/pages/settings/settings.blp:321
 msgid "Eliminates silence between consecutive tracks"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:352
+#: src/app/components/pages/settings/settings.blp:325
 msgid "Volume Curve"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:353
+#: src/app/components/pages/settings/settings.blp:326
 msgid "Controls how the volume slider responds"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:356
+#: src/app/components/pages/settings/settings.blp:329
 msgid "Logarithmic"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:357
+#: src/app/components/pages/settings/settings.blp:330
 msgid "Linear"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:358
+#: src/app/components/pages/settings/settings.blp:331
 msgid "Cubic"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:364
+#: src/app/components/pages/settings/settings.blp:337
 #, fuzzy
 msgid "Mono Audio"
 msgstr "Ses"
 
-#: src/app/components/pages/settings/settings.blp:365
+#: src/app/components/pages/settings/settings.blp:338
 msgid ""
 "Mix left and right channels together so both speakers play the same audio"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:371
+#: src/app/components/pages/settings/settings.blp:344
 #, fuzzy
 msgid "Normalisation"
 msgstr "Normal"
 
-#: src/app/components/pages/settings/settings.blp:372
+#: src/app/components/pages/settings/settings.blp:345
 msgid "Adjust volume levels between tracks for consistent loudness"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:375
+#: src/app/components/pages/settings/settings.blp:348
 msgid "Enable Normalisation"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:376
+#: src/app/components/pages/settings/settings.blp:349
 msgid "Automatically adjust volume between tracks"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:380
+#: src/app/components/pages/settings/settings.blp:353
 msgid "Normalisation Type"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:381
+#: src/app/components/pages/settings/settings.blp:354
 msgid "How gain values are selected"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:385
+#: src/app/components/pages/settings/settings.blp:358
 msgid "Auto"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:393
+#: src/app/components/pages/settings/settings.blp:366
 msgid "Normalisation Method"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:394
+#: src/app/components/pages/settings/settings.blp:367
 msgid "Basic clips peaks, Dynamic uses a limiter"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:398
+#: src/app/components/pages/settings/settings.blp:371
 msgid "Dynamic"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:399
+#: src/app/components/pages/settings/settings.blp:372
 msgid "Basic"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:405
+#: src/app/components/pages/settings/settings.blp:378
 msgid "Pre-gain (dB)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:406
+#: src/app/components/pages/settings/settings.blp:379
 msgid "Additional gain applied before normalisation"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:418
+#: src/app/components/pages/settings/settings.blp:391
 msgid "Threshold (dBFS)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:419
+#: src/app/components/pages/settings/settings.blp:392
 msgid "Ceiling for dynamic normalisation"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:431
+#: src/app/components/pages/settings/settings.blp:404
 msgid "Attack (ms)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:432
+#: src/app/components/pages/settings/settings.blp:405
 msgid "How quickly the limiter reacts to peaks"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:444
+#: src/app/components/pages/settings/settings.blp:417
 #, fuzzy
 msgid "Release (ms)"
 msgstr "Parçalar"
 
-#: src/app/components/pages/settings/settings.blp:445
+#: src/app/components/pages/settings/settings.blp:418
 msgid "How quickly the limiter recovers after peaks"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:457
+#: src/app/components/pages/settings/settings.blp:430
 msgid "Knee (dB)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:458
+#: src/app/components/pages/settings/settings.blp:431
 msgid "Width of the soft knee for the limiter"
 msgstr ""
 
 #. Translators: Header for a group of preference items regarding network
-#: src/app/components/pages/settings/settings.blp:479
+#: src/app/components/pages/settings/settings.blp:452
 msgid "Network"
 msgstr "Ağ"
 
 #. Translators: Title for an item in preferences
-#: src/app/components/pages/settings/settings.blp:484
+#: src/app/components/pages/settings/settings.blp:457
 msgid "Access Point Port"
 msgstr "Erişim Noktası Bağlantı Noktası"
 
 #. Translators: Longer description for an item (Access Point Port) in preferences
-#: src/app/components/pages/settings/settings.blp:488
+#: src/app/components/pages/settings/settings.blp:461
 msgid ""
 "Port used for connections to Spotify’s Access Point. Set to 0 if any port is "
 "fine."
@@ -2856,43 +2829,83 @@ msgstr ""
 "Spotify Erişim Noktasına bağlanmak için kullanılan bağlantı noktası. "
 "Herhangi bir bağlantı noktası iyiyse 0'a ayarlayın."
 
-#: src/app/components/pages/settings/settings.blp:499
+#: src/app/components/pages/settings/settings.blp:470
+msgid "Spotify Soloist"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.blp:471
+msgid ""
+"Spotify's official player for Linux, with no window. Canto plays through it "
+"when this account can't play inside Canto. It needs a free developer key "
+"from Spotify."
+msgstr ""
+
+#: src/app/components/pages/settings/settings.blp:474
+msgid "How to get a key"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.blp:483
+msgid "Play Through Soloist"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.blp:484
+msgid ""
+"When off, or without a key, Canto uses the Spotify app hidden in the "
+"background"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.blp:493
+#, fuzzy
+msgid "Status"
+msgstr "Kütüphane"
+
+#: src/app/components/pages/settings/settings.blp:494
+msgid "Checking…"
+msgstr ""
+
+#: src/app/components/pages/settings/settings.blp:500
+msgid ""
+"Spotify picks it. To change it, open Spotify on your phone, tap “Canto” in "
+"the device list and choose the quality."
+msgstr ""
+
+#: src/app/components/pages/settings/settings.blp:507
 msgid "Integrations"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:503
+#: src/app/components/pages/settings/settings.blp:511
 msgid "Genius (Credits and Liner Notes)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:504
+#: src/app/components/pages/settings/settings.blp:512
 msgid ""
 "Optional Client Access Token to show producers, writers and featured artists "
 "in the Now Playing panel."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:507
+#: src/app/components/pages/settings/settings.blp:515
 msgid "How to get token"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:516
+#: src/app/components/pages/settings/settings.blp:524
 msgid "Client Access Token"
 msgstr ""
 
 #. Translators: Switch in Preferences > Integrations > Lyrics: when LRCLIB (the synced lyrics site) has no lyrics for a song, Canto shows Genius's.
-#: src/app/components/pages/settings/settings.blp:527
+#: src/app/components/pages/settings/settings.blp:535
 msgid "Lyrics When LRCLIB Has None"
 msgstr ""
 
 #. Translators: Subtitle of the "Lyrics When LRCLIB Has None" switch. Genius lyrics have no timing: they don't follow the song.
-#: src/app/components/pages/settings/settings.blp:529
+#: src/app/components/pages/settings/settings.blp:537
 msgid "Shows the lyrics from Genius, without timing"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:534
+#: src/app/components/pages/settings/settings.blp:542
 msgid "Lyrics Translation"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:535
+#: src/app/components/pages/settings/settings.blp:543
 msgid ""
 "Lyrics are translated through Google Translate for free, without a key. That "
 "free route isn't official and may stop working; a Google Cloud API key "
@@ -2900,95 +2913,95 @@ msgid ""
 "reliable."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:538
+#: src/app/components/pages/settings/settings.blp:546
 msgid "Google Cloud API Key (optional)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:543
+#: src/app/components/pages/settings/settings.blp:551
 msgid "Scrobbling (Last.fm and ListenBrainz)"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:544
+#: src/app/components/pages/settings/settings.blp:552
 msgid ""
 "Track played songs to Last.fm and/or ListenBrainz with automatic offline "
 "retry."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:547
+#: src/app/components/pages/settings/settings.blp:555
 msgid "How to set up scrobbling"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:556
+#: src/app/components/pages/settings/settings.blp:564
 msgid "Enable Scrobbling"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:557
+#: src/app/components/pages/settings/settings.blp:565
 msgid "Send Now Playing updates and scrobble tracks after listening"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:561
+#: src/app/components/pages/settings/settings.blp:569
 msgid "Scrobble Connect Devices"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:562
+#: src/app/components/pages/settings/settings.blp:570
 msgid "Also track plays from active Spotify Connect speakers and phones"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:566
+#: src/app/components/pages/settings/settings.blp:574
 msgid "Last.fm API Key"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:570
+#: src/app/components/pages/settings/settings.blp:578
 msgid "Last.fm API Secret"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:574
+#: src/app/components/pages/settings/settings.blp:582
 msgid "Authorize Last.fm"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:583
+#: src/app/components/pages/settings/settings.blp:591
 msgid "1. Open Auth"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:587
+#: src/app/components/pages/settings/settings.blp:595
 msgid "2. Complete"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:592
+#: src/app/components/pages/settings/settings.blp:600
 msgid "Disconnect"
 msgstr ""
 
 #. Translators: Switch in Preferences > Integrations, shown once Last.fm is connected. "Love" is Last.fm's heart on a song.
-#: src/app/components/pages/settings/settings.blp:604
+#: src/app/components/pages/settings/settings.blp:612
 msgid "Love on Last.fm When You Like a Song"
 msgstr ""
 
 #. Translators: Subtitle of the "Love on Last.fm When You Like a Song" switch.
-#: src/app/components/pages/settings/settings.blp:606
+#: src/app/components/pages/settings/settings.blp:614
 msgid "Removing a song from your liked songs unloves it too"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:611
+#: src/app/components/pages/settings/settings.blp:619
 msgid "ListenBrainz User Token"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:616
-msgid "Visual Bridge (External Visualizers)"
+#: src/app/components/pages/settings/settings.blp:624
+msgid "Visual Bridge"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:617
+#: src/app/components/pages/settings/settings.blp:625
 msgid ""
-"Opt-in lightweight local state and audio RMS/peak output for external 3D "
-"visualizers."
+"Opt-in lightweight local state and audio RMS/peak output for status bars, "
+"widgets, and external visualizers."
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:620
+#: src/app/components/pages/settings/settings.blp:628
 msgid "Enable Visual Bridge"
 msgstr ""
 
-#: src/app/components/pages/settings/settings.blp:621
+#: src/app/components/pages/settings/settings.blp:629
 msgid ""
-"Write active track, theme colors, and audio energy levels to "
+"Write active track, synced lyric, theme colors, and audio levels to "
 "$XDG_RUNTIME_DIR/canto/state.json"
 msgstr ""
 
@@ -3052,11 +3065,11 @@ msgstr ""
 msgid "Main Menu"
 msgstr ""
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:511
+#: src/app/components/pages/shortcuts/shortcuts.blp:123 src/window.blp:526
 msgid "Preferences"
 msgstr "Tercihler"
 
-#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:516
+#: src/app/components/pages/shortcuts/shortcuts.blp:128 src/window.blp:531
 msgid "Keyboard Shortcuts"
 msgstr ""
 
@@ -3248,54 +3261,54 @@ msgid "What do you want to play?"
 msgstr ""
 
 #. Translators: Contextual banner shown when the user's Spotify account requires Soloist for headless playback and no Soloist API key has been configured yet.
-#: src/window.blp:275
+#: src/window.blp:287
 msgid ""
 "This account needs Spotify Soloist for headless playback. Add a free API key "
 "so Canto doesn’t need the Spotify desktop app."
 msgstr ""
 
 #. Translators: Button in the Soloist setup banner that opens the Soloist setup guide.
-#: src/window.blp:289
+#: src/window.blp:302
 msgid "Set Up Soloist"
 msgstr ""
 
 #. Translators: Tooltip of the button that dismisses the Soloist setup banner for the current session.
-#: src/window.blp:303
+#: src/window.blp:318
 msgid "Dismiss"
 msgstr ""
 
-#: src/window.blp:373
+#: src/window.blp:388
 #, fuzzy
 msgid "Expand Your Library"
 msgstr "Kütüphane"
 
 #. Translators: Title of the left panel, which lists the user's playlists, albums and artists.
-#: src/window.blp:395
+#: src/window.blp:410
 #, fuzzy
 msgid "Your Library"
 msgstr "Kütüphane"
 
-#: src/window.blp:406
+#: src/window.blp:421
 msgid "Collapse Sidebar"
 msgstr ""
 
 #. Translators: One line under the app name in the About window.
-#: src/window.blp:485
+#: src/window.blp:500
 msgid ""
 "Your music services in one calm player, with synced lyrics, translations and "
 "listening stats."
 msgstr ""
 
-#: src/window.blp:521
+#: src/window.blp:536
 msgid "Report Issue"
 msgstr ""
 
-#: src/window.blp:526
+#: src/window.blp:541
 #, fuzzy
 msgid "About Canto"
 msgstr "Hakkında"
 
-#: src/window.blp:533
+#: src/window.blp:548
 msgid "Log Out"
 msgstr "Oturumdan çık"
 

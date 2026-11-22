@@ -39,8 +39,8 @@
 </p>
 
 **Looks that follow your desktop**
-- **Follow System** reads your Omarchy theme and changes with it, live. Built-in themes too: Neutral (Adwaita), Green, OLED Dark, Warm Vinyl and Purple Night.
-- Optional background tint taken from the album cover.
+- **Follow System** reads Omarchy, matugen, pywal, or wallust palettes live, and falls back to your native desktop theme and accent color (GNOME, KDE, COSMIC). Built-in themes too: Neutral (Adwaita), Green, OLED Dark, Warm Vinyl and Purple Night.
+- Optional background tint taken from the album cover, plus an opt-in **Cover Accent on Controls** switch to apply a contrast-safe cover accent to buttons, sliders, and highlights.
 - A player bar you can customize: right-click it to pick which buttons show and in what order.
 - Built for tiled and narrow windows too: below 1100 sp the side panel floats as a drawer, the library collapses to covers beside it when space gets tight, and the player bar stays on one line while stepping buttons down.
 
@@ -76,7 +76,7 @@
 - Gapless playback, a 10-band equalizer with presets, stereo balance, mono and pitch shift.
 
 **For tinkerers**
-- Optional visual bridge: a lock-free level meter and an atomic `$XDG_RUNTIME_DIR/canto/state.json` for external visualizers (zero cost when off).
+- Optional visual bridge: a lock-free level meter and an atomic `$XDG_RUNTIME_DIR/canto/state.json` with active track, synced lyric, theme colors, and audio energy for Waybar, Quickshell, Eww, and external visualizers (zero cost when off; see [doc/VisualBridge.md](doc/VisualBridge.md)).
 - Music providers sit behind a `MusicProvider` abstraction (see [docs/providers-architecture.md](docs/providers-architecture.md)).
 
 ## Keyboard Shortcuts

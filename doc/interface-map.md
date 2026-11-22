@@ -349,13 +349,25 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   `crates/canto-auth/src/oauth2.rs`).
 - "Follow System" (the first option of `app_theme` in
   `src/app/components/pages/settings/settings.blp`) is `ThemeKind::Omarchy` in
-  `src/app/theme.rs`: it reads the current Omarchy theme's colors file
-  (`omarchy_colors_path`, `load_omarchy_palette`, `parse_omarchy_colors_toml`)
-  and watches it for changes; the accent comes from that theme's `accent`.
-  Without that file it falls back to the Green palette
-  (`ThemeKind::SpotifyGreen` in code, "Green" in the UI), so on other desktops
-  it does not follow the system yet. The other themes are fixed palettes in
-  the same file.
+  `src/app/theme.rs`: `resolve_system_palette` checks `SystemThemePaths` in
+  order (Omarchy via `omarchy_colors_path` / `parse_omarchy_colors_toml`,
+  matugen via `parse_matugen_colors_json`, pywal via `parse_pywal_colors_json`,
+  and wallust via `parse_wallust_colors_json`), watching present directories
+  for live updates, and falls back to the native system theme via
+  `AdwStyleManager` (`None`, respecting system light/dark preference and
+  desktop accent color) rather than a fixed preset. The other themes are fixed
+  palettes in the same file.
+- `adaptive_cover_colors` (`adaptive-cover-colors`) tints Now Playing and
+  Lyrics surfaces from the playing album art; the dependent
+  `adaptive_cover_accent` switch (`adaptive-cover-accent`) optionally applies
+  a WCAG contrast-safe cover accent (`compute_accessible_cover_accent`,
+  `build_theme_css_with_options`) to UI accent tokens on both dark and light
+  themes.
+- `VisualBridge` (`src/app/components/visual_bridge.rs`, enabled via
+  `visual_bridge_switch` / `visual-bridge-enabled`) publishes
+  `VisualBridgeState` including the live synced lyric line
+  (`active_synced_lyric`) to `$XDG_RUNTIME_DIR/canto/state.json` and stays
+  dormant when off (see `doc/VisualBridge.md`).
 - Scrollbars: GTK thickens the overlay scrollbar on hover and draws a dark
   trough over the content. A global rule in `src/app.css`
   (`scrollbar.overlay-indicator`) keeps it thin and transparent; widgets at
