@@ -5,8 +5,8 @@
 <h1 align="center">Canto</h1>
 
 <p align="center">
-  A Spotify client for the Linux desktop, built with GTK4 and libadwaita.<br>
-  Your library, synced lyrics and the song you're on, without visual clutter.
+  A GTK4 and libadwaita music player for the Linux desktop: Spotify, local music folders, and OpenSubsonic / Navidrome.<br>
+  Your library, synced lyrics and listening flow, without visual clutter.
 </p>
 
 <p align="center">
@@ -20,16 +20,20 @@
 ---
 
 > [!NOTE]
-> Canto is an unofficial client, not affiliated with or endorsed by Spotify. It needs a **Spotify Premium** account.
+> Spotify playback and catalog browsing require a **Spotify Premium** account (Canto is unofficial and not affiliated with Spotify). **Local Music Folders** and **OpenSubsonic / Navidrome** work completely offline or self-hosted with no Spotify account required.
 
 ## What Canto does
+
+**Music Sources**
+- Switch live in **Preferences -> General -> Music Source** (or directly from the welcome screen) between **Spotify**, **Local Music Folders** (FLAC, MP3, OGG, WAV with embedded covers and metadata), and **OpenSubsonic / Navidrome** servers.
+- Local audio streams decode cleanly through the same DSP pipeline (`symphonia` -> 10-band EQ, pan, mono, pitch shift, crossfade, and level meter).
 
 **Lyrics**
 - Synced lyrics from LRCLIB in the side panel or full screen with a sharp cover over a solid color picked from it. The active line lights up word by word (with real word timing when LRCLIB has it, an estimate otherwise).
 - When LRCLIB doesn't have a song, the lyrics come from **Genius** instead (not synced), and the line above the lyrics says where they came from. You can turn this off in **Preferences -> Integrations**.
 - Click a line to jump there, nudge the timing live, and translate lyrics into your language, shown under each line.
 - **Genius** annotations: tap the mark next to a line to read what it means, right inside the lyrics.
-- When no source has the lyrics: **Search the Web** in your language, or **Add Lyrics** to paste or type them (plain or timed LRC) and publish them to LRCLIB after confirming.
+- When no source has the lyrics: **Search the Web** in your language, or **Add Lyrics** to type/paste them or tap along line-by-line in the 1-button **Lyrics Sync Studio** before publishing LRC timestamps to LRCLIB (only after confirming).
 
 <p align="center">
   <img src="data/screenshots/03-lyrics-fullscreen.png" width="49%" alt="Full-screen lyrics beside the album cover over a solid background">
@@ -45,11 +49,11 @@
 - Built for tiled and narrow windows too: below 1100 sp the side panel floats as a drawer, the library collapses to covers beside it when space gets tight, and the player bar stays on one line while stepping buttons down.
 
 **Listening**
-- Now Playing panel with a big cover, a lyrics preview, the next track, how many times you played the song, album and artist (Last.fm), song credits and the song's story from **Genius**. The title takes you to the album, the artists to their pages.
-- Your Library as a list or a grid of covers, with pinned items, Recents and sorting, plus a collapsed sidebar that keeps only the covers.
+- Now Playing panel with a big cover, a lyrics preview, the next track, how many times you played the song, album and artist (Last.fm), song credits and the song's story from **Genius**. The title takes you to the album, the artists to their pages, and clicking any album/playlist/artist header cover opens it in a fullscreen lightbox.
+- Your Library as a list or a grid of covers, with pinned items, Recents and sorting, plus a collapsed sidebar that keeps only the covers, and an inline track filter (`Ctrl+F`) and quick sort inside album and playlist pages.
 - Reopens on the track you closed it on, right where it stopped. Nothing plays until you press play.
-- Plays here or on any Spotify Connect device, such as a phone or a smart speaker. On launch it follows the device that is already playing.
-- Queue with **Recently Played** folded above Now Playing (and a like heart on each track), plus a mini player window, track radio, a sleep timer, and **Your Stats** from Last.fm.
+- Plays here or on any Spotify Connect device, such as a phone or a smart speaker (including adding tracks to the active Connect queue). On launch it follows the device that is already playing.
+- Queue with **Recently Played** folded above Now Playing (updating immediately across skipped songs, Connect sync, and local/Subsonic playback, with a like heart on each track), drag reordering on local queues, saving the queue as a playlist, mini player window with 2 px seek bar and optional live synced lyric strip, track radio, a sleep timer, and **Your Stats** from Last.fm.
 - Scroll over the volume slider (or the narrow bar's volume button) in 5% steps, filter an artist's releases directly under **Releases**, and click any artist name under an album or song cover.
 - Scrobbling to Last.fm and ListenBrainz, counting only real listening time, with an offline queue.
 
@@ -64,7 +68,7 @@
 </p>
 
 **Keyboard first**
-- `Ctrl+K` command palette: navigation, themes, devices, sleep timer, track radio and search.
+- `Ctrl+K` command palette: instant saved-library search beside deduplicated catalog search, navigation, themes, devices, sleep timer, and track radio.
 - Media keys (MPRIS), shortcuts for everything below, and touch gestures.
 
 <p align="center">
@@ -73,7 +77,7 @@
 </p>
 
 **Sound** (when Canto plays audio itself)
-- Gapless playback, a 10-band equalizer with presets, stereo balance, mono and pitch shift.
+- Gapless playback, equal-power **Crossfade** (0 to 12 seconds), a 10-band equalizer with presets, stereo balance, mono and pitch shift.
 
 **For tinkerers**
 - Optional visual bridge: a lock-free level meter and an atomic `$XDG_RUNTIME_DIR/canto/state.json` with active track, synced lyric, theme colors, and audio energy for Waybar, Quickshell, Eww, and external visualizers (zero cost when off; see [doc/VisualBridge.md](doc/VisualBridge.md)).
@@ -195,7 +199,7 @@ You can enable Last.fm, ListenBrainz, or both simultaneously.
 
 ## Installing
 
-There are no packages yet. Build from source:
+Arch Linux / AUR PKGBUILD templates live in [`packaging/aur/`](packaging/aur/README.md) (for upcoming tagged releases). To build from source today:
 
 ```sh
 ./scripts/setup-dev.sh    # install system build dependencies

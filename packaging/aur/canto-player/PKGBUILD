@@ -1,0 +1,68 @@
+# Maintainer: Gustavo Costa <gustavo@example.com>
+# Canto is a fork of Riff (Diego Augusto and contributors), itself descended from Spot (Alexandre Trendel)
+
+pkgname=canto-player
+_name=canto
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='GTK4 music player for Spotify, local music folders, and OpenSubsonic/Navidrome with synced lyrics'
+arch=('x86_64')
+url='https://github.com/gusthanks/canto'
+license=('MIT')
+depends=(
+  'alsa-lib'
+  'curl'
+  'gcc-libs'
+  'gdk-pixbuf2'
+  'glib2'
+  'glibc'
+  'graphene'
+  'gtk4'
+  'libadwaita>=1:1.9'
+  'libpulse'
+  'openssl'
+  'pango'
+)
+makedepends=('blueprint-compiler' 'cargo' 'meson')
+checkdepends=('appstream')
+optdepends=(
+  'org.freedesktop.secrets: keep credentials saved (gnome-keyring)'
+  'spotify-soloist-bin: system-wide Spotify Soloist (Canto downloads its own copy if missing)'
+  'spotify: official Spotify desktop client fallback'
+  'hyprland: keeps the fallback official client isolated in a special workspace'
+)
+conflicts=('canto-git')
+options=('!lto')
+source=("$_name-$pkgver.tar.gz::$url/archive/refs/tags/$pkgver.tar.gz")
+# Replace SKIP with updpkgsums once the tagged release tarball exists.
+sha256sums=('SKIP')
+
+prepare() {
+  cd "$_name-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  # meson.build sets CARGO_HOME to <source>/cargo, so pre-fetch vendored crates there
+  export CARGO_HOME="$srcdir/$_name-$pkgver/cargo"
+  cargo fetch --locked --target host-tuple
+}
+
+build() {
+  export RUSTUP_TOOLCHAIN=stable
+  # buildtype must be "release" so src/meson.build passes --release to cargo
+  meson setup \
+    --prefix=/usr \
+    --buildtype=release \
+    --wrap-mode=nodownload \
+    -Doffline=true \
+    "$_name-$pkgver" build
+  meson compile -C build
+}
+
+check() {
+  meson test -C build --no-rebuild --print-errorlogs \
+    'Validate schema file' 'Validate AppStream metainfo'
+}
+
+package() {
+  meson install -C build --no-rebuild --destdir "$pkgdir"
+  install -Dm644 "$_name-$pkgver/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

@@ -27,9 +27,10 @@ decided about it. Read the section of an area before changing it.
   `clip_card_panes` in `src/app/components/shell/layout/mod.rs` sets
   `gtk::Overflow::Hidden` on them.
 - The layout code is `src/app/components/shell/layout/`: `mod.rs` decides,
-  `panel.rs` sizes each panel, `constants.rs` holds every width with its
-  reasoning. The layout refits on every width change, in the first frame at
-  the new width.
+  `fit.rs` holds `utility_mode` and `LibraryFit`, `breakpoints.rs` holds
+  `add_window_breakpoints`, `panel.rs` sizes each panel, and `constants.rs`
+  holds every width with its reasoning. The layout refits on every width change,
+  in the first frame at the new width.
 - A new window opens 1200 wide, so the side panel starts beside the page.
 
 ### The side panel by window width (`utility_mode`)
@@ -110,7 +111,7 @@ decided about it. Read the section of an area before changing it.
 ## 4. The player bar
 
 Files: `src/app/components/shell/playback/` (`playback_widget.blp` and `.rs`,
-`playback_info.blp`, `playback_controls.rs`, `playback.css`).
+`volume_scroll.rs`, `playback_info.blp`, `playback_controls.rs`, `playback.css`).
 
 - The end of the bar, by default: device, queue, lyrics, volume, mini player,
   More Options (the gear, `eq_button`, `canto-settings-symbolic`) and the side
@@ -241,7 +242,12 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   playable queue tracks into a new playlist through
   `PlaylistDialog::for_saving_queue`. Movable rows expose Move Up and Move Down
   in the row menu (`menu_opening_for` enables each direction lazily on
-  `Device::Local`).
+  `Device::Local`). Queueing while on `Device::Connect` emits
+  `PlaybackEvent::TracksQueuedRemote`, forwarded via
+  `ConnectCommand::AddToQueue` to `player_add_to_queue`. Recently Played tracks
+  finished or skipped songs immediately in session memory and merges them via
+  `merge_recent_tracks` across Connect `TrackSynced`, Local, and Subsonic
+  sources.
 - Tests: `assert_recently_played`, `assert_recently_played_opens_at_newest` and
   `assert_save_queue_as_playlist_button` (`src/app/components/gtk_tests/queue.rs`).
 
@@ -305,7 +311,12 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
 - Album and playlist header (`src/app/components/widgets/details_page/header.blp`):
   rounding on the `image_clip` overlay, shadow on `image_box`, nothing clipped
   around them; the header keeps its cover above the text until cover and
-  buttons fit side by side.
+  buttons fit side by side. Clicking a loaded cover
+  (`.details-header__image-box--clickable`) opens `present_fullscreen_artwork`
+  (`ArtworkViewerSource` in
+  `src/app/components/widgets/details_page/artwork_viewer.rs`) with high-res
+  artwork over a dark tinted backdrop, closed with `Esc`, backdrop click, or the
+  close button.
 - An artist's releases are filtered by buttons under "Releases"
   (`FilterChips` in `src/app/components/widgets/card_list/filter_chips.rs`,
   pills with `library-filter` in a `filter-chips` row, built by
@@ -353,12 +364,17 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
 
 ## 10. Theme, preferences, login and small things
 
-- Preferences (`src/app/components/pages/settings/settings.blp`, `settings.rs`)
-  has built-in search enabled and is split into three pages: `general_page`
-  (Appearance, Playback, Caching, Experimental Features), `audio_page`
-  (`win.preferences-audio`, holding `soloist_group` plus the librespot audio,
-  normalisation, equalizer, pan, pitch and network controls when the account
-  can play locally), and `integrations_page` (`win.preferences-integrations`).
+- Preferences (`src/app/components/pages/settings/settings.blp`, `settings.rs`,
+  `settings_model.rs`) has built-in search enabled and is split into three
+  pages: `general_page` (Appearance, Music Source switcher in
+  `music_source_group` / `music_source_combo` for `music-source`,
+  `local-music-folders`, `subsonic-url`, `subsonic-username`, and
+  `subsonic-password`, Playback, Caching, Experimental Features), `audio_page`
+  (`win.preferences-audio`, holding `soloist_group`, `crossfade_seconds` for
+  `crossfade-seconds` via `MixController`, plus the librespot/audio engine
+  normalisation, equalizer, pan, pitch and network controls; Spotify-only sections
+  hide on Local/Subsonic), and `integrations_page`
+  (`win.preferences-integrations`).
 - Soloist onboarding: when an account needs Soloist and has no API key saved,
   `soloist_banner_revealer` under `top_bar` in `src/window.blp` shows a
   dismissible contextual banner (`should_show_soloist_banner` in
@@ -366,11 +382,14 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   opens `present_soloist_guide_dialog`. On non-x86_64 architectures,
   `status_text` in `src/connect/soloist.rs` notes that automatic downloads are
   unavailable.
-- Login (`src/app/components/pages/login/login.blp`, `login.rs`) includes a
-  collapsed-by-default advanced option (`custom_client_id_toggle`,
-  `custom_client_id_entry`) backed by `spotify-client-id` and overridden by
-  `CANTO_SPOTIFY_CLIENT_ID` (`resolve_client_id` in
-  `crates/canto-auth/src/oauth2.rs`).
+- Login (`src/app/components/pages/login/login.blp`, `login.rs`,
+  `login_model.rs`) includes a collapsed-by-default advanced option
+  (`custom_client_id_toggle`, `custom_client_id_entry`) backed by
+  `spotify-client-id` and overridden by `CANTO_SPOTIFY_CLIENT_ID`
+  (`resolve_client_id` in `crates/canto-auth/src/oauth2.rs`), as well as
+  login-free entry buttons for local music folders (`use_local_folder_button`)
+  and OpenSubsonic / Navidrome (`connect_subsonic_toggle`,
+  `subsonic_connect_button`).
 - "Follow System" (the first option of `app_theme` in
   `src/app/components/pages/settings/settings.blp`) is `ThemeKind::Omarchy` in
   `src/app/theme.rs`: `resolve_system_palette` checks `SystemThemePaths` in

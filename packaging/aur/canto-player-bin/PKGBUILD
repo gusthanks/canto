@@ -1,0 +1,55 @@
+# Maintainer: Gustavo Costa <gustavo@example.com>
+# Prebuilt x86_64 release template for Canto
+
+pkgname=canto-player-bin
+_name=canto
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='GTK4 music player for Spotify, local music folders, and OpenSubsonic/Navidrome with synced lyrics (prebuilt release)'
+arch=('x86_64')
+url='https://github.com/gusthanks/canto'
+license=('MIT')
+depends=(
+  'alsa-lib'
+  'curl'
+  'gcc-libs'
+  'gdk-pixbuf2'
+  'glib2'
+  'glibc'
+  'graphene'
+  'gtk4'
+  'libadwaita>=1:1.9'
+  'libpulse'
+  'openssl'
+  'pango'
+)
+optdepends=(
+  'org.freedesktop.secrets: keep credentials saved (gnome-keyring)'
+  'spotify-soloist-bin: system-wide Spotify Soloist (Canto downloads its own copy if missing)'
+  'spotify: official Spotify desktop client fallback'
+  'hyprland: keeps the fallback official client isolated in a special workspace'
+)
+provides=('canto-player')
+conflicts=('canto-player' 'canto-git')
+source=("$_name-$pkgver-x86_64.tar.gz::$url/releases/download/$pkgver/$_name-$pkgver-x86_64.tar.gz")
+# Replace SKIP with updpkgsums once the GitHub release asset is uploaded.
+sha256sums=('SKIP')
+
+package() {
+  install -Dm755 "$srcdir/bin/canto" "$pkgdir/usr/bin/canto"
+  install -Dm644 "$srcdir/share/applications/io.github.gusthanks.Canto.desktop" \
+    "$pkgdir/usr/share/applications/io.github.gusthanks.Canto.desktop"
+  install -Dm644 "$srcdir/share/metainfo/io.github.gusthanks.Canto.metainfo.xml" \
+    "$pkgdir/usr/share/metainfo/io.github.gusthanks.Canto.metainfo.xml"
+  install -Dm644 "$srcdir/share/glib-2.0/schemas/io.github.gusthanks.Canto.gschema.xml" \
+    "$pkgdir/usr/share/glib-2.0/schemas/io.github.gusthanks.Canto.gschema.xml"
+  install -Dm644 "$srcdir/share/canto/canto.gresource" \
+    "$pkgdir/usr/share/canto/canto.gresource"
+  if [ -d "$srcdir/share/icons" ]; then
+    cp -r "$srcdir/share/icons" "$pkgdir/usr/share/"
+  fi
+  if [ -d "$srcdir/share/locale" ]; then
+    cp -r "$srcdir/share/locale" "$pkgdir/usr/share/"
+  fi
+  install -Dm644 "$srcdir/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
