@@ -28,7 +28,10 @@ jobs:
         with:
           bundle: canto-${{ matrix.variant.arch }}.flatpak
           manifest-path: flatpak/io.github.gusthanks.Canto.snapshots.json
-          cache-key: flatpak-builder-${{ matrix.variant.arch }}-${{ github.sha }}
+          # No build cache: one restored from an older build made flatpak-builder
+          # fail to update the GNOME SDK ("Invalid cross-device link", then exit 139)
+          cache: false
+          restore-cache: false
           arch: ${{ matrix.variant.arch }}
 
   release:
