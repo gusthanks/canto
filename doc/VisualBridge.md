@@ -44,6 +44,7 @@ Bridge is turned off or Canto exits.
   "lyric_previous": "I've been tryna call",
   "lyric_next": "No, I can't sleep until I feel your touch",
   "lyric_ends_in_ms": 1850,
+  "liked": true,
   "audio": {
     "rms": 0.34,
     "peak": 0.78
@@ -74,11 +75,32 @@ Bridge is turned off or Canto exits.
 | `lyric_previous` | string or `null` | The nearest non-blank synced line before `lyric`, or `null`. |
 | `lyric_next` | string or `null` | The nearest non-blank synced line after the playing position (also before the first line and during an instrumental break), or `null` after the last line. |
 | `lyric_ends_in_ms` | integer or `null` | Milliseconds until the next line starts while `lyric` is showing (lets a widget page a long line in time), or `null`. |
+| `liked` | boolean or `null` | Whether the playing track is in Liked Songs; `null` when unknown or not a Spotify track. |
 | `audio` | object | Normalized `rms` and `peak` energy levels (`0.0` to `1.0`) when playing through Canto's built-in engine; `0.0` when paused or playing on an external/remote device. |
 | `theme` | object | Active theme snapshot (`kind`, `is_dark`, `background`, `surface`, `foreground`, `accent`, `highlight`). |
 | `updated_at_ms` | integer | Unix timestamp in milliseconds when the frame was written. |
 
 Implementation: `src/app/components/visual_bridge.rs`.
+
+## Liking the playing track
+
+MPRIS has no "like", so Canto adds its own D-Bus interface on the same bus
+name and object as its MPRIS player:
+
+```text
+bus name   org.mpris.MediaPlayer2.canto
+object     /org/mpris/MediaPlayer2
+interface  io.github.gusthanks.Canto.Player
+method     ToggleLiked()
+```
+
+It likes or unlikes the playing track, exactly like the heart in Canto's
+player bar; the next frame's `liked` shows the result. From a shell:
+
+```sh
+busctl --user call org.mpris.MediaPlayer2.canto /org/mpris/MediaPlayer2 \
+  io.github.gusthanks.Canto.Player ToggleLiked
+```
 
 ## Examples
 

@@ -271,6 +271,10 @@ impl PlaybackControl {
 impl EventListener for PlaybackControl {
     fn on_event(&mut self, event: &AppEvent) {
         match event {
+            // The heart of a bar widget: the same toggle as this bar's own
+            AppEvent::CurrentTrackLikeToggleRequested => {
+                self.model.toggle_like();
+            }
             AppEvent::PlaybackEvent(PlaybackEvent::PlaybackPaused)
             | AppEvent::PlaybackEvent(PlaybackEvent::PlaybackResumed)
             | AppEvent::PlaybackEvent(PlaybackEvent::PlayStateSynced(_)) => {

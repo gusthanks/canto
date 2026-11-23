@@ -18,6 +18,7 @@ use listener::*;
 async fn dbus_server(
     mpris: CantoMpris,
     player: CantoMprisPlayer,
+    control: CantoControl,
     receiver: UnboundedReceiver<MprisStateUpdate>,
 ) -> zbus::Result<()> {
     let connection = Connection::session().await?;
@@ -28,6 +29,10 @@ async fn dbus_server(
     connection
         .object_server()
         .at("/org/mpris/MediaPlayer2", player)
+        .await?;
+    connection
+        .object_server()
+        .at("/org/mpris/MediaPlayer2", control)
         .await?;
     let _ = connection
         .request_name("org.mpris.MediaPlayer2.canto")
@@ -96,11 +101,12 @@ pub fn start_dbus_server(
     sender: UnboundedSender<AppAction>,
 ) -> AppPlaybackStateListener {
     let mpris = CantoMpris::new(sender.clone());
+    let control = CantoControl::new(sender.clone());
     let player = CantoMprisPlayer::new(sender);
 
     let (sender, receiver) = unbounded();
 
-    thread::spawn(move || dbus_server(mpris, player, receiver));
+    thread::spawn(move || dbus_server(mpris, player, control, receiver));
 
     AppPlaybackStateListener::new(app_model, sender)
 }

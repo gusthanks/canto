@@ -76,6 +76,9 @@ pub struct VisualBridgeState {
     pub lyric_previous: Option<String>,
     pub lyric_next: Option<String>,
     pub lyric_ends_in_ms: Option<u64>,
+    /// Whether the playing track is in Liked Songs; `None` when unknown or
+    /// not a Spotify track (nothing to like)
+    pub liked: Option<bool>,
     pub audio: VisualBridgeAudio,
     pub theme: VisualBridgeTheme,
     pub updated_at_ms: u64,
@@ -104,6 +107,7 @@ impl VisualBridgeState {
             "lyric_previous": self.lyric_previous,
             "lyric_next": self.lyric_next,
             "lyric_ends_in_ms": self.lyric_ends_in_ms,
+            "liked": self.liked,
             "audio": {
                 "rms": self.audio.rms,
                 "peak": self.audio.peak,
@@ -448,6 +452,19 @@ impl Inner {
     }
 
     fn build_snapshot(&self, active: bool) -> VisualBridgeState {
+        let liked = if active {
+            let spotify = self
+                .app_model
+                .get_state()
+                .playback
+                .current_song()
+                .is_some_and(|t| t.rri.provider == canto_api::models::Provider::Spotify);
+            spotify
+                .then(|| crate::app::components::now_panel::current_track_liked(&self.app_model))
+                .flatten()
+        } else {
+            None
+        };
         let (playing, track, lyric) = if active {
             let state = self.app_model.get_state();
             let playback = &state.playback;
@@ -495,6 +512,7 @@ impl Inner {
             lyric_previous: lyric.previous,
             lyric_next: lyric.next,
             lyric_ends_in_ms: lyric.current_ends_in_ms,
+            liked,
             audio: VisualBridgeAudio { rms, peak },
             theme: self.theme_engine.current_snapshot().into(),
             updated_at_ms: now_unix_ms(),
@@ -576,6 +594,7 @@ mod tests {
             lyric_previous: Some("Hangs motionless upon the air".into()),
             lyric_next: Some("And deep beneath the rolling waves".into()),
             lyric_ends_in_ms: Some(1_500),
+            liked: Some(true),
             audio: VisualBridgeAudio {
                 rms: 0.42,
                 peak: 0.88,
@@ -594,6 +613,7 @@ mod tests {
         assert_eq!(parsed["lyric_previous"], "Hangs motionless upon the air");
         assert_eq!(parsed["lyric_next"], "And deep beneath the rolling waves");
         assert_eq!(parsed["lyric_ends_in_ms"], 1_500);
+        assert_eq!(parsed["liked"], true);
         assert!((parsed["audio"]["rms"].as_f64().unwrap() - 0.42).abs() < 1e-4);
 
         let entries: Vec<_> = std::fs::read_dir(&dir)
@@ -618,6 +638,7 @@ mod tests {
             lyric_previous: None,
             lyric_next: None,
             lyric_ends_in_ms: None,
+            liked: None,
             audio: VisualBridgeAudio {
                 rms: 0.0,
                 peak: 0.0,
@@ -630,6 +651,7 @@ mod tests {
         assert!(json["lyric"].is_null());
         assert!(json["lyric_next"].is_null());
         assert!(json["lyric_ends_in_ms"].is_null());
+        assert!(json["liked"].is_null());
         assert!(json["track"].is_null());
         assert_eq!(json["active"], false);
     }

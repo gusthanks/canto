@@ -350,3 +350,26 @@ impl CantoMprisPlayer {
         Ok(())
     }
 }
+
+/// Canto's own D-Bus interface, beside MPRIS on the same object, for what
+/// MPRIS has no word for. Bar widgets call ToggleLiked to like or unlike
+/// the playing track (the Visual Bridge's "liked" tells the result).
+#[derive(Clone)]
+pub struct CantoControl {
+    sender: UnboundedSender<AppAction>,
+}
+
+impl CantoControl {
+    pub fn new(sender: UnboundedSender<AppAction>) -> Self {
+        Self { sender }
+    }
+}
+
+#[interface(interface = "io.github.gusthanks.Canto.Player")]
+impl CantoControl {
+    fn toggle_liked(&self) -> Result<()> {
+        self.sender
+            .unbounded_send(AppAction::ToggleCurrentTrackLike)
+            .map_err(|_| Error::Failed("Could not send action".to_string()))
+    }
+}

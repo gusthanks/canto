@@ -32,6 +32,9 @@ pub enum AppAction {
     // or MPRIS OpenUri): albums, artists and playlists open their page; a
     // song opens its album (resolved by ClipboardImport, which has the API)
     OpenLink(String),
+    // Like or unlike the playing track from outside Canto (D-Bus
+    // io.github.gusthanks.Canto.Player.ToggleLiked, used by bar widgets)
+    ToggleCurrentTrackLike,
     ShowRestartRequired,
     // Account can't be decrypted by librespot (PlayPlay DRM): play through
     // the official Spotify client over Connect instead.
@@ -93,6 +96,7 @@ pub enum AppEvent {
     Raised,
     NotificationShown(String),
     LinkOpenRequested(SpotifyLink),
+    CurrentTrackLikeToggleRequested,
     RestartRequiredShown,
     OfficialClientRequested,
     OfficialClientFailed,
@@ -137,6 +141,7 @@ impl AppState {
             // Couple of actions that don't mutate the state (not intested in keeping track of what they change)
             // they're here just to have a consistent way of doing things (always an Action)
             AppAction::ShowNotification(c) => vec![AppEvent::NotificationShown(c)],
+            AppAction::ToggleCurrentTrackLike => vec![AppEvent::CurrentTrackLikeToggleRequested],
             AppAction::OpenLink(text) => match SpotifyLink::parse(&text) {
                 Some(link) => vec![AppEvent::LinkOpenRequested(link)],
                 None => vec![AppEvent::NotificationShown(gettext("Failed to open link!"))],
@@ -490,6 +495,19 @@ mod tests {
             matches!(&junk[..], [AppEvent::NotificationShown(_)]),
             "{:?}",
             junk
+        );
+    }
+
+    #[test]
+    fn a_like_from_outside_asks_the_player_bar_to_toggle_it() {
+        // D-Bus ToggleLiked (a bar widget's heart) goes through the same
+        // toggle as the player bar's own heart
+        let mut state = AppState::new();
+        let events = state.update_state(AppAction::ToggleCurrentTrackLike);
+        assert!(
+            matches!(&events[..], [AppEvent::CurrentTrackLikeToggleRequested]),
+            "{:?}",
+            events
         );
     }
 }
