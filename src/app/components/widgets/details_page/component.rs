@@ -99,24 +99,44 @@ impl<M: PinnedPageModel + 'static> DetailsPageComponent<M> {
         filter_toggle.add_css_class("circular");
         filter_toggle.add_css_class("details-header__filter");
 
-        let sort_labels = gtk::StringList::new(&[
+        // Sorting is one icon with a menu of the orders (the chosen one
+        // marked), so the header's buttons fit on one line in a narrow
+        // window; the icon takes the accent while the list is not in its
+        // original order (Q34)
+        let sort_menu = gio::Menu::new();
+        for (label, target) in [
             // translators: Track sort option keeping album/playlist original track order.
-            &gettext("Original Order"),
+            (gettext("Original Order"), "original"),
             // translators: Track sort option sorting alphabetically by track title.
-            &gettext("Title"),
+            (gettext("Title"), "title"),
             // translators: Track sort option sorting alphabetically by artist name.
-            &gettext("Artist"),
+            (gettext("Artist"), "artist"),
             // translators: Track sort option sorting by track duration.
-            &gettext("Duration"),
-        ]);
-        let sort_dropdown = gtk::DropDown::new(Some(sort_labels), None::<gtk::Expression>);
-        // translators: Tooltip of the dropdown sorting tracks in the current playlist, album, or Liked Songs page.
-        sort_dropdown.set_tooltip_text(Some(&gettext("Sort tracks")));
-        sort_dropdown.set_valign(gtk::Align::Center);
-        sort_dropdown.add_css_class("details-section__sort");
+            (gettext("Duration"), "duration"),
+        ] {
+            sort_menu.append(Some(&label), Some(&format!("tracks.order::{target}")));
+        }
+        let sort_button = gtk::MenuButton::builder()
+            .icon_name("canto-sort-symbolic")
+            .menu_model(&sort_menu)
+            // translators: Tooltip of the button sorting tracks in the current playlist, album, or Liked Songs page.
+            .tooltip_text(gettext("Sort tracks"))
+            .valign(gtk::Align::Center)
+            .build();
+        sort_button.add_css_class("flat");
+        sort_button.add_css_class("circular");
+        sort_button.add_css_class("details-section__sort");
+        let sort_order = gio::SimpleAction::new_stateful(
+            "order",
+            Some(glib::VariantTy::STRING),
+            &"original".to_variant(),
+        );
+        let sort_actions = gio::SimpleActionGroup::new();
+        sort_actions.add_action(&sort_order);
+        controls.insert_action_group("tracks", Some(&sort_actions));
 
         controls.append(&filter_toggle);
-        controls.append(&sort_dropdown);
+        controls.append(&sort_button);
         if label.is_some() {
             section.set_button(&controls);
         } else {
@@ -179,15 +199,25 @@ impl<M: PinnedPageModel + 'static> DetailsPageComponent<M> {
             }
         ));
 
-        sort_dropdown.connect_selected_notify({
+        sort_order.connect_change_state({
             let controller = controller.clone();
-            move |dropdown| {
-                let order = match dropdown.selected() {
-                    1 => TrackSortOrder::Title,
-                    2 => TrackSortOrder::Artist,
-                    3 => TrackSortOrder::Duration,
+            let sort_button = sort_button.downgrade();
+            move |action, value| {
+                let Some(value) = value else { return };
+                action.set_state(value);
+                let order = match value.str() {
+                    Some("title") => TrackSortOrder::Title,
+                    Some("artist") => TrackSortOrder::Artist,
+                    Some("duration") => TrackSortOrder::Duration,
                     _ => TrackSortOrder::Original,
                 };
+                if let Some(button) = sort_button.upgrade() {
+                    if order == TrackSortOrder::Original {
+                        button.remove_css_class("details-section__sort--active");
+                    } else {
+                        button.add_css_class("details-section__sort--active");
+                    }
+                }
                 controller.set_sort_order(order);
             }
         });

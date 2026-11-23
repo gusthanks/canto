@@ -422,6 +422,13 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   a WCAG contrast-safe cover accent (`compute_accessible_cover_accent`,
   `build_theme_css_with_options`) to UI accent tokens on both dark and light
   themes.
+- On album, playlist and Liked Songs pages the header's row of buttons
+  ends with the track filter (magnifier), the sort (`canto-sort-symbolic`,
+  a menu of Original Order, Title, Artist and Duration, the icon in the
+  accent while sorted; action `tracks.order`) and More Options, all icons
+  so the row stays on one line in a narrow window
+  (`create_track_list` in `src/app/components/widgets/details_page/component.rs`,
+  check `assert_header_track_controls_show`).
 - Album, playlist and artist pages get a gradient of the cover's color
   behind their header (`set_tint`, `src/app/components/widgets/details_page/tint.rs`).
   `readable_tint` darkens it in dark themes and lightens it in light ones

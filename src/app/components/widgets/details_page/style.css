@@ -53,7 +53,7 @@
   animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
 
-.details-page-content .details-header .circular:not(.play__button):not(.like__button):not(.shuffle__button):not(.menu__button):not(.share__button):not(.details-header__filter) {
+.details-page-content .details-header .circular:not(.play__button):not(.like__button):not(.shuffle__button):not(.menu__button):not(.share__button):not(.details-header__filter):not(.details-section__sort) {
   background-color: @skeleton_color;
   color: transparent;
   opacity: 0;
@@ -97,7 +97,7 @@
   min-width: unset;
 }
 
-.details-page--loaded .details-header .circular:not(.play__button):not(.like__button):not(.shuffle__button):not(.menu__button):not(.share__button):not(.details-header__filter) {
+.details-page--loaded .details-header .circular:not(.play__button):not(.like__button):not(.shuffle__button):not(.menu__button):not(.share__button):not(.details-header__filter):not(.details-section__sort) {
   animation: none;
   background-color: transparent;
   color: inherit;
@@ -280,14 +280,9 @@ headerbar.details__headerbar windowtitle {
   margin-bottom: 12px;
 }
 
-.details-section__sort {
-  min-height: 30px;
-}
-
-.details-section__sort > button {
-  min-height: 32px;
-  padding: 2px 10px;
-  font-weight: 500;
+/* The sort icon takes the accent while the list is sorted */
+.details-section__sort.details-section__sort--active > button {
+  color: @accent_color;
 }
 
 .details-section__filter-entry {

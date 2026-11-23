@@ -1229,10 +1229,15 @@ fn assert_header_track_controls_show() {
         filter.add_css_class("flat");
         filter.add_css_class("circular");
         filter.add_css_class("details-header__filter");
-        let sort = gtk::DropDown::new(
-            Some(gtk::StringList::new(&["Original Order", "Title"])),
-            None::<gtk::Expression>,
-        );
+        // With a menu, like the page's: GTK greys out a menu button with none
+        let sort_menu = gtk::gio::Menu::new();
+        sort_menu.append(Some("Original Order"), Some("tracks.order::original"));
+        let sort = gtk::MenuButton::builder()
+            .icon_name("canto-sort-symbolic")
+            .menu_model(&sort_menu)
+            .build();
+        sort.add_css_class("flat");
+        sort.add_css_class("circular");
         sort.add_css_class("details-section__sort");
         controls.append(&filter);
         controls.append(&sort);
@@ -1269,6 +1274,21 @@ fn assert_header_track_controls_show() {
         distinct_colors(
             window.upcast_ref(),
             &format!("header-track-controls-{:04}", width),
+        );
+        // The whole row on one line: the sort icon level with the play button
+        let play = with_class(page.widget().upcast_ref(), "play__button")
+            .into_iter()
+            .next()
+            .and_then(|b| b.compute_bounds(&window));
+        let mid = |b: gtk::graphene::Rect| b.y() + b.height() / 2.0;
+        let one_line = match (play, d.3) {
+            (Some(p), Some(q)) => (mid(p) - mid(q)).abs() <= 4.0,
+            _ => false,
+        };
+        check(
+            &format!("{} px: the header's buttons stay on one line", width),
+            one_line,
+            format!("play {:?}, sort {:?}", play, d.3),
         );
         check(
             &format!(

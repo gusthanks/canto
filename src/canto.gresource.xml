@@ -107,6 +107,7 @@
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-library-symbolic.svg">../data/hicolor/symbolic/actions/canto-library-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-translate-symbolic.svg">../data/hicolor/symbolic/actions/canto-translate-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-heart-symbolic.svg">../data/hicolor/symbolic/actions/canto-heart-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="canto-sort-symbolic.svg">../data/hicolor/symbolic/actions/canto-sort-symbolic.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-heart-filled-symbolic.svg">../data/hicolor/symbolic/actions/canto-heart-filled-symbolic.svg</file>
     <!-- artist social & streaming platform icons (About tab) -->
     <file compressed="true" preprocess="xml-stripblanks" alias="canto-social-web-symbolic.svg">../data/hicolor/symbolic/actions/canto-social-web-symbolic.svg</file>
