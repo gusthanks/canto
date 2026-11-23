@@ -90,27 +90,36 @@
       <caption>Mini player</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.1/data/screenshots/13-theme-tokyo-night.png</image>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.2/data/screenshots/13-theme-tokyo-night.png</image>
       <caption>An album with synced lyrics beside it, in the Tokyo Night theme</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.1/data/screenshots/14-theme-catppuccin-latte.png</image>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.2/data/screenshots/14-theme-catppuccin-latte.png</image>
       <caption>The same window in the light Catppuccin Latte theme</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.1/data/screenshots/15-theme-gruvbox.png</image>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.2/data/screenshots/15-theme-gruvbox.png</image>
       <caption>The same window in the Gruvbox theme</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.1/data/screenshots/16-theme-rose-pine.png</image>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.2/data/screenshots/16-theme-rose-pine.png</image>
       <caption>The same window in the Rosé Pine theme</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.1/data/screenshots/18-lyrics-fullscreen-man-made.png</image>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.2/data/screenshots/18-lyrics-fullscreen-man-made.png</image>
       <caption>Full-screen lyrics beside the album cover</caption>
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.1.2" date="2026-11-22">
+      <description>
+        <ul>
+          <li>Spotify links to a song now open in Canto, and opening a link no longer breaks the media keys</li>
+          <li>Album and playlist headers keep their buttons on one line: sorting is an icon with a menu</li>
+          <li>The media player interface accepts Spotify links</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.1.1" date="2026-11-22">
       <description>
         <p>Fixes in this release:</p>
