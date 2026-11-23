@@ -91,11 +91,12 @@ Building from source and the Arch Linux (AUR) packages: see [Building from sourc
 
 **Listening**
 - Now Playing panel with a big cover, a lyrics preview, the next track, how many times you played the song, album and artist (Last.fm), song credits and the song's story from **Genius**. The title takes you to the album, the artists to their pages, and clicking any album/playlist/artist header cover opens it in a fullscreen lightbox.
-- Your Library as a list or a grid of covers, with pinned items, Recents and sorting, plus a collapsed sidebar that keeps only the covers, and an inline track filter (`Ctrl+F`) and quick sort inside album and playlist pages.
+- Your Library as a list or a grid of covers, with pinned items, Recents and sorting, plus a collapsed sidebar that keeps only the covers, and an inline track filter (`Ctrl+F`) and a sort menu (original order, title, artist, duration) inside album and playlist pages.
 - Reopens on the track you closed it on, right where it stopped. Nothing plays until you press play.
 - Plays here or on any Spotify Connect device, such as a phone or a smart speaker (including adding tracks to the active Connect queue). On launch it follows the device that is already playing.
 - Queue with **Recently Played** folded above Now Playing (updating immediately across skipped songs, Connect sync, and local/Subsonic playback, with a like heart on each track), drag reordering on local queues, saving the queue as a playlist, mini player window with 2 px seek bar and optional live synced lyric strip, track radio, a sleep timer, and **Your Stats** from Last.fm.
 - Scroll over the volume slider (or the narrow bar's volume button) in 5% steps, filter an artist's releases directly under **Releases**, and click any artist name under an album or song cover.
+- Spotify links open in Canto: "Open in app" on the Spotify website, a `spotify:` link anywhere, or an `open.spotify.com` link you copy. A song opens its album.
 - Scrobbling to Last.fm and ListenBrainz, counting only real listening time, with an offline queue.
 
 <p align="center">
