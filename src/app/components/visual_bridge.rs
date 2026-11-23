@@ -71,6 +71,11 @@ pub struct VisualBridgeState {
     pub playing: bool,
     pub track: Option<VisualBridgeTrack>,
     pub lyric: Option<String>,
+    /// The synced lines around `lyric` and when `lyric` ends, for widgets
+    /// that show more than one line or page a long one in time
+    pub lyric_previous: Option<String>,
+    pub lyric_next: Option<String>,
+    pub lyric_ends_in_ms: Option<u64>,
     pub audio: VisualBridgeAudio,
     pub theme: VisualBridgeTheme,
     pub updated_at_ms: u64,
@@ -96,6 +101,9 @@ impl VisualBridgeState {
             "playing": self.playing,
             "track": track_val,
             "lyric": self.lyric,
+            "lyric_previous": self.lyric_previous,
+            "lyric_next": self.lyric_next,
+            "lyric_ends_in_ms": self.lyric_ends_in_ms,
             "audio": {
                 "rms": self.audio.rms,
                 "peak": self.audio.peak,
@@ -114,6 +122,47 @@ impl VisualBridgeState {
     }
 }
 
+/// The synced lines around the playing position: the active one (`current`),
+/// the nearest non-blank lines before and after it, and how long until the
+/// next line starts.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct LyricContext {
+    pub previous: Option<String>,
+    pub current: Option<String>,
+    pub next: Option<String>,
+    pub current_ends_in_ms: Option<u64>,
+}
+
+/// The lyric lines around `progress_ms` (shifted by `offset_ms`). Everything
+/// is `None` for missing or unsynced lyrics; `current` is `None` before the
+/// first line and on a blank instrumental break, while `next` still tells
+/// what comes.
+pub fn synced_lyric_context(
+    lyrics: Option<&Lyrics>,
+    progress_ms: u64,
+    offset_ms: i32,
+) -> LyricContext {
+    let Some(lyrics @ Lyrics::Synced(lines)) = lyrics else {
+        return LyricContext::default();
+    };
+    let adjusted =
+        (progress_ms as i128 + i128::from(offset_ms)).clamp(0, i128::from(u64::MAX)) as u64;
+    let text_at = |i: usize| {
+        let text = lines.get(i)?.text.trim();
+        (!text.is_empty()).then(|| text.to_string())
+    };
+    let index = lyrics.active_line_index(adjusted);
+    let after = index.map_or(0, |i| i + 1);
+    LyricContext {
+        previous: index.and_then(|i| (0..i).rev().find_map(text_at)),
+        current: index.and_then(text_at),
+        next: (after..lines.len()).find_map(text_at),
+        current_ends_in_ms: index
+            .and(lines.get(after))
+            .map(|line| line.start_time_ms.saturating_sub(adjusted)),
+    }
+}
+
 /// Returns the currently active synced lyric line at `progress_ms` (shifted by
 /// `offset_ms`), or `None` when lyrics are missing, unsynced, before the first
 /// line, or on a blank instrumental break line.
@@ -122,15 +171,7 @@ pub fn active_synced_lyric(
     progress_ms: u64,
     offset_ms: i32,
 ) -> Option<String> {
-    let lyrics = lyrics?;
-    let Lyrics::Synced(lines) = lyrics else {
-        return None;
-    };
-    let adjusted =
-        (progress_ms as i128 + i128::from(offset_ms)).clamp(0, i128::from(u64::MAX)) as u64;
-    let index = lyrics.active_line_index(adjusted)?;
-    let text = lines.get(index)?.text.trim();
-    (!text.is_empty()).then(|| text.to_string())
+    synced_lyric_context(lyrics, progress_ms, offset_ms).current
 }
 
 pub fn runtime_state_path() -> PathBuf {
@@ -425,17 +466,17 @@ impl Inner {
             let lyric = if current_song.as_ref().is_some_and(|t| {
                 self.lyrics_track_id.borrow().as_deref() == Some(t.rri.id.as_str())
             }) {
-                active_synced_lyric(
+                synced_lyric_context(
                     self.lyrics.borrow().as_ref(),
                     progress_ms,
                     self.lyrics_offset_ms.get(),
                 )
             } else {
-                None
+                LyricContext::default()
             };
             (playing, track, lyric)
         } else {
-            (false, None, None)
+            (false, None, LyricContext::default())
         };
 
         let (rms, peak) = if active && playing {
@@ -450,7 +491,10 @@ impl Inner {
             active,
             playing,
             track,
-            lyric,
+            lyric: lyric.current,
+            lyric_previous: lyric.previous,
+            lyric_next: lyric.next,
+            lyric_ends_in_ms: lyric.current_ends_in_ms,
             audio: VisualBridgeAudio { rms, peak },
             theme: self.theme_engine.current_snapshot().into(),
             updated_at_ms: now_unix_ms(),
@@ -529,6 +573,9 @@ mod tests {
                 artwork_url: None,
             }),
             lyric: Some("Overhead the albatross".into()),
+            lyric_previous: Some("Hangs motionless upon the air".into()),
+            lyric_next: Some("And deep beneath the rolling waves".into()),
+            lyric_ends_in_ms: Some(1_500),
             audio: VisualBridgeAudio {
                 rms: 0.42,
                 peak: 0.88,
@@ -544,6 +591,9 @@ mod tests {
         assert_eq!(parsed["playing"], true);
         assert_eq!(parsed["track"]["title"], "Echoes");
         assert_eq!(parsed["lyric"], "Overhead the albatross");
+        assert_eq!(parsed["lyric_previous"], "Hangs motionless upon the air");
+        assert_eq!(parsed["lyric_next"], "And deep beneath the rolling waves");
+        assert_eq!(parsed["lyric_ends_in_ms"], 1_500);
         assert!((parsed["audio"]["rms"].as_f64().unwrap() - 0.42).abs() < 1e-4);
 
         let entries: Vec<_> = std::fs::read_dir(&dir)
@@ -565,6 +615,9 @@ mod tests {
             playing: false,
             track: None,
             lyric: None,
+            lyric_previous: None,
+            lyric_next: None,
+            lyric_ends_in_ms: None,
             audio: VisualBridgeAudio {
                 rms: 0.0,
                 peak: 0.0,
@@ -575,6 +628,8 @@ mod tests {
 
         let json = state.to_json_value();
         assert!(json["lyric"].is_null());
+        assert!(json["lyric_next"].is_null());
+        assert!(json["lyric_ends_in_ms"].is_null());
         assert!(json["track"].is_null());
         assert_eq!(json["active"], false);
     }
@@ -612,5 +667,47 @@ mod tests {
         let plain = Lyrics::Plain(vec!["Unsynced verse".into()]);
         assert_eq!(active_synced_lyric(Some(&plain), 15_000, 0), None);
         assert_eq!(active_synced_lyric(None, 15_000, 0), None);
+    }
+
+    #[test]
+    fn lyric_context_gives_the_lines_around_and_when_the_current_ends() {
+        let synced = Lyrics::Synced(vec![
+            LyricLine::new(10_000, "First line"),
+            LyricLine::new(20_000, "   "),
+            LyricLine::new(25_000, "Second line"),
+            LyricLine::new(30_000, "Third line"),
+        ]);
+        // Before the first line: nothing current, the first line is next
+        let before = synced_lyric_context(Some(&synced), 5_000, 0);
+        assert_eq!(before.current, None);
+        assert_eq!(before.next.as_deref(), Some("First line"));
+        assert_eq!(before.current_ends_in_ms, None);
+        // Inside a line: its neighbours skip blank lines; it ends when the
+        // next line (blank or not) starts
+        let second = synced_lyric_context(Some(&synced), 26_000, 0);
+        assert_eq!(second.previous.as_deref(), Some("First line"));
+        assert_eq!(second.current.as_deref(), Some("Second line"));
+        assert_eq!(second.next.as_deref(), Some("Third line"));
+        assert_eq!(second.current_ends_in_ms, Some(4_000));
+        let first = synced_lyric_context(Some(&synced), 12_000, 0);
+        assert_eq!(first.next.as_deref(), Some("Second line"));
+        assert_eq!(first.current_ends_in_ms, Some(8_000));
+        // The last line has no next and no known end
+        let last = synced_lyric_context(Some(&synced), 31_000, 0);
+        assert_eq!(last.next, None);
+        assert_eq!(last.current_ends_in_ms, None);
+        // The offset shifts the position, as for `lyric`
+        let shifted = synced_lyric_context(Some(&synced), 24_500, 600);
+        assert_eq!(shifted.current.as_deref(), Some("Second line"));
+        // Unsynced or missing lyrics: all empty
+        let plain = Lyrics::Plain(vec!["Unsynced verse".into()]);
+        assert_eq!(
+            synced_lyric_context(Some(&plain), 15_000, 0),
+            LyricContext::default()
+        );
+        assert_eq!(
+            synced_lyric_context(None, 15_000, 0),
+            LyricContext::default()
+        );
     }
 }

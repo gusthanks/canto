@@ -41,6 +41,9 @@ Bridge is turned off or Canto exits.
     "artwork_url": "https://i.scdn.co/image/..."
   },
   "lyric": "And I said, ooh, I'm blinded by the lights",
+  "lyric_previous": "I've been tryna call",
+  "lyric_next": "No, I can't sleep until I feel your touch",
+  "lyric_ends_in_ms": 1850,
   "audio": {
     "rms": 0.34,
     "peak": 0.78
@@ -68,6 +71,9 @@ Bridge is turned off or Canto exits.
 | `playing` | boolean | `true` while audio is playing. |
 | `track` | object or `null` | Active track metadata (`id`, `title`, `artists`, `album`, `duration_ms`, `progress_ms`, `artwork_url`), or `null` when stopped/inactive. |
 | `lyric` | string or `null` | Currently active synced lyric line (respecting your lyrics sync offset), or `null` when unavailable, unsynced, on an instrumental break, or inactive. |
+| `lyric_previous` | string or `null` | The nearest non-blank synced line before `lyric`, or `null`. |
+| `lyric_next` | string or `null` | The nearest non-blank synced line after the playing position (also before the first line and during an instrumental break), or `null` after the last line. |
+| `lyric_ends_in_ms` | integer or `null` | Milliseconds until the next line starts while `lyric` is showing (lets a widget page a long line in time), or `null`. |
 | `audio` | object | Normalized `rms` and `peak` energy levels (`0.0` to `1.0`) when playing through Canto's built-in engine; `0.0` when paused or playing on an external/remote device. |
 | `theme` | object | Active theme snapshot (`kind`, `is_dark`, `background`, `surface`, `foreground`, `accent`, `highlight`). |
 | `updated_at_ms` | integer | Unix timestamp in milliseconds when the frame was written. |
