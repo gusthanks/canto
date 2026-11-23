@@ -90,27 +90,32 @@
       <caption>Mini player</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.3/data/screenshots/13-theme-tokyo-night.png</image>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.4/data/screenshots/13-theme-tokyo-night.png</image>
       <caption>An album with synced lyrics beside it, in the Tokyo Night theme</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.3/data/screenshots/14-theme-catppuccin-latte.png</image>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.4/data/screenshots/14-theme-catppuccin-latte.png</image>
       <caption>The same window in the light Catppuccin Latte theme</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.3/data/screenshots/15-theme-gruvbox.png</image>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.4/data/screenshots/15-theme-gruvbox.png</image>
       <caption>The same window in the Gruvbox theme</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.3/data/screenshots/16-theme-rose-pine.png</image>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.4/data/screenshots/16-theme-rose-pine.png</image>
       <caption>The same window in the Rosé Pine theme</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.3/data/screenshots/18-lyrics-fullscreen-man-made.png</image>
+      <image>https://raw.githubusercontent.com/gusthanks/canto/0.1.4/data/screenshots/18-lyrics-fullscreen-man-made.png</image>
       <caption>Full-screen lyrics beside the album cover</caption>
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.1.4" date="2026-11-23">
+      <description>
+        <p>Bar widgets can like the playing track: Canto adds a ToggleLiked D-Bus method and Visual Bridge publishes whether the track is liked.</p>
+      </description>
+    </release>
     <release version="0.1.3" date="2026-11-22">
       <description>
         <p>Visual Bridge also publishes the lyric lines around the current one and when it ends, for bar widgets such as Canto Now Playing for Omarchy.</p>

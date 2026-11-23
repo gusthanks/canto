@@ -3,7 +3,7 @@
 
 pkgname=canto-player-bin
 _name=canto
-pkgver=0.1.3
+pkgver=0.1.4
 pkgrel=1
 pkgdesc='GTK4 music player for Spotify, local music folders, and OpenSubsonic/Navidrome with synced lyrics (prebuilt release)'
 arch=('x86_64')
