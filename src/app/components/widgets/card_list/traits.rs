@@ -1,4 +1,6 @@
+use crate::app::components::navigation_panel::NavigationPanelDestination;
 use crate::app::components::SortOrder;
+use crate::app::models::CardModel;
 use crate::app::AppEvent;
 use crate::app::ProvidesApi;
 
@@ -13,6 +15,12 @@ pub trait CardListPageModel: CardListModel + ProvidesApi {
     // Page identity (used for sort persistence)
 
     fn page_id(&self) -> &str;
+
+    /// What a card opens, for its right-click menu (the library's own menu).
+    /// `None`: no menu.
+    fn card_destination(&self, _card: &CardModel) -> Option<NavigationPanelDestination> {
+        None
+    }
 
     // Empty state
 

@@ -6,6 +6,7 @@ mod navigation_panel_item;
 pub use navigation_panel_item::*;
 
 mod context_menu;
+pub use context_menu::build_context_menu;
 mod model;
 pub use model::*;
 

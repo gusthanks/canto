@@ -126,6 +126,17 @@ impl CardListPageModel for SavedAlbumsModel {
         gettext("Your library will be shown here.")
     }
 
+    fn card_destination(
+        &self,
+        card: &crate::app::models::CardModel,
+    ) -> Option<crate::app::components::navigation_panel::NavigationPanelDestination> {
+        use crate::app::components::navigation_panel::NavigationPanelDestination;
+        Some(NavigationPanelDestination::Album {
+            id: card.id(),
+            title: card.title(),
+        })
+    }
+
     fn available_sort_orders(&self) -> &[SortOrder] {
         &[
             SortOrder::RecentlyAdded,

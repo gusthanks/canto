@@ -43,6 +43,10 @@ impl ScreenFactory {
         // First in, leftmost: the shuffle button sits left of the view menu
         header.add_end(page.shuffle_button());
         header.add_end(page.view_button());
+        page.set_card_menu(Rc::new(NavigationPanelModel::new(
+            Rc::clone(&self.app_model),
+            self.dispatcher.clone(),
+        )));
         page
     }
 

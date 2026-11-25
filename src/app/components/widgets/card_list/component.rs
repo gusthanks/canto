@@ -6,6 +6,7 @@ use super::card_view_menu::{effective_sort, CardViewMenu};
 use super::page_widget::CardListWidget;
 use super::traits::CardListPageModel;
 use super::widget::{changes_playing_card, CardList, PlayingCard};
+use crate::app::components::navigation_panel::{build_context_menu, NavigationPanelModel};
 use crate::app::components::{labels, CardLayout, CardSize, Component, EventListener, SortOrder};
 use crate::app::models::FilterOption;
 use crate::app::state::LoginEvent;
@@ -159,6 +160,15 @@ impl<M: CardListPageModel + 'static> CardListComponent<M> {
 
     pub fn shuffle_button(&self) -> &gtk::Button {
         self.view_menu.shuffle_button()
+    }
+
+    /// Right click on a card opens the same menu as its row in Your Library
+    pub fn set_card_menu(&self, nav: Rc<NavigationPanelModel>) {
+        let model = Rc::downgrade(&self.model);
+        self.card_list.set_context_menu(move |card| {
+            let destination = model.upgrade()?.card_destination(card)?;
+            build_context_menu(&destination, &nav)
+        });
     }
 }
 

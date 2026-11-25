@@ -107,6 +107,17 @@ impl CardListPageModel for SavedArtistsModel {
         "avatar-default-symbolic"
     }
 
+    fn card_destination(
+        &self,
+        card: &crate::app::models::CardModel,
+    ) -> Option<crate::app::components::navigation_panel::NavigationPanelDestination> {
+        use crate::app::components::navigation_panel::NavigationPanelDestination;
+        Some(NavigationPanelDestination::Artist {
+            id: card.id(),
+            title: card.title(),
+        })
+    }
+
     fn available_sort_orders(&self) -> &[SortOrder] {
         &[
             SortOrder::RecentlyAdded,

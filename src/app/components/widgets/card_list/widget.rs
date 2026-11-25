@@ -138,7 +138,12 @@ pub struct CardList {
     source_signal: Cell<Option<(gio::ListStore, glib::SignalHandlerId)>>,
     /// Signal connection for child activation, disconnected on rebind/drop.
     activation_signal: Cell<Option<glib::SignalHandlerId>>,
+    /// The right-click menu, once a page asks for one (`set_context_menu`)
+    context_menu: RefCell<Option<gtk::PopoverMenu>>,
 }
+
+/// A card's right-click menu: action prefix, its actions, the menu model
+pub type CardMenu = (&'static str, gio::SimpleActionGroup, gio::Menu);
 
 impl CardList {
     pub fn new() -> Self {
@@ -197,6 +202,7 @@ impl CardList {
             placeholder_count: Rc::new(Cell::new(0)),
             source_signal: Cell::new(None),
             activation_signal: Cell::new(None),
+            context_menu: RefCell::new(None),
         }
     }
 
@@ -457,6 +463,53 @@ impl CardList {
     pub fn set_sort(&self, sort: SortOrder) {
         self.current_sort.set(sort);
         self.flowbox.invalidate_sort();
+    }
+
+    /// A right click on a card opens the menu `build` makes for it.
+    pub fn set_context_menu(&self, build: impl Fn(&CardModel) -> Option<CardMenu> + 'static) {
+        if self.context_menu.borrow().is_some() {
+            return;
+        }
+        let menu = gtk::PopoverMenu::from_model(None::<&gio::MenuModel>);
+        menu.set_has_arrow(false);
+        menu.set_parent(&self.grid);
+        let click = gtk::GestureClick::builder()
+            .button(gtk::gdk::BUTTON_SECONDARY)
+            .build();
+        let weak_menu = menu.downgrade();
+        click.connect_pressed(move |gesture, _, x, y| {
+            let Some(flowbox) = gesture.widget().and_downcast::<gtk::FlowBox>() else {
+                return;
+            };
+            let Some(card) = flowbox
+                .child_at_pos(x as i32, y as i32)
+                .and_then(|child| get_model(&child))
+            else {
+                return;
+            };
+            let (Some(menu), Some((prefix, actions, model))) = (weak_menu.upgrade(), build(&card))
+            else {
+                return;
+            };
+            gesture.set_state(gtk::EventSequenceState::Claimed);
+            menu.insert_action_group(prefix, Some(&actions));
+            menu.set_menu_model(Some(&model));
+            let Some(parent) = menu.parent() else {
+                return;
+            };
+            let Some(at) =
+                flowbox.compute_point(&parent, &gtk::graphene::Point::new(x as f32, y as f32))
+            else {
+                return;
+            };
+            crate::app::components::popup_fit::popup_at(
+                menu.upcast_ref(),
+                at.x() as f64,
+                at.y() as f64,
+            );
+        });
+        self.flowbox.add_controller(click);
+        self.context_menu.replace(Some(menu));
     }
 
     pub fn sort(&self) -> SortOrder {

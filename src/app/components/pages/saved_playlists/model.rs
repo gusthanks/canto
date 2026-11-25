@@ -145,6 +145,19 @@ impl CardListPageModel for SavedPlaylistsModel {
         gettext("Your playlists will be shown here.")
     }
 
+    fn card_destination(
+        &self,
+        card: &crate::app::models::CardModel,
+    ) -> Option<crate::app::components::navigation_panel::NavigationPanelDestination> {
+        use crate::app::components::navigation_panel::NavigationPanelDestination;
+        Some(NavigationPanelDestination::Playlist(
+            crate::app::models::PlaylistSummary {
+                id: card.id(),
+                title: card.title(),
+            },
+        ))
+    }
+
     fn available_sort_orders(&self) -> &[SortOrder] {
         &[
             SortOrder::RecentlyAdded,

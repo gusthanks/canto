@@ -351,6 +351,20 @@ Files: `src/app/components/shell/utility_panel/` (tabs and frame) and
   `build_song_menu_popover` (`src/app/components/widgets/track_list/song_menu.rs`).
   The Track Details item opens `present_track_details`
   (`src/app/components/widgets/track_list/track_details.rs`) for any track.
+- Library pages (albums, playlists, artists) sort by "Random" too
+  (`SortOrder::Random`): each card's place is a hash of its id and a seed
+  (`shuffle_key` in `src/app/components/widgets/card_list/widget.rs`), so cards
+  loaded later do not reshuffle the screen, and picking Random loads every page.
+  The shuffle button (`shuffle_button` of `CardViewMenu`) sits left of the view
+  menu, shown only under Random; each click calls `CardList::reshuffle`.
+- Right click on a library card opens the same menu as its row in Your Library
+  (`CardList::set_context_menu`, fed by `card_destination` and
+  `build_context_menu`). Track cards in search results open the track row menu
+  (`attach_track_card_menu` in `src/app/components/pages/search/search.rs`).
+- Every menu opened by a click or under a button goes through `fit_popover` or
+  `popup_at` (`src/app/components/popup_fit.rs`): below if it fits, above if
+  only that fits, else slid up to the window's bottom edge; the song menu
+  scrolls past the free height.
 - Tests: `assert_release_filters_are_buttons`,
   `assert_filtered_card_grid_keeps_its_columns`, `assert_card_artist_links`,
   `assert_no_lines_between_songs`, `assert_album_page_fits`,

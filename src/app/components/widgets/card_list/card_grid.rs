@@ -69,7 +69,10 @@ mod imp {
         }
 
         fn dispose(&self) {
-            self.flowbox.unparent();
+            // The FlowBox and any right-click menu (`CardList::set_context_menu`)
+            while let Some(child) = self.obj().first_child() {
+                child.unparent();
+            }
         }
     }
 
@@ -84,6 +87,14 @@ mod imp {
 
         fn size_allocate(&self, width: i32, height: i32, baseline: i32) {
             self.flowbox.allocate(width, height, baseline, None);
+            // A menu parented here follows the grid when it moves
+            let mut child = self.obj().first_child();
+            while let Some(c) = child {
+                if let Some(popover) = c.downcast_ref::<gtk::Popover>() {
+                    popover.present();
+                }
+                child = c.next_sibling();
+            }
             if self.align_to_edges.get() {
                 self.align_cells(width);
             }
