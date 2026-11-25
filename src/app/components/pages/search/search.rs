@@ -9,12 +9,13 @@ use std::rc::Rc;
 use crate::app::components::utils::Debouncer;
 use crate::app::components::widgets::card_list::card_view_menu::CardViewMenu;
 use crate::app::components::{
-    display_add_css_provider, CardLayout, CardList, CardListModel, CardSize, CardWidget, Component,
-    EventListener, ImageShape, PageHeader, SortOrder, TrackList, CLAMP_MAX_SIZE,
+    build_song_menu_popover, display_add_css_provider, track_menu, CardLayout, CardList,
+    CardListModel, CardSize, CardWidget, Component, DetailsPageModel, EventListener, ImageShape,
+    MenuHooks, PageHeader, SortOrder, TrackList, CLAMP_MAX_SIZE,
 };
 use crate::app::models::{CardModel, SearchType, Track};
 use crate::app::state::{AppEvent, BrowserEvent};
-use crate::app::{Dispatcher, ListStore};
+use crate::app::{AppModel, Dispatcher, ListStore};
 
 use super::{SearchResultsModel, SearchScopeCardsModel, SearchScopeTracksModel};
 
@@ -301,6 +302,108 @@ fn build_section(
     card_list
 }
 
+/// The track at a card, from the section that holds its data
+fn track_of_card(section: &SearchSectionModel, card: &CardWidget) -> Option<Track> {
+    let id = card.card_id();
+    if id.is_empty() {
+        return None;
+    }
+    let card_model = section.store.iter().find(|c| c.id() == id)?;
+    let track = card_model
+        .data()
+        .and_then(|d| d.downcast_ref::<Track>().cloned());
+    track
+}
+
+/// Right click on a track card opens the same menu as a track row: queue,
+/// radio, add to playlist, like, album, artists, link and details.
+fn attach_track_card_menu(
+    anchor: &gtk::Box,
+    card_list: &CardList,
+    section: &Rc<SearchSectionModel>,
+    app_model: Rc<AppModel>,
+    dispatcher: Dispatcher,
+) {
+    let page_model = Rc::new(DetailsPageModel::new_without_id(app_model, dispatcher));
+    let flowbox = card_list.flowbox().clone();
+    let section = Rc::downgrade(section);
+    let anchor = anchor.downgrade();
+    let click = gtk::GestureClick::builder()
+        .button(gdk::BUTTON_SECONDARY)
+        .build();
+    click.connect_pressed(move |gesture, _, x, y| {
+        let (Some(section), Some(anchor)) = (section.upgrade(), anchor.upgrade()) else {
+            return;
+        };
+        let Some(flowbox) = gesture.widget().and_downcast::<gtk::FlowBox>() else {
+            return;
+        };
+        let Some(card) = flowbox
+            .child_at_pos(x as i32, y as i32)
+            .and_then(|child| child.child())
+            .and_downcast::<CardWidget>()
+        else {
+            return;
+        };
+        let Some(track) = track_of_card(&section, &card) else {
+            return;
+        };
+        let Some(at) =
+            flowbox.compute_point(&anchor, &gtk::graphene::Point::new(x as f32, y as f32))
+        else {
+            return;
+        };
+        gesture.set_state(gtk::EventSequenceState::Claimed);
+
+        let actions = page_model.track_actions(&track, None);
+        let like = gio::SimpleAction::new("like", None);
+        like.connect_activate(clone!(
+            #[strong]
+            page_model,
+            #[strong]
+            track,
+            move |_, _| page_model.toggle_track_like(track.clone())
+        ));
+        actions.add_action(&like);
+        // The menu's items activate "song.*" on the card
+        card.insert_action_group("song", Some(&actions));
+
+        let liked = page_model.is_song_liked(&track.rri.id);
+        let menu = track_menu(&track, None, liked, None);
+        let hooks = MenuHooks {
+            opening: Rc::new(|| {}),
+            picker: Rc::new(clone!(
+                #[strong]
+                page_model,
+                #[strong]
+                track,
+                move || page_model.playlist_picker(&track)
+            )),
+        };
+        let popover = build_song_menu_popover(
+            card.upcast_ref(),
+            &menu,
+            Some(hooks),
+            Some(actions.upcast()),
+        );
+        // Parented like the library's context menu: to a Box, at the click
+        popover.set_parent(&anchor);
+        popover.set_pointing_to(Some(&gdk::Rectangle::new(
+            at.x() as i32,
+            at.y() as i32,
+            1,
+            1,
+        )));
+        popover.connect_closed(|popover| {
+            // After the click on an item has run its action
+            let popover = popover.clone();
+            glib::idle_add_local_once(move || popover.unparent());
+        });
+        popover.popup();
+    });
+    flowbox.add_controller(click);
+}
+
 /// Replaces the contents of a ListStore. `ListStore::replace_all` takes `&mut
 /// self`, so we operate on a cheap clone (the store is a shared GObject handle).
 fn replace_store_contents(store: &ListStore<CardModel>, items: Vec<CardModel>) {
@@ -427,6 +530,13 @@ impl SearchResults {
                     }
                 }
             });
+        attach_track_card_menu(
+            &all_box,
+            &track_card_list,
+            &track_section,
+            model.app_model(),
+            dispatcher.clone(),
+        );
 
         let artist_card_list = build_section(
             &all_box,

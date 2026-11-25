@@ -529,10 +529,14 @@ impl DetailsPageModel {
         let Some(song) = song_list.get(id) else {
             return;
         };
-        let song_desc = song.into_description();
+        self.toggle_track_like(song.into_description());
+    }
+
+    /// Like or unlike one track, for menus outside a track list (a track card)
+    pub fn toggle_track_like(&self, song_desc: Track) {
         let song_id = song_desc.rri.id.clone();
         let api = self.app_model.api();
-        let is_liked = self.is_song_liked(id);
+        let is_liked = self.is_song_liked(&song_id);
 
         if is_liked {
             dispatch_api_call(&self.dispatcher, move || async move {
