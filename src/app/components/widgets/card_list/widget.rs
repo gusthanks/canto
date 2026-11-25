@@ -119,6 +119,10 @@ pub struct CardList {
     current_layout: Rc<Cell<CardLayout>>,
     current_size: Rc<Cell<CardSize>>,
     current_sort: Rc<Cell<SortOrder>>,
+    /// Seed of the "Random" order: each card's place comes from hashing its
+    /// id with it, so cards loaded later land in a stable spot and a new seed
+    /// shuffles the whole list again.
+    shuffle_seed: Rc<Cell<u64>>,
     current_filter: Rc<RefCell<CardFilter>>,
     playing: Rc<RefCell<PlayingCard>>,
     next_position: Rc<Cell<i64>>,
@@ -184,6 +188,7 @@ impl CardList {
             current_layout,
             current_size,
             current_sort: Rc::new(Cell::new(SortOrder::RecentlyAdded)),
+            shuffle_seed: Rc::new(Cell::new(new_shuffle_seed())),
             current_filter,
             playing: Default::default(),
             next_position: Rc::new(Cell::new(0)),
@@ -231,8 +236,10 @@ impl CardList {
 
             // Install sort function
             let sort_ref = Rc::clone(&self.current_sort);
-            self.flowbox
-                .set_sort_func(move |a, b| sort_children(sort_ref.get(), a, b).into());
+            let seed_ref = Rc::clone(&self.shuffle_seed);
+            self.flowbox.set_sort_func(move |a, b| {
+                sort_children(sort_ref.get(), seed_ref.get(), a, b).into()
+            });
 
             // Install filter function
             let filter_ref = Rc::clone(&self.current_filter);
@@ -452,6 +459,19 @@ impl CardList {
         self.flowbox.invalidate_sort();
     }
 
+    pub fn sort(&self) -> SortOrder {
+        self.current_sort.get()
+    }
+
+    /// Draw a new "Random" order and apply it (a no-op under other sorts,
+    /// apart from the new seed being kept for later).
+    pub fn reshuffle(&self) {
+        self.shuffle_seed.set(new_shuffle_seed());
+        if self.current_sort.get() == SortOrder::Random {
+            self.flowbox.invalidate_sort();
+        }
+    }
+
     /// Change the active filter category. Empty string = show all.
     ///
     /// Preserves the FlowBox's current height as a minimum so the page doesn't
@@ -660,11 +680,16 @@ fn get_model(child: &gtk::FlowBoxChild) -> Option<CardModel> {
 
 /// Sort function for the FlowBox. Reads CardModel from each child.
 /// Children without a model (placeholders) sort to the end.
-fn sort_children(sort: SortOrder, a: &gtk::FlowBoxChild, b: &gtk::FlowBoxChild) -> Ordering {
+fn sort_children(
+    sort: SortOrder,
+    seed: u64,
+    a: &gtk::FlowBoxChild,
+    b: &gtk::FlowBoxChild,
+) -> Ordering {
     let a_model = get_model(a);
     let b_model = get_model(b);
     match (a_model.as_ref(), b_model.as_ref()) {
-        (Some(a), Some(b)) => compare_cards(sort, a, b),
+        (Some(a), Some(b)) => compare_cards(sort, seed, a, b),
         (None, None) => Ordering::Equal,
         (None, Some(_)) => Ordering::Greater,
         (Some(_), None) => Ordering::Less,
@@ -688,7 +713,7 @@ fn remove_placeholder_children(flowbox: &gtk::FlowBox, count: &Rc<Cell<u32>>) {
 }
 
 /// Compare two CardModels for sorting.
-fn compare_cards(sort: SortOrder, a: &CardModel, b: &CardModel) -> Ordering {
+fn compare_cards(sort: SortOrder, seed: u64, a: &CardModel, b: &CardModel) -> Ordering {
     match sort {
         SortOrder::RecentlyAdded => a.insertion_position().cmp(&b.insertion_position()),
         SortOrder::Alphabetic => a
@@ -701,7 +726,24 @@ fn compare_cards(sort: SortOrder, a: &CardModel, b: &CardModel) -> Ordering {
             .cmp(&b.subtitle().to_ascii_lowercase()),
         SortOrder::DateReleased => b.release_date().cmp(&a.release_date()),
         SortOrder::Popularity => b.popularity().cmp(&a.popularity()),
+        SortOrder::Random => shuffle_key(seed, &a.id())
+            .cmp(&shuffle_key(seed, &b.id()))
+            .then_with(|| a.id().cmp(&b.id())),
     }
+}
+
+fn new_shuffle_seed() -> u64 {
+    (u64::from(glib::random_int()) << 32) | u64::from(glib::random_int())
+}
+
+/// Where a card goes in the "Random" order: the same id and seed always give
+/// the same key, so sorting is consistent while the seed stays the same.
+fn shuffle_key(seed: u64, id: &str) -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    seed.hash(&mut hasher);
+    id.hash(&mut hasher);
+    hasher.finish()
 }
 
 /// Padding applied to each card container via CSS (`.container { padding: 6px }`).
@@ -859,5 +901,44 @@ mod tests {
         assert!(!CardFilter::OwnedBy("you".to_string()).matches(&card));
         assert!(CardFilter::NotOwnedBy("you".to_string()).matches(&card));
         assert!(!CardFilter::NotOwnedBy("me".to_string()).matches(&card));
+    }
+
+    fn order(sort: SortOrder, seed: u64, ids: &[&str]) -> Vec<String> {
+        let mut cards: Vec<CardModel> = ids
+            .iter()
+            .map(|id| CardModel::new(id, None, id, "S", None, None, None, None))
+            .collect();
+        cards.sort_by(|a, b| compare_cards(sort, seed, a, b));
+        cards.iter().map(|c| c.id()).collect()
+    }
+
+    #[test]
+    fn random_sort_is_stable_for_a_seed_and_changes_with_a_new_one() {
+        let ids: Vec<String> = (0..30).map(|i| format!("album{i}")).collect();
+        let ids: Vec<&str> = ids.iter().map(String::as_str).collect();
+
+        let first = order(SortOrder::Random, 1, &ids);
+        assert_eq!(first, order(SortOrder::Random, 1, &ids));
+        assert_ne!(first, order(SortOrder::Random, 2, &ids));
+
+        // Every card is still there, only the order moved
+        let mut sorted = first.clone();
+        sorted.sort();
+        let mut expected: Vec<String> = ids.iter().map(|s| s.to_string()).collect();
+        expected.sort();
+        assert_eq!(sorted, expected);
+
+        // A card loaded later keeps the others in the same relative order
+        let fewer = order(SortOrder::Random, 1, &ids[..29]);
+        let without_last: Vec<String> = first.into_iter().filter(|id| id != "album29").collect();
+        assert_eq!(fewer, without_last);
+    }
+
+    #[test]
+    fn random_is_a_saved_sort_key() {
+        assert_eq!(
+            SortOrder::parse_key(SortOrder::Random.to_str()),
+            SortOrder::Random
+        );
     }
 }

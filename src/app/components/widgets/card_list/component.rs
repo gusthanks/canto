@@ -37,8 +37,11 @@ fn update_status<M: CardListPageModel>(
     status_page.set_visible(!loading && (filter_empty || !model.has_items()));
 }
 
+/// A filter or the "Random" sort needs every page: a filter to find what it
+/// keeps, a shuffle to mix the whole library, not only what has loaded.
 fn load_more_for_filter<M: CardListPageModel>(model: &M, card_list: &CardList) {
-    if card_list.is_filtered() && model.has_more() {
+    let needs_all = card_list.is_filtered() || card_list.sort() == SortOrder::Random;
+    if needs_all && model.has_more() {
         card_list.append_placeholders();
         model.load_more();
     }
@@ -153,11 +156,20 @@ impl<M: CardListPageModel + 'static> CardListComponent<M> {
     pub fn view_button(&self) -> &libadwaita::SplitButton {
         self.view_menu.widget()
     }
+
+    pub fn shuffle_button(&self) -> &gtk::Button {
+        self.view_menu.shuffle_button()
+    }
 }
 
 impl<M: CardListPageModel + 'static> EventListener for CardListComponent<M> {
     fn on_event(&mut self, event: &AppEvent) {
         match event {
+            AppEvent::BrowserEvent(BrowserEvent::SortOrderChanged(page, SortOrder::Random))
+                if page.as_str() == self.model.page_id() =>
+            {
+                load_more_for_filter(&*self.model, &self.card_list);
+            }
             AppEvent::LoginEvent(LoginEvent::LoginCompleted) => {
                 self.card_list.show_placeholders();
                 self.model.refresh();

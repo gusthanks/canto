@@ -112,6 +112,7 @@ impl CardListPageModel for SavedArtistsModel {
             SortOrder::RecentlyAdded,
             SortOrder::Alphabetic,
             SortOrder::Popularity,
+            SortOrder::Random,
         ]
     }
 

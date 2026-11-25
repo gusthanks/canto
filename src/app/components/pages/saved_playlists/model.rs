@@ -150,6 +150,7 @@ impl CardListPageModel for SavedPlaylistsModel {
             SortOrder::RecentlyAdded,
             SortOrder::Alphabetic,
             SortOrder::Creator,
+            SortOrder::Random,
         ]
     }
 

@@ -133,6 +133,7 @@ impl CardListPageModel for SavedAlbumsModel {
             SortOrder::Alphabetic,
             SortOrder::Creator,
             SortOrder::Popularity,
+            SortOrder::Random,
         ]
     }
 

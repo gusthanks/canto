@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Riff\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-22 17:21-0300\n"
+"POT-Creation-Date: 2026-11-24 21:12-0300\n"
 "Language: et\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -210,7 +210,7 @@ msgstr "Kõik esitusloendid"
 #: src/app/components/shell/command_palette/widget.rs:880
 #: src/app/components/shell/command_palette/widget.rs:964
 #: src/app/components/shell/navigation_panel/model.rs:419
-#: src/app/components/shell/navigation_panel/model.rs:897
+#: src/app/components/shell/navigation_panel/model.rs:903
 #: src/app/components/widgets/track_list/track_details.rs:271
 #: src/app/components/pages/settings/settings.blp:374
 #, fuzzy
@@ -317,8 +317,8 @@ msgstr "{} - {}"
 #: src/app/components/shell/command_palette/widget.rs:881
 #: src/app/components/shell/command_palette/widget.rs:965
 #: src/app/components/shell/navigation_panel/model.rs:421
-#: src/app/components/shell/navigation_panel/model.rs:922
-#: src/app/components/widgets/details_page/component.rs:108
+#: src/app/components/shell/navigation_panel/model.rs:928
+#: src/app/components/widgets/details_page/component.rs:113
 #, fuzzy
 msgid "Artist"
 msgstr "Esitajad"
@@ -519,7 +519,7 @@ msgstr ""
 #. Translators: Button label. Exits selection mode.
 #. translators: Button of a dialog asking to confirm something that cannot be undone: leaves things as they are.
 #: src/app/components/pages/lyrics/add_lyrics.rs:1058
-#: src/app/components/shell/clipboard_import/mod.rs:116
+#: src/app/components/shell/clipboard_import/mod.rs:124
 #: src/app/components/widgets/queue_list/model.rs:311
 #: src/app/components/pages/queue/queue_page.blp:19
 #: src/app/components/shell/headerbar/headerbar.blp:118
@@ -687,7 +687,7 @@ msgstr "Sinu esitusloendid näidatakse siin."
 
 #. translators: Filter of the saved playlists: shows all of them.
 #: src/app/components/pages/saved_playlists/model.rs:119
-#: src/app/models/card_enums.rs:172
+#: src/app/models/card_enums.rs:179
 msgid "All"
 msgstr ""
 
@@ -717,38 +717,38 @@ msgstr "Sinu esitusloendid näidatakse siin."
 msgid "Liked Songs"
 msgstr ""
 
-#: src/app/components/pages/search/search.rs:268
+#: src/app/components/pages/search/search.rs:269
 msgid "Show All"
 msgstr ""
 
 #. Translators: This refers to a number of tracks
-#: src/app/components/pages/search/search.rs:396
+#: src/app/components/pages/search/search.rs:499
 #: src/app/components/pages/details_album/release_details.blp:56
 #: src/app/components/pages/shortcuts/shortcuts.blp:104
 msgid "Tracks"
 msgstr "Lood"
 
 #. translators: This is a navigation panel entry to browse to followed artists.
-#: src/app/components/pages/search/search.rs:433
+#: src/app/components/pages/search/search.rs:543
 #: src/app/components/shell/command_palette/widget.rs:612
-#: src/app/components/shell/navigation/factory.rs:82
+#: src/app/components/shell/navigation/factory.rs:84
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:77
 #: src/app/components/shell/navigation_panel/navigation_panel.rs:417
 #: src/app/components/pages/shortcuts/shortcuts.blp:89
 msgid "Artists"
 msgstr "Esitajad"
 
-#: src/app/components/pages/search/search.rs:443
+#: src/app/components/pages/search/search.rs:553
 #: src/app/components/shell/navigation_panel/navigation_panel.rs:416
-#: src/app/models/card_enums.rs:173
+#: src/app/models/card_enums.rs:180
 #: src/app/components/pages/shortcuts/shortcuts.blp:94
 msgid "Albums"
 msgstr "Albumid"
 
 #. translators: This is a navigation panel entry that marks that the entries below are playlists.
-#: src/app/components/pages/search/search.rs:453
+#: src/app/components/pages/search/search.rs:563
 #: src/app/components/shell/command_palette/widget.rs:623
-#: src/app/components/shell/navigation/factory.rs:71
+#: src/app/components/shell/navigation/factory.rs:73
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:75
 #: src/app/components/shell/navigation_panel/navigation_panel.rs:415
 #: src/app/components/pages/shortcuts/shortcuts.blp:99
@@ -1005,31 +1005,31 @@ msgstr ""
 msgid "Set Up Spotify Soloist"
 msgstr ""
 
-#: src/app/components/shell/clipboard_import/mod.rs:91
+#: src/app/components/shell/clipboard_import/mod.rs:99
 msgid "Open Spotify link?"
 msgstr ""
 
-#: src/app/components/shell/clipboard_import/mod.rs:95
+#: src/app/components/shell/clipboard_import/mod.rs:103
 msgid "There’s a Spotify album link in your clipboard. Open it in Canto?"
 msgstr ""
 
-#: src/app/components/shell/clipboard_import/mod.rs:99
+#: src/app/components/shell/clipboard_import/mod.rs:107
 msgid "There’s a Spotify artist link in your clipboard. Open it in Canto?"
 msgstr ""
 
-#: src/app/components/shell/clipboard_import/mod.rs:103
+#: src/app/components/shell/clipboard_import/mod.rs:111
 msgid "There’s a Spotify playlist link in your clipboard. Open it in Canto?"
 msgstr ""
 
-#: src/app/components/shell/clipboard_import/mod.rs:107
+#: src/app/components/shell/clipboard_import/mod.rs:115
 msgid "There’s a Spotify profile link in your clipboard. Open it in Canto?"
 msgstr ""
 
-#: src/app/components/shell/clipboard_import/mod.rs:111
+#: src/app/components/shell/clipboard_import/mod.rs:119
 msgid "There’s a Spotify track link in your clipboard. Open it in Canto?"
 msgstr ""
 
-#: src/app/components/shell/clipboard_import/mod.rs:117
+#: src/app/components/shell/clipboard_import/mod.rs:125
 msgid "Open"
 msgstr ""
 
@@ -1089,7 +1089,7 @@ msgstr ""
 #. translators: This is a navigation panel entry to browse to saved albums.
 #: src/app/components/shell/command_palette/widget.rs:579
 #: src/app/components/shell/command_palette/widget.rs:962
-#: src/app/components/shell/navigation/factory.rs:55
+#: src/app/components/shell/navigation/factory.rs:57
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:71
 #: src/app/components/shell/navigation_panel/navigation_panel_item.rs:140
 msgid "Library"
@@ -1929,7 +1929,7 @@ msgstr ""
 #. Translators: Sort option. Shows items in the order they were saved,
 #. with the most recently added items appearing first.
 #: src/app/components/shell/navigation_panel/model.rs:75
-#: src/app/models/card_enums.rs:51
+#: src/app/models/card_enums.rs:55
 msgid "Recently Added"
 msgstr ""
 
@@ -1942,7 +1942,7 @@ msgstr ""
 #. Translators: Sort option. Groups items by their artist or creator name,
 #. sorted alphabetically.
 #: src/app/components/shell/navigation_panel/model.rs:79
-#: src/app/models/card_enums.rs:57
+#: src/app/models/card_enums.rs:61
 msgid "Creator"
 msgstr ""
 
@@ -1964,22 +1964,22 @@ msgstr ""
 msgid "Unnamed Playlist"
 msgstr "Nimetamata esitusloend"
 
-#: src/app/components/shell/navigation_panel/model.rs:933
+#: src/app/components/shell/navigation_panel/model.rs:939
 #, fuzzy
 msgid "Pinned Playlist"
 msgstr "Nimetamata esitusloend"
 
-#: src/app/components/shell/navigation_panel/model.rs:934
+#: src/app/components/shell/navigation_panel/model.rs:940
 #, fuzzy
 msgid "Pinned Album"
 msgstr "Vaata albumit"
 
-#: src/app/components/shell/navigation_panel/model.rs:935
+#: src/app/components/shell/navigation_panel/model.rs:941
 #, fuzzy
 msgid "Pinned Artist"
 msgstr "Esitajad"
 
-#: src/app/components/shell/navigation_panel/model.rs:936
+#: src/app/components/shell/navigation_panel/model.rs:942
 #, fuzzy
 msgid "Pinned Track"
 msgstr "Salvestatud lood"
@@ -2053,30 +2053,30 @@ msgid "Filter tracks (Ctrl+F)"
 msgstr ""
 
 #. translators: Track sort option keeping album/playlist original track order.
-#: src/app/components/widgets/details_page/component.rs:104
+#: src/app/components/widgets/details_page/component.rs:109
 msgid "Original Order"
 msgstr ""
 
 #. translators: Track sort option sorting alphabetically by track title.
-#: src/app/components/widgets/details_page/component.rs:106
+#: src/app/components/widgets/details_page/component.rs:111
 msgid "Title"
 msgstr ""
 
 #. translators: Track sort option sorting by track duration.
-#: src/app/components/widgets/details_page/component.rs:110
+#: src/app/components/widgets/details_page/component.rs:115
 #: src/app/components/widgets/track_list/track_details.rs:265
 #, fuzzy
 msgid "Duration"
 msgstr "Keskmine"
 
-#. translators: Tooltip of the dropdown sorting tracks in the current playlist, album, or Liked Songs page.
-#: src/app/components/widgets/details_page/component.rs:114
+#. translators: Tooltip of the button sorting tracks in the current playlist, album, or Liked Songs page.
+#: src/app/components/widgets/details_page/component.rs:123
 #, fuzzy
 msgid "Sort tracks"
 msgstr "Lood"
 
 #. translators: Placeholder in the in-page filter bar for playlists, albums, and Liked Songs.
-#: src/app/components/widgets/details_page/component.rs:128
+#: src/app/components/widgets/details_page/component.rs:148
 msgid "Filter tracks…"
 msgstr ""
 
@@ -2085,7 +2085,7 @@ msgstr ""
 msgid "View artwork in fullscreen"
 msgstr ""
 
-#: src/app/components/widgets/details_page/header.rs:499
+#: src/app/components/widgets/details_page/header.rs:491
 #: src/app/components/widgets/details_page/header.blp:201
 #, fuzzy
 msgid "Add to Library"
@@ -2149,7 +2149,7 @@ msgstr ""
 #. the most popular items appearing first.
 #: src/app/components/widgets/track_list/track_details.rs:285
 #: src/app/components/widgets/track_list/track_details.rs:324
-#: src/app/models/card_enums.rs:63
+#: src/app/models/card_enums.rs:67
 msgid "Popularity"
 msgstr ""
 
@@ -2218,26 +2218,32 @@ msgstr ""
 
 #. Translators: Sort option. Orders items alphabetically by their title
 #. (A-Z, case-insensitive).
-#: src/app/models/card_enums.rs:54
+#: src/app/models/card_enums.rs:58
 msgid "Alphabetic"
 msgstr ""
 
 #. Translators: Sort option. Orders items by their release date, with the
 #. newest releases appearing first.
-#: src/app/models/card_enums.rs:60
+#: src/app/models/card_enums.rs:64
 #, fuzzy
 msgid "Date Released"
 msgstr "Välja antud"
 
-#: src/app/models/card_enums.rs:174
+#. Translators: Sort option. Shows items in a shuffled order; a button
+#. next to the menu shuffles them again.
+#: src/app/models/card_enums.rs:70
+msgid "Random"
+msgstr ""
+
+#: src/app/models/card_enums.rs:181
 msgid "Singles"
 msgstr ""
 
-#: src/app/models/card_enums.rs:175
+#: src/app/models/card_enums.rs:182
 msgid "EPs"
 msgstr ""
 
-#: src/app/models/card_enums.rs:176
+#: src/app/models/card_enums.rs:183
 msgid "Compilations"
 msgstr ""
 
@@ -2358,10 +2364,6 @@ msgstr ""
 #: src/inhibitor.rs:110
 msgid "Playing music"
 msgstr ""
-
-#: src/main.rs:120
-msgid "Failed to open link!"
-msgstr "Lingi avamine ebaõnnestus!"
 
 #: src/player/mod.rs:147
 msgid "Playback is Temporarily Unavailable"
@@ -3519,7 +3521,7 @@ msgstr ""
 
 #. Translators: Tooltip of the player bar button that opens the sleep timer, equalizer and audio options.
 #: src/app/components/shell/playback/playback_widget.blp:408
-#: src/app/components/widgets/details_page/header.blp:242
+#: src/app/components/widgets/details_page/header.blp:241
 #: src/app/components/shell/playback/playback_widget.rs:563
 msgid "More Options"
 msgstr ""
@@ -3626,6 +3628,14 @@ msgstr ""
 #: src/app/components/widgets/card_list/card_view_menu.blp:83
 msgid "Filters"
 msgstr ""
+
+#. Translators: Tooltip of the button next to the view menu, shown
+#. when the "Random" sort is on. Each click shuffles the items again.
+#: src/app/components/widgets/card_list/card_view_menu.rs:117
+#: src/app/components/widgets/card_list/card_view_menu.rs:121
+#, fuzzy
+msgid "Shuffle Again"
+msgstr "Juhuesitus"
 
 #: src/app/components/widgets/selection/selection_toolbar.blp:61
 msgid "Remove"
@@ -3796,6 +3806,10 @@ msgstr ""
 #: src/app/components/widgets/playlist_dialog/widget.rs:242
 msgid "Images"
 msgstr ""
+
+#: src/app/state/app_state.rs:147
+msgid "Failed to open link!"
+msgstr "Lingi avamine ebaõnnestus!"
 
 #: src/app/components/pages/about/about.rs:27
 msgid "Based On"

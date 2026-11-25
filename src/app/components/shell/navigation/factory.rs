@@ -40,6 +40,8 @@ impl ScreenFactory {
     ) -> CardListComponent<M> {
         let header = self.registrar.page(name);
         header.set_title(title);
+        // First in, leftmost: the shuffle button sits left of the view menu
+        header.add_end(page.shuffle_button());
         header.add_end(page.view_button());
         page
     }

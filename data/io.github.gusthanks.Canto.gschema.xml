@@ -353,6 +353,7 @@
         <choice value='creator'/>
         <choice value='date-released'/>
         <choice value='popularity'/>
+        <choice value='random'/>
       </choices>
       <default>'recently-added'</default>
       <summary>Sort order for saved albums page</summary>
@@ -362,6 +363,7 @@
         <choice value='recently-added'/>
         <choice value='alphabetic'/>
         <choice value='creator'/>
+        <choice value='random'/>
       </choices>
       <default>'recently-added'</default>
       <summary>Sort order for saved playlists page</summary>
@@ -371,6 +373,7 @@
         <choice value='recently-added'/>
         <choice value='alphabetic'/>
         <choice value='popularity'/>
+        <choice value='random'/>
       </choices>
       <default>'recently-added'</default>
       <summary>Sort order for saved artists page</summary>

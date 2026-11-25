@@ -16,10 +16,12 @@ pub enum SortOrder {
     Creator = 2,
     DateReleased = 3,
     Popularity = 4,
+    /// A shuffled order, drawn again with the shuffle button next to the menu.
+    Random = 5,
 }
 
 impl SortOrder {
-    const COUNT: u8 = 5;
+    const COUNT: u8 = 6;
 
     /// GSettings-compatible string key for this sort order.
     pub fn to_str(self) -> &'static str {
@@ -29,6 +31,7 @@ impl SortOrder {
             Self::Creator => "creator",
             Self::DateReleased => "date-released",
             Self::Popularity => "popularity",
+            Self::Random => "random",
         }
     }
 
@@ -39,6 +42,7 @@ impl SortOrder {
             "creator" => Self::Creator,
             "date-released" => Self::DateReleased,
             "popularity" => Self::Popularity,
+            "random" => Self::Random,
             _ => Self::RecentlyAdded,
         }
     }
@@ -61,6 +65,9 @@ impl SortOrder {
             // Translators: Sort option. Orders items by their popularity score, with
             // the most popular items appearing first.
             Self::Popularity => gettext("Popularity"),
+            // Translators: Sort option. Shows items in a shuffled order; a button
+            // next to the menu shuffles them again.
+            Self::Random => gettext("Random"),
         }
     }
 

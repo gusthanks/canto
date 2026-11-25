@@ -1,3 +1,4 @@
+use gettextrs::gettext;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::CompositeTemplate;
@@ -89,6 +90,9 @@ fn icon_for_layout(layout: CardLayout) -> &'static str {
 /// and (optionally) filter options.
 pub struct CardViewMenu {
     pub split_button: libadwaita::SplitButton,
+    /// Sits left of the split button, shown only under the "Random" sort:
+    /// each click shuffles the cards again.
+    pub shuffle_button: gtk::Button,
 }
 
 impl CardViewMenu {
@@ -105,6 +109,18 @@ impl CardViewMenu {
     ) -> Self {
         let popover = CardViewMenuPopoverWidget::new();
         let imp = popover.imp();
+
+        let shuffle_button = gtk::Button::builder()
+            .icon_name("media-playlist-shuffle-symbolic")
+            // Translators: Tooltip of the button next to the view menu, shown
+            // when the "Random" sort is on. Each click shuffles the items again.
+            .tooltip_text(gettext("Shuffle Again"))
+            .visible(current_sort.get() == SortOrder::Random)
+            .build();
+        shuffle_button
+            .update_property(&[gtk::accessible::Property::Label(&gettext("Shuffle Again"))]);
+        let card_list_ref = Rc::clone(&card_list);
+        shuffle_button.connect_clicked(move |_| card_list_ref.reshuffle());
 
         // Wire size buttons
         Self::connect_size_buttons(
@@ -123,6 +139,7 @@ impl CardViewMenu {
             available_sorts,
             current_sort.get(),
             current_sort,
+            shuffle_button.downgrade(),
             Rc::clone(&card_list),
             dispatcher.clone(),
         );
@@ -163,11 +180,18 @@ impl CardViewMenu {
             dispatch.dispatch(BrowserAction::ChangeCardLayout(next).into());
         });
 
-        Self { split_button }
+        Self {
+            split_button,
+            shuffle_button,
+        }
     }
 
     pub fn widget(&self) -> &libadwaita::SplitButton {
         &self.split_button
+    }
+
+    pub fn shuffle_button(&self) -> &gtk::Button {
+        &self.shuffle_button
     }
 
     pub fn sync(&self, layout: CardLayout) {
@@ -222,6 +246,7 @@ impl CardViewMenu {
         available_sorts: &[SortOrder],
         current_sort: SortOrder,
         sort: Rc<Cell<SortOrder>>,
+        shuffle_button: glib::WeakRef<gtk::Button>,
         card_list: Rc<CardList>,
         dispatcher: Dispatcher,
     ) {
@@ -231,6 +256,7 @@ impl CardViewMenu {
             SortOrder::Creator,
             SortOrder::DateReleased,
             SortOrder::Popularity,
+            SortOrder::Random,
         ];
         let orders: Vec<SortOrder> = all_sort_options
             .iter()
@@ -248,7 +274,14 @@ impl CardViewMenu {
             move |i| {
                 let order = orders[i];
                 sort.set(order);
+                if order == SortOrder::Random {
+                    // A fresh draw each time "Random" is picked
+                    card_list.reshuffle();
+                }
                 card_list.set_sort(order);
+                if let Some(button) = shuffle_button.upgrade() {
+                    button.set_visible(order == SortOrder::Random);
+                }
                 dispatcher.dispatch(BrowserAction::ChangeSortOrder(page.clone(), order).into());
             },
         );

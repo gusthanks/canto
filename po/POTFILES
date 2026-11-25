@@ -76,6 +76,7 @@ src/app/components/shell/playback/playback_widget.blp
 src/app/components/widgets/playlist_dialog/playlist_dialog.blp
 src/app/components/widgets/playlist_picker/playlist_picker.blp
 src/app/components/widgets/card_list/card_view_menu.blp
+src/app/components/widgets/card_list/card_view_menu.rs
 src/app/components/widgets/details_page/header.blp
 src/app/components/widgets/details_page/details_section.blp
 src/app/components/widgets/track_list/track_row.blp
