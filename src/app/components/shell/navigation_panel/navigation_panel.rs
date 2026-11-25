@@ -184,9 +184,11 @@ impl NavigationPanel {
                         &gtk::graphene::Point::new(x as f32, y as f32),
                     )
                     .unwrap_or_else(|| gtk::graphene::Point::new(x as f32, y as f32));
-                let rect = gdk::Rectangle::new(translated.x() as i32, translated.y() as i32, 1, 1);
-                context_menu.set_pointing_to(Some(&rect));
-                context_menu.popup();
+                crate::app::components::popup_fit::popup_at(
+                    context_menu.upcast_ref(),
+                    translated.x() as f64,
+                    translated.y() as f64,
+                );
             }
         );
 

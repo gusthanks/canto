@@ -37,6 +37,8 @@ pub use constants::*;
 
 pub mod utils;
 
+pub mod popup_fit;
+
 pub mod labels;
 
 pub mod clipboard_link;

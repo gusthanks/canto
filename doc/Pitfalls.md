@@ -131,6 +131,12 @@ groups/rows with `PreferencesPage::remove` / `PreferencesGroup::remove` while
 keeping strong Rust references so they can be re-attached later
 (`sync_audio_page_layout` in `src/app/components/pages/settings/settings.rs`).
 
+**A menu runs off the screen.** A tall popover opened mid-window is cut at the
+bottom edge: there is room neither below nor above the click, and the
+compositor (Hyprland) does not slide or shrink the popup as GTK asks. Place it
+yourself before `popup()`: `popup_at` or `fit_popover` in
+`src/app/components/popup_fit.rs`, never a bare `set_pointing_to`.
+
 ## 2. Events and signals
 
 **`gdk::Event` is not a GObject.** `and_downcast()` does not compile on it. Use

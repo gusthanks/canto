@@ -413,7 +413,13 @@ impl TrackRow {
         let actions = self.imp().actions.borrow().clone();
         let popover = super::build_song_menu_popover(self.upcast_ref(), &model, hooks, actions);
         popover.connect_closed(|popover| popover.set_pointing_to(None));
-        self.imp().menu_btn.set_popover(Some(&popover));
+        let menu_btn = &*self.imp().menu_btn;
+        menu_btn.set_popover(Some(&popover));
+        // Opened by the button: fitted under (or over) the button
+        crate::app::components::popup_fit::fit_popover(
+            &popover,
+            &Rectangle::new(0, 0, menu_btn.width(), menu_btn.height()),
+        );
         Some(popover)
     }
 
@@ -425,13 +431,11 @@ impl TrackRow {
         let Some(origin) = self.compute_point(menu_btn, &Point::zero()) else {
             return;
         };
-        popover.set_pointing_to(Some(&Rectangle::new(
-            (origin.x() as f64 + x) as i32,
-            (origin.y() as f64 + y) as i32,
-            1,
-            1,
-        )));
-        popover.popup();
+        crate::app::components::popup_fit::popup_at(
+            &popover,
+            origin.x() as f64 + x,
+            origin.y() as f64 + y,
+        );
     }
 
     pub fn mark_draggable(&self) -> bool {

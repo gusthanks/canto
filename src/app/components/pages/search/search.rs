@@ -388,18 +388,12 @@ fn attach_track_card_menu(
         );
         // Parented like the library's context menu: to a Box, at the click
         popover.set_parent(&anchor);
-        popover.set_pointing_to(Some(&gdk::Rectangle::new(
-            at.x() as i32,
-            at.y() as i32,
-            1,
-            1,
-        )));
         popover.connect_closed(|popover| {
             // After the click on an item has run its action
             let popover = popover.clone();
             glib::idle_add_local_once(move || popover.unparent());
         });
-        popover.popup();
+        crate::app::components::popup_fit::popup_at(&popover, at.x() as f64, at.y() as f64);
     });
     flowbox.add_controller(click);
 }

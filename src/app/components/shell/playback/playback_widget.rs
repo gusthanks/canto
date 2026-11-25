@@ -701,8 +701,7 @@ mod imp {
             let pop = popover.clone();
             click.connect_pressed(move |gesture, _, x, y| {
                 gesture.set_state(gtk::EventSequenceState::Claimed);
-                pop.set_pointing_to(Some(&gtk::gdk::Rectangle::new(x as i32, y as i32, 1, 1)));
-                pop.popup();
+                crate::app::components::popup_fit::popup_at(&pop, x, y);
             });
             self.bar_end.add_controller(click);
             self.customize_popover.replace(Some(popover));

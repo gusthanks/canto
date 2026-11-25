@@ -273,6 +273,14 @@ pub fn build_song_menu_popover(
         sync_menu_visibility(&sections_ref, &checks_ref, &actions);
     });
 
-    popover.set_child(Some(&stack));
+    // Scrolls when the window is shorter than the menu; `fit_popover` sets
+    // its ceiling (`popup_fit.rs`)
+    let scroller = gtk::ScrolledWindow::builder()
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .propagate_natural_height(true)
+        .propagate_natural_width(true)
+        .child(&stack)
+        .build();
+    popover.set_child(Some(&scroller));
     popover
 }

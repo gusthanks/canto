@@ -1100,7 +1100,19 @@ fn assert_track_menu_sections_icons_and_details_dialog() {
 
     let owner = gtk::Box::new(gtk::Orientation::Vertical, 0);
     let popover = build_song_menu_popover(owner.upcast_ref(), &menu, None, Some(actions.upcast()));
-    let stack = popover.child().and_downcast::<gtk::Stack>().unwrap();
+    // The menu scrolls when the window is shorter than it (`popup_fit.rs`)
+    let scroller = popover
+        .child()
+        .and_downcast::<gtk::ScrolledWindow>()
+        .expect("the song menu sits in a ScrolledWindow");
+    let stack = scroller
+        .child()
+        .and_then(|c| match c.downcast::<gtk::Viewport>() {
+            Ok(viewport) => viewport.child(),
+            Err(c) => Some(c),
+        })
+        .and_downcast::<gtk::Stack>()
+        .unwrap();
     let main_box = stack
         .child_by_name("main")
         .and_downcast::<gtk::Box>()
